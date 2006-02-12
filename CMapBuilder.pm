@@ -192,7 +192,7 @@ sub ACTION_build_html {
               : $q->b( $_->[0] )
           } (
             [ 'CMap Home'      => '' ],
-            [ 'Maps'           => '/cgi-bin/cmap/viewer?changeMenu=1' ],
+            [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
             [ 'Map Search'     => '/cgi-bin/cmap/map_search' ],
             [ 'Feature Search' => '/cgi-bin/cmap/feature_search' ],
             [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
@@ -226,7 +226,7 @@ sub ACTION_build_html {
         ),
         $q->ul(
             $q->li(
-                $q->a( { -href => '/cgi-bin/cmap/viewer?changeMenu=1' },
+                $q->a( { -href => '/cgi-bin/cmap/viewer' },
                     'Maps' )
                     . " - Use a menu to select your starting maps\n"
             ),

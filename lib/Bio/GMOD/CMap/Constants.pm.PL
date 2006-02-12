@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.40 2005-11-10 17:59:05 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.41 2006-02-12 16:15:08 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -66,7 +66,7 @@ use constant GLOBAL_CONFIG_FILE => 'global.conf';
 # The number of cache levels
 # DO NOT ALTER UNLESS YOU ARE CHANGING ALL OF THE LEVELS.
 #
-use constant CACHE_LEVELS => '4';
+use constant CACHE_LEVELS => '5';
 
 !GROK!THIS!
 

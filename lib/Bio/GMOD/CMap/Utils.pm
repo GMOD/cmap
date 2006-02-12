@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.68 2006-01-26 15:31:06 mwz444 Exp $
+# $Id: Utils.pm,v 1.69 2006-02-12 16:15:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,11 +30,12 @@ use Regexp::Common;
 use CGI::Session;
 use Storable qw( freeze thaw );
 use POSIX;
+use Digest::MD5 qw(md5 md5_hex);
 use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -44,7 +45,6 @@ $VERSION = (qw$Revision: 1.68 $)[-1];
     image_type               label_features
     link_group               flip
     session_mod              page_no
-    action                   
     left_min_corrs           right_min_corrs
     menu_min_corrs           ref_map_start
     ref_map_stop             collapse_features
@@ -55,9 +55,10 @@ $VERSION = (qw$Revision: 1.68 $)[-1];
     scale_maps               stack_maps
     comp_menu_order          ref_map_order
     prev_ref_map_order       omit_area_boxes
-    refMenu                  compMenu
-    optionMenu               addOpMenu
-    general_min_corrs        url_for_saving
+    action                   mapMenu
+    featureMenu              corrMenu
+    displayMenu              advancedMenu
+    general_min_corrs
     included_feature_types   url_feature_default_display
     corr_only_feature_types  ignored_feature_types
     included_evidence_types  ignored_evidence_types
@@ -69,7 +70,7 @@ $VERSION = (qw$Revision: 1.68 $)[-1];
 #    comparative_map_right    comparative_map_left
 #    comp_map_set_right       comp_map_set_left
 # Not saving because it is unneccessary
-#    session_id               saved_link_id 
+#    session_id               saved_link_id
 #    step
 
 %SESSION_PARAM_DEFAULT_OF = (
@@ -927,12 +928,47 @@ sub _parse_map_info {
 # ----------------------------------------------------
 sub _modify_slots {
 
-    # Modify the slots object using a modification string
-    my $slots                  = shift;
-    my $mod_str                = shift;
-    my $change_left_min_corrs  = 0;
-    my $change_right_min_corrs = 0;
+    # Modify the slots object using a data from the url
+    my $slots             = shift;
+    my $mod_str           = shift;
+    my $map_menu_data_ref = shift;
 
+    _modify_slots_using_mod_str( $slots, $mod_str );
+    _modify_slots_using_map_menu_data( $slots, $map_menu_data_ref );
+
+}
+
+# ----------------------------------------------------
+sub _modify_slots_using_map_menu_data {
+
+    # Modify the slots object using a modification string
+    my $slots         = shift;
+    my $map_menu_data = shift;
+
+    my @data_names = qw( start stop mag );
+
+    foreach my $slot_no ( keys %{ $map_menu_data || {} } ) {
+        next
+            unless ( $slots->{$slot_no}
+            and %{ $slots->{$slot_no}{'maps'} || {} } );
+        foreach my $map_acc ( keys %{ $map_menu_data->{$slot_no} || {} } ) {
+            next unless ( %{ $slots->{$slot_no}{'maps'}{$map_acc} || {} } );
+            foreach my $data_name (@data_names) {
+                $slots->{$slot_no}{'maps'}{$map_acc}{$data_name}
+                    = $map_menu_data->{$slot_no}{$map_acc}{$data_name};
+            }
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub _modify_slots_using_mod_str {
+
+    # Modify the slots object using a modification string
+    my $slots    = shift;
+    my $mod_str  = shift;
     my @mod_cmds = split( /:/, $mod_str );
 
     foreach my $mod_cmd (@mod_cmds) {
@@ -1036,12 +1072,10 @@ sub _modify_slots {
             )
         {
             if ( $slot_no >= 0 ) {
-                $delete_pos             = 1;
-                $change_right_min_corrs = 1;
+                $delete_pos = 1;
             }
             if ( $slot_no <= 0 ) {
-                $delete_neg            = 1;
-                $change_left_min_corrs = 1;
+                $delete_neg = 1;
             }
         }
         if ( $slot_no >= 0 and $delete_pos ) {
@@ -1051,7 +1085,7 @@ sub _modify_slots {
             delete $slots->{$slot_no};
         }
     }
-    return ( $change_left_min_corrs, $change_right_min_corrs );
+    return;
 }
 
 # ----------------------------------------------------
@@ -1084,9 +1118,11 @@ sub _parse_session_step {
     %{$slots_ref} = %{ clone( $session_step->{'slots'} ) };
 
     # Apply Session Modifications to slots_ref
-    my ( $change_left_min_corrs, $change_right_min_corrs )
-        = _modify_slots( $slots_ref,
-        $parsed_url_options_ref->{'session_mod'} )
+    my ( $change_left_min_corrs, $change_right_min_corrs ) = _modify_slots(
+        $slots_ref,
+        $parsed_url_options_ref->{'session_mod'},
+        $parsed_url_options_ref->{'map_menu_data'}
+        )
         if ( !$parsed_url_options_ref->{'reusing_step'} );
 
     # if a slot was deleted, change the left/right_min_corrs
@@ -1156,9 +1192,9 @@ sub _get_options_from_url {
         clean_view               corrs_to_map        magnify_all
         ignore_image_map_sanity  scale_maps          stack_maps
         comp_menu_order          ref_map_order       prev_ref_map_order
-        omit_area_boxes          refMenu             compMenu
-        optionMenu               addOpMenu           session_id
-        saved_link_id            general_min_corrs
+        omit_area_boxes          mapMenu             featureMenu
+        corrMenu                 displayMenu         advancedMenu
+        session_id               saved_link_id       general_min_corrs
         ]
         )
     {
@@ -1272,10 +1308,55 @@ sub _get_options_from_url {
                 push @{ $parsed_url_options{'greater_evidence_types'} }, $et;
             }
         }
-        if ( $param =~ /^ets_(\S+)/ ) {
+        elsif ( $param =~ /^ets_(\S+)/ ) {
             my $et  = $1;
             my $val = $apr->param($param);
             $parsed_url_options{'evidence_type_score'}->{$et} = $val;
+        }
+        elsif ( $param =~ /^map_start_([-\d]+)_(\S+)/ ) {
+            my $slot_no = $1;
+            my $map_acc = $2;
+            my $val     = $apr->param($param);
+            $parsed_url_options{'map_menu_data'}->{$slot_no}{$map_acc}{start}
+                = $val;
+        }
+        elsif ( $param =~ /^map_stop_([-\d]+)_(\S+)/ ) {
+            my $slot_no = $1;
+            my $map_acc = $2;
+            my $val     = $apr->param($param);
+            $parsed_url_options{'map_menu_data'}->{$slot_no}{$map_acc}{stop}
+                = $val;
+        }
+        elsif ( $param =~ /^map_mag_([-\d]+)_(\S+)/ ) {
+            my $slot_no = $1;
+            my $map_acc = $2;
+            my $val     = $apr->param($param);
+            $parsed_url_options{'map_menu_data'}->{$slot_no}{$map_acc}{mag}
+                = $val;
+        }
+        elsif ( $param =~ /^map_in_menu_([-\d]+)_(\S+)/ ) {
+
+            # This param tells us to look for check boxes for this map and
+            # allows us to deferenciate between unchecked and no check box
+            my $slot_no          = $1;
+            my $map_acc          = $2;
+            my $slot_and_map_str = qq{$slot_no=$map_acc};
+            if ( $apr->param( 'map_flip_' . $slot_no . '_' . $map_acc ) ) {
+                unless ( $parsed_url_options{'flip'}
+                    =~ /(^|:) $slot_and_map_str ($|:)/x )
+                {
+                    $parsed_url_options{'flip'} = join( ":",
+                        $parsed_url_options{'flip'},
+                        $slot_and_map_str );
+                }
+            }
+            else {
+                if ( $parsed_url_options{'flip'}
+                    =~ s/(^|:) $slot_and_map_str ($|:)/$1$2/x )
+                {
+                    $parsed_url_options{'flip'} =~ s/::/:/x;
+                }
+            }
         }
     }
 
@@ -1411,6 +1492,7 @@ sub parse_url {
             $parsed_url_options{'step'}
                 = $#{ $parsed_url_options{'session_data_object'} } + 1;
         }
+
         my $prev_step = $parsed_url_options{'step'} - 1;
         $parsed_url_options{'next_step'} = $parsed_url_options{'step'} + 1;
         my $step_hash;
@@ -1418,13 +1500,18 @@ sub parse_url {
         # Check to see if we can just reuse an old session.
         # When debugging it is usefull to add " and 0" to this if statement
         # to stop it from reusing old sessions.
+
+        # Make a md5 hash key from the menu
+        $parsed_url_options{'session_menu_hash'}
+            = md5( Dumper( $parsed_url_options{'map_menu_data'} )
+                . $parsed_url_options{'session_mod'} );
         if ( $parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]
             and $parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]{'session_mod'}
             and $parsed_url_options{'session_data_object'}
-            ->[ $parsed_url_options{'step'} ]{'session_mod'} eq
-            $parsed_url_options{'session_mod'} )
+            ->[ $parsed_url_options{'step'} ]{'session_menu_hash'} eq
+            $parsed_url_options{'session_menu_hash'} )
         {
             $step_hash = $parsed_url_options{'session_data_object'}
                 ->[ $parsed_url_options{'step'} ];
@@ -1699,7 +1786,7 @@ sub parse_url {
     # Set the data source.
     #
     $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
-    $apr->param('data_source', $calling_cmap_object->data_source);
+    $apr->param( 'data_source', $calling_cmap_object->data_source );
 
     # If the ref species is different than before, then we need to start fresh
     if (   $parsed_url_options{'prev_ref_species_acc'}
@@ -1783,7 +1870,7 @@ sub parse_url {
               $side eq RIGHT
             ? $parsed_url_options{'comp_map_set_right'}
             : $parsed_url_options{'comp_map_set_left'};
-        if (@{$cmap || []}) {
+        if ( @{ $cmap || [] } ) {
             if ( grep {/^-1$/} @$cmap ) {
                 unless (
                     defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
@@ -1845,10 +1932,11 @@ sub create_session_step {
 
     my ( $self, $parsed_url_options_ref, ) = @_;
     my $step_object = {
-        slots           => $parsed_url_options_ref->{'slots'},
-        ref_species_acc => $parsed_url_options_ref->{'ref_species_acc'},
-        ref_map_set_acc => $parsed_url_options_ref->{'ref_map_set_acc'},
-        session_mod     => $parsed_url_options_ref->{'session_mod'},
+        slots             => $parsed_url_options_ref->{'slots'},
+        ref_species_acc   => $parsed_url_options_ref->{'ref_species_acc'},
+        ref_map_set_acc   => $parsed_url_options_ref->{'ref_map_set_acc'},
+        session_mod       => $parsed_url_options_ref->{'session_mod'},
+        session_menu_hash => $parsed_url_options_ref->{'session_menu_hash'},
     };
 
     for my $param (@SESSION_PARAMS) {

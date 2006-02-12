@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.121 2005-11-09 15:29:41 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.122 2006-02-12 16:15:09 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -16,6 +16,8 @@ use Bio::GMOD::CMap::Utils;
 use Template;
 use URI::Escape;
 use Data::Dumper;
+use Digest::MD5 qw(md5 md5_hex);
+use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE        => 'cmap_viewer.tmpl';
@@ -53,145 +55,242 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
 
+    # decide if we should use the whole page cache.
+    # we will not if there is a session going.
+    my $use_whole_page_cache=1; 
+    if ( $apr->param('force_regenerate') or $apr->param('session_id') or $apr->path_info() =~ /map_details/){
+        $use_whole_page_cache=0; 
+    }
+
+    my $whole_page_cache_key;
+    if ($use_whole_page_cache){
+        $whole_page_cache_key = md5_hex(Dumper($apr->Vars()));
+    }
+    my $successful_cache_retrival=0;
+    my $cached_data;
+    if ($use_whole_page_cache) {
+        $cached_data = $self->get_cached_results( 5, $whole_page_cache_key, );
+        if ($cached_data->{'image_name'}){
+            $successful_cache_retrival=1;
+        }
+
+    }
+
+
+
     # parse the url
     my %parsed_url_options = Bio::GMOD::CMap::Utils->parse_url( $apr, $self )
         or return $self->error();
+    my $data = $self->data_module;
 
     $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
         || '';
-    my %included_corr_only_features =
-        map { $_ => 1 } @{ $parsed_url_options{'corr_only_feature_types'} };
-    my %ignored_feature_types
-        = map { $_ => 1 } @{ $parsed_url_options{'ignored_feature_types;'} };
 
-    #
-    # Instantiate the drawer if there's at least one map to draw.
-    #
-    my ( $drawer, $extra_code, $extra_form );
-    if ( @{ $parsed_url_options{'ref_map_accs'} || () } ) {
-        $drawer = Bio::GMOD::CMap::Drawer->new(
-            apr => $apr,
-            %parsed_url_options,
-            )
-            or return $self->error( Bio::GMOD::CMap::Drawer->error );
+    my ($html, $drawer,);
+    my ( %included_corr_only_features, %ignored_feature_types, );
 
-        $parsed_url_options{'slots'} = $drawer->{'slots'};
-        $apr->param( 'left_min_corrs',  $drawer->left_min_corrs );
-        $apr->param( 'right_min_corrs', $drawer->right_min_corrs );
-        $extra_code = $drawer->{'data'}->{'extra_code'};
-        $extra_form = $drawer->{'data'}->{'extra_form'};
-
+    if ($successful_cache_retrival) {
+        $html = $cached_data->{'html'};
+        $parsed_url_options{'slots'} = $cached_data->{'slots'};
         $parsed_url_options{'feature_types'}
-            = $drawer->included_feature_types;
+            = $cached_data->{'feature_types'};
         $parsed_url_options{'corr_only_feature_types'}
-            = $drawer->corr_only_feature_types;
+            = $cached_data->{'corr_only_feature_types'};
         $parsed_url_options{'ignored_feature_types'}
-            = $drawer->ignored_feature_types;
+            = $cached_data->{'ignored_feature_types'};
         $parsed_url_options{'ignored_evidence_types'}
-            = $drawer->ignored_evidence_types;
+            = $cached_data->{'ignored_evidence_types'};
         $parsed_url_options{'included_evidence_types'}
-            = $drawer->included_evidence_types;
+            = $cached_data->{'included_evidence_types'};
         $parsed_url_options{'greater_evidence_types'}
-            = $drawer->greater_evidence_types;
+            = $cached_data->{'greater_evidence_types'};
         $parsed_url_options{'less_evidence_types'}
-            = $drawer->less_evidence_types;
+            = $cached_data->{'less_evidence_types'};
+        %included_corr_only_features
+            = %{ $cached_data->{'included_corr_only_features'} || {} };
+        %ignored_feature_types
+            = %{ $cached_data->{'ignored_feature_types'} || {} };
+    }
+    else {
         %included_corr_only_features =
             map { $_ => 1 }
             @{ $parsed_url_options{'corr_only_feature_types'} };
         %ignored_feature_types = map { $_ => 1 }
-            @{ $parsed_url_options{'ignored_feature_types'} };
-    }
+            @{ $parsed_url_options{'ignored_feature_types;'} };
 
-    #
-    # Get the data for the form.
-    #
-    my $data      = $self->data_module;
-    my $form_data = $data->cmap_form_data(
-        slots                  => $parsed_url_options{'slots'},
-        menu_min_corrs         => $parsed_url_options{'menu_min_corrs'},
-        included_feature_types => $parsed_url_options{'feature_types'},
-        ignored_feature_types => $parsed_url_options{'ignored_feature_types'},
-        ignored_evidence_types =>
-            $parsed_url_options{'ignored_evidence_types'},
-        included_evidence_types =>
-            $parsed_url_options{'included_evidence_types'},
-        less_evidence_types    => $parsed_url_options{'less_evidence_types'},
-        greater_evidence_types =>
-            $parsed_url_options{'greater_evidence_types'},
-        evidence_type_score => $parsed_url_options{'evidence_type_score'},
-        ref_species_acc     => $parsed_url_options{'ref_species_acc'},
-        ref_map_set_acc     => $parsed_url_options{'ref_map_set_acc'},
-        ref_slot_data       => $drawer->{'data'}->{'slot_data'}{0},
-        )
-        or return $self->error( $data->error );
+        #
+        # Instantiate the drawer if there's at least one map to draw.
+        #
+        my ( $extra_code, $extra_form );
 
-    for my $key (qw[ ref_species_acc ref_map_set_acc ]) {
-        $apr->param( $key, $form_data->{$key} );
-    }
+        if ( @{ $parsed_url_options{'ref_map_accs'} || () } ) {
+            $drawer = Bio::GMOD::CMap::Drawer->new(
+                apr => $apr,
+                %parsed_url_options,
+                )
+                or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
-    my $feature_default_display = $data->feature_default_display;
+            $parsed_url_options{'slots'} = $drawer->{'slots'};
+            $apr->param( 'left_min_corrs',  $drawer->left_min_corrs );
+            $apr->param( 'right_min_corrs', $drawer->right_min_corrs );
+            $extra_code = $drawer->{'data'}->{'extra_code'};
+            $extra_form = $drawer->{'data'}->{'extra_form'};
 
-    $form_data->{'feature_types'}
-        = [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-            @{ $self->data_module->get_all_feature_types } ];
+            $parsed_url_options{'feature_types'}
+                = $drawer->included_feature_types;
+            $parsed_url_options{'corr_only_feature_types'}
+                = $drawer->corr_only_feature_types;
+            $parsed_url_options{'ignored_feature_types'}
+                = $drawer->ignored_feature_types;
+            $parsed_url_options{'ignored_evidence_types'}
+                = $drawer->ignored_evidence_types;
+            $parsed_url_options{'included_evidence_types'}
+                = $drawer->included_evidence_types;
+            $parsed_url_options{'greater_evidence_types'}
+                = $drawer->greater_evidence_types;
+            $parsed_url_options{'less_evidence_types'}
+                = $drawer->less_evidence_types;
+            %included_corr_only_features =
+                map { $_ => 1 }
+                @{ $parsed_url_options{'corr_only_feature_types'} };
+            %ignored_feature_types = map { $_ => 1 }
+                @{ $parsed_url_options{'ignored_feature_types'} };
+        }
 
-    my %evidence_type_menu_select = (
-        (   map { $_ => 0 } @{ $parsed_url_options{'ignored_evidence_types'} }
-        ),
-        (   map { $_ => 1 }
-                @{ $parsed_url_options{'included_evidence_types'} }
-        ),
-        ( map { $_ => 2 } @{ $parsed_url_options{'less_evidence_types'} } ),
-        (   map { $_ => 3 } @{ $parsed_url_options{'greater_evidence_types'} }
-        )
-    );
-
-    unless ( $parsed_url_options{'reusing_step'} ) {
-        Bio::GMOD::CMap::Utils->create_session_step( \%parsed_url_options )
-            or return $self->error('Problem creating the new session step.');
-    }
-
-    $apr->param( 'session_id', $parsed_url_options{'session_id'} );
-    $apr->param( 'step',       $parsed_url_options{'next_step'} );
-
-    my $html;
-    my $t = $self->template or return;
-    $t->process(
-        TEMPLATE,
-        {   apr            => $apr,
-            url_for_saving => $parsed_url_options{'url_for_saving'},
-            form_data      => $form_data,
-            drawer         => $drawer,
-            page           => $self->page,
-            intro          => $INTRO,
-            data_source    => $self->data_source,
-            data_sources   => $self->data_sources,
-            title          => $self->config_data('cmap_title') || 'CMap',
-            stylesheet     => $self->stylesheet,
-            selected_maps  =>
-                { map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} } },
-            included_features =>
-                { map { $_, 1 } @{ $parsed_url_options{'feature_types'} } },
-            corr_only_feature_types   => \%included_corr_only_features,
-            ignored_feature_types     => \%ignored_feature_types,
-            evidence_type_menu_select => \%evidence_type_menu_select,
+        #
+        # get the data for the form.
+        #
+        my $form_data = $data->cmap_form_data(
+            slots                  => $parsed_url_options{'slots'},
+            menu_min_corrs         => $parsed_url_options{'menu_min_corrs'},
+            included_feature_types => $parsed_url_options{'feature_types'},
+            ignored_feature_types  =>
+                $parsed_url_options{'ignored_feature_types'},
+            ignored_evidence_types =>
+                $parsed_url_options{'ignored_evidence_types'},
+            included_evidence_types =>
+                $parsed_url_options{'included_evidence_types'},
+            less_evidence_types => $parsed_url_options{'less_evidence_types'},
+            greater_evidence_types =>
+                $parsed_url_options{'greater_evidence_types'},
             evidence_type_score => $parsed_url_options{'evidence_type_score'},
-            feature_types       =>
-                join( ',', @{ $parsed_url_options{'feature_types'} } ),
-            evidence_types => join( ',',
-                @{ $parsed_url_options{'included_evidence_types'} } ),
-            extra_code              => $extra_code,
-            extra_form              => $extra_form,
-            feature_default_display => $feature_default_display,
-            no_footer => $parsed_url_options{'path_info'} eq 'map_details' ? 1
-            : 0,
-            prev_ref_map_order => $self->ref_map_order(),
-            no_footer => $parsed_url_options{'path_info'} eq 'map_details' ? 1
-            : 0,
-        },
-        \$html
-        )
-        or $html = $t->error;
+            flip_list           => $drawer->flip(),
+            ref_species_acc     => $parsed_url_options{'ref_species_acc'},
+            ref_map_set_acc     => $parsed_url_options{'ref_map_set_acc'},
+            ref_slot_data       => $drawer
+            ? $drawer->{'data'}->{'slot_data'}{0}
+            : {},
+            )
+            or return $self->error( $data->error );
+
+        for my $key (qw[ ref_species_acc ref_map_set_acc ]) {
+            $apr->param( $key, $form_data->{$key} );
+        }
+
+        my $feature_default_display = $data->feature_default_display;
+
+        $form_data->{'feature_types'}
+            = [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+                @{ $self->data_module->get_all_feature_types } ];
+
+        my %evidence_type_menu_select = (
+            (   map { $_ => 0 }
+                    @{ $parsed_url_options{'ignored_evidence_types'} }
+            ),
+            (   map { $_ => 1 }
+                    @{ $parsed_url_options{'included_evidence_types'} }
+            ),
+            (   map { $_ => 2 }
+                    @{ $parsed_url_options{'less_evidence_types'} }
+            ),
+            (   map { $_ => 3 }
+                    @{ $parsed_url_options{'greater_evidence_types'} }
+            )
+        );
+
+        my $t = $self->template or return;
+        $t->process(
+            TEMPLATE,
+            {   apr            => $apr,
+                url_for_saving => $parsed_url_options{'url_for_saving'},
+                form_data      => $form_data,
+                drawer         => $drawer,
+                page           => $self->page,
+                intro          => $INTRO,
+                data_source    => $self->data_source,
+                data_sources   => $self->data_sources,
+                title          => $self->config_data('cmap_title') || 'cmap',
+                stylesheet     => $self->stylesheet,
+                selected_maps  => {
+                    map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
+                },
+                included_features => {
+                    map { $_, 1 } @{ $parsed_url_options{'feature_types'} }
+                },
+                corr_only_feature_types   => \%included_corr_only_features,
+                ignored_feature_types     => \%ignored_feature_types,
+                evidence_type_menu_select => \%evidence_type_menu_select,
+                evidence_type_score       =>
+                    $parsed_url_options{'evidence_type_score'},
+                feature_types =>
+                    join( ',', @{ $parsed_url_options{'feature_types'} } ),
+                evidence_types => join( ',',
+                    @{ $parsed_url_options{'included_evidence_types'} } ),
+                extra_code              => $extra_code,
+                extra_form              => $extra_form,
+                feature_default_display => $feature_default_display,
+                no_footer => $parsed_url_options{'path_info'} eq 'map_details'
+                ? 1
+                : 0,
+                prev_ref_map_order => $self->ref_map_order(),
+                no_footer => $parsed_url_options{'path_info'} eq 'map_details'
+                ? 1
+                : 0,
+            },
+            \$html
+            )
+            or $html = $t->error;
+
+        # cache the data if using the whole page cache
+        if ($use_whole_page_cache) {
+            my $cached_data;
+            $cached_data->{'html'}  = $html;
+            $cached_data->{'image_name'}  = $drawer->{'image_name'};
+            $cached_data->{'slots'} = $parsed_url_options{'slots'};
+            $cached_data->{'feature_types'}
+                = $parsed_url_options{'feature_types'};
+            $cached_data->{'corr_only_feature_types'}
+                = $parsed_url_options{'corr_only_feature_types'};
+            $cached_data->{'ignored_feature_types'}
+                = $parsed_url_options{'ignored_feature_types'};
+            $cached_data->{'ignored_evidence_types'}
+                = $parsed_url_options{'ignored_evidence_types'};
+            $cached_data->{'included_evidence_types'}
+                = $parsed_url_options{'included_evidence_types'};
+            $cached_data->{'greater_evidence_types'}
+                = $parsed_url_options{'greater_evidence_types'};
+            $cached_data->{'less_evidence_types'}
+                = $parsed_url_options{'less_evidence_types'};
+            $cached_data->{'included_corr_only_features'}
+                = \%included_corr_only_features;
+            $cached_data->{'ignored_feature_types'} = \%ignored_feature_types;
+
+            $self->store_cached_results( 5, $whole_page_cache_key,
+                $cached_data );
+
+        }
+    }
+    unless ( $parsed_url_options{'reusing_step'} ) {
+        Bio::GMOD::CMap::Utils->create_session_step(
+            \%parsed_url_options )
+            or
+            return $self->error('problem creating the new session step.');
+    }
+
+    $html =~ s/SESSION_ID_PLACEHOLDER/$parsed_url_options{'session_id'}/g;
+    $html =~ s/SESSION_STEP_PLACEHOLDER/$parsed_url_options{'next_step'}/g;
+    #    $apr->param( 'session_id', $parsed_url_options{'session_id'} );
+    #    $apr->param( 'step',       $parsed_url_options{'next_step'} );
 
     if ( $parsed_url_options{'path_info'} eq 'map_details'
         and scalar( keys %{ $drawer->{'data'}{'slot_data'}{0}} ) == 1 )

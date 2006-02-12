@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.192 2006-02-05 04:17:59 mwz444 Exp $
+# $Id: Map.pm,v 1.193 2006-02-12 16:15:09 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.192 $)[-1];
+$VERSION = (qw$Revision: 1.193 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -224,7 +224,10 @@ box.
         my $url  = $buttons->[0]{'url'};
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
-        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        my $eval_area_code = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        if ($eval_area_code){
+            eval $eval_area_code;
+        }
         push @{$map_area_data},
             {
             coords => [
@@ -1205,11 +1208,16 @@ Variable Info:
 
     my $base_x = $self->base_x;
 
+    my $slot_type_title = $slot_no ? "Comparative": "Reference"; 
     # Create the Slot Title Box
     # We do this first to make sure that the slot is wide enough
-    my @lines =
-        map { $self->$_( $map_ids[0] ) if ( $self->can($_) ) }
-        grep !/map_name/, @config_map_titles;
+    my @lines = (
+        $slot_type_title,
+        (   map { $self->$_( $map_ids[0] ) if ( $self->can($_) ) }
+                grep !/map_name/,
+            @config_map_titles
+        )
+    );
     my %slot_title_info = $self->create_slot_title(
         drawer  => $drawer,
         lines   => \@lines,
@@ -2500,7 +2508,10 @@ sub add_topper {
             my $url  = $buttons->[0]{'url'};
             my $alt  = $buttons->[0]{'alt'};
             my $code = '';
-            eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+            my $eval_area_code = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+            if ($eval_area_code){
+                eval $eval_area_code;
+            }
             push @{ $map_area_data->{$map_id} },
                 {
                 coords => \@topper_bounds,

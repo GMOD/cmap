@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.87 2005-11-04 20:50:35 mwz444 Exp $
+# $Id: Admin.pm,v 1.88 2006-02-12 16:15:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -728,9 +728,10 @@ Only the cache level and the levels above it need to be cached.
  Level 2: Maps
  Level 3: Features
  Level 4: Correspondences
+ Level 4: images
 
-For example if features are added, then Level 3 and 4 need to be purged.
-If a new Map is added, Levels 2,3 and 4 need to be purged.
+For example if features are added, then Level 3,4 and 5 need to be purged.
+If a new Map is added, Levels 2,3,4 and 5 need to be purged.
 
 
 =back

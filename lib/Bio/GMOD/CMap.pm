@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.102 2006-02-05 04:17:58 mwz444 Exp $
+# $Id: CMap.pm,v 1.103 2006-02-12 16:15:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -993,7 +993,7 @@ This is a consistant way of naming the cache levels.
 
     my $self  = shift;
     my $level = shift;
-    return $self->ERROR(
+    return $self->error(
         "Cache Level: $level should not be higher than " . CACHE_LEVELS )
         unless ( $level <= CACHE_LEVELS );
     return $self->config_data('database')->{'name'} . "_L" . $level;
@@ -1596,7 +1596,7 @@ sub control_cache_size {
     return unless ( $cache_limit > 0 );
 
 CACHE_LEVEL:
-    for my $cache_level ( 1 .. 4 ) {
+    for my $cache_level ( 1 .. 5 ) {
         my $cache_name = "L" . $cache_level . "_cache";
         unless ( $self->{$cache_name} ) {
             $self->{$cache_name} = $self->init_cache($cache_level)

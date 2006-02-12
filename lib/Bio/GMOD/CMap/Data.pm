@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.265 2006-02-05 04:17:58 mwz444 Exp $
+# $Id: Data.pm,v 1.266 2006-02-12 16:15:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.265 $)[-1];
+$VERSION = (qw$Revision: 1.266 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -67,7 +67,7 @@ Gets the specifics on a feature correspondence record.
 
 sub correspondence_detail_data {
 
-    #p#rint S#TDERR "correspondence_detail_data\n";
+    #print ST#DERR "correspondence_detail_data\n";
     my ( $self, %args ) = @_;
     my $correspondence_acc = $args{'correspondence_acc'}
         or return $self->error('No correspondence accession ID');
@@ -261,7 +261,7 @@ Organizes the data for drawing comparative maps.
 
 sub cmap_data {
 
-    #p#rint S#TDERR "cmap_data\n";
+    #print ST#DERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $slots                      = $args{'slots'};
     my $slots_min_corrs            = $args{'slots_min_corrs'} || {};
@@ -379,8 +379,10 @@ sub cmap_data {
     $data->{'evidence_type_score'}         = $evidence_type_score;
     $data->{'extra_code'}                  = $extra_code;
     $data->{'extra_form'}                  = $extra_form;
-    $data->{'max_unit_size'} = $self->get_max_unit_size( $data->{'slot_data'} );
-    $data->{'ref_unit_size'} = $self->get_ref_unit_size( $data->{'slot_data'} );
+    $data->{'max_unit_size'}
+        = $self->get_max_unit_size( $data->{'slot_data'} );
+    $data->{'ref_unit_size'}
+        = $self->get_ref_unit_size( $data->{'slot_data'} );
     $data->{'feature_default_display'}
         = $self->feature_default_display($url_feature_default_display);
 
@@ -399,7 +401,7 @@ Returns the feature and correspondence data for the maps in a slot.
 
 sub slot_data {
 
-    #print S#TDERR "slot_data\n";
+    #print ST#DERR "slot_data\n";
     my ( $self, %args ) = @_;
     my $this_slot_no = $args{'slot_no'};
     my $ref_slot_no  = $args{'ref_slot_no'};
@@ -769,7 +771,7 @@ and the provided id.
 
 sub get_feature_correspondences {
 
-    #p#rint S#TDERR "get_feature_correspondences\n";
+    #print ST#DERR "get_feature_correspondences\n";
     my ($self,                       $feature_correspondences,
         $correspondence_evidence,    $map_id,
         $slot_no,                    $included_evidence_type_accs,
@@ -1280,7 +1282,7 @@ Returns the data for the main comparative map HTML form.
 
 sub cmap_form_data {
 
-    #p#rint S#TDERR "cmap_form_data\n";
+    #print ST#DERR "cmap_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $menu_min_corrs              = $args{'menu_min_corrs'}          || 0;
@@ -1295,6 +1297,7 @@ sub cmap_form_data {
     my $ref_slot_data               = $args{'ref_slot_data'}           || {};
     my $ref_map                     = $slots->{0};
     my $ref_map_set_acc             = $args{'ref_map_set_acc'}         || 0;
+    my $flip_list                   = $args{'flip_list'}               || [];
     my $sql_object = $self->sql or return;
 
     my $pid = $$;
@@ -1441,9 +1444,9 @@ sub cmap_form_data {
     #
     # Fill out all the info we have on every map.
     #
-    my $map_info;
+    my $slot_info;
     if ( scalar @ref_maps >= 1 ) {
-        $map_info = $self->fill_out_maps($slots);
+        $slot_info = $self->fill_out_slots( $slots, $flip_list, );
     }
 
     return {
@@ -1456,7 +1459,7 @@ sub cmap_form_data {
         ref_map_set_info       => $ref_map_set_info,
         comparative_maps_right => $comp_maps_right,
         comparative_maps_left  => $comp_maps_left,
-        map_info               => $map_info,
+        slot_info              => $slot_info,
         evidence_types         => \@evidence_types,
     };
 }
@@ -1588,7 +1591,7 @@ out which maps have relationships.
         }
 
         next unless $total_correspondences;
-        next if (!@maps and not $map_set->{'is_relational_map'});
+        next if ( !@maps and not $map_set->{'is_relational_map'} );
 
         push @sorted_map_sets,
             {
@@ -1666,22 +1669,29 @@ Retrieve the data for a feature correspondence.
 
 =pod
 
-=head2 fill_out_maps
+=head2 fill_out_slots
 
 Gets the names, IDs, etc., of the maps in the slots.
 
 =cut
 
-sub fill_out_maps {
+sub fill_out_slots {
 
-    #p#rint S#TDERR "fill_out_maps\n";
-    my ( $self, $slots ) = @_;
-    my $sql_object = $self->sql or return;
+    #print ST#DERR "fill_out_slots\n";
+    my $self             = shift;
+    my $slots            = shift;
+    my $flip_list        = shift || [];
+    my $sql_object       = $self->sql or return;
     my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
 
-    my @maps;
+    my %flip_hash;
+    foreach my $row ( @{$flip_list} ) {
+        $flip_hash{ $row->{'slot_no'} }->{ $row->{'map_acc'} } = 1;
+    }
+
+    my @slots;
     for my $i ( 0 .. $#ordered_slot_nos ) {
-        my $map;
+        my $slot;
         my $slot_no   = $ordered_slot_nos[$i];
         my $slot_info = $self->slot_info->{$slot_no};
         my $map_sets  = $sql_object->get_map_set_info_by_maps(
@@ -1700,77 +1710,41 @@ sub fill_out_maps {
                     . $row->{'map_set_short_name'};
             }
         }
-        $map->{'description'} = join( ";",
+        $slot->{'description'} = join( ";",
             map { $desc_by_species{$_} } keys(%desc_by_species) );
 
-        #
-        # To select the other comparative maps, we have to cut off everything
-        # after the current map.  E.g., if there are maps in slots -2, -1, 0,
-        # 1, and 2, for slot 1 we should choose everything less than it (and
-        # non-zero).  The opposite is true for negative slots.
-        #
-        my @cmap_nos;
         if ( $slot_no == 0 ) {
-            $map->{'is_reference_map'} = 1;
+            $slot->{'is_reference_slot'} = 1;
         }
-        elsif ( $slot_no < 0 ) {
-            push @cmap_nos,
-                grep { $_ > $slot_no && $_ != 0 } @ordered_slot_nos;
-        }
-        else {
-            push @cmap_nos,
-                grep { $_ < $slot_no && $_ != 0 } @ordered_slot_nos;
+        $slot->{'slot_no'} = $slot_no;
+        $slot->{'maps'}    = $slots->{$slot_no}{'maps'};
+
+        # Get map information for each map
+        my @map_accs = keys %{ $slot->{'maps'} || {} };
+        if (@map_accs) {
+
+            my $maps = $sql_object->get_maps(
+                cmap_object => $self,
+                map_accs    => \@map_accs,
+            );
+            foreach my $map ( @{ $maps || [] } ) {
+                my $map_acc = $map->{'map_acc'};
+                $slot->{'maps'}{$map_acc}{'map_name'} = $map->{'map_name'};
+                unless ( defined $slot->{'maps'}{$map_acc}{'start'} ) {
+                    $slot->{'maps'}{$map_acc}{'start'} = $map->{'map_start'};
+                }
+                unless ( defined $slot->{'maps'}{$map_acc}{'stop'} ) {
+                    $slot->{'maps'}{$map_acc}{'stop'} = $map->{'map_stop'};
+                }
+                $slot->{'maps'}{$map_acc}{'flip'}
+                    = ( $flip_hash{$slot_no}->{$map_acc} ) ? 1 : 0;
+            }
         }
 
-        foreach my $cmap_no (@cmap_nos) {
-            if ( $slots->{$cmap_no}{'maps'}
-                and %{ $slots->{$cmap_no}{'maps'} } )
-            {
-                my @accs;
-                foreach my $map_acc ( keys %{ $slots->{$cmap_no}{'maps'} } ) {
-                    my $acc_line = $map_acc;
-                    if (defined(
-                            $slots->{$cmap_no}{'maps'}{$map_acc}{'start'}
-                        )
-                        or defined(
-                            $slots->{$cmap_no}{'maps'}{$map_acc}{'stop'}
-                        )
-                        )
-                    {
-                        $acc_line .= "["
-                            . $slots->{$cmap_no}{'maps'}{$map_acc}{'start'}
-                            . "*"
-                            . $slots->{$cmap_no}{'maps'}{$map_acc}{'stop'}
-                            . "x"
-                            . $slots->{$cmap_no}{'maps'}{$map_acc}{'mag'}
-                            . "]";
-                    }
-                    push @accs, $acc_line;
-                }
-                push @{ $map->{'cmaps'} },
-                    {
-                    field   => 'map_acc',
-                    acc     => join( ",", @accs ),
-                    slot_no => $cmap_no,
-                    };
-            }
-            if ( $slots->{$cmap_no}{'map_sets'}
-                and %{ $slots->{$cmap_no}{'map_sets'} } )
-            {
-                push @{ $map->{'cmaps'} },
-                    {
-                    field => 'map_set_acc',
-                    acc   =>
-                        join( ",", keys %{ $slots->{$cmap_no}{'map_sets'} } ),
-                    slot_no => $cmap_no,
-                    };
-            }
-        }
-        $map->{'slot_no'} = $slot_no;
-        push @maps, $map;
+        push @slots, $slot;
     }
 
-    return \@maps;
+    return \@slots;
 }
 
 # ----------------------------------------------------
@@ -3951,6 +3925,7 @@ in the order.  returns -1, 0 or 1 as cmp does.
 }
 
 # ----------------------------------------------------
+
 =pod
 
 =head2 fill_type_arrays
@@ -3961,7 +3936,7 @@ Organizes the data for drawing comparative maps.
 
 sub fill_type_arrays {
 
-    #p#rint S#TDERR "cmap_data\n";
+    #print ST#DERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
@@ -4191,7 +4166,7 @@ original start and stop.
         )
         or return $self->error( $sql_object->error() );
 
-    #print S#TDERR Dumper($self->{'slot_info'})."\n";
+    #print ST#DERR Dumper($self->{'slot_info'})."\n";
     return $self->{'slot_info'};
 }
 

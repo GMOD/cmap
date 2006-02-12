@@ -136,7 +136,7 @@
     <table width="100%">
         <tr>
             <td colspan="10" align="center">
-                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type=${apr.param('feature_type')}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type_acc=${apr.param('feature_type_acc')}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>

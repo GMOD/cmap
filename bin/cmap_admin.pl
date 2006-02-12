@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.125 2006-01-04 21:49:12 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.126 2006-02-12 16:15:08 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.125 $)[-1];
+$VERSION = (qw$Revision: 1.126 $)[-1];
 
 #
 # Get command-line options
@@ -2746,6 +2746,10 @@ sub purge_query_cache_menu {
             {
                 level   => 4,
                 display => 'Cache Level 4 (purge correspondence info)',
+            },
+            {
+                level   => 5,
+                display => 'Cache Level 5 (purge whole web page info)',
             },
             {
                 level   => 0,

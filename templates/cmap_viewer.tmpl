@@ -22,9 +22,8 @@ function toggleDiv(obj){
   }
 }
 
-function setMenuObjects(obj1,obj2,txt){
+function setMenuObjects(obj1,txt){
     obj1.value=txt;
-    obj2.value=txt;
     return 1;
 }
 
@@ -43,70 +42,31 @@ function hideAll(){
 function startPage(){
   var divs=document.getElementsByTagName("DIV");
   for (var i=0; i < divs.length; i++){
-    if (divs[i].id == "displayRefMenu"){
-        if ("[%- apr.param('refMenu') -%]" == "0"){
-            divs[i].style.display='none';
-        }
-        else{
-            divs[i].style.display='block';
-        }
-    }
-    else if (divs[i].id == "hiddenRefMenu"){
-        if ("[%- apr.param('refMenu') -%]" == "0"){
-            divs[i].style.display='block';
-        }
-        else{
-            divs[i].style.display='none';
-        }
-    }
-    else if (divs[i].id == "displayCompMenu"){
-        if ("[%- apr.param('compMenu') -%]" == "1"){
+    [%- FOREACH menu = [
+      ['mapMenu','displayMapMenu','hiddenMapMenu'],
+      ['featureMenu','displayFeatureMenu','hiddenFeatureMenu'],
+      ['corrMenu','displayCorrMenu','hiddenCorrMenu'],
+      ['displayMenu','displayDisplayMenu','hiddenDisplayMenu'],
+      ['advancedMenu','displayAdvancedMenu','hiddenAdvancedMenu'],
+    ] -%]
+      if (divs[i].id == "[% menu.1 %]"){
+        if ("[%- apr.param(menu.0) -%]" == "1"){
             divs[i].style.display='block';
         }
         else{
             divs[i].style.display='none';
         }
-    }
-    else if (divs[i].id == "hiddenCompMenu"){
-        if ("[%- apr.param('compMenu') -%]" == "1"){
+      }
+      else if (divs[i].id == "[% menu.2 %]"){
+        if ("[%- apr.param(menu.0) -%]" == "1"){
             divs[i].style.display='none';
         }
         else{
             divs[i].style.display='block';
         }
-    }
-    else if (divs[i].id == "displayOptionMenu"){
-        if ("[%- apr.param('optionMenu') -%]" == "1"){
-            divs[i].style.display='block';
-        }
-        else{
-            divs[i].style.display='none';
-        }
-    }
-    else if (divs[i].id == "hiddenOptionMenu"){
-        if ("[%- apr.param('optionMenu') -%]" == "1"){
-            divs[i].style.display='none';
-        }
-        else{
-            divs[i].style.display='block';
-        }
-    }
-    else if (divs[i].id == "displayImageMenu"){
-        if ("[%- apr.param('addOpMenu') -%]" == "1"){
-            divs[i].style.display='block';
-        }
-        else{
-            divs[i].style.display='none';
-        }
-    }
-    else if (divs[i].id == "hiddenImageMenu"){
-        if ("[%- apr.param('addOpMenu') -%]" == "1"){
-            divs[i].style.display='none';
-        }
-        else{
-            divs[i].style.display='block';
-        }
-    }
+      }
+    [%- END -%]
+
   }
 
   document.comparative_map_form.ref_map_order='';
@@ -151,7 +111,7 @@ function selectEvidenceRadio(val){
   }
 }
 
-function changeCompMaps(sel,index,side){
+function changeCompMaps(sel,index,side,min_corrs_txt){
   var dataArray;
   var map_sets;
   if (index == -1){
@@ -183,7 +143,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]')
+          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]','[%- map.max_no_correspondences -%]')
         [%- END -%]
         )
       [%- END -%]
@@ -206,7 +166,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.no_correspondences -%]]','[%- map.map_acc -%]')
+          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]','[%- map.max_no_correspondences -%]')
         [%- END -%]
         )
       [%- END -%]
@@ -216,28 +176,29 @@ function changeCompMaps(sel,index,side){
   var mapSetArray=dataArray[index]
   var length=mapSetArray.length;
   var i;
-  for (i=length;i<sel.options.length;i++){
+  var min_corrs = parseInt(min_corrs_txt);
+  if (isNaN(min_corrs)){
+    min_corrs=0;
+  }
+  for (i=0;i<sel.options.length;i++){
     sel.options[i]=null;
     i--;
   }
-  if (sel.options.length<=0){
-    sel.options[sel.options.length] = new Option("== ALL ==",-1);
-  }
-  else{
-    sel.options[0].value=-1;
-    sel.options[0].text="== ALL ==";
-  }
-  for (i=0;i<length;i++){
-    if (sel.options.length<=i+1){
-      var opt = new Option(mapSetArray[i][0],mapSetArray[i][1]);
-      sel.options[sel.options.length] = opt;
-    }
-    else{
-      sel.options[i+1].value=mapSetArray[i][1];
-      sel.options[i+1].text=mapSetArray[i][0];
-    }
-  }
+
+  sel.options[0] = new Option("== ALL ==",-1);
   sel.selectedIndex=0;
+  if (length > 0){
+    for (i=0;i<length;i++){
+      if (mapSetArray[i][2]>=min_corrs){
+        var opt = new Option(mapSetArray[i][0],mapSetArray[i][1]);
+        sel.options[sel.options.length] = opt;
+      }
+    }
+    if (sel.options.length <= 1){
+        sel.options[0]=null;
+        sel.selectedIndex=null;
+    }
+  }
 }
 
 function moveOrderedMaps() {
@@ -314,37 +275,16 @@ function selectAllOptions(select){
         <hr>
       </td>
     </tr>
-  [%- END -%]
-  <tr>
-    <td align="left" valign="top">
-      <div id="hiddenRefMenu">
-        <span  
-          onclick="toggleDiv(document.getElementById('hiddenRefMenu'));
-          setMenuObjects(
-          window.document.ref_map_set_form.refMenu,
-          window.document.comparative_map_form.refMenu,
-          toggleDiv(document.getElementById('displayRefMenu')));"
-        >
-        <img src="/cmap/plus.png">&nbsp;<b>Show Reference Menu</b>
-        </span>
-      </div>
-      <div id="displayRefMenu">
-        <span  
-          onclick="setMenuObjects(
-          window.document.ref_map_set_form.refMenu,
-          window.document.comparative_map_form.refMenu,
-          toggleDiv(document.getElementById('displayRefMenu')));
-          toggleDiv(document.getElementById('hiddenRefMenu'));"
-        >
-        <img src="/cmap/minus.png">&nbsp;<b>Hide Reference Menu</b>
-        </span>
- 
+  [%- ELSE -%]
+    <tr>
+      <td align="left" valign="top">
         <table border="0">
           <form name="ref_map_set_form">
-          <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
-          <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
-          <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
-          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
+          <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+          <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+          <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+          <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+          <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
           <tr>
             <td align="right">Ref. Species:</td>
   
@@ -402,10 +342,11 @@ function selectAllOptions(select){
           [%- IF form_data.ref_maps -%]
             [%- form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'- -All-'}) -%]
             <form name="ref_map_form">
-              <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
-              <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
-              <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
-              <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
+              <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+              <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+              <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+              <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+              <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
@@ -473,149 +414,223 @@ function selectAllOptions(select){
               </tr>
             </form>
           [%- END -%]
-        </table><hr>
-      </div>
-    </td>
-  </tr>
+        </table>
+      </td>
+    </tr>
+  [%- END -%]
   [%- IF apr.param('ref_map_accs') #OR form_data.ref_maps  -%]
-    <form name="comparative_map_form" onSubmit="beforeSubmit()">
+    <form name="comparative_map_form" onSubmit="beforeSubmit();">
       <tr>
         <td align=left valign=top>
-          <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
-          <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
-          <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
-          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
-          <div id="hiddenCompMenu">
+          <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+          <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+          <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+          <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+          <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
+          <!-- Map Menu starts here-->
+          <div id="hiddenMapMenu">
             <span  
-              onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
+              onclick="toggleDiv(document.getElementById('hiddenMapMenu'));
               setMenuObjects(
-              window.document.ref_map_set_form.compMenu,
-              window.document.comparative_map_form.compMenu,
-              toggleDiv(document.getElementById('displayCompMenu')));"
+              window.document.comparative_map_form.mapMenu,
+              toggleDiv(document.getElementById('displayMapMenu')));"
             >
-            <img src="/cmap/plus.png">&nbsp;<b>Show Comparison Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Map Options</b>
             </span>
           </div>
-          <div id="displayCompMenu">
+          <div id="displayMapMenu">
             <span  
               onclick="setMenuObjects(
-              window.document.ref_map_set_form.compMenu,
-              window.document.comparative_map_form.compMenu,
-              toggleDiv(document.getElementById('displayCompMenu')));
-              toggleDiv(document.getElementById('hiddenCompMenu'));"
+              window.document.comparative_map_form.mapMenu,
+              toggleDiv(document.getElementById('displayMapMenu')));
+              toggleDiv(document.getElementById('hiddenMapMenu'));"
             >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Comparison Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Map Options</b>
             </span>
-              <input type="submit" value="Redraw Map" name="sub">
+              <input type="submit" value="Redraw" name="sub">
               <input type="reset"  value="Reset">
-              <table border="0">
-              <tr>
-                <td align="left" colspan=2>Ref Map Start:
-                  <input name="ref_map_start" value="[%- apr.param('ref_map_start') -%]">
-                </td>
-              </tr>
-              <tr>
-                <td align="left" colspan=2>Ref Map End:
-                  <input name="ref_map_stop" value="[%- apr.param('ref_map_stop') -%]">
-                </td>
-              </tr>
 
+            <table border="0">
               <tr>
-                <td align="left" valign="top">Current Map Sets:</td>
-                <td>
-                  [%- FOREACH map=form_data.map_info -%]
-                    [%- SET cmaps=[] -%]
-                    [%- FOREACH cmap=map.cmaps -%]
-                      [%- cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.acc}" ) -%]
-                    [%- END -%]
-                    [%- map.description -%][%- IF map.is_reference_map -%]&nbsp;(Ref.) [%- END -%]<br>
+                [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
+                  side="Left"
+                  map_sets=form_data.comparative_maps_left
+                -%]
+              </tr>
+            </table>
+            <!-- Individual Maps -->
+              <table border=1 cellspacing="0" cellpadding="0">
+                [%- FOREACH slot=form_data.slot_info -%]
+                  [% SET bgcolor = '' %]
+                  [% IF slot.is_reference_slot %]
+                    [% SET bgcolor = 'bgcolor=lightblue' %]
                   [%- END -%]
-                </td>
-              </tr>
+                  [% SET first_row_of_slot = 1 %]
+                  [%- FOREACH map_acc=slot.maps.keys -%]
+                    <tr [% bgcolor %]>
+                      [%- IF first_row_of_slot %]
+                        <td rowspan=[% slot.maps.keys.size %] valign=top>
+                          [% slot.description %]<br>
+                          [% IF slot.is_reference_slot %]   
+                            (Reference Set)
+                          [% ELSE -%]
+                            <input type="submit" 
+                              onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]'" 
+                              value="Delete Set" 
+                              name="sub"
+                            >
+                          [% END -%]
+                        </td>
+                        <td rowspan=[% slot.maps.keys.size %] valign=top>
+                          Min. Correspondences <input size=4 name="min_corrs_[% slot.slot_no %]" value="[%- apr.param('min_corrs_'_slot.slot_no) -%]">
+                         [% IF slot.is_reference_slot %]   
+                            <br>
+                            Stack Vertically
+                            [%- IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END -%]
+                            <input type="checkbox" name="stack_maps" value="1"[%- IF stack_maps==1; ' checked'; END -%]>
+                          [% END -%]
+                        </td>
+                        [% SET first_row_of_slot = 0 %]
+                      [% END -%]
+                      <td valign=top>[% slot.maps.$map_acc.map_name %]
+                        [% IF slot.maps.keys.size>1 %]   
+                          <br>
+                          <input type="submit" 
+                            onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]=[% map_acc %]'" 
+                            value="Delete" 
+                            name="sub"
+                          >
+                        [% END -%]
+                      </td>
+                      <td>
+                       <table border=0>
+                        <tr>
+                         <td>Start</td><td><input size=9 type=text name="map_start_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.start %]"></td>
+                         <td>Magnification</td>
+                         <td>
+                          <select name="map_mag_[% slot.slot_no %]_[% map_acc %]" >
+                            <option value="0.125"[%- IF 0.125==slot.maps.$map_acc.mag; ' selected'; END -%]>1/8</option>
+                            <option value="0.25"[%- IF 0.25==slot.maps.$map_acc.mag; ' selected'; END -%]>1/4</option>
+                            <option value="0.5"[%- IF 0.5==slot.maps.$map_acc.mag; ' selected'; END -%]>1/2</option>
+                            <option value="1"[%- IF 1==slot.maps.$map_acc.mag OR NOT slot.maps.$map_acc.mag; ' selected'; 
+                                               END -%]>Original</option>
+                            <option value="2"[%- IF 2==slot.maps.$map_acc.mag; ' selected'; END -%]>2</option>
+                            <option value="3"[%- IF 3==slot.maps.$map_acc.mag; ' selected'; END -%]>3</option>
+                            <option value="4"[%- IF 4==slot.maps.$map_acc.mag; ' selected'; END -%]>4</option>
+                            <option value="5"[%- IF 5==slot.maps.$map_acc.mag; ' selected'; END -%]>5</option>
+                            <option value="10"[%- IF 10==slot.maps.$map_acc.mag; ' selected'; END -%]>10</option>
+                            <option value="20"[%- IF 20==slot.maps.$map_acc.mag; ' selected'; END -%]>20</option>
+                          </select>
+                         </td>
+
+                        </tr><tr>
+                         <td>Stop</td><td><input size=9 type=text name="map_stop_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.stop %]"></td>
+                         <td>Flipped</td><td><input type=checkbox name="map_flip_[% slot.slot_no %]_[% map_acc %]" value="1" [%- IF slot.maps.$map_acc.flip; ' checked'; END -%]>
+                            <input type=hidden name="map_in_menu_[% slot.slot_no %]_[% map_acc %]" value="1">
+                         </td>
+                        </tr>
+                       </table>
+                      </td>
+                    </tr> 
+                  [%- END -%]
+                [%- END -%]
+              </table>
+
+            <!-- End Individual Maps -->
+            <table border=0>
               <tr>
-                <td align="left" colspan=2>Min. No. Correspondences for Left Slot:
-                <input name="left_min_corrs" value="[%- apr.param('left_min_corrs') -%]"> </td>
-              </tr>
-              <tr>
-                <td align="left" colspan=2>Min. No. Correspondences for right Slot:
-                <input name="right_min_corrs" value="[%- apr.param('right_min_corrs') -%]"> </td>
-              </tr>
-              <tr>
-                <td align="left" colspan=2>Min. No. Correspondences for the menu:
-                <input name="menu_min_corrs" value="[%- apr.param('menu_min_corrs') -%]"> </td>
+                [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
+                  side="Right"
+                  map_sets=form_data.comparative_maps_right
+                -%]
               </tr>
             </table>
-            <table>
-              <tr>
-                <td align="right" valign="top">
-                  <table border="0">
-                    <tr>
-                      [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
-                        side="Left"
-                        map_sets=form_data.comparative_maps_left
-                      -%]
-                    </tr>
-                  </table>
-                </td> 
-                <td align=left valign=top>
-                  <table border=0>
-                    <tr>
-                      [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
-                        side="Right"
-                        map_sets=form_data.comparative_maps_right
-                      -%]
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td ColSpan=2>
                   Format: Name [Total correspondences to slot, Max correspondences to single map]
-                </td>
-              </tr>
+
+            <!-- form name="ref_map_form">
+              <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+              <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+              <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+              <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+              <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
+              <input type="submit" value="Change Reference Map" name="sub">
+            </form -->
+            <br>
+            
+            <table border="0">
+              [%- IF form_data.ordered_ref_maps.size > 1; -%]
+                <tr>
+                  <td align="left" valign="center" colspan=5>
+                    <table border=0>
+                      <tr>
+                        <td colspan=3>Reference Map Order:</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <select name="ori_ref_map_order" multiple size=5>
+                          [%- FOREACH map=form_data.ordered_ref_maps -%]
+                            <option value='[%- map.map_acc -%]'>[%- map.map_name -%]</option>
+                          [%- END -%]
+                          </select>
+                        </td>
+                        <td>
+                          <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
+                          <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
+                        </td>
+                        <td>
+                          <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
+                          <input type=hidden name=ref_map_order>
+                          <input type=hidden name=prev_ref_map_order value="[%- prev_ref_map_order -%]">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan=2>
+                          <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              [%- END -%]
             </table>
+
             hint: To save time, select the desired options before redrawing the map.<br>
-            <input type="submit" value="Redraw Map" name="sub">
+            <input type="submit" value="Redraw" name="sub">
             <input type="reset"  value="Reset">
             <span  
               onclick="setMenuObjects(
-              window.document.ref_map_set_form.compMenu,
-              window.document.comparative_map_form.compMenu,
-              toggleDiv(document.getElementById('displayCompMenu')));
-              toggleDiv(document.getElementById('hiddenCompMenu'));"
+              window.document.comparative_map_form.mapMenu,
+              toggleDiv(document.getElementById('displayMapMenu')));
+              toggleDiv(document.getElementById('hiddenMapMenu'));"
             >
-              <b>(Hide Comparison Menu)</b>
+              <b>(Hide Map Menu)</b>
             </span>
             <hr>
           </div>
-        </td>
-      </tr>
-      <tr>
-        <td align=left valign=top>
-          <div id="hiddenOptionMenu">
+          <!-- Feature Menu starts here-->
+          <div id="hiddenFeatureMenu">
             <span  
-              onclick="toggleDiv(document.getElementById('hiddenOptionMenu'));
+              onclick="toggleDiv(document.getElementById('hiddenFeatureMenu'));
               setMenuObjects(
-              window.document.ref_map_set_form.optionMenu,
-              window.document.comparative_map_form.optionMenu,
-              toggleDiv(document.getElementById('displayOptionMenu')));"
+              window.document.comparative_map_form.featureMenu,
+              toggleDiv(document.getElementById('displayFeatureMenu')));"
             >
-             <img src="/cmap/plus.png">&nbsp;<b>Show Options Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Feature Options</b>
             </span>
           </div>
-          <div id="displayOptionMenu">
+          <div id="displayFeatureMenu">
             <span  
               onclick="setMenuObjects(
-              window.document.ref_map_set_form.optionMenu,
-              window.document.comparative_map_form.optionMenu,
-              toggleDiv(document.getElementById('displayOptionMenu')));
-              toggleDiv(document.getElementById('hiddenOptionMenu'));"
+              window.document.comparative_map_form.featureMenu,
+              toggleDiv(document.getElementById('displayFeatureMenu')));
+              toggleDiv(document.getElementById('hiddenFeatureMenu'));"
             >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Options Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Feature Options</b>
             </span>
-            <input type="submit" value="Redraw Map" name="sub">
-            <input type="reset"  value="Reset">
-            <table>
+              <input type="submit" value="Redraw" name="sub">
+              <input type="reset"  value="Reset">
+
+            <table border=0>
               <tr>
                 <td align="left">Highlight Features: 
                   <input size=40 name="highlight" value="[%- apr.param('highlight') | html -%]">
@@ -648,7 +663,7 @@ function selectAllOptions(select){
                       </tr>
                     [%- END -%]
                       <tr>
-                        <td>Default</td>
+                        <td>Other</td>
                         <td>
                           <input type="radio" name="ft_DEFAULT" value="0" [% IF apr.param('ft_DEFAULT')=='0'; ' checked'; END %]>
                         </td>
@@ -668,6 +683,73 @@ function selectAllOptions(select){
                   </table> 
                 </td>
               </tr>
+              <tr>
+                <td><table>
+                <tr>
+                <td align="left" valign="top">Show Labels:</td>
+
+                <td>
+                  <input type="radio" name="label_features" value="none"[%- IF apr.param('label_features')=='none'; ' checked'; END -%]>None
+                </td>
+                <td>
+                  <input type="radio" name="label_features" value="landmarks"[%- IF apr.param('label_features')=='landmarks'; ' checked'; END -%]>Landmarks
+                </td>
+                <td>
+                  <input type="radio" name="label_features" value="all"[%- IF apr.param('label_features')=='all'; ' checked'; END -%]>All
+                </td>
+              </tr>
+  
+              <tr>
+                <td align="Left" valign="top">Collapse Overlapping <br>Features:</td>
+  
+                <td>
+                  [%- IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END -%]
+                  <input type="radio" name="collapse_features" value="0"[%- IF collapse==0; ' checked'; END -%]>No
+                </td>
+                <td>
+                  <input type="radio" name="collapse_features" value="1"[%- IF collapse==1; ' checked'; END -%]>Yes
+                </td>
+                </tr></table>
+                </td>
+              </tr>
+            </table>
+
+            <input type="submit" value="Redraw" name="sub">
+            <input type="reset"  value="Reset">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.featureMenu,
+              toggleDiv(document.getElementById('displayFeatureMenu')));
+              toggleDiv(document.getElementById('hiddenFeatureMenu'));"
+            >
+              <b>(Hide Feature Menu)</b>
+            </span>
+            <hr>
+          </div>
+          <!-- Corr Menu starts here-->
+          <div id="hiddenCorrMenu">
+            <span  
+              onclick="toggleDiv(document.getElementById('hiddenCorrMenu'));
+              setMenuObjects(
+              window.document.comparative_map_form.corrMenu,
+              toggleDiv(document.getElementById('displayCorrMenu')));"
+            >
+            <img src="/cmap/plus.png">&nbsp;<b>Correspondence Options</b>
+            </span>
+          </div>
+          <div id="displayCorrMenu">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.corrMenu,
+              toggleDiv(document.getElementById('displayCorrMenu')));
+              toggleDiv(document.getElementById('hiddenCorrMenu'));"
+            >
+              <img src="/cmap/minus.png">&nbsp;<b>Correspondence Options</b>
+            </span>
+              <input type="submit" value="Redraw" name="sub">
+              <input type="reset"  value="Reset">
+
+            <table>
               <tr>
                 <td align="left" valign="bottom"><b>Include Correspondence Types:</b></td>
               </tr>
@@ -715,28 +797,93 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-                <td align="left" valign="top">Aggregate Correspondences:
+                <td><table>
+                <td align="left" valign="top">Aggregate Correspondences:</td>
                   [%- IF apr.param('aggregate')==1; aggregate=1; ELSE; aggregate=0; END -%]
                   [%- IF apr.param('aggregate')==2; aggregate=2; END -%]
                   [%- IF apr.param('aggregate')==3; aggregate=3; END -%]
+                <td>
                   <input type="radio" name="aggregate" value="0"[%- IF aggregate==0; ' checked'; END -%]>No
+                </td> <td>
                   <input type="radio" name="aggregate" value="1"[%- IF aggregate==1; ' checked'; END -%]>1 Line
+                </td> <td>
                   <input type="radio" name="aggregate" value="2"[%- IF aggregate==2; ' checked'; END -%]>2 Lines
-                  <input type="radio" name="aggregate" value="3"[%- IF aggregate==3; ' checked'; END -%]>Cluster
                 </td>
               </tr>
               <tr>
-                <td align="left" valign="top">Number of Clusters (if clustering):
-                  [%- IF apr.param('cluster_corr')==3; cluster_corr=3; ELSE; cluster_corr=2; END -%]
-                  [%- IF apr.param('cluster_corr')==4; cluster_corr=4; END -%]
-                  <input type="radio" name="cluster_corr" value="2"[%- IF cluster_corr==2; ' checked'; END -%]>2
-                  <input type="radio" name="cluster_corr" value="3"[%- IF cluster_corr==3; ' checked'; END -%]>3
-                  <input type="radio" name="cluster_corr" value="4"[%- IF cluster_corr==4; ' checked'; END -%]>4
+                <td align="left" valign="top">Correspondence lines drawn to:</td>
+                  [%- IF apr.param('corrs_to_map')==1; corrs_to_map=1; ELSE; corrs_to_map=0; END -%]
+                <td>
+                  <input type="radio" name="corrs_to_map" value="0"[%- IF corrs_to_map==0; ' checked'; END -%]>Feature
+                </td> <td>
+                  <input type="radio" name="corrs_to_map" value="1"[%- IF corrs_to_map==1; ' checked'; END -%]>Map
                 </td>
               </tr>
               <tr>
-                <td align="left" valign="top">Total Magnification: 
-                  <select name="magnify_all" >
+                <td align="left" valign="top">View Intra-Slot Correspondences:</td>
+                  [%- IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END -%]
+                <td>
+                  <input type="radio" name="show_intraslot_corr" value="0"
+                  [%- IF show_intraslot_corr==0; ' checked'; END -%]>No
+                </td> <td>
+                  <input type="radio" name="show_intraslot_corr" value="1"
+                  [%- IF show_intraslot_corr==1; ' checked'; END -%]>yes
+                </td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Aggregate evidence types separately:</td>
+                  [%- IF apr.param('split_agg_ev')==1; split_agg_ev=1; ELSE; split_agg_ev=0; END -%]
+                <td>
+                  <input type="radio" name="split_agg_ev" value="0"
+                  [%- IF split_agg_ev==0; ' checked'; END -%]>No
+                </td> <td>
+                  <input type="radio" name="split_agg_ev" value="1"
+                  [%- IF split_agg_ev==1; ' checked'; END -%]>yes
+                </td></tr>
+                </table></td>
+              </tr>
+            </table>
+
+            <input type="submit" value="Redraw" name="sub">
+            <input type="reset"  value="Reset">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.corrMenu,
+              toggleDiv(document.getElementById('displayCorrMenu')));
+              toggleDiv(document.getElementById('hiddenCorrMenu'));"
+            >
+              <b>(Hide Correspondence Menu)</b>
+            </span>
+            <hr>
+          </div>
+          <!-- Display Menu starts here-->
+          <div id="hiddenDisplayMenu">
+            <span  
+              onclick="toggleDiv(document.getElementById('hiddenDisplayMenu'));
+              setMenuObjects(
+              window.document.comparative_map_form.displayMenu,
+              toggleDiv(document.getElementById('displayDisplayMenu')));"
+            >
+            <img src="/cmap/plus.png">&nbsp;<b>Display Options</b>
+            </span>
+          </div>
+          <div id="displayDisplayMenu">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.displayMenu,
+              toggleDiv(document.getElementById('displayDisplayMenu')));
+              toggleDiv(document.getElementById('hiddenDisplayMenu'));"
+            >
+              <img src="/cmap/minus.png">&nbsp;<b>Display Options</b>
+            </span>
+              <input type="submit" value="Redraw" name="sub">
+              <input type="reset"  value="Reset">
+
+            <table>
+              <tr>
+                <td align="left" valign="top">Total Magnification: </td>
+                <td align="left" colspan=3>
+                  <select name="magnify_all">
                     <option value="0.125"[%- IF 0.125==apr.param('magnify_all'); ' selected'; END -%]>1/8</option>
                     <option value="0.25"[%- IF 0.25==apr.param('magnify_all'); ' selected'; END -%]>1/4</option>
                     <option value="0.5"[%- IF 0.5==apr.param('magnify_all'); ' selected'; END -%]>1/2</option>
@@ -751,86 +898,6 @@ function selectAllOptions(select){
                   </select>
                 </td>
               </tr>
-              <tr>
-                <td>
-                  <input type="submit" value="Redraw Map" name="sub">
-                  <input type="reset"  value="Reset">
-                    <span  
-                      onclick="setMenuObjects(
-                      window.document.ref_map_set_form.optionMenu,
-                      window.document.comparative_map_form.optionMenu,
-                      toggleDiv(document.getElementById('displayOptionMenu')));
-                      toggleDiv(document.getElementById('hiddenOptionMenu'));"
-                    >
-                      <b>(Hide Options Menu)</b>
-                    </span>
-                </td>
-              </tr>
-            </table><hr>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td align=left valign=top>
-          <div id="hiddenImageMenu">
-            <span  
-              onclick="toggleDiv(document.getElementById('hiddenImageMenu'));
-              setMenuObjects(
-              window.document.ref_map_set_form.addOpMenu,
-              window.document.comparative_map_form.addOpMenu,
-              toggleDiv(document.getElementById('displayImageMenu')));"
-            >
-            <img src="/cmap/plus.png">&nbsp;<b>Show Additional Options Menu</b>
-            </span>
-          </div>
-          <div id="displayImageMenu">
-            <span  
-              onclick="setMenuObjects(
-              window.document.ref_map_set_form.addOpMenu,
-              window.document.comparative_map_form.addOpMenu,
-              toggleDiv(document.getElementById('displayImageMenu')));
-              toggleDiv(document.getElementById('hiddenImageMenu'));"
-            >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Additional Options Menu</b>
-            </span>
-            <input type="submit" value="Redraw Map" name="sub">
-            <input type="reset"  value="Reset">
-
-            <table border="0">
-              [%- IF form_data.ordered_ref_maps.size > 1; -%]
-                <tr>
-                  <td align="left" valign="center" colspan=5>
-                    <table border=0>
-                      <tr>
-                        <td colspan=3>Reference Map Order:</td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <select name="ori_ref_map_order" multiple size=5>
-                          [%- FOREACH map=form_data.ordered_ref_maps -%]
-                            <option value='[%- map.map_acc -%]'>[%- map.map_name -%]</option>
-                          [%- END -%]
-                          </select>
-                        </td>
-                        <td>
-                          <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
-                          <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
-                        </td>
-                        <td>
-                          <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
-                          <input type=hidden name=ref_map_order>
-                          <input type=hidden name=prev_ref_map_order value="[%- prev_ref_map_order -%]">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colspan=2>
-                          <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              [%- END -%]
               <tr>
                 <td align="left" valign="top">Image Size:</td>
                 <td>
@@ -877,32 +944,51 @@ function selectAllOptions(select){
                   <input type="radio" name="image_type" value="svg"[%- IF apr.param('image_type') == 'svg'; ' checked'; END -%]>SVG *
                 </td>
               </tr>
-  
               <tr>
-                <td align="left" valign="top">Show Labels:</td>
+                <td align="left" valign="top">Clean View (no navigation buttons):</td>
+                  [%- IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END -%]
+                <td><input type="radio" name="clean_view" value="0"[%- IF clean_view==0; ' checked'; END -%]>No</td>
+                <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>yes</td>
+              </tr>
+            </table>
+  
 
-                <td>
-                  <input type="radio" name="label_features" value="none"[%- IF apr.param('label_features')=='none'; ' checked'; END -%]>None
-                </td>
-                <td>
-                  <input type="radio" name="label_features" value="landmarks"[%- IF apr.param('label_features')=='landmarks'; ' checked'; END -%]>Landmarks
-                </td>
-                <td>
-                  <input type="radio" name="label_features" value="all"[%- IF apr.param('label_features')=='all'; ' checked'; END -%]>All
-                </td>
-              </tr>
-  
-              <tr>
-                <td align="Left" valign="top">Collapse Overlapping <br>Features:</td>
-  
-                <td>
-                  [%- IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END -%]
-                  <input type="radio" name="collapse_features" value="0"[%- IF collapse==0; ' checked'; END -%]>No
-                </td>
-                <td>
-                  <input type="radio" name="collapse_features" value="1"[%- IF collapse==1; ' checked'; END -%]>Yes
-                </td>
-              </tr>
+            <input type="submit" value="Redraw" name="sub">
+            <input type="reset"  value="Reset">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.displayMenu,
+              toggleDiv(document.getElementById('displayDisplayMenu')));
+              toggleDiv(document.getElementById('hiddenDisplayMenu'));"
+            >
+              <b>(Hide Display Menu)</b>
+            </span>
+            <hr>
+          </div>
+          <!-- Advanced Menu starts here-->
+          <div id="hiddenAdvancedMenu">
+            <span  
+              onclick="toggleDiv(document.getElementById('hiddenAdvancedMenu'));
+              setMenuObjects(
+              window.document.comparative_map_form.advancedMenu,
+              toggleDiv(document.getElementById('displayAdvancedMenu')));"
+            >
+            <img src="/cmap/plus.png">&nbsp;<b>Advanced Options</b>
+            </span>
+          </div>
+          <div id="displayAdvancedMenu">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.advancedMenu,
+              toggleDiv(document.getElementById('displayAdvancedMenu')));
+              toggleDiv(document.getElementById('hiddenAdvancedMenu'));"
+            >
+              <img src="/cmap/minus.png">&nbsp;<b>Advanced Options</b>
+            </span>
+              <input type="submit" value="Redraw" name="sub">
+              <input type="reset"  value="Reset">
+            <p>
+            <table>
               <tr>
                 <td align="left" valign="top">Draw Maps Using <br>Same Scale:</td>
                 [%- IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END -%]
@@ -910,44 +996,10 @@ function selectAllOptions(select){
                 <td><input type="radio" name="scale_maps" value="1"[%- IF scale_maps==1; ' checked'; END -%]>Yes</td>
               </tr>
               <tr>
-                <td align="left" valign="top">Correspondence lines drawn to:</td>
-                  [%- IF apr.param('corrs_to_map')==1; corrs_to_map=1; ELSE; corrs_to_map=0; END -%]
-                <td><input type="radio" name="corrs_to_map" value="0"[%- IF corrs_to_map==0; ' checked'; END -%]>Feature</td>
-                <td><input type="radio" name="corrs_to_map" value="1"[%- IF corrs_to_map==1; ' checked'; END -%]>Map</td>
-              </tr>
-              <tr>
-                <td align="left" valign="top">Stack the Reference Maps:</td>
-                [%- IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END -%]
-                <td><input type="radio" name="stack_maps" value="0"[%- IF stack_maps==0; ' checked'; END -%]>No</td>
-                <td><input type="radio" name="stack_maps" value="1"[%- IF stack_maps==1; ' checked'; END -%]>Yes</td>
-              </tr>
-              <tr>
-                <td align="left" valign="top">Clean View (no navigation buttons):</td>
-                  [%- IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END -%]
-                <td><input type="radio" name="clean_view" value="0"[%- IF clean_view==0; ' checked'; END -%]>No</td>
-                <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>yes</td>
-              </tr>
-              <tr>
                 <td align="left" valign="top">Clickable Image</td>
-                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Default</td>
+                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Other</td>
                 <td><input type="radio" name="omit_area_boxes" value="1"[%- IF apr.param('omit_area_boxes')==1; ' checked'; END -%]>Omit Features</td>
                 <td><input type="radio" name="omit_area_boxes" value="2"[%- IF apr.param('omit_area_boxes')==2; ' checked'; END -%]>Omit All Buttons</td>
-              </tr>
-              <tr>
-                <td align="left" valign="top">View Intra-Slot Correspondences:</td>
-                  [%- IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END -%]
-                <td><input type="radio" name="show_intraslot_corr" value="0"
-                  [%- IF show_intraslot_corr==0; ' checked'; END -%]>No</td>
-                <td><input type="radio" name="show_intraslot_corr" value="1"
-                  [%- IF show_intraslot_corr==1; ' checked'; END -%]>yes</td>
-              </tr>
-              <tr>
-                <td align="left" valign="top">Aggregate evidence types separately:</td>
-                  [%- IF apr.param('split_agg_ev')==1; split_agg_ev=1; ELSE; split_agg_ev=0; END -%]
-                <td><input type="radio" name="split_agg_ev" value="0"
-                  [%- IF split_agg_ev==0; ' checked'; END -%]>No</td>
-                <td><input type="radio" name="split_agg_ev" value="1"
-                  [%- IF split_agg_ev==1; ' checked'; END -%]>yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Menu Order of Comparative Maps:</td>
@@ -963,35 +1015,35 @@ function selectAllOptions(select){
                 <td><input type="radio" name="ignore_image_map_sanity" value="0"[% IF ignore_image_map_sanity==0; ' checked'; END %]>No</td>
                 <td><input type="radio" name="ignore_image_map_sanity" value="1"[% IF ignore_image_map_sanity==1; ' checked'; END %]>Yes</td>
               </tr>
-              <tr>
-                <td colspan=4>
-                  <span  
-                    onclick="setMenuObjects(
-                    window.document.ref_map_set_form.addOpMenu,
-                    window.document.comparative_map_form.addOpMenu,
-                    toggleDiv(document.getElementById('displayImageMenu')));
-                    toggleDiv(document.getElementById('hiddenImageMenu'));"
-                  >
-                    <b>(Hide Additional Options Menu)</b>
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="4" align="center">
-                  <input type="hidden" name="session_id" value="[%- apr.param('session_id') -%]">
-                  <input type="hidden" name="step" value="[%- apr.param('step') -%]">
-                  <input type="hidden" name="ref_map_set_acc" value="[%- apr.param('ref_map_set_acc') -%]">
-                  <input type="hidden" name="ref_map_accs"   value="[%- apr.param('ref_map_accs').join(',') -%]">
-                  <input type="hidden" name="ref_species_acc"  value="[%- apr.param('ref_species_acc') -%]">
-                  <input type="hidden" name="flip"      value="[%- apr.param('flip') -%]">
-                  <input type="hidden" name="data_source"      value="[%- data_source -%]">
-                  <br>
-                  <em><b>*</b>SVG output for high-resolution 
-                  printing only (no hyperlinks).</em>
-                </td>
-              </tr>
             </table>
+
+            <input type="submit" value="Redraw" name="sub">
+            <input type="reset"  value="Reset">
+            <span  
+              onclick="setMenuObjects(
+              window.document.comparative_map_form.advancedMenu,
+              toggleDiv(document.getElementById('displayAdvancedMenu')));
+              toggleDiv(document.getElementById('hiddenAdvancedMenu'));"
+            >
+              <b>(Hide Advanced Menu)</b>
+            </span>
+            <hr>
           </div>
+          <tr>
+            <td colspan="4" align="center">
+              <input type="hidden" name="session_id" value="SESSION_ID_PLACEHOLDER">
+              <input type="hidden" name="step" value="SESSION_STEP_PLACEHOLDER">
+              <input type="hidden" name="session_mod" value="">
+              <input type="hidden" name="ref_map_set_acc" value="[%- apr.param('ref_map_set_acc') -%]">
+              <input type="hidden" name="ref_map_accs"   value="[%- apr.param('ref_map_accs').join(',') -%]">
+              <input type="hidden" name="ref_species_acc"  value="[%- apr.param('ref_species_acc') -%]">
+              <input type="hidden" name="flip"      value="[%- apr.param('flip') -%]">
+              <input type="hidden" name="data_source"      value="[%- data_source -%]">
+              <br>
+              <em><b>*</b>SVG output for high-resolution 
+              printing only (no hyperlinks).</em>
+            </td>
+          </tr>
           [%- IF extra_form -%]
             [%- extra_form -%]
           [%- END -%]
@@ -999,17 +1051,18 @@ function selectAllOptions(select){
       </tr>
       <tr>
         <td><hr>
-          <input type="submit" value="Redraw Map" name="sub">
+          <input type="submit" value="Redraw" name="sub">
           <input type="reset"  value="Reset">
         </td>
       </tr>
     </form>
   [%- ELSE -%]
     <form name="comparative_map_form">
-      <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
-      <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
-      <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
-      <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
+      <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+      <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+      <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+      <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+      <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
     </form>
   [%- END -%]    
 </table>
