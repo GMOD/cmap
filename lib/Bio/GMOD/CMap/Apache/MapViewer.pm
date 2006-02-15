@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.122 2006-02-12 16:15:09 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.123 2006-02-15 18:44:06 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -75,8 +75,6 @@ sub handler {
         }
 
     }
-
-
 
     # parse the url
     my %parsed_url_options = Bio::GMOD::CMap::Utils->parse_url( $apr, $self )
@@ -155,6 +153,7 @@ sub handler {
                 @{ $parsed_url_options{'corr_only_feature_types'} };
             %ignored_feature_types = map { $_ => 1 }
                 @{ $parsed_url_options{'ignored_feature_types'} };
+            $apr->param( 'pixel_height', $drawer->pixel_height() );
         }
 
         #
@@ -207,6 +206,26 @@ sub handler {
                     @{ $parsed_url_options{'greater_evidence_types'} }
             )
         );
+        my @pixel_heights;
+        my $pixel_height = $apr->param('pixel_height');
+        my $use_custom_pixel_height = 1;
+        foreach my $image_size (
+            sort { VALID->{'image_size'}{$a} <=> VALID->{'image_size'}{$b} }
+            keys %{ VALID->{'image_size'} }
+            )
+        {
+            my $selected =
+                ( VALID->{'image_size'}{$image_size} == $pixel_height )
+                ? 1
+                : 0;
+            $use_custom_pixel_height = 0 if $selected;
+            push @pixel_heights,
+                {
+                name     => $image_size,
+                value    => VALID->{'image_size'}{$image_size},
+                selected => $selected
+                };
+        }
 
         my $t = $self->template or return;
         $t->process(
@@ -239,6 +258,8 @@ sub handler {
                 extra_code              => $extra_code,
                 extra_form              => $extra_form,
                 feature_default_display => $feature_default_display,
+                pixel_height_options    => \@pixel_heights,
+                use_custom_pixel_height => $use_custom_pixel_height,
                 no_footer => $parsed_url_options{'path_info'} eq 'map_details'
                 ? 1
                 : 0,

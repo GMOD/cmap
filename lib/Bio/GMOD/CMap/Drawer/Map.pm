@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.193 2006-02-12 16:15:09 mwz444 Exp $
+# $Id: Map.pm,v 1.194 2006-02-15 18:44:06 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.193 $)[-1];
+$VERSION = (qw$Revision: 1.194 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -41,7 +41,7 @@ use base 'Bio::GMOD::CMap';
 
 my @INIT_FIELDS =
     qw[ drawer base_x base_y slot_no maps config aggregate
-    clean_view magnify_all scale_maps stack_maps ];
+    clean_view scale_maps stack_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -2060,8 +2060,6 @@ sub get_map_height {
     my $map_id        = $args{'map_id'};
     my $is_compressed = $args{'is_compressed'};
 
-    my $magnify_all = $self->magnify_all;
-
     my $min_map_pixel_height = $drawer->config_data('min_map_pixel_height');
     my $pixel_height         = $drawer->pixel_height();
     if ( $is_compressed and $slot_no != 0 ) {
@@ -2086,8 +2084,7 @@ sub get_map_height {
     $pixel_height = $min_map_pixel_height
         if ( $pixel_height < $min_map_pixel_height );
     $pixel_height = $pixel_height
-        * $drawer->data_module->magnification( $slot_no, $map_id )
-        * $magnify_all;
+        * $drawer->data_module->magnification( $slot_no, $map_id );
 
     return $pixel_height;
 }
@@ -2125,15 +2122,14 @@ sub place_map_y {
     my $ref_slot_no     = $drawer->reference_slot_no($slot_no);
     my $base_y          = $self->base_y;
     my $boundary_factor = 0.5;
-    my $magnify_all     = $self->magnify_all;
     my $capped          = 0;
 
     my $top_boundary_offset
-        = ( ( $drawer->pixel_height() ) * $boundary_factor * $magnify_all );
+        = ( ( $drawer->pixel_height() ) * $boundary_factor );
     my $top_boundary = $base_y - $top_boundary_offset;
     my $bottom_boundary_offset
-        = ( ( $drawer->pixel_height() ) * $boundary_factor * $magnify_all );
-    my $bottom_boundary = ( $drawer->pixel_height() * $magnify_all ) + $base_y
+        = ( ( $drawer->pixel_height() ) * $boundary_factor );
+    my $bottom_boundary = ( $drawer->pixel_height() ) + $base_y
         + $bottom_boundary_offset;
 
     #

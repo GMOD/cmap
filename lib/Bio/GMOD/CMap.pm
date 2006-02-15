@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.103 2006-02-12 16:15:08 mwz444 Exp $
+# $Id: CMap.pm,v 1.104 2006-02-15 18:44:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -551,29 +551,6 @@ The default is 0.
     $self->{'corrs_to_map'} = DEFAULT->{'corrs_to_map'}
         unless defined $self->{'corrs_to_map'};
     return $self->{'corrs_to_map'};
-}
-
-# ----------------------------------------------------
-sub magnify_all {
-
-=pod
-
-=head3 magnify_all
-
-Returns the boolean magnify_all variable.  This determines 
-the value that the whole image is magnified by.
-
-The default is 1.
-
-=cut
-
-    my $self = shift;
-    my $val  = shift;
-    $self->{'magnify_all'} = $val if defined($val);
-
-    # Don't allow Zero as a value
-    $self->{'magnify_all'} = 1 unless $self->{'magnify_all'};
-    return $self->{'magnify_all'};
 }
 
 # ----------------------------------------------------
@@ -1222,7 +1199,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $comparative_maps            = $args{'comparative_maps'};
     my $highlight                   = $args{'highlight'};
     my $font_size                   = $args{'font_size'};
-    my $image_size                  = $args{'image_size'};
+    my $pixel_height                = $args{'pixel_height'};
     my $image_type                  = $args{'image_type'};
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
@@ -1237,7 +1214,6 @@ Given information about the link, creates a url to cmap_viewer.
     my $clean_view                  = $args{'clean_view'};
     my $comp_menu_order             = $args{'comp_menu_order'};
     my $corrs_to_map                = $args{'corrs_to_map'};
-    my $magnify_all                 = $args{'magnify_all'};
     my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
     my $flip                        = $args{'flip'};
     my $left_min_corrs              = $args{'left_min_corrs'};
@@ -1383,8 +1359,8 @@ Given information about the link, creates a url to cmap_viewer.
         if ( defined($highlight) and $highlight ne '' );
     $url .= "font_size=$font_size;"
         if ( defined($font_size) and $font_size ne '' );
-    $url .= "image_size=$image_size;"
-        if ( defined($image_size) and $image_size ne '' );
+    $url .= "pixel_height=$pixel_height;"
+        if ( defined($pixel_height) and $pixel_height ne '' );
     $url .= "image_type=$image_type;"
         if ( defined($image_type) and $image_type ne '' );
     $url .= "label_features=$label_features;"
@@ -1411,8 +1387,6 @@ Given information about the link, creates a url to cmap_viewer.
         if ( defined($comp_menu_order) and $comp_menu_order ne '' );
     $url .= "corrs_to_map=$corrs_to_map;"
         if ( defined($corrs_to_map) and $corrs_to_map ne '' );
-    $url .= "magnify_all=$magnify_all;"
-        if ( defined($magnify_all) and $magnify_all ne '' );
     $url .= "ignore_image_map_sanity=$ignore_image_map_sanity;"
         if $ignore_image_map_sanity;
     $url .= "flip=$flip;"

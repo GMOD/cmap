@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.119 2006-02-05 04:17:59 mwz444 Exp $
+# $Id: Drawer.pm,v 1.120 2006-02-15 18:44:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -28,6 +28,7 @@ The base map drawing module.
         highlight => $highlight,
         font_size => $font_size,
         image_size => $image_size,
+        pixel_height => $pixel_height,
         image_type => $image_type,
         label_features => $label_features,
         included_feature_types  => $included_feature_types,
@@ -55,7 +56,6 @@ The base map drawing module.
         split_agg_ev => $split_agg_ev,
         clean_view => $clean_view,
         corrs_to_map => $corrs_to_map,
-        magnify_all => $magnify_all,
         scale_maps => $scale_maps,
         stack_maps => $stack_maps,
         ref_map_order => $ref_map_order,
@@ -146,6 +146,10 @@ String with the font size: large, medium or small.
 =item * image_size
 
 String with the image size: large, medium or small.
+
+=item * pixel_height
+
+String with the pixel_height of the reference map: positive integer
 
 =item * image_type
 
@@ -278,10 +282,6 @@ Set to 1 to not have the control buttons displayed on the image.
 
 Set to 1 to have correspondence lines go to the map instead of the feature.
 
-=item * magnify_all
-
-Set to the magnification factor of the whole picture.  The default is 1.
-
 =item * scale_maps
 
 Set to 1 scale the maps with the same unit.  Default is 1.
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -363,14 +363,14 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type
     label_features included_feature_types corr_only_feature_types
-    url_feature_default_display
+    url_feature_default_display pixel_height 
     included_evidence_types ignored_evidence_types ignored_feature_types
     less_evidence_types greater_evidence_types evidence_type_score
     config data_source left_min_corrs right_min_corrs
     general_min_corrs menu_min_corrs slots_min_corrs
     collapse_features cache_dir map_view data_module
     aggregate cluster_corr show_intraslot_corr clean_view
-    magnify_all scale_maps stack_maps ref_map_order comp_menu_order
+    scale_maps stack_maps ref_map_order comp_menu_order
     omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
     corrs_to_map session_id next_step ignore_image_map_sanity skip_drawing
 ];
@@ -1184,7 +1184,6 @@ Lays out the image and writes it to the file system, set the "image_name."
             config      => $self->config(),
             aggregate   => $self->aggregate,
             clean_view  => $self->clean_view,
-            magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
             stack_maps  => $self->stack_maps,
             )
@@ -1579,7 +1578,7 @@ Do the actual drawing.
     my $width     = $self->map_width;
     my $img_class = $self->image_class;
     my $img       = $img_class->new( $width, $height );
-    my %colors    =
+    my %colors =
         map {
         $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
         }
@@ -2554,6 +2553,12 @@ Returns the pixel height of the image based upon the requested "image_size."
 =cut
 
     my $self = shift;
+    my $arg  = shift;
+
+    if ( $arg ) {
+print STDERR "$arg\n";
+        $self->{'pixel_height'} = $arg;
+    }
 
     unless ( $self->{'pixel_height'} ) {
         my $image_size = $self->image_size;
@@ -2998,7 +3003,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $comparative_maps            = $args{'comparative_maps'};
     my $highlight                   = $args{'highlight'};
     my $font_size                   = $args{'font_size'};
-    my $image_size                  = $args{'image_size'};
+    my $pixel_height                = $args{'pixel_height'};
     my $image_type                  = $args{'image_type'};
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
@@ -3013,7 +3018,6 @@ Creates default link parameters for CMap->create_viewer_link()
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
     my $corrs_to_map                = $args{'corrs_to_map'};
-    my $magnify_all                 = $args{'magnify_all'};
     my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
     my $flip                        = $args{'flip'};
     my $left_min_corrs              = $args{'left_min_corrs'};
@@ -3096,8 +3100,8 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($font_size) ) {
         $font_size = $self->font_size();
     }
-    unless ( defined($image_size) ) {
-        $image_size = $self->image_size();
+    unless ( defined($pixel_height) ) {
+        $pixel_height = $self->pixel_height();
     }
     unless ( defined($image_type) ) {
         $image_type = $self->image_type();
@@ -3140,9 +3144,6 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($corrs_to_map) ) {
         $corrs_to_map = $self->corrs_to_map();
-    }
-    unless ( defined($magnify_all) ) {
-        $magnify_all = $self->magnify_all();
     }
     unless ( defined($ignore_image_map_sanity) ) {
         $ignore_image_map_sanity = $self->ignore_image_map_sanity();
@@ -3228,7 +3229,7 @@ Creates default link parameters for CMap->create_viewer_link()
         comparative_maps            => $comparative_maps,
         highlight                   => $highlight,
         font_size                   => $font_size,
-        image_size                  => $image_size,
+        pixel_height                => $pixel_height,
         image_type                  => $image_type,
         label_features              => $label_features,
         collapse_features           => $collapse_features,
@@ -3243,7 +3244,6 @@ Creates default link parameters for CMap->create_viewer_link()
         split_agg_ev                => $split_agg_ev,
         clean_view                  => $clean_view,
         corrs_to_map                => $corrs_to_map,
-        magnify_all                 => $magnify_all,
         ignore_image_map_sanity     => $ignore_image_map_sanity,
         flip                        => $flip,
         left_min_corrs              => $left_min_corrs,

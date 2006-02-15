@@ -26,7 +26,8 @@
   <td> 
     <input 
         type="text" 
-        size=4 name = "min_corrs_[%- side | lower -%]" 
+        size=4 
+        name="min_corrs_[%- side | lower -%]" 
         value='' 
         onKeyPress="return event.keyCode!=13"
         onChange="changeCompMaps(document.comparative_map_form.comparative_map_[%- side | lower -%],document.comparative_map_form.comp_map_set_[%- side | lower -%].selectedIndex - 1, '[%- side -%]',this.value); "

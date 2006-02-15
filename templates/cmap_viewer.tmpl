@@ -332,7 +332,7 @@ function selectAllOptions(select){
                 <input type="hidden" name="prev_ref_species_acc" value="[%- apr.param('ref_species_acc') -%]">
                 <input type="hidden" name="prev_ref_map_set_acc" value="[%- apr.param('ref_map_set_acc') -%]">
                 <input type="hidden" name="highlight"      value="[%- apr.param('highlight') -%]">
-                <input type="hidden" name="image_size"       value="[%- apr.param('image_size') -%]">
+                <input type="hidden" name="pixel_height" value="[%- apr.param('pixel_height') -%]">
                 <input type="hidden" name="image_type"       value="[%- apr.param('image_type') -%]">
                 <input type="hidden" name="data_source"      value="[%- data_source -%]">
               </td>
@@ -881,36 +881,39 @@ function selectAllOptions(select){
 
             <table>
               <tr>
-                <td align="left" valign="top">Total Magnification: </td>
-                <td align="left" colspan=3>
-                  <select name="magnify_all">
-                    <option value="0.125"[%- IF 0.125==apr.param('magnify_all'); ' selected'; END -%]>1/8</option>
-                    <option value="0.25"[%- IF 0.25==apr.param('magnify_all'); ' selected'; END -%]>1/4</option>
-                    <option value="0.5"[%- IF 0.5==apr.param('magnify_all'); ' selected'; END -%]>1/2</option>
-                    <option value="1"[%- IF 1==apr.param('magnify_all') OR NOT apr.param('magnify_all'); ' selected'; 
-                                       END -%]>Original Magnification</option>
-                    <option value="2"[%- IF 2==apr.param('magnify_all'); ' selected'; END -%]>2</option>
-                    <option value="3"[%- IF 3==apr.param('magnify_all'); ' selected'; END -%]>3</option>
-                    <option value="4"[%- IF 4==apr.param('magnify_all'); ' selected'; END -%]>4</option>
-                    <option value="5"[%- IF 5==apr.param('magnify_all'); ' selected'; END -%]>5</option>
-                    <option value="10"[%- IF 10==apr.param('magnify_all'); ' selected'; END -%]>10</option>
-                    <option value="20"[%- IF 20==apr.param('magnify_all'); ' selected'; END -%]>20</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
                 <td align="left" valign="top">Image Size:</td>
+                [%- FOREACH height = pixel_height_options %]
+                  <td>
+                    <input 
+                      type="radio" 
+                      name="phrb" 
+                      value="[% height.value %]" 
+                      onClick="pixel_height.value=[% height.value %]; pixel_height.readOnly=true;"
+                      [%- IF height.selected; ' checked'; END -%]
+                    >[% height.name %]
+                  </td>
+                [% END %]
                 <td>
-                  <input type="radio" name="image_size" value="tiny"[%- IF apr.param('image_size') == 'tiny'; ' checked'; END -%]>Tiny
-                </td>
-                <td>
-                  <input type="radio" name="image_size" value="small"[%- IF apr.param('image_size') == 'small'; ' checked'; END -%]>Small
-                </td>
-                <td>
-                  <input type="radio" name="image_size" value="medium"[%- IF apr.param('image_size') == 'medium'; ' checked'; END -%]>Medium
-                </td>
-                <td>
-                  <input type="radio" name="image_size" value="large"[%- IF apr.param('image_size') == 'large'; ' checked'; END -%]>Large
+                  <input 
+                    type="radio" 
+                    name="phrb" 
+                    value="[% height.value %]" 
+                      onClick="pixel_height.readOnly=false;"
+                    [%- IF use_custom_pixel_height; ' checked'; END -%]
+                  >Custom 
+                  <input 
+                    type=text 
+                    name="pixel_height" 
+                    size=5 
+                    value="[% apr.param('pixel_height') %]" 
+                    onBlur="
+                      if(isNaN( parseInt(this.value)) || parseInt(this.value)<=0){
+                        alert('Size must be a positive integer');
+                        this.focus();
+                      } 
+                      this.value=parseInt(this.value);
+                    " 
+                    [% UNLESS use_custom_pixel_height; 'readOnly=true' ; END %]>
                 </td>
               </tr>
           

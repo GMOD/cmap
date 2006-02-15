@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.69 2006-02-12 16:15:09 mwz444 Exp $
+# $Id: Utils.pm,v 1.70 2006-02-15 18:44:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,13 +35,13 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
     ref_species_acc          ref_map_set_acc
     comparative_maps         highlight
-    font_size                image_size
+    font_size                pixel_height
     image_type               label_features
     link_group               flip
     session_mod              page_no
@@ -51,7 +51,7 @@ $VERSION = (qw$Revision: 1.69 $)[-1];
     aggregate                cluster_corr
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
-    magnify_all              ignore_image_map_sanity
+    ignore_image_map_sanity
     scale_maps               stack_maps
     comp_menu_order          ref_map_order
     prev_ref_map_order       omit_area_boxes
@@ -77,7 +77,7 @@ $VERSION = (qw$Revision: 1.69 $)[-1];
     'comparative_maps' => q{},
     'highlight'        => q{},
     'font_size'        => q{},
-    'image_size'       => q{},
+    'pixel_height'     => q{},
     'image_type'       => q{},
     'label_features'   => q{},
     'link_group'       => q{},
@@ -1182,14 +1182,14 @@ sub _get_options_from_url {
     for my $param (
         qw [
         comparative_maps         highlight           font_size
-        image_size               image_type          label_features
+        pixel_height             image_type          label_features
         link_group               flip                session_mod
         page_no                  action              step
         left_min_corrs           right_min_corrs     menu_min_corrs
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
         cluster_corr             show_intraslot_corr split_agg_ev
-        clean_view               corrs_to_map        magnify_all
+        clean_view               corrs_to_map        
         ignore_image_map_sanity  scale_maps          stack_maps
         comp_menu_order          ref_map_order       prev_ref_map_order
         omit_area_boxes          mapMenu             featureMenu
@@ -1593,8 +1593,9 @@ sub parse_url {
   # reset the some params only if you want the code to be able to change them.
   # otherwise, simply initialize the avalue.
     for my $param (
-        qw[ aggregate       cluster_corr show_intraslot_corr
-        split_agg_ev    clean_view   magnify_all
+        qw[ 
+        aggregate       cluster_corr show_intraslot_corr
+        split_agg_ev    clean_view   
         scale_maps      stack_maps   omit_area_boxes
         comp_menu_order ]
         )
