@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.41 2006-02-12 16:15:08 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.42 2006-02-16 16:51:20 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -544,7 +544,7 @@ use constant NUMBER_RE => qr{^\-?\d+(?:\.\d+)?$};
 # time.
 use constant PREFERENCE_FIELDS => [ qw(
     highlight
-    image_size
+    pixel_height
     font_size
     image_type  
     label_features
