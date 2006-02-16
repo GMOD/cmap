@@ -43,28 +43,47 @@ function startPage(){
   var divs=document.getElementsByTagName("DIV");
   for (var i=0; i < divs.length; i++){
     [%- FOREACH menu = [
-      ['mapMenu','displayMapMenu','hiddenMapMenu'],
-      ['featureMenu','displayFeatureMenu','hiddenFeatureMenu'],
-      ['corrMenu','displayCorrMenu','hiddenCorrMenu'],
-      ['displayMenu','displayDisplayMenu','hiddenDisplayMenu'],
-      ['advancedMenu','displayAdvancedMenu','hiddenAdvancedMenu'],
+      ['mapMenu','displayMapMenu','hiddenMapMenu','open'],
+      ['featureMenu','displayFeatureMenu','hiddenFeatureMenu','closed'],
+      ['corrMenu','displayCorrMenu','hiddenCorrMenu','closed'],
+      ['displayMenu','displayDisplayMenu','hiddenDisplayMenu','closed'],
+      ['advancedMenu','displayAdvancedMenu','hiddenAdvancedMenu','closed'],
     ] -%]
-      if (divs[i].id == "[% menu.1 %]"){
-        if ("[%- apr.param(menu.0) -%]" == "1"){
-            divs[i].style.display='block';
+      [%- IF menu.3 == 'open' -%]
+        if (divs[i].id == "[% menu.1 %]"){
+          if ("[%- apr.param(menu.0) -%]" == "0"){
+              divs[i].style.display='none';
+          }
+          else{
+              divs[i].style.display='block';
+          }
         }
-        else{
-            divs[i].style.display='none';
+        else if (divs[i].id == "[% menu.2 %]"){
+          if ("[%- apr.param(menu.0) -%]" == "0"){
+              divs[i].style.display='block';
+          }
+          else{
+              divs[i].style.display='none';
+          }
         }
-      }
-      else if (divs[i].id == "[% menu.2 %]"){
-        if ("[%- apr.param(menu.0) -%]" == "1"){
-            divs[i].style.display='none';
+      [%- ELSE -%]
+        if (divs[i].id == "[% menu.1 %]"){
+          if ("[%- apr.param(menu.0) -%]" == "1"){
+              divs[i].style.display='block';
+          }
+          else{
+              divs[i].style.display='none';
+          }
         }
-        else{
-            divs[i].style.display='block';
+        else if (divs[i].id == "[% menu.2 %]"){
+          if ("[%- apr.param(menu.0) -%]" == "1"){
+              divs[i].style.display='none';
+          }
+          else{
+              divs[i].style.display='block';
+          }
         }
-      }
+      [%- END -%]
     [%- END -%]
 
   }
