@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.70 2006-02-15 18:44:05 mwz444 Exp $
+# $Id: Utils.pm,v 1.71 2006-02-23 17:12:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -45,9 +45,7 @@ $VERSION = (qw$Revision: 1.70 $)[-1];
     image_type               label_features
     link_group               flip
     session_mod              page_no
-    left_min_corrs           right_min_corrs
-    menu_min_corrs           ref_map_start
-    ref_map_stop             collapse_features
+    menu_min_corrs           collapse_features
     aggregate                cluster_corr
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
@@ -86,9 +84,6 @@ $VERSION = (qw$Revision: 1.70 $)[-1];
     'page_no'          => 1,
     'action'           => 'view',
     'step'             => 0,
-    'left_min_corrs'   => 0,
-    'right_min_corrs'  => 0,
-    'menu_min_corrs'   => 0,
 );
 
 use base 'Exporter';
@@ -1104,7 +1099,7 @@ sub _parse_session_step {
     # if this was submitted through a button
     # then use all of the menu parameters
     # otherwise check against the session
-    unless ( $apr->param('sub') ) {
+    unless ( $apr->param('sub') or $apr->param('use_menu') ) {
         for my $param (@SESSION_PARAMS) {
             unless ( $param_specified{$param} ) {
                 $parsed_url_options_ref->{$param} = $session_step->{$param};
@@ -1118,24 +1113,13 @@ sub _parse_session_step {
     %{$slots_ref} = %{ clone( $session_step->{'slots'} ) };
 
     # Apply Session Modifications to slots_ref
-    my ( $change_left_min_corrs, $change_right_min_corrs ) = _modify_slots(
+    _modify_slots(
         $slots_ref,
         $parsed_url_options_ref->{'session_mod'},
         $parsed_url_options_ref->{'map_menu_data'}
         )
         if ( !$parsed_url_options_ref->{'reusing_step'} );
 
-    # if a slot was deleted, change the left/right_min_corrs
-    if ($change_left_min_corrs) {
-        my @slot_nos = sort { $a <=> $b } keys %$slots_ref;
-        $parsed_url_options_ref->{'left_min_corrs'}
-            = $slots_ref->{ $slot_nos[0] }->{'min_corrs'};
-    }
-    if ($change_right_min_corrs) {
-        my @slot_nos = sort { $a <=> $b } keys %$slots_ref;
-        $parsed_url_options_ref->{'right_min_corrs'}
-            = $slots_ref->{ $slot_nos[-1] }->{'min_corrs'};
-    }
     @$ref_map_accs_ref = keys( %{ $slots_ref->{0}->{'maps'} } );
     $apr->param( 'ref_map_accs', join( ":", @{ $ref_map_accs_ref || () } ) );
 
@@ -1185,22 +1169,26 @@ sub _get_options_from_url {
         pixel_height             image_type          label_features
         link_group               flip                session_mod
         page_no                  action              step
-        left_min_corrs           right_min_corrs     menu_min_corrs
+        left_min_corrs           corr_menu_min_corrs_left
+        right_min_corrs          corr_menu_min_corrs_right
+        menu_min_corrs
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
         cluster_corr             show_intraslot_corr split_agg_ev
-        clean_view               corrs_to_map        
+        clean_view               corrs_to_map        reuse_step
         ignore_image_map_sanity  scale_maps          stack_maps
         comp_menu_order          ref_map_order       prev_ref_map_order
         omit_area_boxes          mapMenu             featureMenu
         corrMenu                 displayMenu         advancedMenu
         session_id               saved_link_id       general_min_corrs
+        ignore_comp_maps
         ]
         )
     {
         $parsed_url_options{$param} = $apr->param($param);
     }
 
+    # LEGACY
     # Check for depricated min_correspondences value
     # Basically general_min_corrs is a new way to address
     # the min_correspondences legacy while keeping the option
@@ -1213,20 +1201,14 @@ sub _get_options_from_url {
         unless ( defined( $parsed_url_options{'left_min_corrs'} ) ) {
             $parsed_url_options{'left_min_corrs'}
                 = $parsed_url_options{'general_min_corrs'};
-            $apr->param( 'left_min_corrs',
-                $parsed_url_options{'left_min_corrs'} );
         }
         unless ( defined( $parsed_url_options{'right_min_corrs'} ) ) {
             $parsed_url_options{'right_min_corrs'}
                 = $parsed_url_options{'general_min_corrs'};
-            $apr->param( 'right_min_corrs',
-                $parsed_url_options{'right_min_corrs'} );
-            unless ( defined( $parsed_url_options{'menu_min_corrs'} ) ) {
-                $parsed_url_options{'menu_min_corrs'}
-                    = $parsed_url_options{'general_min_corrs'};
-                $apr->param( 'menu_min_corrs',
-                    $parsed_url_options{'menu_min_corrs'} );
-            }
+        }
+        unless ( defined( $parsed_url_options{'menu_min_corrs'} ) ) {
+            $parsed_url_options{'menu_min_corrs'}
+                = $parsed_url_options{'general_min_corrs'};
         }
     }
 
@@ -1312,6 +1294,11 @@ sub _get_options_from_url {
             my $et  = $1;
             my $val = $apr->param($param);
             $parsed_url_options{'evidence_type_score'}->{$et} = $val;
+        }
+        elsif ( $param =~ /^slot_min_corrs_([-\d]+)/ ) {
+            my $slot_no = $1;
+            my $val     = $apr->param($param);
+            $parsed_url_options{'slot_min_corrs'}->{$slot_no} = $val;
         }
         elsif ( $param =~ /^map_start_([-\d]+)_(\S+)/ ) {
             my $slot_no = $1;
@@ -1505,13 +1492,15 @@ sub parse_url {
         $parsed_url_options{'session_menu_hash'}
             = md5( Dumper( $parsed_url_options{'map_menu_data'} )
                 . $parsed_url_options{'session_mod'} );
-        if ( $parsed_url_options{'session_data_object'}
+        if ($parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]
             and $parsed_url_options{'session_data_object'}
-            ->[ $parsed_url_options{'step'} ]{'session_mod'}
-            and $parsed_url_options{'session_data_object'}
-            ->[ $parsed_url_options{'step'} ]{'session_menu_hash'} eq
-            $parsed_url_options{'session_menu_hash'} )
+            ->[ $parsed_url_options{'step'} ]{'session_menu_hash'}
+            and ( $parsed_url_options{'session_data_object'}
+                ->[ $parsed_url_options{'step'} ]{'session_menu_hash'} eq
+                $parsed_url_options{'session_menu_hash'}
+                or $parsed_url_options{'reuse_step'} )
+            )
         {
             $step_hash = $parsed_url_options{'session_data_object'}
                 ->[ $parsed_url_options{'step'} ];
@@ -1593,9 +1582,9 @@ sub parse_url {
   # reset the some params only if you want the code to be able to change them.
   # otherwise, simply initialize the avalue.
     for my $param (
-        qw[ 
+        qw[
         aggregate       cluster_corr show_intraslot_corr
-        split_agg_ev    clean_view   
+        split_agg_ev    clean_view
         scale_maps      stack_maps   omit_area_boxes
         comp_menu_order ]
         )
@@ -1847,6 +1836,8 @@ sub parse_url {
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
     my $max_left  = $slot_nos[0];
+
+    # general_min_corrs is now legacy
     if ( $parsed_url_options{'general_min_corrs'} ) {
         foreach my $slot_no (@slot_nos) {
             $slots_min_corrs{$slot_no}
@@ -1854,60 +1845,78 @@ sub parse_url {
         }
     }
 
-    # set the left and the right slots' min corr
-    $slots_min_corrs{$max_left}  = $parsed_url_options{'left_min_corrs'};
-    $slots_min_corrs{$max_right} = $parsed_url_options{'right_min_corrs'};
-
-    #
-    # Add in our next chosen maps.
-    #
-    for my $side ( ( RIGHT, LEFT ) ) {
-        my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
-        my $cmap =
-              $side eq RIGHT
-            ? $parsed_url_options{'comparative_map_right'}
-            : $parsed_url_options{'comparative_map_left'};
-        my $cmap_set_acc =
-              $side eq RIGHT
-            ? $parsed_url_options{'comp_map_set_right'}
-            : $parsed_url_options{'comp_map_set_left'};
-        if ( @{ $cmap || [] } ) {
-            if ( grep {/^-1$/} @$cmap ) {
-                unless (
-                    defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
-                {
-                    $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} = ();
-                }
-            }
-            else {
-                foreach my $map_acc (@$cmap) {
-                    my ( $start, $stop, $magnification );
-                    (   $map_acc, $start, $stop, $magnification,
-                        $parsed_url_options{'highlight'}
-                        )
-                        = _parse_map_info( $map_acc,
-                        $parsed_url_options{'highlight'} );
-
-                    $slots{$slot_no}{'maps'}{$map_acc} = {
-                        start => $start,
-                        stop  => $stop,
-                        mag   => $magnification,
-                    };
-                }
-            }
-
-            # Set this slots min corrs
+    foreach my $slot_no (@slot_nos) {
+        if ( defined( $parsed_url_options{'slot_min_corrs'}->{$slot_no} ) ) {
+        }
+        if ( $parsed_url_options{'slot_min_corrs'}->{$slot_no} =~ /^\d+$/ ) {
+        }
+        if ( defined( $parsed_url_options{'slot_min_corrs'}->{$slot_no} )
+            and $parsed_url_options{'slot_min_corrs'}->{$slot_no} =~ /^\d+$/ )
+        {
             $slots_min_corrs{$slot_no}
-                = $parsed_url_options{'menu_min_corrs'};
+                = $parsed_url_options{'slot_min_corrs'}->{$slot_no};
+        }
+        else {
+            $slots_min_corrs{$slot_no} = $slots_min_corrs{$slot_no} || 0;
+        }
+        $apr->param( 'slot_min_corrs_' . $slot_no,
+            $slots_min_corrs{$slot_no} );
+    }
 
-            # Change the left/right_min_corrs value for future links
-            if ( $slot_no < 0 ) {
-                $parsed_url_options{'left_min_corrs'}
-                    = $parsed_url_options{'menu_min_corrs'};
-            }
-            else {
-                $parsed_url_options{'right_min_corrs'}
-                    = $parsed_url_options{'menu_min_corrs'};
+    # LEGACY set the left and the right slots' min corr
+    $slots_min_corrs{$max_left} = $parsed_url_options{'left_min_corrs'}
+        if $parsed_url_options{'left_min_corrs'};
+    $slots_min_corrs{$max_right} = $parsed_url_options{'right_min_corrs'}
+        if $parsed_url_options{'right_min_corrs'};
+
+    unless ( $parsed_url_options{'ignore_comp_maps'} ) {
+
+        #
+        # Add in our next chosen maps.
+        #
+        for my $side ( ( RIGHT, LEFT ) ) {
+            my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
+            my $cmap =
+                  $side eq RIGHT
+                ? $parsed_url_options{'comparative_map_right'}
+                : $parsed_url_options{'comparative_map_left'};
+            my $cmap_set_acc =
+                  $side eq RIGHT
+                ? $parsed_url_options{'comp_map_set_right'}
+                : $parsed_url_options{'comp_map_set_left'};
+            if ( @{ $cmap || [] } ) {
+                if ( grep {/^-1$/} @$cmap ) {
+                    unless (
+                        defined(
+                            $slots{$slot_no}->{'map_sets'}{$cmap_set_acc}
+                        )
+                        )
+                    {
+                        $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} = ();
+                    }
+                }
+                else {
+                    foreach my $map_acc (@$cmap) {
+                        my ( $start, $stop, $magnification );
+                        (   $map_acc, $start, $stop, $magnification,
+                            $parsed_url_options{'highlight'}
+                            )
+                            = _parse_map_info( $map_acc,
+                            $parsed_url_options{'highlight'} );
+
+                        $slots{$slot_no}{'maps'}{$map_acc} = {
+                            start => $start,
+                            stop  => $stop,
+                            mag   => $magnification,
+                        };
+                    }
+                }
+
+                # Set this slots min corrs
+                $slots_min_corrs{$slot_no}
+                    = $parsed_url_options{ 'corr_menu_min_corrs_'
+                        . lc $side };
+
             }
         }
     }

@@ -3,10 +3,10 @@
   title=title
   cur_sec='map_viewer'
   help_anchor='map_viewer'
-  body_addendum='onLoad="setDivElems();document.comparative_map_form.reset()"'
+  body_addendum='onLoad="setDivElems();document.comparative_map_form.reset();"'
 %]
 <script language="javascript">
-                                        
+
 function setDivElems(){
   startPage();
 }
@@ -25,18 +25,6 @@ function toggleDiv(obj){
 function setMenuObjects(obj1,txt){
     obj1.value=txt;
     return 1;
-}
-
-function hideAll(){
-  var divs=document.getElementsByTagName("DIV");
-  for (var i=0; i < divs.length; i++){
-    if (divs[i].id.search(/^display/)>=0){
-      divs[i].style.display='none';
-    }
-    else if (divs[i].id.search(/^hidden/)>=0){
-      divs[i].style.display='block';
-    }
-  }
 }
 
 function startPage(){
@@ -130,96 +118,6 @@ function selectEvidenceRadio(val){
   }
 }
 
-function changeCompMaps(sel,index,side,min_corrs_txt){
-  var dataArray;
-  var map_sets;
-  if (index == -1){
-    //None selected clear and return
-    var i;
-    for (i=0;i<sel.options.length;i++){
-      sel.options[i]=null;
-      i--;
-    }
-    var opt = new Option("No Map Set Selected","");
-    sel.options[0] = opt;
-    return;
-  }
-
-  if (side == 'Left'){
-    dataArray=new Array(
-      [%- SET not_first_map_set=0; -%]
-      [%- FOREACH ms=form_data.comparative_maps_left -%]
-        [%- IF not_first_map_set -%]
-          ,
-        [%- ELSE -%]
-          [%- SET not_first_map_set=1; -%] 
-        [%- END -%]
-        [%- SET not_first_map=0; -%]
-        new Array( 
-        [%- FOREACH map=ms.maps; -%]
-          [%- IF not_first_map -%]
-            ,
-          [%- ELSE -%]
-            [%- SET not_first_map=1; -%] 
-          [%- END -%]
-          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]','[%- map.max_no_correspondences -%]')
-        [%- END -%]
-        )
-      [%- END -%]
-    );
-  }
-  else{
-    dataArray=new Array(
-      [%- SET not_first_map_set=0; -%]
-      [%- FOREACH ms=form_data.comparative_maps_right -%]
-        [%- IF not_first_map_set -%]
-          ,
-        [%- ELSE -%]
-          [%- SET not_first_map_set=1; -%] 
-        [%- END -%]
-        [%- SET not_first_map=0; -%]
-        new Array( 
-        [%- FOREACH map=ms.maps; -%]
-          [%- IF not_first_map -%]
-            ,
-          [%- ELSE -%]
-            [%- SET not_first_map=1; -%] 
-          [%- END -%]
-          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]','[%- map.max_no_correspondences -%]')
-        [%- END -%]
-        )
-      [%- END -%]
-    );
-  }
-
-  var mapSetArray=dataArray[index]
-  var length=mapSetArray.length;
-  var i;
-  var min_corrs = parseInt(min_corrs_txt);
-  if (isNaN(min_corrs)){
-    min_corrs=0;
-  }
-  for (i=0;i<sel.options.length;i++){
-    sel.options[i]=null;
-    i--;
-  }
-
-  sel.options[0] = new Option("== ALL ==",-1);
-  sel.selectedIndex=0;
-  if (length > 0){
-    for (i=0;i<length;i++){
-      if (mapSetArray[i][2]>=min_corrs){
-        var opt = new Option(mapSetArray[i][0],mapSetArray[i][1]);
-        sel.options[sel.options.length] = opt;
-      }
-    }
-    if (sel.options.length <= 1){
-        sel.options[0]=null;
-        sel.selectedIndex=null;
-    }
-  }
-}
-
 function moveOrderedMaps() {
   select        = document.comparative_map_form.ori_ref_map_order;
   selectOptions = select.options;
@@ -247,6 +145,98 @@ function moveOrderedMapsRev() {
     }
   }
 }
+
+function changeCompMaps(sel,index,dataArray){
+  var dataArray;
+  var map_sets;
+  if (index == -1){
+    //None selected clear and return
+    var i;
+    for (i=0;i<sel.options.length;i++){
+      sel.options[i]=null;
+      i--;
+    }
+    var opt = new Option("No Map Set Selected","");
+    sel.options[0] = opt;
+    return;
+  }
+
+
+  var mapSetArray=dataArray[index]
+  var length=mapSetArray.length;
+  var i;
+  for (i=0;i<sel.options.length;i++){
+    sel.options[i]=null;
+    i--;
+  }
+
+  sel.options[0] = new Option("== ALL ==",-1);
+  sel.selectedIndex=0;
+  if (length > 0){
+    for (i=0;i<length;i++){
+      var opt = new Option(mapSetArray[i][0],mapSetArray[i][1]);
+      sel.options[sel.options.length] = opt;
+    }
+  }
+}
+
+
+function ajaxManager() {
+  // Modified from Eddie Traversa's ajax tutorial 
+  // http://dhtmlnirvana.com/ajax/ajax_tutorial/
+  var args = ajaxManager.arguments;
+  switch (args[0]) {
+    case "post_page":
+      if (document.getElementById) {
+        var x = (window.ActiveXObject) ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
+      }
+      if (x) {
+        x.onreadystatechange = function() {
+          if (x.readyState == 4 && x.status == 200) {
+              el = document.getElementById(args[2]);
+              el.innerHTML = x.responseText;
+          }
+        }
+        x.open("POST", args[1], true);
+        x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+        x.send(args[3]);
+      }
+    break;
+  }
+}
+
+function stringify_form(form) {
+  var query_string = "";
+  var i = 0;
+  var elems = form.elements;
+  for (i=0;i<elems.length;i++){
+    if ( elems[i].type == "text"
+      || elems[i].type == "textarea"
+      || elems[i].type == "hidden"
+    ){
+      query_string += elems[i].name + "=" + elems[i].value + "&";
+    }
+    if ( elems[i].type == "select-one"
+      || elems[i].type == "select-multiple"
+    ){
+      for (var j=0; j<elems[i].options.length; j++){
+        if (elems[i].options[j].selected){
+          query_string += elems[i].name + "=" + elems[i].options[j].value + "&";
+        }
+      }
+    }
+    if ( elems[i].type == "checkbox"
+      || elems[i].type == "radio"
+    ){
+      if (elems[i].checked){
+        query_string += elems[i].name + "=" + elems[i].value + "&";
+      }
+    }
+  }
+  return query_string;
+}
+
+
 
 function selectAllOptions(select){
   var options = select.options;
@@ -306,7 +296,7 @@ function selectAllOptions(select){
           <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
           <tr>
             <td align="right">Ref. Species:</td>
-  
+
             <td>
               [%- IF form_data.ref_species.size -%]
                 <select name="ref_species_acc" 
@@ -329,7 +319,7 @@ function selectAllOptions(select){
               [%- END -%]
             </td>
           </tr>
-          
+
           [%- IF form_data.ref_map_sets.size -%]
             <tr>
               <td align="right">Ref. Set:</td>
@@ -368,7 +358,7 @@ function selectAllOptions(select){
               <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
-      
+
                 <td valign="top">
                   <select name="ref_map_accs" size="14" multiple
                     [%- IF apr.param('ref_map_accs') -%]
@@ -376,7 +366,7 @@ function selectAllOptions(select){
                     [%- ELSE -%]
                         >
                     [%- END -%]
-    
+
                     [%- IF form_data.ref_maps.size -%]
                       [%- FOREACH m=form_data.ref_maps -%]
                         <option[%- IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END -%] value="[%- m.map_acc -%]">[% m.map_name %] [% m.map_start %]-[% m.map_stop -%]</option>
@@ -402,27 +392,51 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-            <td valign="top" align="right" >Handle features:<br>
-            </td>
+                <td valign="top" align="right" >Feature Type Display:<br></td>
                 <td>
-                <table border=1></tr>
-                  <tr>
-                    <td valign=center> Use Normal Defaults</td>
-                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="" checked > </td>
-                  </tr>
-                  <tr>
-                    <td valign=center> Ignore All Features</td>
-                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="0" > </td>
-                  </tr>
-                  <tr>
-                    <td valign=center> Display Features <br>With Correspondences</td>
-                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="1" > </td>
-                  </tr>
-                  <tr>
-                    <td valign=center> Display All Features</td>
-                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="2" > </td>
-                  </tr>
-                </table>
+                  <table border="1">
+                    <tr>
+                      <td>Feature</td>
+                      <td>Ignore</td>
+                      <td>Display if<br>Correspondence</td>
+                      <td>Always Display</td>
+                    </tr>
+                    [%- FOREACH ft=sorted_feature_type -%]
+                      <tr>
+                        <td><a href="feature_type_info?feature_type_acc=[%- ft.feature_type_acc -%]">[%- ft.feature_type -%]</a></td>
+                        <td>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="0" [%- IF (ignored_feature_types.${ft.feature_type_acc} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_acc} AND NOT corr_only_feature_types.${ft.feature_type_acc})) ; ' checked'; END -%]>
+                        </td>
+                        <td>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="1" [%- IF (corr_only_feature_types.${ft.feature_type_acc} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END -%]>
+                        </td>
+                        <td>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="2" [%- IF (included_features.${ft.feature_type_acc} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END -%]>
+                        </td>
+                      </tr>
+                    [%- END -%]
+                    <tr>
+                      <td>Default</td>
+                      <td>
+                        <input type="radio" name="ft_DEFAULT" value="0" [% IF apr.param('ft_DEFAULT')=='0'; ' checked'; END %]>
+                      </td>
+                      <td>
+                        <input type="radio" name="ft_DEFAULT" value="1" [% IF apr.param('ft_DEFAULT')=='1'; ' checked'; END %]>
+                      </td>
+                      <td>
+                        <input type="radio" name="ft_DEFAULT" value="2" [% IF apr.param('ft_DEFAULT')=='2'; ' checked'; END %]>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(0)"></td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(1)"></td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(2)"></td>
+                    </tr>
+                  </table> 
+                </td>
+              </tr>
+              <tr>
                 <td>
                   <input type="hidden" name="prev_ref_species_acc" value="[%- apr.param('ref_species_acc') -%]">
                   <input type="hidden" name="prev_ref_map_accs" value="[%- apr.param('ref_map_accs') -%]">
@@ -437,8 +451,10 @@ function selectAllOptions(select){
       </td>
     </tr>
   [%- END -%]
-  [%- IF apr.param('ref_map_accs') #OR form_data.ref_maps  -%]
-    <form name="comparative_map_form" onSubmit="beforeSubmit();">
+</table>
+[%- IF apr.param('ref_map_accs') #OR form_data.ref_maps  -%]
+  <form name="comparative_map_form" onSubmit="beforeSubmit();">
+    <table>
       <tr>
         <td align=left valign=top>
           <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
@@ -469,14 +485,9 @@ function selectAllOptions(select){
               <input type="submit" value="Redraw" name="sub">
               <input type="reset"  value="Reset">
 
-            <table border="0">
-              <tr>
-                [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
-                  side="Left"
-                  map_sets=form_data.comparative_maps_left
-                -%]
-              </tr>
-            </table>
+            <div id="corr_menu_left">
+               <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(this.form))" value="Add Maps Left">
+            </div>
             <!-- Individual Maps -->
               <table border=1 cellspacing="0" cellpadding="0">
                 [%- FOREACH slot=form_data.slot_info -%]
@@ -486,9 +497,13 @@ function selectAllOptions(select){
                   [%- END -%]
                   [% SET first_row_of_slot = 1 %]
                   [%- FOREACH map_acc=slot.maps.keys -%]
+                    [%- SET display_maps = 1 -%]
+                    [%- IF slot.maps.keys.size > 10 %]
+                      [%- SET display_maps = 0 -%]
+                    [%- END -%]
                     <tr [% bgcolor %]>
                       [%- IF first_row_of_slot %]
-                        <td rowspan=[% slot.maps.keys.size %] valign=top>
+                        <td rowspan=[% IF display_maps; slot.maps.keys.size; ELSE; '1'; END; %] valign=top>
                           [% slot.description %]<br>
                           [% IF slot.is_reference_slot %]   
                             (Reference Set)
@@ -500,82 +515,78 @@ function selectAllOptions(select){
                             >
                           [% END -%]
                         </td>
-                        <td rowspan=[% slot.maps.keys.size %] valign=top>
-                          Min. Correspondences <input size=4 name="min_corrs_[% slot.slot_no %]" value="[%- apr.param('min_corrs_'_slot.slot_no) -%]">
+                        <td rowspan=[% IF display_maps; slot.maps.keys.size; ELSE; '1'; END; %] valign=top>
                          [% IF slot.is_reference_slot %]   
-                            <br>
                             Stack Vertically
                             [%- IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END -%]
                             <input type="checkbox" name="stack_maps" value="1"[%- IF stack_maps==1; ' checked'; END -%]>
+                          [% ELSE -%]
+                            [%- SET min_corr_label = 'slot_min_corrs_' _ slot.slot_no -%]
+                            Min. Correspondences <input size=4 name="[% min_corr_label %]" value="[%- slot.min_corrs -%]">
                           [% END -%]
                         </td>
                         [% SET first_row_of_slot = 0 %]
                       [% END -%]
-                      <td valign=top>[% slot.maps.$map_acc.map_name %]
-                        [% IF slot.maps.keys.size>1 %]   
-                          <br>
-                          <input type="submit" 
-                            onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]=[% map_acc %]'" 
-                            value="Delete" 
-                            name="sub"
-                          >
-                        [% END -%]
-                      </td>
-                      <td>
-                       <table border=0>
-                        <tr>
-                         <td>Start</td><td><input size=9 type=text name="map_start_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.start %]"></td>
-                         <td>Magnification</td>
-                         <td>
-                          <select name="map_mag_[% slot.slot_no %]_[% map_acc %]" >
-                            <option value="0.125"[%- IF 0.125==slot.maps.$map_acc.mag; ' selected'; END -%]>1/8</option>
-                            <option value="0.25"[%- IF 0.25==slot.maps.$map_acc.mag; ' selected'; END -%]>1/4</option>
-                            <option value="0.5"[%- IF 0.5==slot.maps.$map_acc.mag; ' selected'; END -%]>1/2</option>
-                            <option value="1"[%- IF 1==slot.maps.$map_acc.mag OR NOT slot.maps.$map_acc.mag; ' selected'; 
-                                               END -%]>Original</option>
-                            <option value="2"[%- IF 2==slot.maps.$map_acc.mag; ' selected'; END -%]>2</option>
-                            <option value="3"[%- IF 3==slot.maps.$map_acc.mag; ' selected'; END -%]>3</option>
-                            <option value="4"[%- IF 4==slot.maps.$map_acc.mag; ' selected'; END -%]>4</option>
-                            <option value="5"[%- IF 5==slot.maps.$map_acc.mag; ' selected'; END -%]>5</option>
-                            <option value="10"[%- IF 10==slot.maps.$map_acc.mag; ' selected'; END -%]>10</option>
-                            <option value="20"[%- IF 20==slot.maps.$map_acc.mag; ' selected'; END -%]>20</option>
-                          </select>
-                         </td>
-
-                        </tr><tr>
-                         <td>Stop</td><td><input size=9 type=text name="map_stop_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.stop %]"></td>
-                         <td>Flipped</td><td><input type=checkbox name="map_flip_[% slot.slot_no %]_[% map_acc %]" value="1" [%- IF slot.maps.$map_acc.flip; ' checked'; END -%]>
-                            <input type=hidden name="map_in_menu_[% slot.slot_no %]_[% map_acc %]" value="1">
-                         </td>
+                      [% IF display_maps %]   
+                        <td valign=top>[% slot.maps.$map_acc.map_name %]
+                          [% IF slot.maps.keys.size>1 %]   
+                            <br>
+                            <input type="submit" 
+                              onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]=[% map_acc %]'" 
+                              value="Delete" 
+                              name="sub"
+                            >
+                          [% END -%]
+                        </td>
+                        <td>
+                         <table border=0>
+                          <tr>
+                           <td>Start</td><td><input size=9 type=text name="map_start_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.start %]"></td>
+                           <td>Magnification</td>
+                           <td>
+                            <select name="map_mag_[% slot.slot_no %]_[% map_acc %]" >
+                              <option value="0.125"[%- IF 0.125==slot.maps.$map_acc.mag; ' selected'; END -%]>1/8</option>
+                              <option value="0.25"[%- IF 0.25==slot.maps.$map_acc.mag; ' selected'; END -%]>1/4</option>
+                              <option value="0.5"[%- IF 0.5==slot.maps.$map_acc.mag; ' selected'; END -%]>1/2</option>
+                              <option value="1"[%- IF 1==slot.maps.$map_acc.mag OR NOT slot.maps.$map_acc.mag; ' selected'; 
+                                                 END -%]>Original</option>
+                              <option value="2"[%- IF 2==slot.maps.$map_acc.mag; ' selected'; END -%]>2</option>
+                              <option value="3"[%- IF 3==slot.maps.$map_acc.mag; ' selected'; END -%]>3</option>
+                              <option value="4"[%- IF 4==slot.maps.$map_acc.mag; ' selected'; END -%]>4</option>
+                              <option value="5"[%- IF 5==slot.maps.$map_acc.mag; ' selected'; END -%]>5</option>
+                              <option value="10"[%- IF 10==slot.maps.$map_acc.mag; ' selected'; END -%]>10</option>
+                              <option value="20"[%- IF 20==slot.maps.$map_acc.mag; ' selected'; END -%]>20</option>
+                            </select>
+                           </td>
+  
+                          </tr><tr>
+                           <td>Stop</td><td><input size=9 type=text name="map_stop_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.stop %]"></td>
+                           <td>Flipped</td><td><input type=checkbox name="map_flip_[% slot.slot_no %]_[% map_acc %]" value="1" [%- IF slot.maps.$map_acc.flip; ' checked'; END -%]>
+                              <input type=hidden name="map_in_menu_[% slot.slot_no %]_[% map_acc %]" value="1">
+                           </td>
+                          </tr>
+                         </table>
+                        </td>
+                      [%- ELSE -%]
+                        <td colspan=2>
+                          [% slot.maps.keys.size %] Maps.  Too many to display.
+                        <td>
                         </tr>
-                       </table>
-                      </td>
+                        [%- LAST -%]
+                      [%- END -%]
                     </tr> 
                   [%- END -%]
                 [%- END -%]
               </table>
 
             <!-- End Individual Maps -->
-            <table border=0>
-              <tr>
-                [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
-                  side="Right"
-                  map_sets=form_data.comparative_maps_right
-                -%]
-              </tr>
-            </table>
-                  Format: Name [Total correspondences to slot, Max correspondences to single map]
+            <div id="corr_menu_right">
+               <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(this.form))" value="Add Maps Right">
+            </div>
+            Format: Name [Total correspondences to slot, Max correspondences to single map]
 
-            <!-- form name="ref_map_form">
-              <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
-              <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
-              <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
-              <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
-              <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
-              <input type="submit" value="Change Reference Map" name="sub">
-            </form -->
             <br>
-            
+
             <table border="0">
               [%- IF form_data.ordered_ref_maps.size > 1; -%]
                 <tr>
@@ -717,10 +728,10 @@ function selectAllOptions(select){
                   <input type="radio" name="label_features" value="all"[%- IF apr.param('label_features')=='all'; ' checked'; END -%]>All
                 </td>
               </tr>
-  
+
               <tr>
                 <td align="Left" valign="top">Collapse Overlapping <br>Features:</td>
-  
+
                 <td>
                   [%- IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END -%]
                   <input type="radio" name="collapse_features" value="0"[%- IF collapse==0; ' checked'; END -%]>No
@@ -935,10 +946,10 @@ function selectAllOptions(select){
                     [% UNLESS use_custom_pixel_height; 'readOnly=true' ; END %]>
                 </td>
               </tr>
-          
+
               <tr>
                 <td align="left" valign="top">Font Size:</td>
-  
+
                 <td>
                   <input type="radio" name="font_size" value="small"[%- IF apr.param('font_size') == 'small'; ' checked'; END -%]>Small
                 </td>
@@ -949,10 +960,10 @@ function selectAllOptions(select){
                   <input type="radio" name="font_size" value="large"[%- IF apr.param('font_size') == 'large'; ' checked'; END -%]>Large
                 </td>
               </tr>
-            
+
               <tr>
                 <td align="left" valign="top">Image Type:</td>
-  
+
                 <td>
                   <input type="radio" name="image_type" value="png"[%- IF apr.param('image_type') == 'png'; ' checked'; END -%]>PNG
                 </td>
@@ -973,7 +984,7 @@ function selectAllOptions(select){
                 <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>yes</td>
               </tr>
             </table>
-  
+
 
             <input type="submit" value="Redraw" name="sub">
             <input type="reset"  value="Reset">
@@ -1077,17 +1088,17 @@ function selectAllOptions(select){
           <input type="reset"  value="Reset">
         </td>
       </tr>
-    </form>
-  [%- ELSE -%]
-    <form name="comparative_map_form">
-      <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
-      <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
-      <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
-      <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
-      <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
-    </form>
-  [%- END -%]    
-</table>
+    </table>
+  </form>
+[%- ELSE -%]
+  <form name="comparative_map_form">
+    <input type="hidden" name="mapMenu" id="mapMenu" value="[%- apr.param('mapMenu') -%]">
+    <input type="hidden" name="featureMenu" id="featureMenu" value="[%- apr.param('featureMenu') -%]">
+    <input type="hidden" name="corrMenu" id="corrMenu" value="[%- apr.param('corrMenu') -%]">
+    <input type="hidden" name="displayMenu" id="displayMenu" value="[%- apr.param('displayMenu') -%]">
+    <input type="hidden" name="advancedMenu" id="advancedMenu" value="[%- apr.param('advancedMenu') -%]">
+  </form>
+[%- END -%]    
 
 [%- IF drawer AND drawer.image_type!='svg' -%]
   <map name="zoom">

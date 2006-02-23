@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.133 2006-02-12 16:15:09 mwz444 Exp $
+# $Id: Generic.pm,v 1.134 2006-02-23 17:12:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.133 $)[-1];
+$VERSION = (qw$Revision: 1.134 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -862,6 +862,10 @@ original start and stop.
             {
                 $where .= " and cl.feature_type_acc1 not in ('"
                     . join( "','", sort @$ignored_feature_type_accs ) . "') ";
+                $where .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
+                    . " or cl.feature_type_acc2 not in ('"
+                    . join( "','", sort @$ignored_feature_type_accs )
+                    . "') ) ";
             }
 
             if (   @$included_evidence_type_accs
@@ -2144,25 +2148,25 @@ Map Set id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object        => 1,
-        no_validation      => 0,
-        map_set_acc        => 0,
-        accession_id       => 0,
-        map_set_name       => 0,
-        map_set_short_name => 0,
-        map_type_acc       => 0,
-        map_type_aid       => 0,
-        map_type_accession => 0,
-        species_id         => 0,
-        published_on       => 0,
-        display_order      => 0,
-        map_set_display_order      => 0,
-        is_enabled         => 0,
-        shape              => 0,
-        width              => 0,
-        color              => 0,
-        map_units          => 0,
-        is_relational_map  => 0,
+        cmap_object           => 1,
+        no_validation         => 0,
+        map_set_acc           => 0,
+        accession_id          => 0,
+        map_set_name          => 0,
+        map_set_short_name    => 0,
+        map_type_acc          => 0,
+        map_type_aid          => 0,
+        map_type_accession    => 0,
+        species_id            => 0,
+        published_on          => 0,
+        display_order         => 0,
+        map_set_display_order => 0,
+        is_enabled            => 0,
+        shape                 => 0,
+        width                 => 0,
+        color                 => 0,
+        map_units             => 0,
+        is_relational_map     => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -2177,9 +2181,10 @@ Map Set id
     my $species_id    = $args{'species_id'};
     my $published_on  = $args{'published_on'};
     my $display_order = $args{'display_order'};
-    $display_order    = $args{'map_set_display_order'} unless defined($display_order);
-    $display_order    = 1 unless defined($display_order);
-    my $is_enabled    = $args{'is_enabled'};
+    $display_order = $args{'map_set_display_order'}
+        unless defined($display_order);
+    $display_order = 1 unless defined($display_order);
+    my $is_enabled = $args{'is_enabled'};
     $is_enabled = 1 unless ( defined($is_enabled) );
     my $shape             = $args{'shape'};
     my $width             = $args{'width'};
@@ -2282,27 +2287,27 @@ to ignore that column.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object        => 1,
-        no_validation      => 0,
-        map_set_id         => 0,
-        object_id          => 0,
-        map_set_acc        => 0,
-        accession_id       => 0,
-        map_set_name       => 0,
-        map_set_short_name => 0,
-        map_type_acc       => 0,
-        map_type_aid       => 0,
-        map_type_accession => 0,
-        species_id         => 0,
-        published_on       => 0,
-        display_order      => 0,
+        cmap_object           => 1,
+        no_validation         => 0,
+        map_set_id            => 0,
+        object_id             => 0,
+        map_set_acc           => 0,
+        accession_id          => 0,
+        map_set_name          => 0,
+        map_set_short_name    => 0,
+        map_type_acc          => 0,
+        map_type_aid          => 0,
+        map_type_accession    => 0,
+        species_id            => 0,
+        published_on          => 0,
+        display_order         => 0,
         map_set_display_order => 0,
-        is_enabled         => 0,
-        shape              => 0,
-        width              => 0,
-        color              => 0,
-        map_units          => 0,
-        is_relational_map  => 0,
+        is_enabled            => 0,
+        shape                 => 0,
+        width                 => 0,
+        color                 => 0,
+        map_units             => 0,
+        is_relational_map     => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -2316,10 +2321,11 @@ to ignore that column.
     my $map_type_acc       = $args{'map_type_acc'}
         || $args{'map_type_aid'}
         || $args{'map_type_accession'};
-    my $species_id        = $args{'species_id'};
-    my $published_on      = $args{'published_on'};
-    my $display_order     = $args{'display_order'};
-    $display_order        = $args{'map_set_display_order'} unless defined($display_order);
+    my $species_id    = $args{'species_id'};
+    my $published_on  = $args{'published_on'};
+    my $display_order = $args{'display_order'};
+    $display_order = $args{'map_set_display_order'}
+        unless defined($display_order);
     my $is_enabled        = $args{'is_enabled'};
     my $shape             = $args{'shape'};
     my $width             = $args{'width'};
@@ -2665,8 +2671,8 @@ Array of Hashes:
             .= " and map.map_id in (" . join( ',', sort @$map_ids ) . ") ";
     }
     elsif (@$map_accs) {
-        $where_sql
-            .= " and map.map_acc in ('" . join( q{','}, sort @$map_accs ) . "') ";
+        $where_sql .= " and map.map_acc in ('"
+            . join( q{','}, sort @$map_accs ) . "') ";
     }
     if ($map_name) {
         $where_sql .= " and map.map_name='$map_name' ";
@@ -6135,6 +6141,9 @@ Array of Hashes:
     if (@$feature_type_accs) {
         $sql_str .= " and cl.feature_type_acc1 in ('"
             . join( "','", sort @$feature_type_accs ) . "')";
+        $sql_str .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
+            . " or cl.feature_type_acc2 in ('"
+            . join( "','", sort @$feature_type_accs ) . "') )";
     }
 
     unless (
@@ -6800,6 +6809,9 @@ If $include_map1_data also has
     if (@$ignored_feature_type_accs) {
         $where_sql .= " and cl.feature_type_acc2 not in ('"
             . join( "','", sort @$ignored_feature_type_accs ) . "') ";
+        $where_sql .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
+            . " or cl.feature_type_acc1 not in ('"
+            . join( "','", sort @$ignored_feature_type_accs ) . "') )";
     }
 
     if ($min_correspondences) {

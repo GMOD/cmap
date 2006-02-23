@@ -1,0 +1,67 @@
+[%- IF form_data -%]
+  [%- SET map_sets = form_data.comp_maps -%]
+  <table>
+  <tr>
+    [%- IF map_sets.size -%]
+      [%- SET last_map_type = "" -%]
+      <td valign="top">
+      <select name="comp_map_set_[%- side | lower -%]" size=1 
+      onChange="changeCompMaps(
+        document.comparative_map_form.comparative_map_[%- side | lower -%],
+        this.selectedIndex - 1, 
+        new Array(
+          [%- SET not_first_map_set=0; -%]
+          [%- FOREACH ms=form_data.comp_maps -%]
+            [%- IF not_first_map_set -%]
+              ,
+            [%- ELSE -%]
+              [%- SET not_first_map_set=1; -%]
+            [%- END -%]
+            [%- SET not_first_map=0; -%]
+            new Array(
+            [%- FOREACH map=ms.maps; -%]
+              [%- IF not_first_map -%]
+                ,
+              [%- ELSE -%]
+                [%- SET not_first_map=1; -%]
+              [%- END -%]
+              new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]','[%- map.max_no_correspondences -%]')
+            [%- END -%]
+            )
+          [%- END -%]
+          )
+        ); 
+      ">
+         <option value=''>Add Map Set</option>
+         [%- FOREACH ms=map_sets -%]
+             <option value="[%- ms.map_set_acc -%]">
+             [%- ms.map_type -%] : [%- ms.species_common_name -%] - [%- ms.map_set_short_name -%] [[%- ms.map_count -%]]</option>      
+             
+             [%- SET last_map_type = ms.map_type -%]
+         [%- END -%]
+       </select>
+    </td>
+    <td  valign="top">
+      <select name="comparative_map_[%- side | lower -%]"  style="width:100%" size="3" multiple>
+        <option value=''>No Map Set Selected</option> 
+      </select>
+    </td> 
+    [%- ELSE -%]
+      <td valign="top">No maps available at these settings.</td></tr><tr>
+    [%- END -%]
+    <td valign="top">
+      Min. Correspondences:
+      <input 
+          type="text" 
+          size=4 
+          name="corr_menu_min_corrs_[%- side | lower -%]" 
+          value='[% corr_menu_min_corrs %]' 
+          onKeyPress="return event.keyCode!=13"
+       >
+    </td>
+    <td valign="top"><input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu"></td>
+  </tr>
+  </table>
+[%- ELSE -%]
+  <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Data">
+[%- END -%]

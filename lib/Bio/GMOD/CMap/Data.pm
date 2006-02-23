@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.266 2006-02-12 16:15:08 mwz444 Exp $
+# $Id: Data.pm,v 1.267 2006-02-23 17:11:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.266 $)[-1];
+$VERSION = (qw$Revision: 1.267 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1399,37 +1399,6 @@ sub cmap_form_data {
     }
 
     my @slot_nos = sort { $a <=> $b } keys %$slots;
-    my ( $comp_maps_right, $comp_maps_left );
-    if ( $self->slot_info and @slot_nos ) {
-        $comp_maps_right = $self->get_comparative_maps(
-            min_correspondences         => $menu_min_corrs,
-            feature_type_accs           => $feature_type_accs,
-            ignored_feature_type_accs   => $ignored_feature_type_accs,
-            included_evidence_type_accs => $included_evidence_type_accs,
-            ignored_evidence_type_accs  => $ignored_evidence_type_accs,
-            less_evidence_type_accs     => $less_evidence_type_accs,
-            greater_evidence_type_accs  => $greater_evidence_type_accs,
-            evidence_type_score         => $evidence_type_score,
-            ref_slot_no                 => $slot_nos[-1],
-            pid                         => $pid,
-        );
-
-        $comp_maps_left =
-              $slot_nos[0] == $slot_nos[-1]
-            ? $comp_maps_right
-            : $self->get_comparative_maps(
-            min_correspondences         => $menu_min_corrs,
-            feature_type_accs           => $feature_type_accs,
-            ignored_feature_type_accs   => $ignored_feature_type_accs,
-            included_evidence_type_accs => $included_evidence_type_accs,
-            ignored_evidence_type_accs  => $ignored_evidence_type_accs,
-            less_evidence_type_accs     => $less_evidence_type_accs,
-            greater_evidence_type_accs  => $greater_evidence_type_accs,
-            evidence_type_score         => $evidence_type_score,
-            ref_slot_no                 => $slot_nos[0],
-            pid                         => $pid,
-            );
-    }
 
     #
     # Correspondence evidence types.
@@ -1450,18 +1419,83 @@ sub cmap_form_data {
     }
 
     return {
-        ref_species_acc        => $ref_species_acc,
-        ref_species            => $ref_species,
-        ref_map_sets           => $ref_map_sets,
-        ref_map_set_acc        => $ref_map_set_acc,
-        ref_maps               => $ref_maps,
-        ordered_ref_maps       => \@ref_maps,
-        ref_map_set_info       => $ref_map_set_info,
-        comparative_maps_right => $comp_maps_right,
-        comparative_maps_left  => $comp_maps_left,
-        slot_info              => $slot_info,
-        evidence_types         => \@evidence_types,
+        ref_species_acc  => $ref_species_acc,
+        ref_species      => $ref_species,
+        ref_map_sets     => $ref_map_sets,
+        ref_map_set_acc  => $ref_map_set_acc,
+        ref_maps         => $ref_maps,
+        ordered_ref_maps => \@ref_maps,
+        ref_map_set_info => $ref_map_set_info,
+        slot_info        => $slot_info,
+        evidence_types   => \@evidence_types,
     };
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 correspondence_form_data
+
+Returns the data for the main comparative map HTML form.
+
+=cut
+
+sub correspondence_form_data {
+
+    #print ST#DERR "correspondence_form_data\n";
+    my ( $self, %args ) = @_;
+    my $slots = $args{'slots'} or return;
+    my $menu_min_corrs = $args{'menu_min_corrs'} || 0;
+    my $url_feature_default_display = $args{'url_feature_default_display'}
+        || q{};
+    my $included_feature_type_accs  = $args{'included_feature_types'}  || [];
+    my $ignored_feature_type_accs   = $args{'ignored_feature_types'}   || [];
+    my $corr_only_feature_type_accs = $args{'corr_only_feature_types'} || [];
+    my $included_evidence_type_accs = $args{'included_evidence_types'} || [];
+    my $ignored_evidence_type_accs  = $args{'ignored_evidence_types'}  || [];
+    my $less_evidence_type_accs     = $args{'less_evidence_types'}     || [];
+    my $greater_evidence_type_accs  = $args{'greater_evidence_types'}  || [];
+    my $evidence_type_score         = $args{'evidence_type_score'}     || {};
+    my $slots_min_corrs             = $args{'slots_min_corrs'}         || {};
+    my $side                        = $args{'side'}                    || q{};
+
+    my @ref_maps = ();
+    $self->fill_type_arrays(
+        included_feature_type_accs  => $included_feature_type_accs,
+        corr_only_feature_type_accs => $corr_only_feature_type_accs,
+        ignored_feature_type_accs   => $ignored_feature_type_accs,
+        url_feature_default_display => $url_feature_default_display,
+        ignored_evidence_type_accs  => $ignored_evidence_type_accs,
+        included_evidence_type_accs => $included_evidence_type_accs,
+        less_evidence_type_accs     => $less_evidence_type_accs,
+        greater_evidence_type_accs  => $greater_evidence_type_accs,
+    );
+    $self->slot_info(
+        $slots,                       $ignored_feature_type_accs,
+        $included_evidence_type_accs, $less_evidence_type_accs,
+        $greater_evidence_type_accs,  $evidence_type_score,
+        $slots_min_corrs,
+        )
+        or return;
+
+    my $comp_maps;
+    my @slot_nos = sort { $a <=> $b } keys %$slots;
+    if ( $self->slot_info and @slot_nos ) {
+        $comp_maps = $self->get_comparative_maps(
+            min_correspondences         => $menu_min_corrs,
+            feature_type_accs           => $included_feature_type_accs,
+            ignored_feature_type_accs   => $ignored_feature_type_accs,
+            included_evidence_type_accs => $included_evidence_type_accs,
+            ignored_evidence_type_accs  => $ignored_evidence_type_accs,
+            less_evidence_type_accs     => $less_evidence_type_accs,
+            greater_evidence_type_accs  => $greater_evidence_type_accs,
+            evidence_type_score         => $evidence_type_score,
+            ref_slot_no => lc($side) eq 'left' ? $slot_nos[0] : $slot_nos[-1],
+        );
+    }
+
+    return { comp_maps => $comp_maps, };
 }
 
 # ----------------------------------------------------
@@ -1486,7 +1520,6 @@ out which maps have relationships.
     my $greater_evidence_type_accs  = $args{'greater_evidence_type_accs'};
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $ref_slot_no                 = $args{'ref_slot_no'};
-    my $pid                         = $args{'pid'};
     my $sql_object                  = $self->sql or return;
     return unless defined $ref_slot_no;
 
@@ -1560,8 +1593,9 @@ out which maps have relationships.
         } values %map_sets
         )
     {
-        my @maps;                    # the maps for the map set
-        my $total_correspondences;   # all the correspondences for the map set
+        my @maps;    # the maps for the map set
+        my $total_corrs = 0;    # all the correspondences for the map set
+        my $total_maps  = 0;    # all the matching maps in the map set
 
         my $display_order_sort = sub {
             $a->{'display_order'} <=> $b->{'display_order'}
@@ -1586,11 +1620,12 @@ out which maps have relationships.
                 if $min_correspondences
                 && $map->{'max_no_correspondences'} < $min_correspondences;
 
-            $total_correspondences += $map->{'no_correspondences'};
+            $total_corrs += $map->{'no_correspondences'};
+            $total_maps++;
             push @maps, $map if not $map_set->{'is_relational_map'};
         }
 
-        next unless $total_correspondences;
+        next unless $total_corrs;
         next if ( !@maps and not $map_set->{'is_relational_map'} );
 
         push @sorted_map_sets,
@@ -1600,7 +1635,8 @@ out which maps have relationships.
             map_set_name        => $map_set->{'map_set_name'},
             map_set_short_name  => $map_set->{'map_set_short_name'},
             map_set_acc         => $map_set->{'map_set_acc'},
-            no_correspondences  => $total_correspondences,
+            no_correspondences  => $total_corrs,
+            map_count           => $total_maps,
             maps                => \@maps,
             };
     }
@@ -1689,9 +1725,9 @@ sub fill_out_slots {
         $flip_hash{ $row->{'slot_no'} }->{ $row->{'map_acc'} } = 1;
     }
 
-    my @slots;
+    my @filled_slots;
     for my $i ( 0 .. $#ordered_slot_nos ) {
-        my $slot;
+        my $filled_slot;
         my $slot_no   = $ordered_slot_nos[$i];
         my $slot_info = $self->slot_info->{$slot_no};
         my $map_sets  = $sql_object->get_map_set_info_by_maps(
@@ -1710,17 +1746,18 @@ sub fill_out_slots {
                     . $row->{'map_set_short_name'};
             }
         }
-        $slot->{'description'} = join( ";",
+        $filled_slot->{'description'} = join( ";",
             map { $desc_by_species{$_} } keys(%desc_by_species) );
+        $filled_slot->{'min_corrs'} = $slots->{$slot_no}->{'min_corrs'};
 
         if ( $slot_no == 0 ) {
-            $slot->{'is_reference_slot'} = 1;
+            $filled_slot->{'is_reference_slot'} = 1;
         }
-        $slot->{'slot_no'} = $slot_no;
-        $slot->{'maps'}    = $slots->{$slot_no}{'maps'};
+        $filled_slot->{'slot_no'} = $slot_no;
+        $filled_slot->{'maps'}    = $slots->{$slot_no}{'maps'};
 
         # Get map information for each map
-        my @map_accs = keys %{ $slot->{'maps'} || {} };
+        my @map_accs = keys %{ $filled_slot->{'maps'} || {} };
         if (@map_accs) {
 
             my $maps = $sql_object->get_maps(
@@ -1729,22 +1766,25 @@ sub fill_out_slots {
             );
             foreach my $map ( @{ $maps || [] } ) {
                 my $map_acc = $map->{'map_acc'};
-                $slot->{'maps'}{$map_acc}{'map_name'} = $map->{'map_name'};
-                unless ( defined $slot->{'maps'}{$map_acc}{'start'} ) {
-                    $slot->{'maps'}{$map_acc}{'start'} = $map->{'map_start'};
+                $filled_slot->{'maps'}{$map_acc}{'map_name'}
+                    = $map->{'map_name'};
+                unless ( defined $filled_slot->{'maps'}{$map_acc}{'start'} ) {
+                    $filled_slot->{'maps'}{$map_acc}{'start'}
+                        = $map->{'map_start'};
                 }
-                unless ( defined $slot->{'maps'}{$map_acc}{'stop'} ) {
-                    $slot->{'maps'}{$map_acc}{'stop'} = $map->{'map_stop'};
+                unless ( defined $filled_slot->{'maps'}{$map_acc}{'stop'} ) {
+                    $filled_slot->{'maps'}{$map_acc}{'stop'}
+                        = $map->{'map_stop'};
                 }
-                $slot->{'maps'}{$map_acc}{'flip'}
+                $filled_slot->{'maps'}{$map_acc}{'flip'}
                     = ( $flip_hash{$slot_no}->{$map_acc} ) ? 1 : 0;
             }
         }
 
-        push @slots, $slot;
+        push @filled_slots, $filled_slot;
     }
 
-    return \@slots;
+    return \@filled_slots;
 }
 
 # ----------------------------------------------------

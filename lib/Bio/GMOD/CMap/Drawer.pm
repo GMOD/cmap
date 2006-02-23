@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.120 2006-02-15 18:44:05 mwz444 Exp $
+# $Id: Drawer.pm,v 1.121 2006-02-23 17:12:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -363,7 +363,7 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type
     label_features included_feature_types corr_only_feature_types
-    url_feature_default_display pixel_height 
+    url_feature_default_display pixel_height
     included_evidence_types ignored_evidence_types ignored_feature_types
     less_evidence_types greater_evidence_types evidence_type_score
     config data_source left_min_corrs right_min_corrs
@@ -1178,14 +1178,14 @@ Lays out the image and writes it to the file system, set the "image_name."
         }
 
         my $map = Bio::GMOD::CMap::Drawer::Map->new(
-            drawer      => $self,
-            slot_no     => $slot_no,
-            maps        => $data,
-            config      => $self->config(),
-            aggregate   => $self->aggregate,
-            clean_view  => $self->clean_view,
-            scale_maps  => $self->scale_maps,
-            stack_maps  => $self->stack_maps,
+            drawer     => $self,
+            slot_no    => $slot_no,
+            maps       => $data,
+            config     => $self->config(),
+            aggregate  => $self->aggregate,
+            clean_view => $self->clean_view,
+            scale_maps => $self->scale_maps,
+            stack_maps => $self->stack_maps,
             )
             or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
@@ -1571,14 +1571,15 @@ sub draw_image {
 Do the actual drawing.
 
 =cut
-    my $self      = shift;
+
+    my $self = shift;
 
     my @data      = $self->drawing_data;
     my $height    = $self->map_height;
     my $width     = $self->map_width;
     my $img_class = $self->image_class;
     my $img       = $img_class->new( $width, $height );
-    my %colors =
+    my %colors    =
         map {
         $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
         }
@@ -1813,7 +1814,7 @@ to connect corresponding features on two maps.
     my $ref_side    = $slot_no > 0 ? RIGHT: LEFT;
     my $cur_side    = $slot_no > 0 ? LEFT: RIGHT;
 
-    #return unles ref slot no is is defined and not ""
+    # Return unless ref slot no is is defined and not ""
     unless ( defined($ref_slot_no) and ( $ref_slot_no or $ref_slot_no == 0 ) )
     {
         return ();
@@ -2385,7 +2386,8 @@ Returns the data for one or all slots.
     my $data = $self->data;
 
     if ( defined( my $slot_no = shift ) ) {
-        return exists $data->{'slot_data'}{$slot_no}
+        return
+            exists $data->{'slot_data'}{$slot_no}
             ? $data->{'slot_data'}{$slot_no}
             : undef;
     }
@@ -2555,8 +2557,7 @@ Returns the pixel height of the image based upon the requested "image_size."
     my $self = shift;
     my $arg  = shift;
 
-    if ( $arg ) {
-print STDERR "$arg\n";
+    if ($arg) {
         $self->{'pixel_height'} = $arg;
     }
 
