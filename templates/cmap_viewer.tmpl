@@ -80,13 +80,6 @@ function startPage(){
 } 
 
 function beforeSubmit(){
-  //Clean things up before submitting to decrease the URL clutter
-  var select = document.comparative_map_form.ori_ref_map_order;
-  select.selectedIndex = -1;
-  document.comparative_map_form.ref_map_order_display.value='';
-  if (document.comparative_map_form.ref_map_order.value != '' ){
-    document.comparative_map_form.prev_ref_map_order.value = '';
-  }
 }
 
 function selectFeatureRadio(val){
@@ -114,34 +107,6 @@ function selectEvidenceRadio(val){
       else{
         radios[i].checked=false;
       }
-    }
-  }
-}
-
-function moveOrderedMaps() {
-  select        = document.comparative_map_form.ori_ref_map_order;
-  selectOptions = select.options;
-  for ( var i=0;i<selectOptions.length;i++){
-    if (selectOptions[i].selected){
-      document.comparative_map_form.ref_map_order_display.value = 
-        document.comparative_map_form.ref_map_order_display.value + selectOptions[i].text + ",";
-      document.comparative_map_form.ref_map_order.value = 
-        document.comparative_map_form.ref_map_order.value + selectOptions[i].value + ",";
-      select.remove(i);
-      i--;
-    }
-  }
-}
-function moveOrderedMapsRev() {
-  select        = document.comparative_map_form.ori_ref_map_order;
-  selectOptions = select.options;
-  for ( var i=selectOptions.length-1;i>=0;i--){
-    if (selectOptions[i].selected){
-      document.comparative_map_form.ref_map_order_display.value = 
-        document.comparative_map_form.ref_map_order_display.value + selectOptions[i].text + ",";
-      document.comparative_map_form.ref_map_order.value = 
-        document.comparative_map_form.ref_map_order.value + selectOptions[i].value + ",";
-      select.remove(i);
     }
   }
 }
@@ -234,15 +199,6 @@ function stringify_form(form) {
     }
   }
   return query_string;
-}
-
-
-
-function selectAllOptions(select){
-  var options = select.options;
-  for ( var i=0;i<options.length;i++){  
-    options[i].selected=1;
-  }
 }
 </script>
 [%- IF extra_code -%]
@@ -484,6 +440,7 @@ function selectAllOptions(select){
             </span>
               <input type="submit" value="Redraw" name="sub">
               <input type="reset"  value="Reset">
+            <br>
 
             <div id="corr_menu_left">
                <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(this.form))" value="Add Maps Left">
@@ -578,53 +535,16 @@ function selectAllOptions(select){
                   [%- END -%]
                 [%- END -%]
               </table>
-
+            
             <!-- End Individual Maps -->
             <div id="corr_menu_right">
                <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(this.form))" value="Add Maps Right">
             </div>
             Format: Name [Total correspondences to slot, Max correspondences to single map]
-
             <br>
 
-            <table border="0">
-              [%- IF form_data.ordered_ref_maps.size > 1; -%]
-                <tr>
-                  <td align="left" valign="center" colspan=5>
-                    <table border=0>
-                      <tr>
-                        <td colspan=3>Reference Map Order:</td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <select name="ori_ref_map_order" multiple size=5>
-                          [%- FOREACH map=form_data.ordered_ref_maps -%]
-                            <option value='[%- map.map_acc -%]'>[%- map.map_name -%]</option>
-                          [%- END -%]
-                          </select>
-                        </td>
-                        <td>
-                          <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
-                          <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
-                        </td>
-                        <td>
-                          <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
-                          <input type=hidden name=ref_map_order>
-                          <input type=hidden name=prev_ref_map_order value="[%- prev_ref_map_order -%]">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colspan=2>
-                          <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              [%- END -%]
-            </table>
-
             hint: To save time, select the desired options before redrawing the map.<br>
+            <input type=button value="New Reference Maps" onClick="location.href='[% apr.url %]/viewer'"><br>
             <input type="submit" value="Redraw" name="sub">
             <input type="reset"  value="Reset">
             <span  
