@@ -1,7 +1,5 @@
 [%- IF form_data -%]
   [%- SET map_sets = form_data.comp_maps -%]
-  <table>
-  <tr>
     [%- IF map_sets.size -%]
       [%- SET last_map_type = "" -%]
       <td valign="top">
@@ -60,8 +58,8 @@
        >
     </td>
     <td valign="top"><input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu"></td>
-  </tr>
-  </table>
 [%- ELSE -%]
+  <tr><td>
   <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Data">
+  </tr></td>
 [%- END -%]

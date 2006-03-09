@@ -442,11 +442,16 @@ function stringify_form(form) {
               <input type="reset"  value="Reset">
             <br>
 
-            <div id="corr_menu_left">
-               <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(this.form))" value="Add Maps Left">
-            </div>
+            <table border=1 cellspacing="0" cellpadding="0">
+              <tr>
+                <td colspan=4>
+                <div id="corr_menu_left">
+                       <a href="javascript:ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(window.document.comparative_map_form))">Add Maps</a>
+                </div>
+                  </td>
+                  <td></td> <td></td> <td></td>
+              </tr>
             <!-- Individual Maps -->
-              <table border=1 cellspacing="0" cellpadding="0">
                 [%- FOREACH slot=form_data.slot_info -%]
                   [% SET bgcolor = '' %]
                   [% IF slot.is_reference_slot %]
@@ -534,12 +539,16 @@ function stringify_form(form) {
                     </tr> 
                   [%- END -%]
                 [%- END -%]
-              </table>
-            
-            <!-- End Individual Maps -->
-            <div id="corr_menu_right">
-               <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(this.form))" value="Add Maps Right">
-            </div>
+              <!-- End Individual Maps -->
+              <tr>
+                <td colspan=4>
+                <div id="corr_menu_right">
+                       <a href="javascript:ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(window.document.comparative_map_form))">Add Maps</a>
+                </div>
+                  </td>
+                  <td></td> <td></td> <td></td>
+              </tr>
+            </table>
             Format: Name [Total correspondences to slot, Max correspondences to single map]
             <br>
 
