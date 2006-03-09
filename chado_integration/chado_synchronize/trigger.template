@@ -1,0 +1,748 @@
+
+-- CMap triggers and functions for organism table --
+CREATE OR REPLACE FUNCTION cmap_organism_updated() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM organism_dbxref odbx, dbxref, db
+        where odbx.organism_id = ]
+        . $_TD->{new}{organism_id} . q[ 
+            and odbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_species\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $species_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+            my $species_full_name
+                = $_TD->{new}{\'genus\'} . q{ } . $_TD->{new}{\'species\'}
+                || $_TD->{new}{\'common_name\'}
+                || $_TD->{new}{\'abbreviation\'};
+            my $species_common_name = $_TD->{new}{\'common_name\'}
+                || $_TD->{new}{\'abbreviation\'}
+                || $species_full_name;
+
+            $cmap_admin->sql()->update_species(
+                cmap_object             => $cmap_admin,
+                species_id              => $species_id,
+                species_common_name     => $species_common_name,
+                species_full_name       => $species_full_name,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_organism_updated_trig
+    BEFORE UPDATE ON organism
+    FOR EACH ROW EXECUTE PROCEDURE cmap_organism_updated();
+
+CREATE OR REPLACE FUNCTION cmap_organism_deleted() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM organism_dbxref odbx, dbxref, db
+        where odbx.organism_id = ]
+        . $_TD->{new}{organism_id} . q[ 
+            and odbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_species\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $species_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+            $cmap_admin->species_delete(
+                species_id     => $species_id,
+                cascade_delete => 1,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_organism_deleted_trig
+    BEFORE DELETE ON organism
+    FOR EACH ROW EXECUTE PROCEDURE cmap_organism_deleted();
+
+-- CMap triggers and functions for featureset table --
+CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
+
+    # get map set type and remove improper chars
+    my $sql_str = q[ select name from cvterm where cvterm_id = ]
+        . $_TD->{\'new\'}{\'feature_type_id\'};
+    my $rv           = spi_exec_query($sql_str);
+    my $map_type_acc = $rv->{\'rows\'}[0]{\'name\'};
+    $map_type_acc =~ s/\s+/_/g;
+
+    use Bio::GMOD::CMap::Admin;
+    my $cmap_admin
+        = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\', );
+
+    my $species_id;
+    my $organism_id = $_TD->{new}{organism_id};
+    $sql_str = q[
+        SELECT dbxref.accession 
+        FROM organism_dbxref odbx, dbxref, db
+        where odbx.organism_id = ]
+        . $organism_id . q[ 
+            and odbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_species\'
+    ];
+    $rv = spi_exec_query($sql_str);
+    if ( $rv->{\'processed\'} ) {
+        $species_id = $rv->{\'rows\'}[0]{\'accession\'};
+    }
+    else {
+
+        # Create new species
+        my $organism_sql = q[
+            select distinct
+                o.organism_id,
+                o.abbreviation,
+                o.genus,
+                o.species,
+                o.common_name,
+                o.comment
+            from organism o
+            where o.organism_id = ] . $organism_id;
+        $rv = spi_exec_query($organism_sql);
+
+        my $species_full_name
+            = $rv->{\'rows\'}[0]{\'genus\'} . q{ } . $rv->{\'rows\'}[0]{\'species\'}
+            || $rv->{\'rows\'}[0]{\'common_name\'}
+            || $rv->{\'rows\'}[0]{\'abbreviation\'};
+        my $species_common_name = $rv->{\'rows\'}[0]{\'common_name\'}
+            || $rv->{\'rows\'}[0]{\'abbreviation\'}
+            || $species_full_name;
+        my $display_order = 1;
+
+        $species_id = $cmap_sql_object->insert_species(
+            cmap_object         => $cmap_object,
+            species_common_name => $species_common_name,
+            species_full_name   => $species_full_name,
+            display_order       => $display_order,
+        );
+
+        # Insert dbxref
+        spi_exec_query(
+            q[
+              insert into dbxref ( db_id, accession)
+                select (db_id, \'] . $species_id . q[
+                from db where name = \'CMAP_BASE_NAME_species\'
+             ]
+        );
+        $rv = spi_exec_query(
+            q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
+        spi_exec_query(
+            q[
+                insert into organism_dbxref
+                ( dbxref_id, organism_id)
+                    values ( ]
+                . $rv->{rows}[0]{\'dbxref_id\'} . q[,\'] . $organism_id . q[\')]
+        );
+
+    }
+
+    my $featureset_id      = $_TD->{\'new\'}{\'featureset_id\'};
+    my $map_set_name       = $_TD->{\'new\'}{\'name\'};
+    my $map_set_short_name = $_TD->{\'new\'}{\'uniquename\'};
+
+    # Insert
+    my $map_set_id = $cmap_admin->map_set_create(
+        map_set_name       => $map_set_name,
+        map_set_short_name => $map_set_short_name,
+        map_type_acc       => $map_type_acc,
+        species_id         => $species_id,
+    );
+    spi_exec_query(
+        q[
+          insert into dbxref ( db_id, accession)
+            select (db_id, \'] . $map_set_id . q[
+            from db where name = \'CMAP_BASE_NAME_map_set\'
+         ]
+    );
+    $rv = spi_exec_query(
+        q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
+    spi_exec_query(
+        q[
+            insert into featureset_dbxref
+            ( dbxref_id, featureset_id)
+                values ( ]
+            . $rv->{rows}[0]{\'dbxref_id\'} . q[,\'] . $featureset_id . q[\')]
+    );
+
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureset_created_trig
+    BEFORE INSERT ON featureset
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureset_created();
+
+CREATE OR REPLACE FUNCTION cmap_featureset_updated() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM featureset_dbxref fsdbx, dbxref, db
+        where fsdbx.featureset_id = ]
+        . $_TD->{new}{featureset_id} . q[ 
+            and fsdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_map_set\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $map_set_id         = $rv->{\'rows\'}[$rn]{\'accession\'};
+            my $map_set_name       = $_TD->{new}{\'name\'};
+            my $map_set_short_name = $_TD->{new}{\'uniquename\'};
+
+            $cmap_admin->sql()->update_map_set(
+                cmap_object        => $cmap_admin,
+                map_set_id         => $map_set_id,
+                map_set_name       => $map_set_name,
+                map_set_short_name => $map_set_short_name,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureset_updated_trig
+    BEFORE UPDATE ON featureset
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureset_updated();
+
+CREATE OR REPLACE FUNCTION cmap_featureset_deleted() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM featureset_dbxref fsdbx, dbxref, db
+        where fsdbx.featureset_id = ]
+        . $_TD->{new}{featureset_id} . q[ 
+            and fsdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_map_set\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $map_set_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+            $cmap_admin->map_set_delete(
+                cmap_object => $cmap_admin,
+                map_set_id  => $map_set_id,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureset_deleted_trig
+    BEFORE DELETE ON featureset
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureset_deleted();
+
+
+-- CMap triggers and functions for feature_featureset table --
+CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS '
+
+    use Bio::GMOD::CMap::Admin;
+    my $cmap_admin
+        = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\', );
+
+    my $map_set_id;
+    my $featureset_id = $_TD->{new}{featureset_id};
+    my $ch_feature_id = $_TD->{\'new\'}{\'feature_id\'};
+    my $sql_str       = q[
+        SELECT dbxref.accession 
+        FROM featureset_dbxref fsdbx, dbxref, db
+        where fsdbx.featureset_id = ]
+        . $featureset_id . q[ 
+            and fsdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_map_set\'
+    ];
+    my $rv = spi_exec_query($sql_str);
+    $map_set_id = $rv->{\'rows\'}[0]{\'accession\'};
+
+    $sql_str = q[
+        select
+            f.feature_id,
+            f.name as map_name,
+            f.uniquename,
+            f.seqlen
+        from feature f
+        where f.feature_id = ] . $ch_feature_id;
+    $rv = spi_exec_query($sql_str);
+
+    my $map_name = $rv->{\'rows\'}[0]{\'map_name\'}
+        || $rv->{\'rows\'}[0]{\'uniquename\'}
+        || \'UNNAMED\';
+    my $display_order = 1;
+    my $map_start     = 1;
+    my $map_stop      = $new_feature->{\'seqlen\'};
+
+    # Insert
+    my $map_id = $cmap_admin->sql()->insert_map(
+        cmap_object   => $cmap_admin,
+        map_set_id    => $map_set_id,
+        map_name      => $map_name,
+        display_order => $display_order,
+        map_start     => $map_start,
+        map_stop      => $map_stop,
+    );
+
+    spi_exec_query(
+        q[
+          insert into dbxref ( db_id, accession)
+            select (db_id, \'] . $map_id . q[
+            from db where name = \'CMAP_BASE_NAME_map\'
+         ]
+    );
+    $rv = spi_exec_query(
+        q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
+    spi_exec_query(
+        q[
+            insert into feature_dbxref
+            ( dbxref_id, feature_id)
+                values ( ]
+            . $rv->{rows}[0]{\'dbxref_id\'} . q[,\'] . $feature_id . q[\')]
+    );
+
+    # Add the applicable features
+    $sql_str = q[
+        select
+            floc.featureloc_id,
+            f.name,
+            f.feature_id,
+            f.uniquename,
+            floc.fmin as feature_start,
+            floc.fmax as feature_stop,
+            floc.strand as direction,
+            cvt.name as type_name
+        from
+            featureloc floc,
+            feature f,
+            cvterm cvt
+            where f.type_id = cvt.cvterm_id
+            and f.feature_id = floc.feature_id
+            and floc.srcfeature_id = ] . $ch_feature_id;
+
+    my $sub_features = spi_exec_query($sql_str);
+    my $nrows        = $sub_features->{processed};
+    if ($nrows) {
+        my $feature_type_data
+            = $cmap_object->feature_type_data($feature_type_acc);
+        my %failed_feature_types;
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+
+            # get feature type and remove improper chars
+            my $feature_type_acc = $sub_features->{\'rows\'}[$rn]{\'type_name\'};
+            $feature_type_acc =~ s/\s+/_/g;
+            if ( $failed_feature_types{$feature_type_acc} ) {
+                next;
+            }
+
+            unless ( $feature_type_data and %$feature_type_data ) {
+                $failed_feature_types{$feature_type_acc} = 1;
+                next;
+            }
+
+            # Get map type params
+            my $featureloc_id = $sub_features->{\'rows\'}[$rn]{\'featureloc_id\'};
+            my $feature_name  = $sub_features->{\'rows\'}[$rn]{\'name\'}
+                || $sub_features->{\'rows\'}[$rn]{\'uniquename\'};
+            my $is_landmark   = $feature_type_data->{\'is_landmark\'} || 0;
+            my $feature_start = $sub_features->{\'rows\'}[$rn]{\'feature_start\'};
+            my $feature_stop  = $sub_features->{\'rows\'}[$rn]{\'features_stop\'};
+            unless ( defined $feature_stop ) {
+                $feature_stop = $feature_start;
+            }
+            my $default_rank = $feature_type_data->{\'default_rank\'} || 1;
+            my $direction;
+            if ( defined( $sub_features->{\'rows\'}[$rn]{\'strand\'} )
+                and $sub_features->{\'rows\'}[$rn]{\'strand\'} < 0 )
+            {
+                $direction = -1;
+            }
+            else {
+                $direction = 1;
+            }
+
+            # Insert
+            my $cmap_feature_id = $cmap_admin->sql()->insert_feature(
+                cmap_object      => $cmap_admin,
+                map_id           => $map_id,
+                feature_type_acc => $feature_type_acc,
+                feature_name     => $feature_name,
+                is_landmark      => $is_landmark,
+                feature_start    => $feature_start,
+                feature_stop     => $feature_stop,
+                default_rank     => $default_rank,
+                direction        => $direction,
+            );
+
+            spi_exec_query(
+                q[
+                  insert into dbxref ( db_id, accession)
+                    select (db_id, \'] . $cmap_feature_id . q[
+                    from db where name = \'CMAP_BASE_NAME_feature\'
+                 ]
+            );
+            $rv = spi_exec_query(
+                q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
+            spi_exec_query(
+                q[
+                    insert into feature_dbxref
+                    ( dbxref_id, feature_id)
+                        values ( ]
+                    . $rv->{rows}[0]{\'dbxref_id\'} . q[,\']
+                    . $sub_features->{\'rows\'}[$rn]{\'feature_id\'} . q[\')]
+            );
+        }
+    }
+
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_feature_featureset_created_trig
+    BEFORE INSERT ON feature_featureset
+    FOR EACH ROW EXECUTE PROCEDURE cmap_feature_featureset_created();
+
+CREATE OR REPLACE FUNCTION cmap_feature_featureset_deleted() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM feature_dbxref fdbx, dbxref, db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_map\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $map_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+            $cmap_admin->map_delete(
+                cmap_object => $cmap_admin,
+                map_id      => $map_id,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_feature_featureset_deleted_trig
+    BEFORE DELETE ON feature_featureset
+    FOR EACH ROW EXECUTE PROCEDURE cmap_feature_featureset_deleted();
+
+
+-- CMap triggers and functions for featureloc table --
+CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession as map_id
+        FROM feature_dbxref fdbx, 
+             dbxref, 
+             db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{srcfeature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_map\'
+    ];
+
+    my $rv = spi_exec_query($sql_str);
+
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        my $map_id        = $rv->{\'rows\'}[0]{\'map_id\'};
+        my $ch_feature_id = $_TD->{new}{feature_id};
+        my $featureloc_id = $_TD->{new}{featureloc_id};
+        my $feature_start = $_TD->{new}{fmin};
+        my $feature_stop  = $_TD->{new}{fmax};
+        unless ( defined $feature_stop ) {
+            $feature_stop = $feature_start;
+        }
+        my $direction;
+        if ( defined( $_TD->{new}{\'strand\'} )
+            and $_TD->{new}{\'strand\'} < 0 )
+        {
+            $direction = -1;
+        }
+        else {
+            $direction = 1;
+        }
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        $sql_str = q[
+            select
+                f.name,
+                f.feature_id,
+                f.uniquename,
+                cvt.name as type_name
+            from
+                feature f,
+                cvterm cvt
+                where f.type_id = cvt.cvterm_id
+                and f.feature_id = ] . $ch_feature_id;
+
+        my $features = spi_exec_query($sql_str);
+        if ( $features->{processed} ) {
+            my $feature_type_data
+                = $cmap_object->feature_type_data($feature_type_acc);
+
+            # get feature type and remove improper chars
+            my $feature_type_acc = $features->{\'rows\'}[0]{\'type_name\'};
+            $feature_type_acc =~ s/\s+/_/g;
+
+            unless ( $feature_type_data and %$feature_type_data ) {
+
+                #return if the feature_type isn\'t in the cmap config
+                return;
+            }
+
+            # Get map type params
+            my $feature_name = $features->{\'rows\'}[0]{\'name\'}
+                || $features->{\'rows\'}[0]{\'uniquename\'};
+            my $is_landmark  = $feature_type_data->{\'is_landmark\'}  || 0;
+            my $default_rank = $feature_type_data->{\'default_rank\'} || 1;
+
+            # Insert
+            my $cmap_feature_id = $cmap_admin->sql()->insert_feature(
+                cmap_object      => $cmap_admin,
+                map_id           => $map_id,
+                feature_type_acc => $feature_type_acc,
+                feature_name     => $feature_name,
+                is_landmark      => $is_landmark,
+                feature_start    => $feature_start,
+                feature_stop     => $feature_stop,
+                default_rank     => $default_rank,
+                direction        => $direction,
+            );
+
+            spi_exec_query(
+                q[
+                  insert into dbxref ( db_id, accession)
+                    select (db_id, \'] . $cmap_feature_id . q[
+                    from db where name = \'CMAP_BASE_NAME_feature\'
+                 ]
+            );
+            $rv = spi_exec_query(
+                q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
+            spi_exec_query(
+                q[
+                    insert into feature_dbxref
+                    ( dbxref_id, feature_id)
+                        values ( ]
+                    . $rv->{rows}[0]{\'dbxref_id\'} . q[,\']
+                    . $features->{\'rows\'}[$rn]{\'feature_id\'} . q[\')]
+            );
+        }
+    }
+
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureloc_created_trig
+    BEFORE INSERT ON featureloc
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureloc_created();
+
+CREATE OR REPLACE FUNCTION cmap_featureloc_updated() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM feature_dbxref fdbx, dbxref, db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_feature\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        my $feature_start = $_TD->{new}{fmin};
+        my $feature_stop  = $_TD->{new}{fmax};
+        unless ( defined $feature_stop ) {
+            $feature_stop = $feature_start;
+        }
+        my $direction;
+        if ( defined( $_TD->{new}{\'strand\'} )
+            and $_TD->{new}{\'strand\'} < 0 )
+        {
+            $direction = -1;
+        }
+        else {
+            $direction = 1;
+        }
+
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $cmap_feature_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+
+            $cmap_admin->sql()->update_feature(
+                cmap_object   => $cmap_admin,
+                feature_id    => $cmap_feature_id,
+                feature_start => $feature_start,
+                feature_stop  => $feature_stop,
+                direction     => $direction,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureloc_updated_trig
+    BEFORE UPDATE ON featureloc
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureloc_updated();
+
+CREATE OR REPLACE FUNCTION cmap_featureloc_deleted() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession 
+        FROM feature_dbxref fdbx, dbxref, db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+            and db.name = \'CMAP_BASE_NAME_feature\'
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        use Bio::GMOD::CMap::Admin;
+        my $cmap_admin
+            = Bio::GMOD::CMap::Admin->new( data_source => \'CMAP_DATASOURCE\',
+            );
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            my $cmap_feature_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+            $cmap_admin->feature_delete(
+                cmap_object => $cmap_admin,
+                feature_id  => $cmap_feature_id,
+            );
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_featureloc_deleted_trig
+    BEFORE DELETE ON featureloc
+    FOR EACH ROW EXECUTE PROCEDURE cmap_featureloc_deleted();
+
+
+-- CMap triggers and functions for feature table --
+CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession, db.name as db_name
+        FROM feature_dbxref fdbx, dbxref, db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_feature\' ) {
+                use Bio::GMOD::CMap::Admin;
+                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
+                    data_source => \'CMAP_DATASOURCE\', );
+                my $cmap_feature_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+                my $feature_name    = $_TD->{new}{\'name\'}
+                    || $_TD->{new}{\'uniquename\'};
+
+                $cmap_admin->sql()->update_feature(
+                    cmap_object  => $cmap_admin,
+                    feature_id   => $cmap_feature_id,
+                    feature_name => $feature_name,
+                );
+            }
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
+                use Bio::GMOD::CMap::Admin;
+                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
+                    data_source => \'CMAP_DATASOURCE\', );
+                my $map_id   = $rv->{\'rows\'}[$rn]{\'accession\'};
+                my $map_name = $_TD->{new}{\'map_name\'}
+                    || $_TD->{new}{\'uniquename\'}
+                    || \'UNNAMED\';
+                my $map_stop = $_TD->{new}{\'seqlen\'};
+                $cmap_admin->sql()->update_map(
+                    cmap_object => $cmap_admin,
+                    map_id      => $map_id,
+                    map_name    => $feature_name,
+                    map_stop    => $map_stop,
+                );
+            }
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_feature_updated_trig
+    BEFORE UPDATE ON feature
+    FOR EACH ROW EXECUTE PROCEDURE cmap_feature_updated();
+
+CREATE OR REPLACE FUNCTION cmap_feature_deleted() RETURNS trigger AS '
+    my $sql_str = q[
+        SELECT dbxref.accession, db.name as db_name
+        FROM feature_dbxref fdbx, dbxref, db
+        where fdbx.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fdbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+    ];
+    my $rv    = spi_exec_query($sql_str);
+    my $nrows = $rv->{processed};
+    if ($nrows) {
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_feature\' ) {
+                use Bio::GMOD::CMap::Admin;
+                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
+                    data_source => \'CMAP_DATASOURCE\', );
+                my $cmap_feature_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+
+                $cmap_admin->feature_delete( feature_id => $cmap_feature_id,
+                );
+            }
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
+                use Bio::GMOD::CMap::Admin;
+                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
+                    data_source => \'CMAP_DATASOURCE\', );
+                my $map_id = $rv->{\'rows\'}[$rn]{\'accession\'};
+                $cmap_admin->map_delete( map_id => $map_id, );
+            }
+        }
+    }
+    return;
+' LANGUAGE plperlu;
+
+CREATE TRIGGER cmap_feature_deleted_trig
+    BEFORE DELETE ON feature
+    FOR EACH ROW EXECUTE PROCEDURE cmap_feature_deleted();
+
+
