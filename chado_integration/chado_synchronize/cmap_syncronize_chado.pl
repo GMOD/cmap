@@ -78,9 +78,7 @@ if ($cmap_datasource ne $cmap_object->data_source()){
 # This object is a direct link to the sql queries for CMap.
 my $cmap_sql_object = $cmap_object->sql();
 
-my $contact_id   = get_set_contact($dbh);
-die unless ($contact_id);
-my $db_ids_ref = get_set_all_dbs( $contact_id,$dbh );
+my $db_ids_ref = get_set_all_dbs( $dbh );
 
 print "Dealing with Species \n";
 my @selected_featureset_ids = select_featureset();
@@ -130,38 +128,12 @@ get_set_cmap_feature(
 
 #----------------------------------------------
 
-sub get_set_contact {
-    my $dbh = shift;
-    my $contact_id        = $dbh->selectrow_array(
-        q[
-            select contact_id
-            from   contact
-            where  description=?
-        ],
-        {}, (CMAP_BASE_NAME)
-    );
-    unless ($contact_id) {
-        $dbh->do(
-            q[
-                insert into contact 
-                ( description )
-                values (?)
-            ], {}, (CMAP_BASE_NAME)
-        );
-        $contact_id = $dbh->selectrow_array(
-            q[ select currval('contact_contact_id_seq') ],
-        );
-    }
-    return $contact_id;
-}
-
 sub get_set_all_dbs {
-    my $contact_id   = shift;
     my $dbh = shift;
     my $db_ids_ref;
 
     for my $db_type ( qw[ species map_set map feature ] ) {
-        $db_ids_ref->{$db_type} = get_set_db(CMAP_BASE_NAME.'_'.$db_type, $contact_id,$dbh);
+        $db_ids_ref->{$db_type} = get_set_db(CMAP_BASE_NAME.'_'.$db_type, $dbh);
     }
     
     return $db_ids_ref;
@@ -169,7 +141,6 @@ sub get_set_all_dbs {
 
 sub get_set_db {
     my $cmap_db_name = shift;
-    my $contact_id  = shift;
     my $dbh = shift;
     my $db_id        = $dbh->selectrow_array(
         q[
@@ -183,10 +154,10 @@ sub get_set_db {
         $dbh->do(
             q[
                 insert into db 
-                ( name, contact_id)
-                values (?,?)
+                ( name )
+                values (?)
             ],
-            {}, ( $cmap_db_name, $contact_id )
+            {}, ( $cmap_db_name )
         );
         $db_id
             = $dbh->selectrow_array( q[ select currval('db_db_id_seq') ], );
@@ -603,7 +574,7 @@ sub get_set_cmap_map {
             map_stop      => $map_stop,
         );
 
-        $chado_to_cmap_map{$new_feature->{'feature_id'}}= $map_id;
+        $chado_to_cmap_map{$feature_id}= $map_id;
         
         # Insert dbxref
         $dbh->do(
@@ -737,7 +708,7 @@ sub get_set_cmap_feature {
             unless ( defined $feature_stop ) {
                 $feature_stop = $feature_start;
             }
-            my $default_rank = $new_feature->{''};
+            my $default_rank = $feature_type_data->{'default_rank'} || 1;
             my $direction;
             if ( defined( $new_feature->{'strand'} )
                 and $new_feature->{'strand'} < 0 )
