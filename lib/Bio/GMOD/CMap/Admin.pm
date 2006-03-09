@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.88 2006-02-12 16:15:08 mwz444 Exp $
+# $Id: Admin.pm,v 1.89 2006-03-09 18:15:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -142,7 +142,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $corr_evidence_id = $args{'correspondence_evidence_id'}
-      or return $self->error('No correspondence evidence id');
+        or return $self->error('No correspondence evidence id');
     my $sql_object = $self->sql;
 
     my $evidences = $sql_object->get_correspondence_evidences(
@@ -150,9 +150,9 @@ Nothing
         correspondence_evidence_id => $corr_evidence_id,
     );
     return $self->error('Invalid correspondence evidence id')
-      unless (@$evidences);
-    my $feature_correspondence_id =
-      $evidences->[0]{'feature_correspondence_id'};
+        unless (@$evidences);
+    my $feature_correspondence_id
+        = $evidences->[0]{'feature_correspondence_id'};
 
     $self->attribute_delete( 'correspondence_evidence', $corr_evidence_id );
 
@@ -248,9 +248,9 @@ integrated with GBrowse and should not be used otherwise.
     my $map_id       = $args{'map_id'} or push @missing, 'map_id';
     my $feature_acc  = $args{'feature_acc'};
     my $feature_name = $args{'feature_name'}
-      or push @missing, 'feature_name';
+        or push @missing, 'feature_name';
     my $feature_type_acc = $args{'feature_type_acc'}
-      or push @missing, 'feature_type_acc';
+        or push @missing, 'feature_type_acc';
     my $feature_start = $args{'feature_start'};
     push @missing, 'start' unless $feature_start =~ /^$RE{'num'}{'real'}$/;
     my $feature_stop = $args{'feature_stop'};
@@ -260,8 +260,8 @@ integrated with GBrowse and should not be used otherwise.
     $gclass = undef unless ( $self->config_data('gbrowse_compatible') );
     my $sql_object = $self->sql or return $self->error;
 
-    my $default_rank =
-      $self->feature_type_data( $feature_type_acc, 'default_rank' ) || 1;
+    my $default_rank
+        = $self->feature_type_data( $feature_type_acc, 'default_rank' ) || 1;
 
     if (@missing) {
         return $self->error(
@@ -329,7 +329,7 @@ Create an alias for a feature.  The alias is searchable.
     my ( $self, %args ) = @_;
     my $sql_object = $self->sql;
     my $feature_id = $args{'feature_id'}
-      or return $self->error('No feature id');
+        or return $self->error('No feature id');
     my $alias = $args{'alias'} or return 1;
     my $features = $sql_object->get_features_simple(
         cmap_object => $self,
@@ -395,7 +395,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $feature_id = $args{'feature_id'}
-      or return $self->error('No feature id');
+        or return $self->error('No feature id');
 
     my $sql_object = $self->sql or return;
 
@@ -404,7 +404,7 @@ Nothing
         feature_id  => $feature_id,
     );
     return $self->error('Invalid feature id')
-      unless (@$features);
+        unless (@$features);
 
     my $map_id = $features->[0]{'map_id'};
 
@@ -511,8 +511,9 @@ If not defined, the object_id will be assigned to it.
     my $evidence_type_acc          = $args{'evidence_type_acc'};
     my $score                      = $args{'score'};
     my $evidence                   = $args{'correspondence_evidence'};
-    my $feature_correspondence_acc = $args{'feature_correspondence_acc'} || '';
-    my $is_enabled                 = $args{'is_enabled'};
+    my $feature_correspondence_acc = $args{'feature_correspondence_acc'}
+        || '';
+    my $is_enabled = $args{'is_enabled'};
     $is_enabled = 1 unless defined $is_enabled;
     my $threshold = $args{'threshold'} || 0;
     my $sql_object = $self->sql or return;
@@ -527,16 +528,16 @@ If not defined, the object_id will be assigned to it.
     }
 
     my $allow_update =
-      defined( $args{'allow_update'} )
-      ? $args{'allow_update'}
-      : 1;
+        defined( $args{'allow_update'} )
+        ? $args{'allow_update'}
+        : 1;
 
     if ($evidence_type_acc) {
         push @$evidence,
-          {
+            {
             evidence_type_acc => $evidence_type_acc,
             score             => $score,
-          };
+            };
     }
 
     #
@@ -572,7 +573,7 @@ If not defined, the object_id will be assigned to it.
     # Bail if no evidence.
     #$self->error('No evidence')
     return -1
-      unless @{ $evidence || [] };
+        unless @{ $evidence || [] };
 
     my $feature_correspondence_id = '';
     if ($allow_update) {
@@ -587,8 +588,8 @@ If not defined, the object_id will be assigned to it.
             disregard_evidence_type => 1,
         );
         if (@$corrs) {
-            $feature_correspondence_id =
-              $corrs->[0]{'feature_correspondence_id'};
+            $feature_correspondence_id
+                = $corrs->[0]{'feature_correspondence_id'};
         }
     }
     if ($feature_correspondence_id) {
@@ -598,7 +599,7 @@ If not defined, the object_id will be assigned to it.
         # Skip if a correspondence with this evidence type exists already.
         #
 
-        for ( my $i = 0 ; $i <= $#{$evidence} ; $i++ ) {
+        for ( my $i = 0; $i <= $#{$evidence}; $i++ ) {
             my $evidence_array = $sql_object->get_correspondence_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
@@ -618,14 +619,15 @@ If not defined, the object_id will be assigned to it.
 
         # New Correspondence
 
-        $feature_correspondence_id = $sql_object->insert_feature_correspondence(
+        $feature_correspondence_id
+            = $sql_object->insert_feature_correspondence(
             cmap_object => $self,
             feature_id1 => $feature_id1,
             feature_id2 => $feature_id2,
             is_enabled  => $is_enabled,
             evidence    => $evidence,
             threshold   => $threshold,
-        );
+            );
     }
 
     return $feature_correspondence_id || -1;
@@ -664,30 +666,56 @@ Nothing
     my $sql_object = $self->sql or return;
 
     print "Deleting Duplicate Correspondences\n";
-    my $duplicates =
-      $sql_object->get_duplicate_correspondences( cmap_object => $self );
+    print "Retrieving list of correspondences\n";
+    my $corr_hash = $sql_object->get_duplicate_correspondences_hash(
+        cmap_object => $self );
+    print "Retrieved list of correspondences\n\n";
+    print
+        "Examining correspondences.\n (A '.' will appear for each deleted correspondence\n";
 
+    my $feature_count = 0;
+    my $delete_count  = 0;
+    my $report_num    = 5000;
     ### Move any non-duplicate evidence from the duplicate to the original.
-    foreach my $dup (@$duplicates) {
-        print "Deleting correspondence id " . $dup->{'duplicate_id'} . "\n";
-        my $move_evidence = $sql_object->get_moveable_evidence(
-            cmap_object  => $self,
-            original_id  => $dup->{'original_id'},
-            duplicate_id => $dup->{'duplicate_id'},
-        );
-        if ( scalar(@$move_evidence) ) {
-            foreach my $evidence_id (@$move_evidence) {
-                $sql_object->update_correspondence_evidence(
-                    cmap_object                => $self,
-                    correspondence_evidence_id => $evidence_id,
-                    feature_correspondence_id  => $dup->{'original_id'},
+    foreach my $feature_id1 ( keys %{$corr_hash} ) {
+        $feature_count++;
+        print "Examined $feature_count features.\n"
+            unless ( $feature_count % $report_num );
+        foreach my $feature_id2 ( keys %{ $corr_hash->{$feature_id1} } ) {
+            next
+                if (
+                scalar( @{ $corr_hash->{$feature_id1}{$feature_id2} } )
+                == 1 );
+
+            my @corr_list = sort { $a <=> $b }
+                @{ $corr_hash->{$feature_id1}{$feature_id2} };
+            my $original_id = shift @corr_list;
+
+            foreach my $duplicate_id (@corr_list) {
+                $delete_count++;
+                print "Deleted $delete_count duplicates.\n"
+                    unless ( $delete_count % $report_num );
+                print ".";
+                my $move_evidence = $sql_object->get_moveable_evidence(
+                    cmap_object  => $self,
+                    original_id  => $original_id,
+                    duplicate_id => $duplicate_id,
                 );
+                if ( scalar(@$move_evidence) ) {
+                    foreach my $evidence_id (@$move_evidence) {
+                        $sql_object->update_correspondence_evidence(
+                            cmap_object                => $self,
+                            correspondence_evidence_id => $evidence_id,
+                            feature_correspondence_id  => $original_id,
+                        );
+                    }
+                }
+                $self->feature_correspondence_delete(
+                    feature_correspondence_id => $duplicate_id );
             }
         }
-        $self->feature_correspondence_delete(
-            feature_correspondence_id => $dup->{'duplicate_id'} );
     }
-
+    print "\n\nDone. Deleted $delete_count duplicates.\n";
 }
 
 sub purge_cache {
@@ -743,9 +771,9 @@ If a new Map is added, Levels 2,3,4 and 5 need to be purged.
     my ( $self, $cache_level ) = @_;
     $cache_level = 1 unless $cache_level;
 
-    for ( my $i = $cache_level - 1 ; $i <= CACHE_LEVELS ; $i++ ) {
+    for ( my $i = $cache_level - 1; $i <= CACHE_LEVELS; $i++ ) {
         my $namespace = $self->cache_level_name($i)
-          or return $self->ERROR(
+            or return $self->ERROR(
             "Cache Level: $i should not be higher than " . CACHE_LEVELS );
         my %params = ( 'namespace' => $namespace, );
         my $cache = new Cache::SizeAwareFileCache( \%params );
@@ -792,7 +820,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $feature_correspondence_id = $args{'feature_correspondence_id'}
-      or return $self->error('No feature correspondence id');
+        or return $self->error('No feature correspondence id');
 
     my $sql_object = $self->sql or return;
 
@@ -921,21 +949,21 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
             s/"//g;            # kill double quotes
             s/'/\\'/g;         # backslash escape single quotes
             uc $_ || ()        # uppercase what's left
-          } parse_words( $args{'feature_name'} )
+            } parse_words( $args{'feature_name'} )
     );
     my $map_acc           = $args{'map_acc'}           || '';
     my $species_ids       = $args{'species_ids'}       || [];
     my $feature_type_accs = $args{'feature_type_accs'} || [];
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
-      || 'feature_name,species_common_name,map_set_short_name,map_name,feature_start';
+        || 'feature_name,species_common_name,map_set_short_name,map_name,feature_start';
     my $sql_object = $self->sql or return;
 
     #
     # "-1" is a reserved value meaning "all"
     #
-    $species_ids       = [] if grep { /^-1$/ } @$species_ids;
-    $feature_type_accs = [] if grep { /^-1$/ } @$feature_type_accs;
+    $species_ids       = [] if grep {/^-1$/} @$species_ids;
+    $feature_type_accs = [] if grep {/^-1$/} @$feature_type_accs;
 
     my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
@@ -970,24 +998,23 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
     my @results = ();
     if ( $order_by =~ /position/ ) {
         @results =
-          map  { $_->[1] }
-          sort { $a->[0] <=> $b->[0] }
-          map  { [ $_->{$order_by}, $_ ] } values %features;
+            map  { $_->[1] }
+            sort { $a->[0] <=> $b->[0] }
+            map  { [ $_->{$order_by}, $_ ] } values %features;
     }
     else {
         my @sort_fields = split( /,/, $order_by );
         @results =
-          map  { $_->[1] }
-          sort { $a->[0] cmp $b->[0] }
-          map  { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
+            map  { $_->[1] }
+            sort { $a->[0] cmp $b->[0] }
+            map  { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
     }
 
     #
     # Slice the results up into pages suitable for web viewing.
     #
     my $pager = Data::Pageset->new(
-        {
-            total_entries    => scalar @results,
+        {   total_entries    => scalar @results,
             entries_per_page => $args{'entries_per_page'},
             current_page     => $args{'current_page'},
             pages_per_set    => $args{'pages_per_set'},
@@ -1055,7 +1082,7 @@ Array of feature names.
     my $feature_id  = $args{'feature_id'}  || 0;
     my $feature_acc = $args{'feature_acc'} || 0;
     $self->error('Need either feature id or accession id')
-      unless $feature_id || $feature_acc;
+        unless $feature_id || $feature_acc;
 
     my $sql_object = $self->sql or return;
     my $features = $sql_object->get_features_simple(
@@ -1112,9 +1139,9 @@ Arrayref of hashes with feature_type data.
     foreach my $type_acc ( sort { $a->{$order_by} cmp $b->{$order_by} }
         @feature_type_accs )
     {
-        $feature_types->[ ++$#{$feature_types} ] =
-          $self->feature_type_data($type_acc)
-          or return $self->error("No feature type accession '$type_acc'");
+        $feature_types->[ ++$#{$feature_types} ]
+            = $self->feature_type_data($type_acc)
+            or return $self->error("No feature type accession '$type_acc'");
     }
     return $feature_types;
 }
@@ -1183,16 +1210,16 @@ End point of the map.
     my ( $self, %args ) = @_;
     my @missing    = ();
     my $map_set_id = $args{'map_set_id'}
-      or push @missing, 'map_set_id';
+        or push @missing, 'map_set_id';
     my $map_name = $args{'map_name'};
     my $display_order = $args{'display_order'} || 1;
     push @missing, 'map name' unless defined $map_name && $map_name ne '';
     my $map_start = $args{'map_start'};
     push @missing, 'start position'
-      unless defined $map_start && $map_start ne '';
+        unless defined $map_start && $map_start ne '';
     my $map_stop = $args{'map_stop'};
     push @missing, 'stop position'
-      unless defined $map_stop && $map_stop ne '';
+        unless defined $map_stop && $map_stop ne '';
     my $map_acc = $args{'map_acc'};
 
     if (@missing) {
@@ -1268,7 +1295,7 @@ Nothing
         map_id      => $map_id,
     );
     return $self->error('Invalid map id')
-      unless (@$maps);
+        unless (@$maps);
 
     my $map_set_id = $maps->[0]{'map_set_id'};
 
@@ -1374,13 +1401,13 @@ If not defined, the object_id will be assigned to it.
     my $sql_object   = $self->sql;
     my @missing      = ();
     my $map_set_name = $args{'map_set_name'}
-      or push @missing, 'map_set_name';
+        or push @missing, 'map_set_name';
     my $map_set_short_name = $args{'map_set_short_name'}
-      or push @missing, 'map_set_short_name';
+        or push @missing, 'map_set_short_name';
     my $species_id = $args{'species_id'}
-      or push @missing, 'species';
+        or push @missing, 'species';
     my $map_type_acc = $args{'map_type_acc'}
-      or push @missing, 'map_type_acc';
+        or push @missing, 'map_type_acc';
     my $map_set_acc   = $args{'map_set_acc'}   || '';
     my $display_order = $args{'display_order'} || 1;
     my $shape         = $args{'shape'}         || '';
@@ -1396,30 +1423,30 @@ If not defined, the object_id will be assigned to it.
 
     if ($published_on) {
         my $pub_date = parsedate( $published_on, VALIDATE => 1 )
-          or
-          return $self->error("Publication date '$published_on' is not valid");
+            or return $self->error(
+            "Publication date '$published_on' is not valid");
         my $t = localtime($pub_date);
         $published_on = $t->strftime( $self->data_module->sql->date_format );
     }
     my $map_units = $self->map_type_data( $map_type_acc, 'map_units' );
 
-         $color ||= $self->map_type_data( $map_type_acc, 'color' )
-      || $self->config_data("map_color")
-      || DEFAULT->{'map_color'}
-      || 'black';
+           $color ||= $self->map_type_data( $map_type_acc, 'color' )
+        || $self->config_data("map_color")
+        || DEFAULT->{'map_color'}
+        || 'black';
 
-         $shape ||= $self->map_type_data( $map_type_acc, 'shape' )
-      || $self->config_data("map_shape")
-      || DEFAULT->{'map_shape'}
-      || 'box';
+           $shape ||= $self->map_type_data( $map_type_acc, 'shape' )
+        || $self->config_data("map_shape")
+        || DEFAULT->{'map_shape'}
+        || 'box';
 
-         $width ||= $self->map_type_data( $map_type_acc, 'width' )
-      || $self->config_data("map_width")
-      || DEFAULT->{'map_width'}
-      || '0';
+           $width ||= $self->map_type_data( $map_type_acc, 'width' )
+        || $self->config_data("map_width")
+        || DEFAULT->{'map_width'}
+        || '0';
 
-    my $is_relational_map =
-      $self->map_type_data( $map_type_acc, 'is_relational_map' ) || 0;
+    my $is_relational_map
+        = $self->map_type_data( $map_type_acc, 'is_relational_map' ) || 0;
 
     my $map_set_id = $sql_object->insert_map_set(
         cmap_object        => $self,
@@ -1479,7 +1506,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $map_set_id = $args{'map_set_id'}
-      or return $self->error('No map set id');
+        or return $self->error('No map set id');
     my $sql_object = $self->sql or return;
     my $maps = $sql_object->get_maps(
         cmap_object => $self,
@@ -1530,8 +1557,8 @@ Nothing
     my ( $self, %args ) = @_;
     my $sql_object = $self->sql or return;
 
-    my $new_records =
-      $sql_object->reload_correspondence_matrix( cmap_object => $self, );
+    my $new_records
+        = $sql_object->reload_correspondence_matrix( cmap_object => $self, );
 
     print("\n$new_records new records inserted.\n");
 }
@@ -1586,13 +1613,13 @@ The name of the object being reference.
 =cut
 
     my ( $self, %args ) = @_;
-    my $object_id       = $args{'object_id'} or 
-                          return $self->error('No object id');
-    my $object_type     = $args{'object_type'}
-                          or return $self->error('No table name');
-    my @attributes      = @{ $args{'attributes'} || [] } or return;
-    my $overwrite       = $args{'overwrite'} || 0;
-    my $sql_object      = $self->sql or return;
+    my $object_id = $args{'object_id'}
+        or return $self->error('No object id');
+    my $object_type = $args{'object_type'}
+        or return $self->error('No table name');
+    my @attributes = @{ $args{'attributes'} || [] } or return;
+    my $overwrite = $args{'overwrite'} || 0;
+    my $sql_object = $self->sql or return;
 
     if ($overwrite) {
         $sql_object->delete_attribute(
@@ -1604,16 +1631,16 @@ The name of the object being reference.
 
     for my $attr (@attributes) {
         my $attr_id       = $attr->{'attribute_id'};
-        my $attr_name     = $attr->{'name'}  || $attr->{'attribute_name'};
+        my $attr_name     = $attr->{'name'} || $attr->{'attribute_name'};
         my $attr_value    = $attr->{'value'} || $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
         my $display_order = $attr->{'display_order'};
 
         next
-          unless defined $attr_name
-          && $attr_name ne ''
-          && defined $attr_value
-          && $attr_value ne '';
+            unless defined $attr_name
+            && $attr_name ne ''
+            && defined $attr_value
+            && $attr_value ne '';
 
         if ($attr_id) {
             $sql_object->update_attribute(
@@ -1696,7 +1723,7 @@ The name of the object being reference.
     my ( $self, %args ) = @_;
     my $object_id   = $args{'object_id'};
     my $object_type = $args{'object_type'}
-      or return $self->error('No object name');
+        or return $self->error('No object name');
     my @xrefs = @{ $args{'xrefs'} || [] } or return;
     my $overwrite = $args{'overwrite'} || 0;
     my $sql_object = $self->sql or return;
@@ -1711,18 +1738,18 @@ The name of the object being reference.
 
     for my $xref (@xrefs) {
         my $xref_id   = $xref->{'xref_id'};
-        my $xref_name = $xref->{'name'}    || $xref->{'xref_name'};
-        my $xref_url  = $xref->{'url'}     || $xref->{'xref_url'};
-        my $is_public =
-          defined( $xref->{'is_public'} ) ? $xref->{'is_public'} : 1;
+        my $xref_name = $xref->{'name'} || $xref->{'xref_name'};
+        my $xref_url  = $xref->{'url'} || $xref->{'xref_url'};
+        my $is_public
+            = defined( $xref->{'is_public'} ) ? $xref->{'is_public'} : 1;
 
         my $display_order = $xref->{'display_order'};
 
         next
-          unless defined $xref_name
-          && $xref_name ne ''
-          && defined $xref_url
-          && $xref_url ne '';
+            unless defined $xref_name
+            && $xref_name ne ''
+            && defined $xref_url
+            && $xref_url ne '';
 
         if ($xref_id) {
             $sql_object->update_xref(
@@ -1808,9 +1835,9 @@ If not defined, the object_id will be assigned to it.
     my @missing;
     my $sql_object          = $self->sql;
     my $species_common_name = $args{'species_common_name'}
-      or push @missing, 'common name';
+        or push @missing, 'common name';
     my $species_full_name = $args{'species_full_name'}
-      or push @missing, 'full name';
+        or push @missing, 'full name';
     if (@missing) {
         return $self->error(
             'Species create failed.  Missing required fields: ',
@@ -1826,8 +1853,8 @@ If not defined, the object_id will be assigned to it.
         species_full_name   => $species_full_name,
         species_common_name => $species_common_name,
         display_order       => $display_order,
-      )
-      or return $sql_object->error;
+        )
+        or return $sql_object->error;
 
     return $species_id;
 }
@@ -1871,7 +1898,8 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $species_id = $args{'species_id'}
-      or return $self->error('No species id');
+        or return $self->error('No species id');
+    my $cascade_delete = $args{'cascade_delete'} || 0;
 
     my $sql_object = $self->sql or return;
 
@@ -1880,21 +1908,24 @@ Nothing
         species_id  => $species_id,
     );
 
-    if ( scalar(@$map_sets) > 0 ) {
+    if ( scalar(@$map_sets) > 0 and !$cascade_delete ) {
         return $self->error(
             'Unable to delete ',
             $map_sets->[0]{'species_common_name'},
             ' because ', scalar(@$map_sets), ' map sets are linked to it.'
         );
     }
-    else {
-        $self->attribute_delete( 'species', $species_id );
 
-        $sql_object->delete_species(
-            cmap_object => $self,
-            species_id  => $species_id,
-        );
+    foreach my $map_set (@$map_sets) {
+        $self->map_set_delete( map_set_id => $map_set->{'map_set_id'}, );
     }
+
+    $self->attribute_delete( 'species', $species_id );
+
+    $sql_object->delete_species(
+        cmap_object => $self,
+        species_id  => $species_id,
+    );
 
     return 1;
 }
@@ -1957,7 +1988,7 @@ The name of the table being reference.
     my @missing     = ();
     my $object_id   = $args{'object_id'} || 0;
     my $object_type = $args{'object_type'}
-      or push @missing, 'database object (table name)';
+        or push @missing, 'database object (table name)';
     my $xref_name = $args{'xref_name'} or push @missing, 'xref name';
     my $xref_url  = $args{'xref_url'}  or push @missing, 'xref URL';
     my $display_order = $args{'display_order'};
@@ -1998,14 +2029,13 @@ The name of the table being reference.
             object_id   => $object_id,
             object_type => $object_type,
             xrefs       => [
-                {
-                    name          => $xref_name,
+                {   name          => $xref_name,
                     url           => $xref_url,
                     display_order => $display_order,
                 },
             ],
-          )
-          or return $self->error;
+            )
+            or return $self->error;
     }
 
     return $xref_id;
