@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.134 2006-02-23 17:12:06 mwz444 Exp $
+# $Id: Generic.pm,v 1.135 2006-03-09 18:16:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.134 $)[-1];
+$VERSION = (qw$Revision: 1.135 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -9686,14 +9686,81 @@ Array of Hashes:
                a.feature_correspondence_id as duplicate_id
         from  cmap_correspondence_lookup a,
               cmap_correspondence_lookup b
-        where a.feature_correspondence_id > b.feature_correspondence_id
+        where a.feature_id1<a.feature_id2
           and a.feature_id1=b.feature_id1
           and a.feature_id2=b.feature_id2
+          and a.feature_correspondence_id > b.feature_correspondence_id
         group by a.feature_correspondence_id
         ];
 
     return $db->selectall_arrayref( $dup_sql, { Columns => {} } );
 
+}
+
+#-----------------------------------------------
+sub get_duplicate_correspondences_hash {
+
+=pod
+
+=head2 get_duplicate_correspondences_hash()
+
+=over 4
+
+=item * Description
+
+Get duplicate correspondences from the database.  This method is used in order to delete them.
+
+=item * Adaptor Writing Info
+
+Again if you don't want CMap to mess with your db, make this a dummy method.
+
+=item * Required Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=back
+
+=item * Output
+
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = ( cmap_object => 1, no_validation => 0, );
+    my %args              = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+
+    my $dup_sql = q[
+        select  feature_id1,
+                feature_id2,
+                feature_correspondence_id
+        from  cmap_feature_correspondence
+        ];
+
+    my $corrs = $db->selectall_arrayref( $dup_sql, { Columns => {} } );
+
+    my $corr_hash = {};
+    foreach my $corr ( @{ $corrs || [] } ) {
+        if ( $corr->{'feature_id1'} < $corr->{'feature_id2'} ) {
+            push @{ $corr_hash->{ $corr->{'feature_id1'} }
+                    { $corr->{'feature_id2'} } },
+                $corr->{'feature_correspondence_id'},;
+        }
+        else {
+            push @{ $corr_hash->{ $corr->{'feature_id2'} }
+                    { $corr->{'feature_id1'} } },
+                $corr->{'feature_correspondence_id'},;
+        }
+    }
+
+    return $corr_hash;
 }
 
 #-----------------------------------------------
