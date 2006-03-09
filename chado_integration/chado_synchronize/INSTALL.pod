@@ -110,7 +110,7 @@ This script will look at the featuresets that you've inserted and insert the
 data into CMap.  
 
 You will have several options.  The most import is the feature types to look
-at.  If you select to many, it may take a long time.
+at.  If you select too many, it may take a long time.
 
   $ chado_integration/chado_synchronize/cmap_syncronize_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] --cmap_datasource cmap_datasource
 
