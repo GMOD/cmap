@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.267 2006-02-23 17:11:51 mwz444 Exp $
+# $Id: Data.pm,v 1.268 2006-03-09 18:17:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.267 $)[-1];
+$VERSION = (qw$Revision: 1.268 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3812,7 +3812,8 @@ sub feature_default_display {
                 $feature_type_acc, 'feature_default_display'
             )
         )
-        and not defined($url_feature_default_display)
+        and not( defined($url_feature_default_display)
+            and $url_feature_default_display =~ /^\d$/ )
         )
     {
         return $return_val;
@@ -3820,7 +3821,9 @@ sub feature_default_display {
 
     # If needed use url value
     unless ( $self->{'feature_default_display'} ) {
-        if ( defined($url_feature_default_display) ) {
+        if ( defined($url_feature_default_display)
+            and $url_feature_default_display =~ /^\d$/ )
+        {
             if ( $url_feature_default_display == 0 ) {
                 $self->{'feature_default_display'} = 'ignore';
             }
