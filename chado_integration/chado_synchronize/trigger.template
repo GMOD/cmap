@@ -554,11 +554,11 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
                 q[ select currval(\'dbxref_dbxref_id_seq\') as dbxref_id ]);
             spi_exec_query(
                 q[
-                    insert into feature_dbxref
+                    insert into featureloc_dbxref
                     ( dbxref_id, feature_id)
                         values ( ]
                     . $rv->{rows}[0]{\'dbxref_id\'} . q[,\']
-                    . $features->{\'rows\'}[$rn]{\'feature_id\'} . q[\')]
+                    . $features->{\'rows\'}[$rn]{\'featureloc_id\'} . q[\')]
             );
         }
     }
@@ -573,10 +573,10 @@ CREATE TRIGGER cmap_featureloc_created_trig
 CREATE OR REPLACE FUNCTION cmap_featureloc_updated() RETURNS trigger AS '
     my $sql_str = q[
         SELECT dbxref.accession 
-        FROM feature_dbxref fdbx, dbxref, db
-        where fdbx.feature_id = ]
-        . $_TD->{new}{feature_id} . q[ 
-            and fdbx.dbxref_id = dbxref.dbxref_id
+        FROM featureloc_dbxref fldbx, dbxref, db
+        where fldbx.featureloc_id = ]
+        . $_TD->{new}{featureloc_id} . q[ 
+            and fldbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_feature\'
     ];
@@ -624,9 +624,9 @@ CREATE TRIGGER cmap_featureloc_updated_trig
 CREATE OR REPLACE FUNCTION cmap_featureloc_deleted() RETURNS trigger AS '
     my $sql_str = q[
         SELECT dbxref.accession 
-        FROM feature_dbxref fdbx, dbxref, db
-        where fdbx.feature_id = ]
-        . $_TD->{new}{feature_id} . q[ 
+        FROM featureloc_dbxref fldbx, dbxref, db
+        where fldbx.featureloc_id = ]
+        . $_TD->{new}{featureloc_id} . q[ 
             and fdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_feature\'
@@ -656,6 +656,8 @@ CREATE TRIGGER cmap_featureloc_deleted_trig
 
 -- CMap triggers and functions for feature table --
 CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
+
+    # Check if it is a map
     my $sql_str = q[
         SELECT dbxref.accession, db.name as db_name
         FROM feature_dbxref fdbx, dbxref, db
@@ -666,6 +668,39 @@ CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
+    if ($nrows) {
+        foreach my $rn ( 0 .. $nrows - 1 ) {
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
+                use Bio::GMOD::CMap::Admin;
+                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
+                    data_source => \'CMAP_DATASOURCE\', );
+                my $map_id   = $rv->{\'rows\'}[$rn]{\'accession\'};
+                my $map_name = $_TD->{new}{\'name\'}
+                    || $_TD->{new}{\'uniquename\'}
+                    || \'UNNAMED\';
+                my $map_stop = $_TD->{new}{\'seqlen\'};
+                $cmap_admin->sql()->update_map(
+                    cmap_object => $cmap_admin,
+                    map_id      => $map_id,
+                    map_name    => $map_name,
+                    map_stop    => $map_stop,
+                );
+            }
+        }
+    }
+
+    # Check if it is a feature
+    $sql_str = q[
+        SELECT dbxref.accession, db.name as db_name
+        FROM featureloc_dbxref fldbx, featureloc fl, dbxref, db
+        where fldbx.featureloc_id = fl.featureloc_id
+            and fl.feature_id = ]
+        . $_TD->{new}{feature_id} . q[ 
+            and fldbx.dbxref_id = dbxref.dbxref_id
+            and dbxref.db_id = db.db_id
+    ];
+    $rv    = spi_exec_query($sql_str);
+    $nrows = $rv->{processed};
     if ($nrows) {
         foreach my $rn ( 0 .. $nrows - 1 ) {
             if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_feature\' ) {
@@ -682,22 +717,6 @@ CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
                     feature_name => $feature_name,
                 );
             }
-            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
-                use Bio::GMOD::CMap::Admin;
-                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
-                    data_source => \'CMAP_DATASOURCE\', );
-                my $map_id   = $rv->{\'rows\'}[$rn]{\'accession\'};
-                my $map_name = $_TD->{new}{\'map_name\'}
-                    || $_TD->{new}{\'uniquename\'}
-                    || \'UNNAMED\';
-                my $map_stop = $_TD->{new}{\'seqlen\'};
-                $cmap_admin->sql()->update_map(
-                    cmap_object => $cmap_admin,
-                    map_id      => $map_id,
-                    map_name    => $feature_name,
-                    map_stop    => $map_stop,
-                );
-            }
         }
     }
     return;
@@ -708,6 +727,7 @@ CREATE TRIGGER cmap_feature_updated_trig
     FOR EACH ROW EXECUTE PROCEDURE cmap_feature_updated();
 
 CREATE OR REPLACE FUNCTION cmap_feature_deleted() RETURNS trigger AS '
+    # Check if it is a map
     my $sql_str = q[
         SELECT dbxref.accession, db.name as db_name
         FROM feature_dbxref fdbx, dbxref, db
@@ -720,15 +740,6 @@ CREATE OR REPLACE FUNCTION cmap_feature_deleted() RETURNS trigger AS '
     my $nrows = $rv->{processed};
     if ($nrows) {
         foreach my $rn ( 0 .. $nrows - 1 ) {
-            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_feature\' ) {
-                use Bio::GMOD::CMap::Admin;
-                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
-                    data_source => \'CMAP_DATASOURCE\', );
-                my $cmap_feature_id = $rv->{\'rows\'}[$rn]{\'accession\'};
-
-                $cmap_admin->feature_delete( feature_id => $cmap_feature_id,
-                );
-            }
             if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
                 use Bio::GMOD::CMap::Admin;
                 my $cmap_admin = Bio::GMOD::CMap::Admin->new(
