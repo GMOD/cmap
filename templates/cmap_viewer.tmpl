@@ -156,6 +156,8 @@ function ajaxManager() {
         var x = (window.ActiveXObject) ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();
       }
       if (x) {
+        el = document.getElementById(args[2]);
+        el.innerHTML = "Loading...";
         x.onreadystatechange = function() {
           if (x.readyState == 4 && x.status == 200) {
               el = document.getElementById(args[2]);
