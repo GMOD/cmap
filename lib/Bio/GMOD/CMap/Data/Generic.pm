@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.135 2006-03-09 18:16:23 mwz444 Exp $
+# $Id: Generic.pm,v 1.136 2006-03-14 22:16:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135 $)[-1];
+$VERSION = (qw$Revision: 1.136 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2595,6 +2595,7 @@ Array of Hashes:
         no_validation     => 0,
         map_id            => 0,
         map_ids           => 0,
+        map_acc           => 0,
         map_accs          => 0,
         map_set_id        => 0,
         map_set_acc       => 0,
@@ -2613,6 +2614,7 @@ Array of Hashes:
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id       = $args{'map_id'};
     my $map_ids      = $args{'map_ids'} || [];
+    my $map_acc      = $args{'map_acc'};
     my $map_accs     = $args{'map_accs'} || [];
     my $map_set_id   = $args{'map_set_id'};
     my $map_set_acc  = $args{'map_set_acc'};
@@ -2669,6 +2671,9 @@ Array of Hashes:
     elsif (@$map_ids) {
         $where_sql
             .= " and map.map_id in (" . join( ',', sort @$map_ids ) . ") ";
+    }
+    if ($map_acc) {
+        $where_sql .= " and map.map_acc = '$map_acc' ";
     }
     elsif (@$map_accs) {
         $where_sql .= " and map.map_acc in ('"
@@ -3860,6 +3865,133 @@ Not using cache because this query is quicker.
     }
     if (@$ignore_feature_type_accs) {
         $where_sql .= " and feature_type_acc not in ('"
+            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
+    }
+
+    $sql_str .= $where_sql;
+    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_features_sub_maps_version {
+
+=pod
+
+=head2 get_features_sub_maps_version()
+
+=over 4
+
+=item * Description
+
+Get just the info from the features taking into account sub-map information.
+
+=item * Required Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=back
+
+=item * Optional Input
+
+=over 4
+
+=item - Map Accession (map_acc)
+
+=item - Feature Type Accession (feature_type_acc)
+
+=item - List of Feature Type Accession to ignore (ignore_feature_type_accs)
+
+=item - Return only sub maps (get_sub_maps)
+
+=item - Return only features that are not sub maps (no_sub_maps)
+
+=back
+
+=item * Output
+
+Array of Hashes:
+
+  Keys:
+    feature_id
+    feature_acc
+    feature_name
+    is_landmark
+    feature_start
+    feature_stop
+    feature_type_acc
+    default_rank
+    direction
+
+=item * Cache Level (If Used): 3
+
+Not using cache because this query is quicker.
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object              => 1,
+        no_validation            => 0,
+        map_acc                  => 1,
+        feature_type_acc         => 0,
+        ignore_feature_type_accs => 0,
+        get_sub_maps             => 0,
+        no_sub_maps              => 0,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
+    my $map_acc       = $args{'map_acc'};
+    my $feature_type_acc         = $args{'feature_type_acc'};
+    my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
+    my $get_sub_maps             = $args{'get_sub_maps'} || 0;
+    my $no_sub_maps              = $args{'no_sub_maps'} || 0;
+    my $db                       = $cmap_object->db;
+    my $return_object;
+    my $sql_str = qq[
+         select f.feature_id,
+               f.feature_acc,
+               f.feature_name,
+               f.is_landmark,
+               f.feature_start,
+               f.feature_stop,
+               f.feature_type_acc,
+               f.default_rank,
+               f.direction
+        from   cmap_map map, 
+               cmap_feature f
+    ];
+
+    if ( $get_sub_maps or $no_sub_maps ) {
+        $sql_str .= q[ 
+            LEFT JOIN cmap_map_to_feature mtf 
+            on mtf.feature_id = f.feature_id
+        ];
+    }
+    my $where_sql = ' where f.map_id = map.map_id ';
+
+    if ($map_acc) {
+        $where_sql .= "and map.map_acc = '$map_acc' ";
+    }
+    if ($get_sub_maps) {
+        $where_sql .= "and !isNull(mtf.map_id) ";
+    }
+    if ($no_sub_maps) {
+        $where_sql .= "and isNull(mtf.map_id) ";
+    }
+    if ($feature_type_acc) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " f.feature_type_acc = '$feature_type_acc' ";
+    }
+    if (@$ignore_feature_type_accs) {
+        $where_sql .= " and f.feature_type_acc not in ('"
             . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
 

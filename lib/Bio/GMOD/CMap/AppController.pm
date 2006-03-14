@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.1 2006-02-05 04:17:58 mwz444 Exp $
+# $Id: AppController.pm,v 1.2 2006-03-14 22:16:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,13 +21,14 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Tk;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Data::AppData;
-use Bio::GMOD::CMap::Drawer::AppDrawer;
+use Bio::GMOD::CMap::Drawer::AppInterface;
+use Bio::GMOD::CMap::Drawer::AppDisplayData;
 use Bio::GMOD::CMap::Constants;
 
 use base 'Bio::GMOD::CMap';
@@ -47,180 +48,50 @@ Initializes the object.
     $self->params( $config, qw[ config_dir data_source ] );
     $self->config();
     $self->data_source( $self->{'data_source'} );
-    $self->create_application();
-    $self->new_reference_maps();    #BF remove after testing is done
+    my $window_acc = $self->start_application();
+    $self->new_reference_maps( window_acc => $window_acc, );
     MainLoop();
     return $self;
 }
 
 # ----------------------------------------------------
-sub create_application {
+sub start_application {
 
 =pod
-
-=head2 create_application
-
+                                                                                                                             
+=head2 start_application
+                                                                                                                             
 This method will create the Application.
-
+                                                                                                                             
 =cut
 
     my $self = shift;
-    my %args = @_;
-
-    my $main_window = $self->main_window();
-    $main_window->title('CMap Application');
-    $self->menu_bar();
-    my $canvas = $self->canvas();
-
-    return 1;
+    my $window_acc = $self->create_window( title => "CMap Application", )
+        or die "Failed to create interface\n";
+    my $app_display_data = $self->app_display_data();
+    return $window_acc;
 }
 
 # ----------------------------------------------------
-sub main_window {
+sub create_window {
 
 =pod
-
-=head2 main_window
-
-Returns the TK main_window object.
-
+                                                                                                                             
+=head2 create_application
+                                                                                                                             
+This method will create the Application.
+                                                                                                                             
 =cut
 
-    my $self = shift;
-    unless ( $self->{'main_window'} ) {
-        $self->{'main_window'} = MainWindow->new();
+    my $self      = shift;
+    my $interface = $self->app_interface();
+    my $window_acc
+        = $interface->create_window( title => "CMap Application", );
+    unless ( defined $window_acc ) {
+        die "Problem setting up interface\n";
     }
-    return $self->{'main_window'};
-}
 
-# ----------------------------------------------------
-sub menu_bar {
-
-=pod
-
-=head2 menu_bar
-
-Returns the menu_bar object.
-
-=cut
-
-    my $self = shift;
-    unless ( $self->{'menu_bar'} ) {
-        my $main_window = $self->main_window();
-        $self->{'menu_bar'} = $main_window->Menu();
-        $main_window->configure( -menu => $self->{'menu_bar'} );
-        $self->populate_menu_bar();
-    }
-    return $self->{'menu_bar'};
-}
-
-# ----------------------------------------------------
-sub populate_menu_bar {
-
-=pod
-
-=head2 populate_menu_bar
-
-Populates the menu_bar object.
-
-=cut
-
-    my $self = shift;
-
-    my $menu_bar = $self->menu_bar();
-
-    $self->{'menu_buttons'}->{'file'} = $menu_bar->cascade(
-        -label     => '~file',
-        -menuitems => $self->file_menu_items(),
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub file_menu_items {
-
-=pod
-
-=head2 file_menu_items
-
-Populates the file menu with menu_items
-
-=cut
-
-    my $self = shift;
-    return [
-        [   'command', '~Load',
-            -accelerator => 'Ctrl-l',
-            -command     => sub { new_reference_maps($self) },
-        ],
-        [   'command', '~Quit',
-            -accelerator => 'Ctrl-q',
-            -command     => sub {exit},
-        ],
-    ];
-}
-
-# ----------------------------------------------------
-sub canvas {
-
-=pod
-
-=head2 canvas
-
-Returns the canvas object.
-
-=cut
-
-    my $self = shift;
-    unless ( $self->{'canvas'} ) {
-        my $canvas_frame = $self->main_window()->Frame()
-            ->pack( -side => 'bottom', -fill => 'both', );
-        $self->{'canvas'} = $canvas_frame->Scrolled(
-            'Canvas',
-            (   '-width'        => '950',
-                '-height'       => '500',
-                '-relief'       => 'sunken',
-                '-borderwidth'  => 2,
-                '-scrollbars'   => 'se',
-                '-scrollregion' => [qw/0c 0c 30c 24c/],
-            ),
-        )->pack;
-    }
-    return $self->{'canvas'};
-}
-
-# ----------------------------------------------------
-sub zzz {
-
-=pod
-
-=head2 zzz
-
-Returns the zzz object.
-
-=cut
-
-    my $self = shift;
-    unless ( $self->{'zzz'} ) {
-        $self->{'zzz'} = '';
-    }
-    return $self->{'zzz'};
-}
-
-# ----------------------------------------------------
-sub yyy {
-
-=pod
-
-=head2 yyy
-
-Returns the yyy object.
-
-=cut
-
-    my $self = shift;
-    return $self->{'yyy'};
+    return $window_acc;
 }
 
 # ----------------------------------------------------
@@ -240,14 +111,8 @@ Returns a handle to the data module.
 
     unless ( $self->{'app_data_module'} ) {
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
-            data_source         => $self->data_source,
-            config              => $self->config,
-            aggregate           => $self->aggregate,
-            cluster_corr        => $self->cluster_corr,
-            show_intraslot_corr => $self->show_intraslot_corr,
-            split_agg_ev        => $self->split_agg_ev,
-            ref_map_order       => $self->ref_map_order,
-            comp_menu_order     => $self->comp_menu_order,
+            data_source => $self->data_source,
+            config      => $self->config,
             )
             or $self->error( Bio::GMOD::CMap::Data::AppData->error );
     }
@@ -256,11 +121,11 @@ Returns a handle to the data module.
 }
 
 # ----------------------------------------------------
-sub app_drawer {
+sub app_interface {
 
 =pod
 
-=head3 app_drawer
+=head3 app_interface
 
 Returns a handle to the data module.
 
@@ -268,25 +133,44 @@ Returns a handle to the data module.
 
     my $self = shift;
 
-    $self->{'app_drawer'} = shift if @_;
+    $self->{'app_interface'} = shift if @_;
 
-    unless ( $self->{'app_drawer'} ) {
-        $self->{'app_drawer'} = Bio::GMOD::CMap::Drawer::AppDrawer->new(
-            canvas              => $self->canvas,
-            data_source         => $self->data_source,
-            data_module         => $self->app_data_module,
-            config              => $self->config,
-            aggregate           => $self->aggregate,
-            cluster_corr        => $self->cluster_corr,
-            show_intraslot_corr => $self->show_intraslot_corr,
-            split_agg_ev        => $self->split_agg_ev,
-            ref_map_order       => $self->ref_map_order,
-            comp_menu_order     => $self->comp_menu_order,
+    unless ( $self->{'app_interface'} ) {
+        $self->{'app_interface'} = Bio::GMOD::CMap::Drawer::AppInterface->new(
+            app_data_module => $self->app_data_module(),
+            app_controller  => $self,
             )
-            or $self->error( Bio::GMOD::CMap::Data::AppData->error );
+            or die "Couldn't initialize AppInterface\n";
     }
 
-    return $self->{'app_drawer'};
+    return $self->{'app_interface'};
+}
+
+# ----------------------------------------------------
+sub app_display_data {
+
+=pod
+
+=head3 app_display_data
+
+Returns a handle to the data module.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    unless ( $self->{'app_display_data'} ) {
+        $self->{'app_display_data'}
+            = Bio::GMOD::CMap::Drawer::AppDisplayData->new(
+            data_source     => $self->data_source,
+            app_data_module => $self->app_data_module,
+            app_interface   => $self->app_interface,
+            config          => $self->config,
+            )
+            or die "failed to create app_display_data\n";
+    }
+
+    return $self->{'app_display_data'};
 }
 
 # ----------------------------------------------------
@@ -299,319 +183,88 @@ sub new_reference_maps {
 
 =cut
 
-    my $self = shift;
+    my ( $self, %args ) = @_;
+    my $window_acc = $args{'window_acc'}
+        or die "no window acc for new_reference_maps";
 
-    my $reference_maps = $self->get_reference_maps();
-    $self->main_window()->withdraw();
-
-    my $ref_selection_window
-        = $self->main_window()->Toplevel( -takefocus => 1 );
-    $ref_selection_window->title('POP');
-    my $selection_frame
-        = $ref_selection_window->Frame( -relief => 'groove', -border => 1, );
-    my $species_frame = $selection_frame->Frame(
-        -relief => 'groove',
-        -border => 1,
-        -label  => "Species",
+    $self->app_interface()->select_reference_maps(
+        window_acc => $window_acc,
+        controller => $self,
     );
-    my $map_set_frame = $selection_frame->Frame(
-        -relief => 'groove',
-        -border => 1,
-        -label  => "Map Sets",
-    );
-    my $map_frame = $selection_frame->Frame(
-        -relief => 'groove',
-        -border => 1,
-        -label  => "Maps",
-    );
-    my $map_listbox = $map_frame->Scrolled(
-        'Listbox',
-        -scrollbars => 'osoe',
-        -height     => 7,
-        -selectmode => 'multiple',
-    )->pack;
-    my $ref_species_acc         = $reference_maps->[0]->{'species_acc'};
-    my $selectable_ref_map_accs = [];
 
-    foreach my $species ( @{ $reference_maps || [] } ) {
-        $species_frame->Radiobutton(
-            -text     => $species->{'species_common_name'},
-            -value    => $species->{'species_acc'},
-            -variable => \$ref_species_acc,
-            -command  => sub {
-                $self->display_reference_map_sets(
-                    map_set_frame           => $map_set_frame,
-                    map_listbox             => $map_listbox,
-                    selectable_ref_map_accs => $selectable_ref_map_accs,
-                    map_sets                => $species->{'map_sets'},
-                );
-            },
-        )->pack( -side => 'top', -anchor => 'nw', );
-    }
-    $species_frame->pack( -side => 'left', -anchor => 'n', );
-    $map_set_frame->pack( -side => 'left', -anchor => 'n', );
-    $map_frame->pack( -side     => 'left', -anchor => 'n', );
-    $self->display_reference_map_sets(
-        map_set_frame           => $map_set_frame,
-        map_listbox             => $map_listbox,
-        selectable_ref_map_accs => $selectable_ref_map_accs,
-        map_sets                => $reference_maps->[0]{'map_sets'},
-    );
-    $selection_frame->pack( -side => 'top', -anchor => 'nw', );
-
-    $ref_selection_window->Button(
-        -text    => "Load Maps",
-        -command => sub {
-            $self->load_maps(
-                selectable_ref_map_accs => $selectable_ref_map_accs,
-                selections              => [ $map_listbox->curselection() ],
-            );
-            $self->close_secondary_window($ref_selection_window);
-        },
-    )->pack( -side => 'bottom', -anchor => 's' );
-    $ref_selection_window->Button(
-        -text    => "Cancel",
-        -command => sub {
-            $self->close_secondary_window($ref_selection_window);
-        },
-    )->pack( -side => 'bottom', -anchor => 's' );
-    $ref_selection_window->protocol( 'WM_DELETE_WINDOW',
-        sub { $self->close_secondary_window($ref_selection_window); } );
-
-return;
+    return;
 
 }
 
-# ----------------------------------------------------
-sub load_maps {
-
 =pod
 
-=head2 load_maps
-
+=head1 CallBack Methods
 
 =cut
 
-    my ($self,%args)= @_;
+# ----------------------------------------------------
+sub load_first_slot {
+
+=pod
+
+=head2 load_first_slot
+
+Load the first slot of a page.
+
+=cut
+
+    my ( $self, %args ) = @_;
 
     my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'} or return;
-    my $selections = $args{'selections'} or return;
+    my $selections              = $args{'selections'}              or return;
+    my $window_acc              = $args{'window_acc'}              or return;
 
-    my @selected_map_accs = map { $selectable_ref_map_accs->[$_] } @$selections ; 
+    my @selected_map_accs
+        = map { $selectable_ref_map_accs->[$_] } @$selections;
 
-    $self->{'slots'} = {
-        '0' => {
-            min_corrsmap => '',
-            maps         =>
-                { map { $selectable_ref_map_accs->[$_]=>{} } @$selections },
-            map_sets => {},
-        }
-    };
-
-
-#    my $slots = {
-#        '1' => {
-#            'min_corrs' => '',
-#            'maps'      => {
-#                '18' => {
-#                    'start' => undef,
-#                    'mag'   => 1,
-#                    'stop'  => undef
-#                },
-#                '17' => {
-#                    'start' => undef,
-#                    'mag'   => 1,
-#                    'stop'  => undef
-#                }
-#            },
-#            'map_sets' => {}
-#        },
-#        '0' => {
-#            'min_corrs' => '0',
-#            'maps'      => {
-#                '56' => {
-#                    'start' => undef,
-#                    'mag'   => 1,
-#                    'stop'  => undef
-#                }
-#            },
-#            'map_set_acc' => 'MS4',
-#            'map_sets'    => {}
-#        }
-#    };
-
-    my $new_maps = $self->app_data_module()->map_data(map_accs => \@selected_map_accs,);
-print STDERR Dumper(\@selected_map_accs)."\n";
-print STDERR Dumper($new_maps)."\n";
-
-
-    ( $self->{'data'}, $self->{'slots'} )
-        = $self->app_data_module()
-        ->set_data( slots => $self->{'slots'}, url_feature_default_display => 2, );
-    my $drawer = $self->app_drawer();
-    $drawer->slots($self->{'slots'});
-    $drawer->initial_draw( data => $self->{'data'} );
-
-    #exit;
-}
-
-# ----------------------------------------------------
-sub close_secondary_window {
-
-=pod
-
-=head2 get_reference_maps
-
-
-=cut
-
-    my $self             = shift;
-    my $secondary_window = shift;
-    $self->main_window()->deiconify();
-    $self->main_window()->raise();
-    $secondary_window->destroy();
-}
-
-# ----------------------------------------------------
-sub slots {
-
-=pod
-
-=head2 slots
-
-
-=cut
-
-    my $self = shift;
-    my $new_slots = shift;
-
-    if (defined $new_slots){
-        $self->{'slots'} = $new_slots;
+    if (@selected_map_accs) {
+        $self->app_display_data()->load_first_slot_of_window(
+            window_acc => $window_acc,
+            map_accs   => \@selected_map_accs,
+        );
     }
-    return $self->{'slots'};
 
-}
-# ----------------------------------------------------
-sub get_reference_maps {
-
-=pod
-
-=head2 get_reference_maps
-
-
-=cut
-
-    my $self = shift;
-
-    unless ( $self->{'reference_maps'} ) {
-        $self->{'reference_maps'}
-            = $self->app_data_module()->get_reference_maps();
-    }
-    return $self->{'reference_maps'};
+    return;
 
 }
 
 # ----------------------------------------------------
-sub display_reference_map_sets {
+sub close_window {
 
 =pod
 
-=head2 display_reference_map_sets
+=head2 close_window
+
+When window is closed, delete drawing data and if it is the last window, exit.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_set_frame           = $args{'map_set_frame'};
-    my $map_listbox             = $args{'map_listbox'};
-    my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'};
-    my $map_sets                = $args{'map_sets'};
+    my $window_acc = $args{'window_acc'};
 
-    $self->clear_buttons($map_set_frame);
-    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_accs );
+    my $remaining_windows_num = $self->app_display_data()
+        ->remove_window( window_acc => $window_acc, );
 
-    my $ref_map_set_acc = $map_sets->[0]->{'map_set_acc'};
-    foreach my $map_set ( @{ $map_sets || [] } ) {
-        $map_set_frame->Radiobutton(
-            -text     => $map_set->{'map_set_name'},
-            -value    => $map_set->{'map_set_acc'},
-            -variable => \$ref_map_set_acc,
-            -command  => sub {
-                $self->display_reference_maps(
-                    map_listbox             => $map_listbox,
-                    selectable_ref_map_accs => $selectable_ref_map_accs,
-                    maps                    => $map_set->{'maps'},
-                );
-            },
-        )->pack( -side => 'top', -anchor => 'nw', );
+    unless ($remaining_windows_num) {
+        exit;
     }
 
-    $self->display_reference_maps(
-        map_listbox             => $map_listbox,
-        selectable_ref_map_accs => $selectable_ref_map_accs,
-        maps                    => $map_sets->[0]{'maps'},
-    );
+    return;
 }
-
-# ----------------------------------------------------
-sub display_reference_maps {
 
 =pod
 
-=head2 display_reference_map_sets
+=head1 Extra Methods
 
 =cut
 
-    my ( $self, %args ) = @_;
-    my $map_listbox             = $args{'map_listbox'};
-    my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'};
-    my $maps                    = $args{'maps'};
-
-    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_accs );
-
-    foreach my $map ( @{ $maps || [] } ) {
-        $map_listbox->insert( 'end', $map->{'map_name'}, );
-        push @$selectable_ref_map_accs, $map->{'map_acc'};
-    }
-}
-
 # ----------------------------------------------------
-sub clear_buttons {
-
-=pod
-
-=head2 clear_buttons
-
-=cut
-
-    my $self   = shift;
-    my $widget = shift;
-    foreach my $child ( $widget->children() ) {
-        if ( $child->class() =~ /button/i ) {
-            $child->destroy;
-        }
-    }
-
-}
-
-# ----------------------------------------------------
-sub clear_ref_maps {
-
-=pod
-
-=head2 clear_ref_maps
-
-=cut
-
-    my $self             = shift;
-    my $ref_maps_listbox = shift or return;
-    my $ref_map_accs     = shift or return;
-    $ref_maps_listbox->delete( 0, 'end' );
-    @$ref_map_accs = ();
-
-}
-
-# ----------------------------------------------------
-sub check_datasource_credentials {
+sub xcheck_datasource_credentials {
 
 =pod
 
