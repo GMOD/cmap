@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.71 2006-02-23 17:12:01 mwz444 Exp $
+# $Id: Utils.pm,v 1.72 2006-03-14 16:33:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1869,7 +1869,9 @@ sub parse_url {
     $slots_min_corrs{$max_right} = $parsed_url_options{'right_min_corrs'}
         if $parsed_url_options{'right_min_corrs'};
 
-    unless ( $parsed_url_options{'ignore_comp_maps'} ) {
+    unless ( $parsed_url_options{'ignore_comp_maps'}
+        or $parsed_url_options{'reusing_step'} )
+    {
 
         #
         # Add in our next chosen maps.
