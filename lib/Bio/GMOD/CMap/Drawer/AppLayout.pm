@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.1 2006-03-14 22:16:26 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.2 2006-03-15 13:58:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use base 'Exporter';
 
@@ -49,32 +49,32 @@ sub layout_new_window {
 =cut
 
     my %args             = @_;
-    my $window_acc       = $args{'window_acc'};
+    my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
-    $app_display_data->{'window_layout'}{$window_acc}{'bounds'}
+    $app_display_data->{'window_layout'}{$window_key}{'bounds'}
         = [ 0, 0, 900, 0 ];
-    $app_display_data->{'window_layout'}{$window_acc}{'container_bounds'}
+    $app_display_data->{'window_layout'}{$window_key}{'container_bounds'}
         = [ 0, 0, 900, 0 ];    # width is defined, height is changable
 
     my $panel_buffer = 10;
 
     my $window_height_change = 0;
     foreach
-        my $panel_acc ( @{ $app_display_data->{'panel_order'}{$window_acc} } )
+        my $panel_key ( @{ $app_display_data->{'panel_order'}{$window_key} } )
     {
         layout_new_panel(
-            window_acc       => $window_acc,
-            panel_acc        => $panel_acc,
+            window_key       => $window_key,
+            panel_key        => $panel_key,
             app_display_data => $app_display_data,
         );
         $window_height_change
-            += ( $app_display_data->{'panel_layout'}{$panel_acc}{'bounds'}[3]
-                - $app_display_data->{'panel_layout'}{$panel_acc}{'bounds'}[1]
+            += ( $app_display_data->{'panel_layout'}{$panel_key}{'bounds'}[3]
+                - $app_display_data->{'panel_layout'}{$panel_key}{'bounds'}[1]
             );
     }
 
     $app_display_data->modify_window_bottom_bound(
-        window_acc       => $window_acc,
+        window_key       => $window_key,
         bounds_change    => $window_height_change,
         container_change => $window_height_change,
     );
@@ -94,11 +94,11 @@ sub layout_new_panel {
 =cut
 
     my %args             = @_;
-    my $window_acc       = $args{'window_acc'};
-    my $panel_acc        = $args{'panel_acc'};
+    my $window_key       = $args{'window_key'};
+    my $panel_key        = $args{'panel_key'};
     my $app_display_data = $args{'app_display_data'};
-    my $window_layout    = $app_display_data->{'window_layout'}{$window_acc};
-    my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_acc};
+    my $window_layout    = $app_display_data->{'window_layout'}{$window_key};
+    my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_key};
 
     my $panel_border_width = 4;
 
@@ -123,22 +123,22 @@ sub layout_new_panel {
 
     my $panel_height_change = 0;
     foreach
-        my $slot_acc ( @{ $app_display_data->{'slot_order'}{$panel_acc} } )
+        my $slot_key ( @{ $app_display_data->{'slot_order'}{$panel_key} } )
     {
         layout_new_slot(
-            window_acc       => $window_acc,
-            panel_acc        => $panel_acc,
-            slot_acc         => $slot_acc,
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            slot_key         => $slot_key,
             app_display_data => $app_display_data,
         );
         $panel_height_change
-            += ( $app_display_data->{'slot_layout'}{$slot_acc}{'bounds'}[3]
-                - $app_display_data->{'slot_layout'}{$slot_acc}{'bounds'}[1]
+            += ( $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[3]
+                - $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1]
             );
     }
 
     $app_display_data->modify_panel_bottom_bound(
-        panel_acc        => $panel_acc,
+        panel_key        => $panel_key,
         bounds_change    => $panel_height_change,
         container_change => $panel_height_change,
     );
@@ -171,12 +171,12 @@ Lays out a brand new slot
 =cut
 
     my %args             = @_;
-    my $window_acc       = $args{'window_acc'};
-    my $panel_acc        = $args{'panel_acc'};
-    my $slot_acc         = $args{'slot_acc'};
+    my $window_key       = $args{'window_key'};
+    my $panel_key        = $args{'panel_key'};
+    my $slot_key         = $args{'slot_key'};
     my $app_display_data = $args{'app_display_data'};
-    my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_acc};
-    my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_acc};
+    my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_key};
+    my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
     my $start_height     = 0;
 
     # Initialize bounds to the container bounds of the panel
@@ -197,10 +197,10 @@ Lays out a brand new slot
     $slot_layout->{'container_bounds'}[3]
         = $slot_layout->{'container_bounds'}[0];
 
-    if ( $app_display_data->{'scaffold'}{$window_acc}{$panel_acc}{$slot_acc}
+    if ( $app_display_data->{'scaffold'}{$window_key}{$panel_key}{$slot_key}
         {'sub_maps'}
-        and my $parent_slot_acc
-        = $app_display_data->{'scaffold'}{$window_acc}{$panel_acc}{$slot_acc}
+        and my $parent_slot_key
+        = $app_display_data->{'scaffold'}{$window_key}{$panel_key}{$slot_key}
         {'parent'} )
     {
 
@@ -211,9 +211,9 @@ Lays out a brand new slot
 
         # These maps are "reference" maps
         _layout_reference_maps(
-            window_acc       => $window_acc,
-            panel_acc        => $panel_acc,
-            slot_acc         => $slot_acc,
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            slot_key         => $slot_key,
             app_display_data => $app_display_data,
 
         );
@@ -237,11 +237,11 @@ Lays out a reference maps in a new slot
 =cut
 
     my %args             = @_;
-    my $window_acc       = $args{'window_acc'};
-    my $panel_acc        = $args{'panel_acc'};
-    my $slot_acc         = $args{'slot_acc'};
+    my $window_key       = $args{'window_key'};
+    my $panel_key        = $args{'panel_key'};
+    my $slot_key         = $args{'slot_key'};
     my $app_display_data = $args{'app_display_data'};
-    my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_acc};
+    my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
 
     my $left_bound  = $slot_layout->{'container_bounds'}[0];
     my $right_bound = $slot_layout->{'container_bounds'}[2];
@@ -258,16 +258,18 @@ Lays out a reference maps in a new slot
     my $map_x_buffer  = 5;
     my $map_y_buffer  = 5;
 
-    my $map_data = $app_display_data->app_data_module()
-        ->map_data_array(
-        map_accs => [ keys( %{ $slot_layout->{'maps'} || {} } ) ], );
+    my @ordered_map_ids = map { $app_display_data->{'map_key_to_id'}{$_} }
+        @{ $app_display_data->{'map_order'}{$slot_key} || [] };
+    my $map_data_hash = $app_display_data->app_data_module()
+        ->map_data_hash( map_ids => \@ordered_map_ids, );
 
     my $length_conversion_factor = 1;
     if ($stacked) {
 
         # Layout maps on top of each other
         my $longest_length = 0;
-        foreach my $map ( @{ $map_data || [] } ) {
+        foreach my $map_id (@ordered_map_ids) {
+            my $map       = $map_data_hash->{$map_id};
             my $map_start = $map->{'map_start'};
             my $map_stop  = $map->{'map_stop'};
             my $length    = $map->{'map_stop'} - $map->{'map_start'};
@@ -278,13 +280,13 @@ Lays out a reference maps in a new slot
     }
     else {
         my $length_sum = 0;
-        foreach my $map ( @{ $map_data || [] } ) {
+        foreach my $map_id (@ordered_map_ids) {
+            my $map       = $map_data_hash->{$map_id};
             my $map_start = $map->{'map_start'};
             my $map_stop  = $map->{'map_stop'};
             $length_sum += $map->{'map_stop'} - $map->{'map_start'};
         }
-        my $buffer_space
-            = ( 1 + scalar( @{ $map_data || [] } ) ) * $map_x_buffer;
+        my $buffer_space = ( 1 + scalar(@ordered_map_ids) ) * $map_x_buffer;
         $length_conversion_factor
             = ( $slot_width - $buffer_space ) / $length_sum;
     }
@@ -294,9 +296,12 @@ Lays out a reference maps in a new slot
     my $row_max_y   = $row_min_y;
     my $start_min_y = $row_min_y;
 
-    foreach my $map ( @{ $map_data || [] } ) {
-        my $map_acc             = $map->{'map_acc'};
-        my $length              = $map->{'map_stop'} - $map->{'map_start'};
+    foreach
+        my $map_key ( @{ $app_display_data->{'map_order'}{$slot_key} || [] } )
+    {
+        my $map_id = $app_display_data->{'map_key_to_id'}{$map_key};
+        my $map    = $map_data_hash->{$map_id};
+        my $length = $map->{'map_stop'} - $map->{'map_start'};
         my $map_container_width = $length * $length_conversion_factor;
 
         $map_container_width = $min_map_width
@@ -308,8 +313,8 @@ Lays out a reference maps in a new slot
         }
         my $tmp_map_max_y = _layout_contained_map(
             app_display_data         => $app_display_data,
-            slot_acc                 => $slot_acc,
-            map_acc                  => $map_acc,
+            slot_key                 => $slot_key,
+            map_key                  => $map_key,
             map                      => $map,
             min_x                    => $row_max_x,
             width                    => $map_container_width,
@@ -321,12 +326,12 @@ Lays out a reference maps in a new slot
         }
 
         $row_max_x += $map_container_width + $map_x_buffer;
-        $slot_layout->{'maps'}{$map_acc}{'changed'} = 1;
+        $slot_layout->{'maps'}{$map_key}{'changed'} = 1;
     }
 
     my $height_change = $row_max_y - $start_min_y;
     $app_display_data->modify_slot_bottom_bound(
-        slot_acc         => $slot_acc,
+        slot_key         => $slot_key,
         bounds_change    => $height_change,
         container_change => $height_change,
     );
@@ -348,8 +353,8 @@ Lays out a maps in a contained area.
 
     my %args                     = @_;
     my $app_display_data         = $args{'app_display_data'};
-    my $slot_acc                 = $args{'slot_acc'};
-    my $map_acc                  = $args{'map_acc'};
+    my $slot_key                 = $args{'slot_key'};
+    my $map_key                  = $args{'map_key'};
     my $map                      = $args{'map'};
     my $min_x                    = $args{'min_x'};
     my $min_y                    = $args{'min_y'};
@@ -364,7 +369,7 @@ Lays out a maps in a contained area.
     my $y2;
 
     my $map_layout
-        = $app_display_data->{'slot_layout'}{$slot_acc}{'maps'}{$map_acc};
+        = $app_display_data->{'slot_layout'}{$slot_key}{'maps'}{$map_key};
 
     push @{ $map_layout->{'data'} },
         (
@@ -391,8 +396,8 @@ Lays out a maps in a contained area.
 
     $y2 = _layout_features(
         app_display_data         => $app_display_data,
-        slot_acc                 => $slot_acc,
-        map_acc                  => $map_acc,
+        slot_key                 => $slot_key,
+        map_key                  => $map_key,
         map                      => $map,
         min_x                    => $x1,
         width                    => $width,
@@ -418,8 +423,8 @@ Lays out feautures
 
     my %args                     = @_;
     my $app_display_data         = $args{'app_display_data'};
-    my $slot_acc                 = $args{'slot_acc'};
-    my $map_acc                  = $args{'map_acc'};
+    my $slot_key                 = $args{'slot_key'};
+    my $map_key                  = $args{'map_key'};
     my $map                      = $args{'map'};
     my $min_x                    = $args{'min_x'};
     my $min_y                    = $args{'min_y'};
@@ -434,7 +439,7 @@ Lays out feautures
     my $max_y;
 
     my $feature_data = $app_display_data->app_data_module()
-        ->feature_data( map_acc => $map_acc );
+        ->feature_data( map_id => $map->{'map_id'} );
 
     unless ( @{ $feature_data || [] } ) {
         return $min_y;
@@ -448,14 +453,14 @@ Lays out feautures
         my $feature_stop  = $feature->{'feature_stop'};
         my $direction     = $feature->{'direction'};
         unless (
-            $app_display_data->{'slot_layout'}{$slot_acc}{'maps'}{$map_acc}
+            $app_display_data->{'slot_layout'}{$slot_key}{'maps'}{$map_key}
             {'features'}{$feature_acc} )
         {
-            $app_display_data->{'slot_layout'}{$slot_acc}{'maps'}{$map_acc}
+            $app_display_data->{'slot_layout'}{$slot_key}{'maps'}{$map_key}
                 {'features'}{$feature_acc} = {};
         }
         my $feature_layout
-            = $app_display_data->{'slot_layout'}{$slot_acc}{'maps'}{$map_acc}
+            = $app_display_data->{'slot_layout'}{$slot_key}{'maps'}{$map_key}
             {'features'}{$feature_acc};
 
         my $x1 = $min_x
@@ -476,7 +481,7 @@ Lays out feautures
             );
 
         $y1 += 15;
-        my $y2 = $y1 + 5;
+        my $y2 = $y1 + 2;
         push @{ $feature_layout->{'data'} },
             (
             [   1, undef,

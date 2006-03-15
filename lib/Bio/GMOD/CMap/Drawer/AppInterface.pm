@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.1 2006-03-14 22:16:26 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.2 2006-03-15 13:58:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -68,31 +68,31 @@ This method will create the Application.
     my ( $self, %args ) = @_;
     my $title = $args{'title'} || 'Cmap Application';
 
-    # Assign window_acc sequentially
+    # Assign window_key sequentially
     # Start at 1 so it evals to true
-    my $window_acc = 1 + scalar keys %{ $self->{'windows'} || {} };
+    my $window_key = 1 + scalar keys %{ $self->{'windows'} || {} };
 
-    $self->{'windows'}{$window_acc}
+    $self->{'windows'}{$window_key}
         = $self->main_window()->Toplevel( -takefocus => 1 );
-    $self->{'windows'}{$window_acc}->title($title);
+    $self->{'windows'}{$window_key}->title($title);
 
-    $self->menu_bar( window_acc => $window_acc, );
-    $self->canvas( window_acc => $window_acc, );
+    $self->menu_bar( window_key => $window_key, );
+    $self->canvas( window_key => $window_key, );
 
     $self->populate_menu_bar(
-        window_acc      => $window_acc,
+        window_key      => $window_key,
         file_menu_items =>
-            $self->file_menu_items( window_acc => $window_acc, ),
+            $self->file_menu_items( window_key => $window_key, ),
     );
 
-    $self->{'windows'}{$window_acc}->protocol(
+    $self->{'windows'}{$window_key}->protocol(
         'WM_DELETE_WINDOW',
         sub {
-            $self->app_controller->close_window( window_acc => $window_acc, );
+            $self->app_controller->close_window( window_key => $window_key, );
         }
     );
 
-    return $window_acc;
+    return $window_key;
 }
 
 # ----------------------------------------------------
@@ -107,9 +107,9 @@ This method returns a window.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'} or return undef;
+    my $window_key = $args{'window_key'} or return undef;
 
-    return $self->{'windows'}{$window_acc};
+    return $self->{'windows'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -161,13 +161,13 @@ Returns the menu_bar object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'} or return undef;
-    unless ( $self->{'menu_bar'}{$window_acc} ) {
-        my $window = $self->{'windows'}{$window_acc};
-        $self->{'menu_bar'}{$window_acc} = $window->Menu();
-        $window->configure( -menu => $self->{'menu_bar'}{$window_acc} );
+    my $window_key = $args{'window_key'} or return undef;
+    unless ( $self->{'menu_bar'}{$window_key} ) {
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'menu_bar'}{$window_key} = $window->Menu();
+        $window->configure( -menu => $self->{'menu_bar'}{$window_key} );
     }
-    return $self->{'menu_bar'}{$window_acc};
+    return $self->{'menu_bar'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -182,10 +182,10 @@ Populates the menu_bar object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc      = $args{'window_acc'} or return undef;
+    my $window_key      = $args{'window_key'} or return undef;
     my $file_menu_items = $args{'file_menu_items'};
 
-    my $menu_bar = $self->menu_bar( window_acc => $window_acc, );
+    my $menu_bar = $self->menu_bar( window_key => $window_key, );
 
     $self->{'menu_buttons'}->{'file'} = $menu_bar->cascade(
         -label     => '~file',
@@ -207,13 +207,13 @@ Draws and re-draws on the canvas
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'}
-        or die "no window acc for file_menu_items";
+    my $window_key = $args{'window_key'}
+        or die "no window key for file_menu_items";
     my $app_display_data = $args{'app_display_data'};
 
-    my $canvas = $self->canvas( window_acc => $window_acc, );
+    my $canvas = $self->canvas( window_key => $window_key, );
 
-    my $window_layout = $app_display_data->{'window_layout'}{$window_acc};
+    my $window_layout = $app_display_data->{'window_layout'}{$window_key};
 
     if ( $window_layout->{'changed'} ) {
         foreach my $drawing_section (qw[ border buttons ]) {
@@ -227,11 +227,11 @@ Draws and re-draws on the canvas
     if ( $window_layout->{'sub_changed'} ) {
 
         # PANELS
-        foreach my $panel_acc (
-            @{ $app_display_data->{'panel_order'}{$window_acc} || [] } )
+        foreach my $panel_key (
+            @{ $app_display_data->{'panel_order'}{$window_key} || [] } )
         {
             my $panel_layout
-                = $app_display_data->{'panel_layout'}{$panel_acc};
+                = $app_display_data->{'panel_layout'}{$panel_key};
             if ( $panel_layout->{'changed'} ) {
                 foreach my $drawing_section (qw[ border buttons ]) {
                     $self->draw_items(
@@ -244,11 +244,11 @@ Draws and re-draws on the canvas
             if ( $panel_layout->{'sub_changed'} ) {
 
                 # SLOTS
-                foreach my $slot_acc (
-                    @{ $app_display_data->{'slot_order'}{$panel_acc} || [] } )
+                foreach my $slot_key (
+                    @{ $app_display_data->{'slot_order'}{$panel_key} || [] } )
                 {
                     my $slot_layout
-                        = $app_display_data->{'slot_layout'}{$slot_acc};
+                        = $app_display_data->{'slot_layout'}{$slot_key};
                     if ( $slot_layout->{'changed'} ) {
                         foreach my $drawing_section (qw[ border buttons ]) {
                             $self->draw_items(
@@ -261,10 +261,10 @@ Draws and re-draws on the canvas
                     if ( $slot_layout->{'sub_changed'} ) {
 
                         # MAPS
-                        foreach my $map_acc (
+                        foreach my $map_key (
                             keys %{ $slot_layout->{'maps'} || {} } )
                         {
-                            my $map_layout = $slot_layout->{'maps'}{$map_acc};
+                            my $map_layout = $slot_layout->{'maps'}{$map_key};
                             foreach my $drawing_section (qw[ buttons data ]) {
                                 $self->draw_items(
                                     canvas => $canvas,
@@ -361,15 +361,15 @@ Populates the file menu with menu_items
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'}
-        or die "no window acc for file_menu_items";
+    my $window_key = $args{'window_key'}
+        or die "no window key for file_menu_items";
     return [
         [   'command',
             '~Load',
             -accelerator => 'Ctrl-l',
             -command     => sub {
                 new_reference_maps( $self->app_controller(),
-                    window_acc => $window_acc, );
+                    window_key => $window_key, );
             },
         ],
         [   'command',
@@ -392,12 +392,12 @@ Returns the canvas object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'} or return undef;
+    my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'canvas'}{$window_acc} ) {
-        my $canvas_frame = $self->{'windows'}{$window_acc}->Frame()
+    unless ( $self->{'canvas'}{$window_key} ) {
+        my $canvas_frame = $self->{'windows'}{$window_key}->Frame()
             ->pack( -side => 'top', -fill => 'both', );
-        $self->{'canvas'}{$window_acc} = $canvas_frame->Scrolled(
+        $self->{'canvas'}{$window_key} = $canvas_frame->Scrolled(
             'Canvas',
             (   '-width'       => 1100,
                 '-height'      => 700,
@@ -410,7 +410,7 @@ Returns the canvas object.
             ),
         )->pack( -side => 'top', -fill => 'both', );
     }
-    return $self->{'canvas'}{$window_acc};
+    return $self->{'canvas'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -424,14 +424,14 @@ sub select_reference_maps {
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'}
-        or die "no window acc for new reference_maps";
+    my $window_key = $args{'window_key'}
+        or die "no window key for new reference_maps";
     my $controller = $args{'controller'};
 
     my $reference_maps_by_species
         = $self->app_data_module()->get_reference_maps_by_species();
 
-    my $window = $self->get_window( window_acc => $window_acc, );
+    my $window = $self->get_window( window_key => $window_key, );
 
     $window->withdraw();
 
@@ -461,20 +461,20 @@ sub select_reference_maps {
         -height     => 7,
         -selectmode => 'multiple',
     )->pack;
-    my $ref_species_acc = $reference_maps_by_species->[0]->{'species_acc'};
-    my $selectable_ref_map_accs = [];
+    my $ref_species_id = $reference_maps_by_species->[0]->{'species_id'};
+    my $selectable_ref_map_ids = [];
 
     foreach my $species ( @{ $reference_maps_by_species || [] } ) {
         $species_frame->Radiobutton(
             -text     => $species->{'species_common_name'},
-            -value    => $species->{'species_acc'},
-            -variable => \$ref_species_acc,
+            -value    => $species->{'species_id'},
+            -variable => \$ref_species_id,
             -command  => sub {
                 $self->display_reference_map_sets(
-                    map_set_frame           => $map_set_frame,
-                    map_listbox             => $map_listbox,
-                    selectable_ref_map_accs => $selectable_ref_map_accs,
-                    map_sets                => $species->{'map_sets'},
+                    map_set_frame          => $map_set_frame,
+                    map_listbox            => $map_listbox,
+                    selectable_ref_map_ids => $selectable_ref_map_ids,
+                    map_sets               => $species->{'map_sets'},
                 );
             },
         )->pack( -side => 'top', -anchor => 'nw', );
@@ -483,10 +483,10 @@ sub select_reference_maps {
     $map_set_frame->pack( -side => 'left', -anchor => 'n', );
     $map_frame->pack( -side     => 'left', -anchor => 'n', );
     $self->display_reference_map_sets(
-        map_set_frame           => $map_set_frame,
-        map_listbox             => $map_listbox,
-        selectable_ref_map_accs => $selectable_ref_map_accs,
-        map_sets => $reference_maps_by_species->[0]{'map_sets'},
+        map_set_frame          => $map_set_frame,
+        map_listbox            => $map_listbox,
+        selectable_ref_map_ids => $selectable_ref_map_ids,
+        map_sets               => $reference_maps_by_species->[0]{'map_sets'},
     );
     $selection_frame->pack( -side => 'top', -anchor => 'nw', );
 
@@ -494,9 +494,9 @@ sub select_reference_maps {
         -text    => "Load Maps",
         -command => sub {
             $controller->load_first_slot(
-                selectable_ref_map_accs => $selectable_ref_map_accs,
-                selections              => [ $map_listbox->curselection() ],
-                window_acc              => $window_acc,
+                selectable_ref_map_ids => $selectable_ref_map_ids,
+                selections             => [ $map_listbox->curselection() ],
+                window_key             => $window_key,
             );
             $self->return_to_last_window(
                 current_window => $ref_selection_window,
@@ -536,34 +536,34 @@ sub display_reference_map_sets {
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_set_frame           = $args{'map_set_frame'};
-    my $map_listbox             = $args{'map_listbox'};
-    my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'};
-    my $map_sets                = $args{'map_sets'};
+    my $map_set_frame          = $args{'map_set_frame'};
+    my $map_listbox            = $args{'map_listbox'};
+    my $selectable_ref_map_ids = $args{'selectable_ref_map_ids'};
+    my $map_sets               = $args{'map_sets'};
 
     $self->clear_buttons($map_set_frame);
-    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_accs );
+    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_ids );
 
-    my $ref_map_set_acc = $map_sets->[0]->{'map_set_acc'};
+    my $ref_map_set_id = $map_sets->[0]->{'map_set_id'};
     foreach my $map_set ( @{ $map_sets || [] } ) {
         $map_set_frame->Radiobutton(
             -text     => $map_set->{'map_set_name'},
-            -value    => $map_set->{'map_set_acc'},
-            -variable => \$ref_map_set_acc,
+            -value    => $map_set->{'map_set_id'},
+            -variable => \$ref_map_set_id,
             -command  => sub {
                 $self->display_reference_maps(
-                    map_listbox             => $map_listbox,
-                    selectable_ref_map_accs => $selectable_ref_map_accs,
-                    maps                    => $map_set->{'maps'},
+                    map_listbox            => $map_listbox,
+                    selectable_ref_map_ids => $selectable_ref_map_ids,
+                    maps                   => $map_set->{'maps'},
                 );
             },
         )->pack( -side => 'top', -anchor => 'nw', );
     }
 
     $self->display_reference_maps(
-        map_listbox             => $map_listbox,
-        selectable_ref_map_accs => $selectable_ref_map_accs,
-        maps                    => $map_sets->[0]{'maps'},
+        map_listbox            => $map_listbox,
+        selectable_ref_map_ids => $selectable_ref_map_ids,
+        maps                   => $map_sets->[0]{'maps'},
     );
 
     return;
@@ -579,15 +579,15 @@ sub display_reference_maps {
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_listbox             = $args{'map_listbox'};
-    my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'};
-    my $maps                    = $args{'maps'};
+    my $map_listbox            = $args{'map_listbox'};
+    my $selectable_ref_map_ids = $args{'selectable_ref_map_ids'};
+    my $maps                   = $args{'maps'};
 
-    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_accs );
+    $self->clear_ref_maps( $map_listbox, $selectable_ref_map_ids );
 
     foreach my $map ( @{ $maps || [] } ) {
         $map_listbox->insert( 'end', $map->{'map_name'}, );
-        push @$selectable_ref_map_accs, $map->{'map_acc'};
+        push @$selectable_ref_map_ids, $map->{'map_id'};
     }
 
     return;
@@ -624,9 +624,9 @@ sub clear_ref_maps {
 
     my $self             = shift;
     my $ref_maps_listbox = shift or return;
-    my $ref_map_accs     = shift or return;
+    my $ref_map_ids      = shift or return;
     $ref_maps_listbox->delete( 0, 'end' );
-    @$ref_map_accs = ();
+    @$ref_map_ids = ();
 
     return;
 }

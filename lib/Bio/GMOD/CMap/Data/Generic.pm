@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.136 2006-03-14 22:16:23 mwz444 Exp $
+# $Id: Generic.pm,v 1.137 2006-03-15 13:58:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2928,15 +2928,21 @@ Not using cache because this query is quicker.
     my %validation_params = (
         cmap_object   => 1,
         no_validation => 0,
-        map_set_acc   => 1,
+        map_set_acc   => 0,
+        map_set_id    => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_acc = $args{'map_set_acc'};
-    my $db          = $cmap_object->db;
+    my $map_set_id  = $args{'map_set_id'};
+    unless ( defined($map_set_acc) or defined($map_set_id) ) {
+        die "No map set defined in get_maps_in_map_set()\n";
+    }
+    my $db = $cmap_object->db;
     my $return_object;
+    my @identifiers;
 
     my $sql_str = q[
         select   map.map_acc,
@@ -2944,16 +2950,30 @@ Not using cache because this query is quicker.
                  map.map_name,
                  map.map_start,
                  map.map_stop
-        from     cmap_map map,
-                 cmap_map_set ms
+        from     cmap_map map
+    ];
+
+    if ( defined($map_set_id) ) {
+        $sql_str .= q[ 
+            where    map.map_set_id = ?
+        ];
+        push @identifiers, $map_set_id;
+    }
+    if ( defined($map_set_acc) ) {
+        $sql_str .= q[ 
+               , cmap_map_set ms
         where    map.map_set_id=ms.map_set_id
         and      ms.map_set_acc=?
+        ];
+        push @identifiers, $map_set_acc;
+    }
+    $sql_str .= q[ 
         order by map.display_order,
                  map.map_name
     ];
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
-        ($map_set_acc) );
+        @identifiers );
 
     return $return_object;
 }
@@ -3899,7 +3919,7 @@ Get just the info from the features taking into account sub-map information.
 
 =over 4
 
-=item - Map Accession (map_acc)
+=item - Map ID (map_id)
 
 =item - Feature Type Accession (feature_type_acc)
 
@@ -3938,7 +3958,7 @@ Not using cache because this query is quicker.
     my %validation_params = (
         cmap_object              => 1,
         no_validation            => 0,
-        map_acc                  => 1,
+        map_id                   => 1,
         feature_type_acc         => 0,
         ignore_feature_type_accs => 0,
         get_sub_maps             => 0,
@@ -3947,8 +3967,8 @@ Not using cache because this query is quicker.
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
-    my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
-    my $map_acc       = $args{'map_acc'};
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $map_id = $args{'map_id'};
     my $feature_type_acc         = $args{'feature_type_acc'};
     my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
     my $get_sub_maps             = $args{'get_sub_maps'} || 0;
@@ -3977,8 +3997,8 @@ Not using cache because this query is quicker.
     }
     my $where_sql = ' where f.map_id = map.map_id ';
 
-    if ($map_acc) {
-        $where_sql .= "and map.map_acc = '$map_acc' ";
+    if ($map_id) {
+        $where_sql .= "and map.map_id = $map_id ";
     }
     if ($get_sub_maps) {
         $where_sql .= "and !isNull(mtf.map_id) ";

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.1 2006-03-14 22:16:26 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.2 2006-03-15 13:58:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout
@@ -129,18 +129,18 @@ Adds the first slot
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'};
-    my $map_accs   = $args{'map_accs'};
+    my $window_key = $args{'window_key'};
+    my $map_ids    = $args{'map_ids'};
 
-    # REMOVE OLD INFO XXX
+    # REMOVE OLD INFO IF ANY XXX
 
-    my $panel_acc = $self->next_panel_acc();
-    my $slot_acc  = $self->next_slot_acc();
+    my $panel_key = $self->next_internal_key('panel');
+    my $slot_key  = $self->next_internal_key('slot');
 
-    $self->{'panel_order'}{$window_acc} = [ $panel_acc, ];
-    $self->{'slot_order'}{$panel_acc}   = [ $slot_acc, ];
+    $self->{'panel_order'}{$window_key} = [ $panel_key, ];
+    $self->{'slot_order'}{$panel_key}   = [ $slot_key, ];
 
-    $self->{'scaffold'}{$window_acc}{$panel_acc}{$slot_acc} = {
+    $self->{'scaffold'}{$window_key}{$panel_key}{$slot_key} = {
         parent       => undef,
         children     => [],
         scale2parent => 0,
@@ -150,9 +150,9 @@ Adds the first slot
     };
 
     my $map_data
-        = $self->app_data_module()->map_data_array( map_accs => $map_accs, );
+        = $self->app_data_module()->map_data_array( map_ids => $map_ids, );
 
-    $self->{'window_layout'}{$window_acc} = {
+    $self->{'window_layout'}{$window_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
         border           => [],
@@ -160,7 +160,7 @@ Adds the first slot
         changed          => 1,
         sub_changed      => 1,
     };
-    $self->{'panel_layout'}{$panel_acc} = {
+    $self->{'panel_layout'}{$panel_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
         border           => [],
@@ -168,7 +168,7 @@ Adds the first slot
         changed          => 1,
         sub_changed      => 1,
     };
-    $self->{'slot_layout'}{$slot_acc} = {
+    $self->{'slot_layout'}{$slot_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
         border           => [],
@@ -179,8 +179,12 @@ Adds the first slot
     };
 
     my $display_order = 0;
-    foreach my $map_acc ( @{ $map_accs || [] } ) {
-        $self->{'slot_layout'}{$slot_acc}{'maps'}{$map_acc} = {
+    foreach my $map_id ( @{ $map_ids || [] } ) {
+        my $map_key = $self->next_internal_key('map');
+        push @{ $self->{'map_id_to_key'}{$map_id} }, $map_key;
+        push @{ $self->{'map_order'}{$slot_key} },   $map_key;
+        $self->{'map_key_to_id'}{$map_key} = $map_id;
+        $self->{'slot_layout'}{$slot_key}{'maps'}{$map_key} = {
             bounds  => [ 0, 0, 0, 0 ],
             buttons => [],
             data    => [],
@@ -190,12 +194,12 @@ Adds the first slot
     }
 
     layout_new_window(
-        window_acc       => $window_acc,
+        window_key       => $window_key,
         app_display_data => $self,
     );
 
     $self->app_interface()->draw(
-        window_acc       => $window_acc,
+        window_key       => $window_key,
         app_display_data => $self,
     );
 
@@ -219,14 +223,14 @@ If container_change is given, it will change the y2 value of
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'} or return;
+    my $window_key = $args{'window_key'} or return;
     my $bounds_change    = $args{'bounds_change'}    || 0;
     my $container_change = $args{'container_change'} || 0;
 
-    $self->{'window_layout'}{$window_acc}{'bounds'}[3] += $bounds_change;
-    $self->{'window_layout'}{$window_acc}{'container_bounds'}[3]
+    $self->{'window_layout'}{$window_key}{'bounds'}[3] += $bounds_change;
+    $self->{'window_layout'}{$window_key}{'container_bounds'}[3]
         += $container_change;
-    $self->{'window_layout'}{$window_acc}{'changed'} = 1;
+    $self->{'window_layout'}{$window_key}{'changed'} = 1;
 
     return;
 }
@@ -248,14 +252,14 @@ If container_change is given, it will change the y2 value of
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_acc = $args{'panel_acc'} or return;
+    my $panel_key = $args{'panel_key'} or return;
     my $bounds_change    = $args{'bounds_change'}    || 0;
     my $container_change = $args{'container_change'} || 0;
 
-    $self->{'panel_layout'}{$panel_acc}{'bounds'}[3] += $bounds_change;
-    $self->{'panel_layout'}{$panel_acc}{'container_bounds'}[3]
+    $self->{'panel_layout'}{$panel_key}{'bounds'}[3] += $bounds_change;
+    $self->{'panel_layout'}{$panel_key}{'container_bounds'}[3]
         += $container_change;
-    $self->{'panel_layout'}{$panel_acc}{'changed'} = 1;
+    $self->{'panel_layout'}{$panel_key}{'changed'} = 1;
 
     return;
 }
@@ -277,63 +281,41 @@ If container_change is given, it will change the y2 value of
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_acc = $args{'slot_acc'} or return;
+    my $slot_key = $args{'slot_key'} or return;
     my $bounds_change    = $args{'bounds_change'}    || 0;
     my $container_change = $args{'container_change'} || 0;
 
-    $self->{'slot_layout'}{$slot_acc}{'bounds'}[3] += $bounds_change;
-    $self->{'slot_layout'}{$slot_acc}{'container_bounds'}[3]
+    $self->{'slot_layout'}{$slot_key}{'bounds'}[3] += $bounds_change;
+    $self->{'slot_layout'}{$slot_key}{'container_bounds'}[3]
         += $container_change;
-    $self->{'slot_layout'}{$slot_acc}{'changed'} = 1;
+    $self->{'slot_layout'}{$slot_key}{'changed'} = 1;
 
     return;
 }
 
 # ----------------------------------------------------
-sub next_panel_acc {
+sub next_internal_key {
 
 =pod
 
-=head2 next_panel_acc
+=head2 next_internal_key
 
-Returns the next panel acc
+Returns the next key for the given item.
 
 =cut
 
     my $self = shift;
+    my $key_type = shift or die "Failed to give type to next_internal_key\n";
+    my $access_str = 'last_' . $key_type . '_key';
 
-    if ( $self->{'last_panel_acc'} ) {
-        $self->{'last_panel_acc'}++;
+    if ( $self->{$access_str} ) {
+        $self->{$access_str}++;
     }
     else {
-        $self->{'last_panel_acc'} = 1;
+        $self->{$access_str} = 1;
     }
 
-    return $self->{'last_panel_acc'};
-
-}
-
-# ----------------------------------------------------
-sub next_slot_acc {
-
-=pod
-
-=head2 next_slot_acc
-
-Returns the next slot acc
-
-=cut
-
-    my $self = shift;
-
-    if ( $self->{'last_slot_acc'} ) {
-        $self->{'last_slot_acc'}++;
-    }
-    else {
-        $self->{'last_slot_acc'} = 1;
-    }
-
-    return $self->{'last_slot_acc'};
+    return $self->{$access_str};
 
 }
 
@@ -351,20 +333,20 @@ Returns the number of remaining windows.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'};
+    my $window_key = $args{'window_key'};
 
-    foreach my $panel_acc ( @{ $self->{'panel_order'}{$window_acc} || [] } ) {
-        foreach my $slot_acc ( @{ $self->{'slot_order'}{$panel_acc} || [] } )
+    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
+        foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
         {
-            delete $self->{'slot_layout'}{$slot_acc};
+            delete $self->{'slot_layout'}{$slot_key};
         }
-        delete $self->{'panel_layout'}{$panel_acc};
-        delete $self->{'slot_order'}{$panel_acc};
+        delete $self->{'panel_layout'}{$panel_key};
+        delete $self->{'slot_order'}{$panel_key};
     }
-    delete $self->{'panel_order'}{$window_acc};
+    delete $self->{'panel_order'}{$window_key};
 
-    delete $self->{'scaffold'}{$window_acc};
-    delete $self->{'window_layout'}{$window_acc};
+    delete $self->{'scaffold'}{$window_key};
+    delete $self->{'window_layout'}{$window_key};
 
     return scalar( keys %{ $self->{'scaffold'} || {} } );
 }

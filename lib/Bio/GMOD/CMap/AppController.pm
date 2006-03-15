@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.2 2006-03-14 22:16:19 mwz444 Exp $
+# $Id: AppController.pm,v 1.3 2006-03-15 13:58:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -48,8 +48,8 @@ Initializes the object.
     $self->params( $config, qw[ config_dir data_source ] );
     $self->config();
     $self->data_source( $self->{'data_source'} );
-    my $window_acc = $self->start_application();
-    $self->new_reference_maps( window_acc => $window_acc, );
+    my $window_key = $self->start_application();
+    $self->new_reference_maps( window_key => $window_key, );
     MainLoop();
     return $self;
 }
@@ -66,10 +66,10 @@ This method will create the Application.
 =cut
 
     my $self = shift;
-    my $window_acc = $self->create_window( title => "CMap Application", )
+    my $window_key = $self->create_window( title => "CMap Application", )
         or die "Failed to create interface\n";
     my $app_display_data = $self->app_display_data();
-    return $window_acc;
+    return $window_key;
 }
 
 # ----------------------------------------------------
@@ -85,13 +85,13 @@ This method will create the Application.
 
     my $self      = shift;
     my $interface = $self->app_interface();
-    my $window_acc
+    my $window_key
         = $interface->create_window( title => "CMap Application", );
-    unless ( defined $window_acc ) {
+    unless ( defined $window_key ) {
         die "Problem setting up interface\n";
     }
 
-    return $window_acc;
+    return $window_key;
 }
 
 # ----------------------------------------------------
@@ -184,11 +184,11 @@ sub new_reference_maps {
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'}
+    my $window_key = $args{'window_key'}
         or die "no window acc for new_reference_maps";
 
     $self->app_interface()->select_reference_maps(
-        window_acc => $window_acc,
+        window_key => $window_key,
         controller => $self,
     );
 
@@ -215,17 +215,16 @@ Load the first slot of a page.
 
     my ( $self, %args ) = @_;
 
-    my $selectable_ref_map_accs = $args{'selectable_ref_map_accs'} or return;
-    my $selections              = $args{'selections'}              or return;
-    my $window_acc              = $args{'window_acc'}              or return;
+    my $selectable_ref_map_ids = $args{'selectable_ref_map_ids'} or return;
+    my $selections             = $args{'selections'}             or return;
+    my $window_key             = $args{'window_key'}             or return;
 
-    my @selected_map_accs
-        = map { $selectable_ref_map_accs->[$_] } @$selections;
+    my @selected_map_ids = map { $selectable_ref_map_ids->[$_] } @$selections;
 
-    if (@selected_map_accs) {
+    if (@selected_map_ids) {
         $self->app_display_data()->load_first_slot_of_window(
-            window_acc => $window_acc,
-            map_accs   => \@selected_map_accs,
+            window_key => $window_key,
+            map_ids    => \@selected_map_ids,
         );
     }
 
@@ -245,10 +244,10 @@ When window is closed, delete drawing data and if it is the last window, exit.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_acc = $args{'window_acc'};
+    my $window_key = $args{'window_key'};
 
     my $remaining_windows_num = $self->app_display_data()
-        ->remove_window( window_acc => $window_acc, );
+        ->remove_window( window_key => $window_key, );
 
     unless ($remaining_windows_num) {
         exit;
