@@ -47,7 +47,7 @@ CREATE OR REPLACE FUNCTION cmap_organism_deleted() RETURNS trigger AS '
         SELECT dbxref.accession 
         FROM organism_dbxref odbx, dbxref, db
         where odbx.organism_id = ]
-        . $_TD->{new}{organism_id} . q[ 
+        . $_TD->{old}{organism_id} . q[ 
             and odbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_species\'
@@ -127,8 +127,8 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
             || $species_full_name;
         my $display_order = 1;
 
-        $species_id = $cmap_sql_object->insert_species(
-            cmap_object         => $cmap_object,
+        $species_id = $cmap_admin->sql->insert_species(
+            cmap_object         => $cmap_admin,
             species_common_name => $species_common_name,
             species_full_name   => $species_full_name,
             display_order       => $display_order,
@@ -137,9 +137,9 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
         # Insert dbxref
         spi_exec_query(
             q[
-              insert into dbxref ( db_id, accession)
-                select (db_id, \'] . $species_id . q[
-                from db where name = \'CMAP_BASE_NAME_species\'
+              insert into dbxref ( db_id, accession) (
+                select db_id, \'] . $species_id . q[\'
+                from db where name = \'CMAP_BASE_NAME_species\' )
              ]
         );
         $rv = spi_exec_query(
@@ -167,9 +167,9 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
     );
     spi_exec_query(
         q[
-          insert into dbxref ( db_id, accession)
-            select (db_id, \'] . $map_set_id . q[
-            from db where name = \'CMAP_BASE_NAME_map_set\'
+          insert into dbxref ( db_id, accession) (
+            select db_id, \'] . $map_set_id . q[\'
+            from db where name = \'CMAP_BASE_NAME_map_set\' )
          ]
     );
     $rv = spi_exec_query(
@@ -231,7 +231,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_deleted() RETURNS trigger AS '
         SELECT dbxref.accession 
         FROM featureset_dbxref fsdbx, dbxref, db
         where fsdbx.featureset_id = ]
-        . $_TD->{new}{featureset_id} . q[ 
+        . $_TD->{old}{featureset_id} . q[ 
             and fsdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_map_set\'
@@ -296,7 +296,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
         || \'UNNAMED\';
     my $display_order = 1;
     my $map_start     = 1;
-    my $map_stop      = $new_feature->{\'seqlen\'};
+    my $map_stop      = $rv->{\'rows\'}[0]{\'seqlen\'};
 
     # Insert
     my $map_id = $cmap_admin->sql()->insert_map(
@@ -310,9 +310,9 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
 
     spi_exec_query(
         q[
-          insert into dbxref ( db_id, accession)
-            select (db_id, \'] . $map_id . q[
-            from db where name = \'CMAP_BASE_NAME_map\'
+          insert into dbxref ( db_id, accession) (
+            select db_id, \'] . $map_id . q[\'
+            from db where name = \'CMAP_BASE_NAME_map\' )
          ]
     );
     $rv = spi_exec_query(
@@ -322,7 +322,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
             insert into feature_dbxref
             ( dbxref_id, feature_id)
                 values ( ]
-            . $rv->{rows}[0]{\'dbxref_id\'} . q[,\'] . $feature_id . q[\')]
+            . $rv->{rows}[0]{\'dbxref_id\'} . q[,\'] . $ch_feature_id . q[\')]
     );
 
     # Add the applicable features
@@ -348,7 +348,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
     my $nrows        = $sub_features->{processed};
     if ($nrows) {
         my $feature_type_data
-            = $cmap_object->feature_type_data($feature_type_acc);
+            = $cmap_admin->feature_type_data($feature_type_acc);
         my %failed_feature_types;
         foreach my $rn ( 0 .. $nrows - 1 ) {
 
@@ -400,9 +400,9 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
 
             spi_exec_query(
                 q[
-                  insert into dbxref ( db_id, accession)
-                    select (db_id, \'] . $cmap_feature_id . q[
-                    from db where name = \'CMAP_BASE_NAME_feature\'
+                  insert into dbxref ( db_id, accession) (
+                    select db_id, \'] . $cmap_feature_id . q[\'
+                    from db where name = \'CMAP_BASE_NAME_feature\' )
                  ]
             );
             $rv = spi_exec_query(
@@ -430,7 +430,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_deleted() RETURNS trigger AS 
         SELECT dbxref.accession 
         FROM feature_dbxref fdbx, dbxref, db
         where fdbx.feature_id = ]
-        . $_TD->{new}{feature_id} . q[ 
+        . $_TD->{old}{feature_id} . q[ 
             and fdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_map\'
@@ -512,7 +512,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
         my $features = spi_exec_query($sql_str);
         if ( $features->{processed} ) {
             my $feature_type_data
-                = $cmap_object->feature_type_data($feature_type_acc);
+                = $cmap_admin->feature_type_data($feature_type_acc);
 
             # get feature type and remove improper chars
             my $feature_type_acc = $features->{\'rows\'}[0]{\'type_name\'};
@@ -545,9 +545,9 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
 
             spi_exec_query(
                 q[
-                  insert into dbxref ( db_id, accession)
-                    select (db_id, \'] . $cmap_feature_id . q[
-                    from db where name = \'CMAP_BASE_NAME_feature\'
+                  insert into dbxref ( db_id, accession) (
+                    select db_id, \'] . $cmap_feature_id . q[\'
+                    from db where name = \'CMAP_BASE_NAME_feature\' )
                  ]
             );
             $rv = spi_exec_query(
@@ -555,10 +555,10 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
             spi_exec_query(
                 q[
                     insert into featureloc_dbxref
-                    ( dbxref_id, feature_id)
+                    ( dbxref_id, featureloc_id)
                         values ( ]
                     . $rv->{rows}[0]{\'dbxref_id\'} . q[,\']
-                    . $features->{\'rows\'}[$rn]{\'featureloc_id\'} . q[\')]
+                    . $featureloc_id . q[\')]
             );
         }
     }
@@ -626,8 +626,8 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_deleted() RETURNS trigger AS '
         SELECT dbxref.accession 
         FROM featureloc_dbxref fldbx, dbxref, db
         where fldbx.featureloc_id = ]
-        . $_TD->{new}{featureloc_id} . q[ 
-            and fdbx.dbxref_id = dbxref.dbxref_id
+        . $_TD->{old}{featureloc_id} . q[ 
+            and fldbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
             and db.name = \'CMAP_BASE_NAME_feature\'
     ];
@@ -732,7 +732,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_deleted() RETURNS trigger AS '
         SELECT dbxref.accession, db.name as db_name
         FROM feature_dbxref fdbx, dbxref, db
         where fdbx.feature_id = ]
-        . $_TD->{new}{feature_id} . q[ 
+        . $_TD->{old}{feature_id} . q[ 
             and fdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
     ];
