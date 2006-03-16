@@ -726,34 +726,3 @@ CREATE TRIGGER cmap_feature_updated_trig
     BEFORE UPDATE ON feature
     FOR EACH ROW EXECUTE PROCEDURE cmap_feature_updated();
 
-CREATE OR REPLACE FUNCTION cmap_feature_deleted() RETURNS trigger AS '
-    # Check if it is a map
-    my $sql_str = q[
-        SELECT dbxref.accession, db.name as db_name
-        FROM feature_dbxref fdbx, dbxref, db
-        where fdbx.feature_id = ]
-        . $_TD->{old}{feature_id} . q[ 
-            and fdbx.dbxref_id = dbxref.dbxref_id
-            and dbxref.db_id = db.db_id
-    ];
-    my $rv    = spi_exec_query($sql_str);
-    my $nrows = $rv->{processed};
-    if ($nrows) {
-        foreach my $rn ( 0 .. $nrows - 1 ) {
-            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
-                use Bio::GMOD::CMap::Admin;
-                my $cmap_admin = Bio::GMOD::CMap::Admin->new(
-                    data_source => \'CMAP_DATASOURCE\', );
-                my $map_id = $rv->{\'rows\'}[$rn]{\'accession\'};
-                $cmap_admin->map_delete( map_id => $map_id, );
-            }
-        }
-    }
-    return;
-' LANGUAGE plperlu;
-
-CREATE TRIGGER cmap_feature_deleted_trig
-    BEFORE DELETE ON feature
-    FOR EACH ROW EXECUTE PROCEDURE cmap_feature_deleted();
-
-
