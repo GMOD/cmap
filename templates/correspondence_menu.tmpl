@@ -1,8 +1,13 @@
+<table border=1>
+  <tr>
+    <td valign="top" bgcolor="[% menu_bgcolor_tint %]">
+
 [%- IF form_data -%]
   [%- SET map_sets = form_data.comp_maps -%]
     [%- IF map_sets.size -%]
       [%- SET last_map_type = "" -%]
-      <td valign="top">
+        Comparative Maps ([%- side | ucfirst -%] Side)
+        <br>
       <select name="comp_map_set_[%- side | lower -%]" size=1 
       onChange="changeCompMaps(
         document.comparative_map_form.comparative_map_[%- side | lower -%],
@@ -38,16 +43,14 @@
              [%- SET last_map_type = ms.map_type -%]
          [%- END -%]
        </select>
-    </td>
-    <td  valign="top">
+    <br>
       <select name="comparative_map_[%- side | lower -%]"  style="width:100%" size="3" multiple>
         <option value=''>No Map Set Selected</option> 
       </select>
-    </td> 
+    <br>
     [%- ELSE -%]
-      <td valign="top">No maps available at these settings.</td></tr><tr>
+      No maps available at these settings.<br>
     [%- END -%]
-    <td valign="top">
       Min. Correspondences:
       <input 
           type="text" 
@@ -56,10 +59,11 @@
           value='[% corr_menu_min_corrs %]' 
           onKeyPress="return event.keyCode!=13"
        >
-    </td>
-    <td valign="top"><input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu"></td>
+    <br>
+    <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu">
+    <input type="submit" value="Redraw Image" name="sub">
 [%- ELSE -%]
-  <tr><td>
   <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Data">
-  </tr></td>
 [%- END -%]
+</td></tr>
+</table>

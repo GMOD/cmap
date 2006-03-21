@@ -124,7 +124,8 @@ my %config_defs = (
     font_size                 => { %generic_scalar_def, },
     image_size                => { %generic_scalar_def, },
     image_type                => { %generic_scalar_def, },
-    min_map_pixel_height => { %generic_scalar_def, option_type => 'integer', },
+    min_map_pixel_height      =>
+        { %generic_scalar_def, option_type => 'integer', },
     min_tick_distance => { %generic_scalar_def, option_type => 'integer', },
     map_shape         => { %generic_scalar_def, },
     feature_search_field         => { %generic_scalar_def, },
@@ -137,6 +138,10 @@ my %config_defs = (
     feature_highlight_fg_color   => { %generic_scalar_def, },
     feature_correspondence_color => { %generic_scalar_def, },
     map_color                    => { %generic_scalar_def, },
+    menu_bgcolor                 => { %generic_scalar_def, },
+    menu_bgcolor_tint            => { %generic_scalar_def, },
+    menu_ref_bgcolor             => { %generic_scalar_def, },
+    menu_ref_bgcolor_tint        => { %generic_scalar_def, },
     map_width          => { %generic_scalar_def, option_type => 'integer', },
     cmap_title         => { %generic_scalar_def, },
     cmap_home_intro    => { %generic_scalar_def, },
@@ -171,7 +176,7 @@ my %config_defs = (
             password    => { %generic_scalar_def, required => 0, },
             passwd_file => { %generic_scalar_def, required => 0, },
             is_default  =>
-              { deprecated => 1, validation_method => \&deprecated_value, },
+                { deprecated => 1, validation_method => \&deprecated_value, },
         },
     },
     scalable => {
@@ -200,7 +205,7 @@ my %config_defs = (
             feature_type_accession => {
                 deprecated => 1,
                 warning    =>
-'Warning: feature_type_accession has been changed to feature_type_acc.',
+                    'Warning: feature_type_accession has been changed to feature_type_acc.',
                 validation_method => \&deprecated_value,
             },
             feature_type_acc   => { %generic_scalar_def, required => 1, },
@@ -219,18 +224,20 @@ my %config_defs = (
                 print_corrections_method => \&print_corrected_array,
                 element                  => { %generic_scalar_def, },
             },
-            attribute     => \%attribute_def,
-            xref          => \%xref_def,
-            shape         => { %generic_scalar_def, no_validation_hash => 1, },
+            attribute => \%attribute_def,
+            xref      => \%xref_def,
+            shape     => { %generic_scalar_def, no_validation_hash => 1, },
             glyph_overlap => {
                 deprecated => 1,
                 warning    => 'Warning: glyph_overlap is no longer used.',
                 validation_method => \&deprecated_value,
-                },
-            default_rank  => { %generic_scalar_def, option_type => 'integer', },
-            drawing_lane  => { %generic_scalar_def, option_type => 'integer', },
+            },
+            default_rank =>
+                { %generic_scalar_def, option_type => 'integer', },
+            drawing_lane =>
+                { %generic_scalar_def, option_type => 'integer', },
             drawing_priority =>
-              { %generic_scalar_def, option_type => 'integer', },
+                { %generic_scalar_def, option_type => 'integer', },
             feature_default_display => { %generic_scalar_def, },
             gbrowse_class           => { %generic_scalar_def, },
             gbrowse_ftype           => { %generic_scalar_def, },
@@ -247,7 +254,7 @@ my %config_defs = (
             map_type_accession => {
                 deprecated => 1,
                 warning    =>
-'Warning: map_type_accession has been changed to map_type_acc.',
+                    'Warning: map_type_accession has been changed to map_type_acc.',
                 validation_method => \&deprecated_value,
             },
             map_type_acc => {
@@ -280,8 +287,9 @@ my %config_defs = (
                 required           => 1,
                 %generic_scalar_def,
             },
-            display_order => { %generic_scalar_def, option_type => 'integer', },
-            shape         => {
+            display_order =>
+                { %generic_scalar_def, option_type => 'integer', },
+            shape => {
                 no_validation_hash => 1,
                 %generic_scalar_def,
             },
@@ -300,7 +308,7 @@ my %config_defs = (
             evidence_type_accession => {
                 deprecated => 1,
                 warning    =>
-'Warning: evidence_type_accession has been changed to evidence_type_acc.',
+                    'Warning: evidence_type_accession has been changed to evidence_type_acc.',
                 validation_method => \&deprecated_value,
             },
             evidence_type_acc => {

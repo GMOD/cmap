@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceMenu;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceMenu.pm,v 1.1 2006-02-23 17:12:06 mwz444 Exp $
+# $Id: CorrespondenceMenu.pm,v 1.2 2006-03-21 22:10:21 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -76,6 +76,15 @@ sub handler {
             form_data           => $form_data,
             side                => $side,
             corr_menu_min_corrs => $corr_menu_min_corrs,
+            menu_bgcolor_tint   => $self->config_data('menu_bgcolor_tint')
+                || DEFAULT->{'menu_bgcolor_tint'},
+            menu_bgcolor => $self->config_data('menu_bgcolor')
+                || DEFAULT->{'menu_bgcolor'},
+            menu_ref_bgcolor_tint =>
+                $self->config_data('menu_ref_bgcolor_tint')
+                || DEFAULT->{'menu_ref_bgcolor_tint'},
+            menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
+                || DEFAULT->{'menu_ref_bgcolor'},
         },
         \$html
         )

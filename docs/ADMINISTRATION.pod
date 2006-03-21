@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.23 $
+$Revision: 1.24 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -853,6 +853,36 @@ Values: any shape found in the VALID hash under map_shape in Bio::GMOD::CMap::Co
 Default width of the maps
 
 Value: any number from 1 to 10
+
+=back
+
+=head3 Menu Display Options
+
+=over 4
+
+=item * menu_bgcolor [ default: white ]
+
+The background color of some areas of the menu
+
+Values: color
+
+=item * menu_bgcolor_tint [ default: lightgrey ]
+
+The background color of tinted areas of the menu
+
+Values: color
+
+=item * menu_ref_bgcolor [ default: aqua ]
+
+The background color of some of the reference map areas of the menu
+
+Values: color
+
+=item * menu_ref_bgcolor_tint [ default: lightblue ]
+
+The background color of tinted reference map areas of the menu
+
+Values: color
 
 =back
 

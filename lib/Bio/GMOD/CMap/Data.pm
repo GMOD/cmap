@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.268 2006-03-09 18:17:41 mwz444 Exp $
+# $Id: Data.pm,v 1.269 2006-03-21 22:10:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.268 $)[-1];
+$VERSION = (qw$Revision: 1.269 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1726,6 +1726,16 @@ sub fill_out_slots {
     }
 
     my @filled_slots;
+
+    my $menu_bgcolor_tint = $self->config_data('menu_bgcolor_tint')
+        || 'lightgrey';
+    my $menu_bgcolor = $self->config_data('menu_bgcolor')
+        || 'white';
+    my $menu_ref_bgcolor_tint = $self->config_data('menu_ref_bgcolor_tint')
+        || 'aqua';
+    my $menu_ref_bgcolor = $self->config_data('menu_ref_bgcolor')
+        || 'lightblue';
+
     for my $i ( 0 .. $#ordered_slot_nos ) {
         my $filled_slot;
         my $slot_no   = $ordered_slot_nos[$i];
@@ -1764,8 +1774,12 @@ sub fill_out_slots {
                 cmap_object => $self,
                 map_accs    => \@map_accs,
             );
+            $maps = sort_selectall_arrayref( $maps, '#display_order',
+                'map_name', 'map_acc' );
+            my $grey_cell=0;
             foreach my $map ( @{ $maps || [] } ) {
                 my $map_acc = $map->{'map_acc'};
+                push @{$filled_slot->{'map_order'}},$map_acc;
                 $filled_slot->{'maps'}{$map_acc}{'map_name'}
                     = $map->{'map_name'};
                 unless ( defined $filled_slot->{'maps'}{$map_acc}{'start'} ) {
@@ -1778,6 +1792,30 @@ sub fill_out_slots {
                 }
                 $filled_slot->{'maps'}{$map_acc}{'flip'}
                     = ( $flip_hash{$slot_no}->{$map_acc} ) ? 1 : 0;
+                if ($slot_no) {
+                    if ($grey_cell) {
+                        $filled_slot->{'maps'}{$map_acc}{'bgcolor'}
+                            = $menu_bgcolor_tint;
+                        $grey_cell = 0;
+                    }
+                    else {
+                        $filled_slot->{'maps'}{$map_acc}{'bgcolor'}
+                            = $menu_bgcolor;
+                        $grey_cell = 1;
+                    }
+                }
+                else {
+                    if ($grey_cell) {
+                        $filled_slot->{'maps'}{$map_acc}{'bgcolor'}
+                            = $menu_ref_bgcolor_tint;
+                        $grey_cell = 0;
+                    }
+                    else {
+                        $filled_slot->{'maps'}{$map_acc}{'bgcolor'}
+                            = $menu_ref_bgcolor;
+                        $grey_cell = 1;
+                    }
+                }
             }
         }
 
@@ -3005,7 +3043,6 @@ sub count_correspondences {
                 }
                 $corr_count++;
 
-                #xxx
                 my $map_start1     = $this_slot_info->{$current_map_id1}[0];
                 my $map_start2     = $ref_slot_info->{$current_map_id2}[0];
                 my $map_stop1      = $this_slot_info->{$current_map_id1}[1];

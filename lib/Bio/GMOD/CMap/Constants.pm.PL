@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.42 2006-02-16 16:51:20 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.43 2006-03-21 22:10:19 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -425,6 +425,13 @@ use constant DEFAULT => {
     #
     map_width => 8,
 
+    # Menu defaults
+
+    menu_bgcolor          => 'white',
+    menu_bgcolor_tint     => 'lightgrey',
+    menu_ref_bgcolor      => 'lightblue',
+    menu_ref_bgcolor_tint => 'aqua',
+
     #
     # The smallest any map can be drawn, in pixels.
     # Default: 20
@@ -668,6 +675,10 @@ use constant VALID => {
     feature_highlight_fg_color   => COLORS,
     feature_correspondence_color => COLORS,
     map_color                    => COLORS,
+    menu_bgcolor                 => COLORS,
+    menu_bgcolor_tint            => COLORS,
+    menu_ref_bgcolor             => COLORS,
+    menu_ref_bgcolor_tint        => COLORS,
 
     feature_default_display => {
         'corr_only' => 1,

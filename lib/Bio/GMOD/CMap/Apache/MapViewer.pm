@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.125 2006-02-23 17:12:06 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.126 2006-03-21 22:10:21 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.125 $)[-1];
+$VERSION = (qw$Revision: 1.126 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -289,9 +289,10 @@ sub handler {
                 intro          => $INTRO,
                 data_source    => $self->data_source,
                 data_sources   => $self->data_sources,
-                title          => $self->config_data('cmap_title') || 'cmap',
-                stylesheet     => $self->stylesheet,
-                selected_maps  => {
+                title          => $self->config_data('cmap_title')
+                    || 'cmap',
+                stylesheet    => $self->stylesheet,
+                selected_maps => {
                     map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
                 },
                 included_features => {
@@ -320,6 +321,16 @@ sub handler {
                 no_footer => $parsed_url_options{'path_info'} eq 'map_details'
                 ? 1
                 : 0,
+                menu_bgcolor_tint => $self->config_data('menu_bgcolor_tint')
+                    || DEFAULT->{'menu_bgcolor_tint'},
+                menu_bgcolor => $self->config_data('menu_bgcolor')
+                    || DEFAULT->{'menu_bgcolor'},
+                menu_ref_bgcolor_tint =>
+                    $self->config_data('menu_ref_bgcolor_tint')
+                    || DEFAULT->{'menu_ref_bgcolor_tint'},
+                menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
+                    || DEFAULT->{'menu_ref_bgcolor'},
+
             },
             \$html
             )
