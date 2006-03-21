@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.137 2006-03-15 13:58:42 mwz444 Exp $
+# $Id: Generic.pm,v 1.138 2006-03-21 20:32:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1661,6 +1661,9 @@ Array of Hashes:
     is_relational_map,
     map_units,
     map_set_display_order,
+    shape,
+    color,
+    width,
     species_id,
     species_acc,
     species_common_name,
@@ -1725,6 +1728,9 @@ Array of Hashes:
                 ms.is_relational_map,
                 ms.map_units,
                 ms.display_order as map_set_display_order,
+                ms.shape,
+                ms.color,
+                ms.width,
                 s.species_id,
                 s.species_acc,
                 s.species_common_name,
@@ -3948,7 +3954,7 @@ Array of Hashes:
 
 =item * Cache Level (If Used): 3
 
-Not using cache because this query is quicker.
+Using Cache
 
 =back
 
@@ -4016,7 +4022,17 @@ Not using cache because this query is quicker.
     }
 
     $sql_str .= $where_sql;
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+    $sql_str .= " order by feature_start, feature_stop";
+
+    unless ( $return_object
+        = $cmap_object->get_cached_results( 3, $sql_str ) )
+    {
+        $return_object
+            = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+        return {} unless $return_object;
+
+        $cmap_object->store_cached_results( 4, $sql_str, $return_object );
+    }
 
     return $return_object;
 }
