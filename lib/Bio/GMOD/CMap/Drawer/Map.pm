@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.194 2006-02-15 18:44:06 mwz444 Exp $
+# $Id: Map.pm,v 1.195 2006-03-21 20:34:31 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.194 $)[-1];
+$VERSION = (qw$Revision: 1.195 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1414,8 +1414,6 @@ MAP:
             my %even_labels;               # holds label coordinates
              #my ( @north_labels, @south_labels );    # holds label coordinates
             my $lane_features = $features->{$lane};
-            my $midpoint      = ( $lane_features->[0]->{'feature_start'}
-                    + $lane_features->[-1]->{'feature_start'} ) / 2;
             my $prev_label_y;    # the y value of previous label
             my @fcolumns = ();   # for feature east-to-west
 
@@ -3041,7 +3039,6 @@ sub add_feature_to_map {
                     $column_index = simple_column_distribution(
                         low  => $adjusted_low,
                         high => $adjusted_high,
-                        ,
                         columns    => $fcolumns,
                         map_height => $pixel_height,
                         buffer     => $buffer,
