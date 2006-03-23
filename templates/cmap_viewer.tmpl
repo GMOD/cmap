@@ -558,8 +558,8 @@ function stringify_form(form) {
                     [%- IF slot.maps.keys.size > max_maps_to_display %]
                       [%- SET display_maps = 0 -%]
                     [%- END -%]
-                    <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
-                      [% IF display_maps %]   
+                    [% IF display_maps %]   
+                      <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
                         [% slot.maps.$map_acc.map_name %]
                         [% IF slot.maps.keys.size>1 %]   
                           <br>
@@ -569,8 +569,13 @@ function stringify_form(form) {
                             name="sub"
                           >
                         [% END -%]
+                      </td>
+                    [%- ELSE -%]
+                      [% IF first_row_of_slot %]
+                        <td>[% slot.maps.keys.size %] Maps.  Too many to list.</td>
+                        [% SET first_row_of_slot = 0 %]
                       [%- END -%]
-                    </td>
+                    [%- END -%]
                   [%- END -%]
                 [%- END -%]
                 <td></td>
@@ -586,11 +591,16 @@ function stringify_form(form) {
                     [%- IF slot.maps.keys.size > max_maps_to_display %]
                       [%- SET display_maps = 0 -%]
                     [%- END -%]
-                    <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
-                      [% IF display_maps %]   
+                    [% IF display_maps %]   
+                      <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
                            <input size=9 type=text name="map_start_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.start %]">
+                      </td>
+                    [%- ELSE -%]
+                      [% IF first_row_of_slot %]
+                        <td></td>
+                        [% SET first_row_of_slot = 0 %]
                       [%- END -%]
-                    </td>
+                    [%- END -%]
                   [%- END -%]
                 [%- END -%]
                 <td></td>
@@ -606,11 +616,16 @@ function stringify_form(form) {
                     [%- IF slot.maps.keys.size > max_maps_to_display %]
                       [%- SET display_maps = 0 -%]
                     [%- END -%]
-                    <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
-                      [% IF display_maps %]   
+                    [% IF display_maps %]   
+                      <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
                            <input size=9 type=text name="map_stop_[% slot.slot_no %]_[% map_acc %]" value="[% slot.maps.$map_acc.stop %]" [% bgcolor %]>
+                      </td>
+                    [%- ELSE -%]
+                      [% IF first_row_of_slot %]
+                        <td></td>
+                        [% SET first_row_of_slot = 0 %]
                       [%- END -%]
-                    </td>
+                    [%- END -%]
                   [%- END -%]
                 [%- END -%]
                 <td></td>
@@ -626,8 +641,8 @@ function stringify_form(form) {
                     [%- IF slot.maps.keys.size > max_maps_to_display %]
                       [%- SET display_maps = 0 -%]
                     [%- END -%]
-                    <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
-                      [% IF display_maps %]   
+                    [% IF display_maps %]   
+                      <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
                         <select name="map_mag_[% slot.slot_no %]_[% map_acc %]" >
                           <option value="0.125"[%- IF 0.125==slot.maps.$map_acc.mag; ' selected'; END -%]>1/8</option>
                           <option value="0.25"[%- IF 0.25==slot.maps.$map_acc.mag; ' selected'; END -%]>1/4</option>
@@ -641,8 +656,13 @@ function stringify_form(form) {
                           <option value="10"[%- IF 10==slot.maps.$map_acc.mag; ' selected'; END -%]>10</option>
                           <option value="20"[%- IF 20==slot.maps.$map_acc.mag; ' selected'; END -%]>20</option>
                         </select>
+                      </td>
+                    [%- ELSE -%]
+                      [% IF first_row_of_slot %]
+                        <td></td>
+                        [% SET first_row_of_slot = 0 %]
                       [%- END -%]
-                    </td>
+                    [%- END -%]
                   [%- END -%]
                 [%- END -%]
                 <td></td>
@@ -658,12 +678,17 @@ function stringify_form(form) {
                     [%- IF slot.maps.keys.size > max_maps_to_display %]
                       [%- SET display_maps = 0 -%]
                     [%- END -%]
-                    <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
-                      [% IF display_maps %]   
+                    [% IF display_maps %]   
+                      <td bgcolor=[% slot.maps.$map_acc.bgcolor %] valign=top>
                         <input type=checkbox name="map_flip_[% slot.slot_no %]_[% map_acc %]" value="1" [%- IF slot.maps.$map_acc.flip; ' checked'; END -%]>
                         <input type=hidden name="map_in_menu_[% slot.slot_no %]_[% map_acc %]" value="1">
+                      </td>
+                    [%- ELSE -%]
+                      [% IF first_row_of_slot %]
+                        <td></td>
+                        [% SET first_row_of_slot = 0 %]
                       [%- END -%]
-                    </td>
+                    [%- END -%]
                   [%- END -%]
                 [%- END -%]
                 <td></td>
