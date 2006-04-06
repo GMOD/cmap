@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.54 2006-02-23 17:11:42 mwz444 Exp $
+# $Id: Build.PL,v 1.55 2006-04-06 00:32:29 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -10,6 +10,7 @@ if ( $@ =~ /Can't locate/ ) {
     exit(0);
 }
 
+# CACHE and SESSIONS must be after HTDOCS
 my @OPTION_LIST = qw[
     CONF
     CGIBIN
@@ -18,7 +19,7 @@ my @OPTION_LIST = qw[
     CACHE
     SESSIONS
 ];
-my @ARGS = qw[ PREFIX ], @OPTION_LIST;
+my @ARGS = (qw[ 'PREFIX' ], @OPTION_LIST);
 my %ARGS = (
     PREFIX => {
         desc    => 'A directory prefix for all install arguments',
@@ -82,6 +83,7 @@ my $USAGE = join(
 #
 my @argv = @ARGV;
 foreach (@argv) {
+print STDERR "$OPTIONS \n$_\n";
     if (/^--?h(elp)?/i) {
         print $USAGE;
         exit(0);
@@ -138,12 +140,10 @@ if ( $OPTIONS{'PREFIX'} ) {
         }
         else {
             $OPTIONS{$option} ||= $ARGS{$option}{'default'};
+            # Now add the default prefix
+            $OPTIONS{$option} = catdir( $OPTIONS{'PREFIX'}, $OPTIONS{$option} );
         }
 
-        #
-        # Now add the default prefix
-        #
-        $OPTIONS{$option} = catdir( $OPTIONS{'PREFIX'}, $OPTIONS{$option} );
     }
 }
 else {
