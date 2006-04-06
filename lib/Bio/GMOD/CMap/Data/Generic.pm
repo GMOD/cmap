@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.138 2006-03-21 20:32:32 mwz444 Exp $
+# $Id: Generic.pm,v 1.139 2006-04-06 00:39:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.138 $)[-1];
+$VERSION = (qw$Revision: 1.139 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3981,7 +3981,7 @@ Using Cache
     my $no_sub_maps              = $args{'no_sub_maps'} || 0;
     my $db                       = $cmap_object->db;
     my $return_object;
-    my $sql_str = qq[
+    my $select_str = qq[
          select f.feature_id,
                f.feature_acc,
                f.feature_name,
@@ -3990,13 +3990,15 @@ Using Cache
                f.feature_stop,
                f.feature_type_acc,
                f.default_rank,
-               f.direction
+               f.direction ];
+    my $from_str .= qq[
         from   cmap_map map, 
                cmap_feature f
     ];
 
     if ( $get_sub_maps or $no_sub_maps ) {
-        $sql_str .= q[ 
+        $select_str .= q[, mtf.map_id as sub_map_id ];
+        $from_str   .= q[ 
             LEFT JOIN cmap_map_to_feature mtf 
             on mtf.feature_id = f.feature_id
         ];
@@ -4021,8 +4023,10 @@ Using Cache
             . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
 
-    $sql_str .= $where_sql;
-    $sql_str .= " order by feature_start, feature_stop";
+    my $sql_str = $select_str
+        . $from_str
+        . $where_sql
+        . " order by feature_start, feature_stop";
 
     unless ( $return_object
         = $cmap_object->get_cached_results( 3, $sql_str ) )
