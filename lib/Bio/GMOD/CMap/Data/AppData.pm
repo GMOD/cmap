@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.3 2006-03-15 13:58:42 mwz444 Exp $
+# $Id: AppData.pm,v 1.4 2006-04-06 00:37:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -209,6 +209,99 @@ sub feature_data {
     }
 
     return $self->{'feature_data'}{$map_id};
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 sub_maps
+
+Given a map id, return the information required to draw the
+sub-maps.  These do NOT include the regular features;
+
+=cut
+
+sub sub_maps {
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'} or return undef;
+
+    my $sql_object = $self->sql();
+
+    unless ( $self->{'sub_map_data'}{$map_id} ) {
+
+        my $features = $sql_object->get_features_sub_maps_version(
+            cmap_object => $self,
+            map_id      => $map_id,
+            get_sub_maps => 1,
+            )
+            || [];
+        if (@$features) {
+            $self->{'sub_map_data'}{$map_id} = $features;
+        }
+        else {
+            return undef;
+        }
+    }
+
+    return $self->{'sub_map_data'}{$map_id};
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 sorted_feature_data
+
+Given a map accessions, return the information required to draw the
+features.  These do NOT include the sub-maps.
+
+=cut
+
+sub sorted_feature_data {
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'} or return undef;
+
+    my $sql_object = $self->sql();
+
+    unless ( $self->{'sorted_feature_data'}{$map_id} ) {
+
+        my $features = $self->feature_data( map_id => $map_id, )
+            || [];
+        if (@$features) {
+            # The features are already sorted by start and stop.
+            # All we need to do now is break them apart by lane and priority
+
+            my $feature_type_data = $self->feature_type_data();
+            my %sorting_hash;
+
+            for my $feature ( @{$features} ) {
+                my $this_feature_type_data
+                    = $feature_type_data->{ $feature->{'feature_type_acc'} };
+                push @{ $sorting_hash{ $this_feature_type_data->{
+                            'drawing_lane'} }
+                        ->{ $this_feature_type_data->{'drawing_priority'} } },
+                    $feature;
+            }
+            foreach my $lane ( sort { $a <=> $b } keys(%sorting_hash) ) {
+                foreach my $priority (
+                    sort { $a <=> $b }
+                    keys( %{ $sorting_hash{$lane} } )
+                    )
+                {
+                    push @{ $self->{'sorted_feature_data'}{$map_id}{$lane} },
+                        @{ $sorting_hash{$lane}->{$priority} };
+                }
+            }
+        }
+        else {
+            return undef;
+        }
+    }
+
+    return $self->{'sorted_feature_data'}{$map_id};
 }
 
 # ----------------------------------------------------

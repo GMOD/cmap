@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.2 2006-03-15 13:58:43 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.3 2006-04-06 00:37:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout
@@ -132,7 +132,10 @@ Adds the first slot
     my $window_key = $args{'window_key'};
     my $map_ids    = $args{'map_ids'};
 
-    # REMOVE OLD INFO IF ANY XXX
+    # Remove old info if any 
+    if ($self->{'scaffold'}{$window_key}){
+        $self->clear_window(window_key=>$window_key,);
+    }
 
     my $panel_key = $self->next_internal_key('panel');
     my $slot_key  = $self->next_internal_key('slot');
@@ -141,12 +144,12 @@ Adds the first slot
     $self->{'slot_order'}{$panel_key}   = [ $slot_key, ];
 
     $self->{'scaffold'}{$window_key}{$panel_key}{$slot_key} = {
-        parent       => undef,
-        children     => [],
-        scale2parent => 0,
-        sub_maps     => 0,
-        expanded     => 0,
-        is_top       => 1,
+        parent             => undef,
+        children           => [],
+        scale              => 1,
+        attached_to_parent => 0,
+        expanded           => 1,
+        is_top             => 1,
     };
 
     my $map_data
@@ -155,7 +158,7 @@ Adds the first slot
     $self->{'window_layout'}{$window_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
-        border           => [],
+        misc_items       => [],
         buttons          => [],
         changed          => 1,
         sub_changed      => 1,
@@ -163,7 +166,7 @@ Adds the first slot
     $self->{'panel_layout'}{$panel_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
-        border           => [],
+        misc_items       => [],
         buttons          => [],
         changed          => 1,
         sub_changed      => 1,
@@ -171,27 +174,30 @@ Adds the first slot
     $self->{'slot_layout'}{$slot_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         container_bounds => [ 0, 0, 0, 0 ],
-        border           => [],
+        misc_items       => [],
         buttons          => [],
         changed          => 1,
         sub_changed      => 1,
-        maps             => {},
     };
 
-    my $display_order = 0;
     foreach my $map_id ( @{ $map_ids || [] } ) {
         my $map_key = $self->next_internal_key('map');
-        push @{ $self->{'map_id_to_key'}{$map_id} }, $map_key;
         push @{ $self->{'map_order'}{$slot_key} },   $map_key;
+        push @{ $self->{'map_id_to_key'}{$map_id} }, $map_key;
         $self->{'map_key_to_id'}{$map_key} = $map_id;
-        $self->{'slot_layout'}{$slot_key}{'maps'}{$map_key} = {
+        $self->{'map_layout'}{$map_key}    = {
             bounds  => [ 0, 0, 0, 0 ],
             buttons => [],
-            data    => [],
+            items    => [],
             changed => 1,
         };
-        $display_order++;
     }
+
+    $self->add_sub_maps(
+        window_key      => $window_key,
+        panel_key       => $panel_key,
+        parent_slot_key => $slot_key,
+    );
 
     layout_new_window(
         window_key       => $window_key,
@@ -204,6 +210,110 @@ Adds the first slot
     );
 
     return;
+}
+
+# ----------------------------------------------------
+sub add_sub_maps {
+
+=pod
+
+=head2 add_sub_maps
+
+Adds sub-maps to the view.  Doesn't do any sanity checking.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key      = $args{'window_key'}      or return;
+    my $panel_key       = $args{'panel_key'}       or return;
+    my $parent_slot_key = $args{'parent_slot_key'} or return;
+
+    my @sub_map_keys;
+    foreach my $map_key ( @{ $self->{'map_order'}{$parent_slot_key} || [] } )
+    {
+        my $map_id = $self->{'map_key_to_id'}{$map_key};
+
+        # Collect Sub-Maps
+        my $sub_maps
+            = $self->app_data_module()->sub_maps( map_id => $map_id, );
+
+        foreach my $sub_map ( @{ $sub_maps || [] } ) {
+            my $sub_map_id  = $sub_map->{'sub_map_id'};
+            my $sub_map_key = $self->next_internal_key('map');
+
+            push @{ $self->{'map_id_to_key'}{$sub_map_id} }, $sub_map_key;
+            $self->{'map_key_to_id'}{$sub_map_key} = $sub_map_id;
+
+            $self->{'sub_maps'}{$sub_map_key} = {
+                parent_key    => $map_key,
+                feature_start => $sub_map->{'feature_start'},
+                feature_stop  => $sub_map->{'feature_stop'},
+            };
+            push @sub_map_keys, $sub_map_id;
+
+        }
+    }
+    unless (@sub_map_keys) {
+
+        # No Sub Maps
+        return;
+    }
+
+    my $slot_order_index;
+    for ( my $i = 0; $i <= $#{ $self->{'slot_order'}{$panel_key} }; $i++ ) {
+        if ( $parent_slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
+            $slot_order_index = $i;
+            last;
+        }
+    }
+    unless ( defined $slot_order_index ) {
+        die "Slot $parent_slot_key not in Panel $panel_key\n";
+    }
+
+    # Split maps into slots based on their map set
+    my %maps_by_set;
+    foreach my $sub_map_key (@sub_map_keys) {
+        my $sub_map_id = $self->{'map_key_to_id'}{$sub_map_key};
+        my $sub_map_data
+            = $self->app_data_module()->map_data( map_id => $sub_map_id, );
+        push @{ $maps_by_set{ $sub_map_data->{'map_set_id'} } }, $sub_map_key;
+    }
+
+    foreach my $set_key ( keys %maps_by_set ) {
+        my $child_slot_key = $self->next_internal_key('slot');
+        $slot_order_index++;
+        splice @{ $self->{'slot_order'}{$panel_key} }, $slot_order_index, 0,
+            ($child_slot_key);
+
+        $self->{'slot_layout'}{$child_slot_key} = {
+            bounds           => [ 0, 0, 0, 0 ],
+            container_bounds => [ 0, 0, 0, 0 ],
+            misc_items       => [],
+            buttons          => [],
+            changed          => 1,
+            sub_changed      => 1,
+        };
+        $self->{'scaffold'}{$window_key}{$panel_key}{$child_slot_key} = {
+            parent             => $parent_slot_key,
+            children           => [],
+            scale              => 1,
+            attached_to_parent => 1,
+            expanded           => 0,
+            is_top             => 0,
+        };
+        push @{ $self->{'scaffold'}{$window_key}{$panel_key}{$parent_slot_key}
+                {'children'} }, $child_slot_key;
+
+        foreach my $map_key ( @{ $maps_by_set{$set_key} || [] } ) {
+            push @{ $self->{'map_order'}{$child_slot_key} }, $map_key;
+            $self->{'map_layout'}{$map_key} = {
+                bounds  => [ 0, 0, 0, 0 ],
+                buttons => [],
+                items   => [],
+                changed => 1,
+            };
+        }
+    }
 }
 
 # ----------------------------------------------------
@@ -320,11 +430,34 @@ Returns the next key for the given item.
 }
 
 # ----------------------------------------------------
-sub remove_window {
+sub clear_window {
 
 =pod
 
-=head2 remove_window
+=head2 clear_window
+
+Clears a window of data and calls on the interface to remove the drawings.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    $self->app_interface()->clear_interface_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    $self->remove_window_data( window_key=>$window_key,);
+
+}
+
+# ----------------------------------------------------
+sub remove_window_data {
+
+=pod
+
+=head2 remove_window_data
 
 Deletes the window data of a closed window.
 
@@ -332,19 +465,30 @@ Returns the number of remaining windows.
 
 =cut
 
+
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
     foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
         foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
         {
+            foreach
+                my $map_key ( @{ $self->{'map_order'}{$panel_key} || [] } )
+            {
+                delete $self->{'map_id_to_key'}
+                    { $self->{'map_key_to_id'}{$map_key} };
+                delete $self->{'map_key_to_id'}{$map_key};
+                delete $self->{'map_layout'}{$map_key};
+            }
             delete $self->{'slot_layout'}{$slot_key};
+            delete $self->{'map_order'}{$panel_key};
         }
         delete $self->{'panel_layout'}{$panel_key};
         delete $self->{'slot_order'}{$panel_key};
     }
     delete $self->{'panel_order'}{$window_key};
 
+    delete $self->{'sub_maps'}{$window_key};
     delete $self->{'scaffold'}{$window_key};
     delete $self->{'window_layout'}{$window_key};
 
