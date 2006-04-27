@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.4 2006-04-06 00:37:04 mwz444 Exp $
+# $Id: AppController.pm,v 1.5 2006-04-27 20:16:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -48,8 +48,18 @@ Initializes the object.
     $self->params( $config, qw[ config_dir data_source ] );
     $self->config();
     $self->data_source( $self->{'data_source'} );
-    my $window_key = $self->start_application();
-    $self->new_reference_maps( window_key => $window_key, );
+    my $window_key   = $self->start_application();
+    my $developement = 0;
+    if ($developement) {
+        $self->load_first_slot(
+            window_key               => $window_key,
+            'selections'             => ['0'],
+            'selectable_ref_map_ids' => ['1'],
+        );
+    }
+    else {
+        $self->new_reference_maps( window_key => $window_key, );
+    }
     MainLoop();
     return $self;
 }
@@ -68,7 +78,6 @@ This method will create the Application.
     my $self = shift;
     my $window_key = $self->create_window( title => "CMap Application", )
         or die "Failed to create interface\n";
-    my $app_display_data = $self->app_display_data();
     return $window_key;
 }
 
@@ -83,10 +92,10 @@ This method will create the Application.
                                                                                                                              
 =cut
 
-    my $self      = shift;
-    my $interface = $self->app_interface();
-    my $window_key
-        = $interface->create_window( title => "CMap Application", );
+    my $self       = shift;
+    my $interface  = $self->app_interface();
+    my $window_key = $self->app_display_data()
+        ->create_window( title => "CMap Application", );
     unless ( defined $window_key ) {
         die "Problem setting up interface\n";
     }
@@ -246,6 +255,8 @@ When window is closed, delete drawing data and if it is the last window, exit.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
+    $self->app_interface()
+        ->clear_interface_window( window_key => $window_key, );
     my $remaining_windows_num = $self->app_display_data()
         ->remove_window_data( window_key => $window_key, );
 
@@ -263,18 +274,22 @@ sub zoom_slot {
 
 =head2 close_window
 
-When window is closed, delete drawing data and if it is the last window, exit.
+Handler for zooming a slot.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key = $args{'panel_key'};
-    my $slot_key = $args{'slot_key'};
-    my $zoom_value = $args{'zoom_value'}||1;
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+    my $zoom_value = $args{'zoom_value'} || 1;
 
-print STDERR "Zoom $zoom_value\n";
-
+    $self->app_display_data()->zoom_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $slot_key,
+        zoom_value => $zoom_value,
+    );
 
     return;
 }
