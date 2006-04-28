@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.90 2006-04-28 15:12:20 mwz444 Exp $
+# $Id: Admin.pm,v 1.91 2006-04-28 15:13:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2137,9 +2137,7 @@ The primary key of the map.
 
 =cut
 
-print STDERR "Validating\n";
     my $self       = shift;
-print STDERR Dumper(\@_)."\n";
     my $map_id     = shift or return;
     my $sql_object = $self->sql or return;
 
@@ -2154,13 +2152,11 @@ print STDERR Dumper(\@_)."\n";
         $ori_map_stop  = $map_stop  = $map_array->[0]{'map_stop'};
     }
 
-print STDERR "$map_id\n";
     my ( $min_start, $max_start, $max_stop )
         = $sql_object->get_feature_bounds_on_map(
         cmap_object => $self,
         map_id      => $map_id,
         );
-print STDERR Dumper( $min_start, $max_start, $max_stop)."\n";
 
     #
     # Verify that the map start and stop coordinates at least
@@ -2176,12 +2172,9 @@ print STDERR Dumper( $min_start, $max_start, $max_stop)."\n";
     $map_start = $min_start if $min_start < $map_start;
     $map_stop  = $max_stop  if $max_stop > $map_stop;
 
-print STDERR "ori $ori_map_start $ori_map_stop\n";
-print STDERR "new $map_start $map_stop\n";
     if (   $ori_map_start != $map_start
         or $ori_map_stop != $map_stop )
     {
-print STDERR "Updating maps\n";
         $map_id = $sql_object->update_map(
             cmap_object => $self,
             map_id      => $map_id,
