@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.79 2006-02-05 04:17:59 mwz444 Exp $
+# $Id: Import.pm,v 1.80 2006-04-28 15:12:21 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -792,46 +792,10 @@ appended to the list of xrefs.
     #
     for my $map_name ( sort keys %modified_maps ) {
         my $map_id    = $maps->{$map_name}{'map_id'};
-        my $map_array = $sql_object->get_maps_simple(
-            cmap_object => $self,
-            map_id      => $map_id,
-        );
-        my ( $map_start, $map_stop );
-        if (@$map_array) {
-            $map_start = $map_array->[0]{'map_start'};
-            $map_stop  = $map_array->[0]{'map_stop'};
-        }
-
-        my ( $min_start, $max_start, $max_stop ) =
-          $sql_object->get_feature_bounds_on_map(
-            cmap_object => $self,
-            map_id      => $map_id,
-          );
-
-        #
-        # Verify that the map start and stop coordinates at least
-        # take into account the extremes of the feature coordinates.
-        #
-        $min_start = 0 unless defined $min_start;
-        $max_start = 0 unless defined $max_start;
-        $max_stop  = 0 unless defined $max_stop;
-        $map_start = 0 unless defined $map_start;
-        $map_stop  = 0 unless defined $map_stop;
-
-        $max_stop  = $max_start if $max_start > $max_stop;
-        $map_start = $min_start if $min_start < $map_start;
-        $map_stop  = $max_stop  if $max_stop > $map_stop;
-
-        $map_id = $sql_object->update_map(
-            cmap_object => $self,
-            map_id      => $map_id,
-            map_start   => $map_start,
-            map_stop    => $map_stop,
-        );
+        $admin->validate_update_map_start_stop( $map_id );
 
         $self->Print(
-            "Verified map $map_name ($map_id) ",
-            "start ($map_start) and stop ($map_stop).\n",
+            "Verified map $map_name ($map_id).\n"
         );
     }
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.89 2006-03-09 18:15:24 mwz444 Exp $
+# $Id: Admin.pm,v 1.90 2006-04-28 15:12:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2095,6 +2095,100 @@ The primary key of the object.
         object_type => $object_type,
         object_id   => $object_id,
     );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub validate_update_map_start_stop {
+
+=pod
+
+=head2 validate_update_map_start_stop
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Given a map_id, make sure that the map boundaries are that of the features on
+it.  If not, update the map to extend the start and stop.
+
+=item * Usage
+
+    $admin->validate_update_map_start_stop( $map_id );
+
+=item * Returns
+
+Nothing
+
+=item * Fields
+
+=over 4
+
+=item - map_id
+
+The primary key of the map.
+
+=back
+
+=back
+
+=cut
+
+print STDERR "Validating\n";
+    my $self       = shift;
+print STDERR Dumper(\@_)."\n";
+    my $map_id     = shift or return;
+    my $sql_object = $self->sql or return;
+
+    my $map_array = $sql_object->get_maps_simple(
+        cmap_object => $self,
+        map_id      => $map_id,
+    );
+    my ( $map_start, $map_stop );
+    my ( $ori_map_start, $ori_map_stop );
+    if (@$map_array) {
+        $ori_map_start = $map_start = $map_array->[0]{'map_start'};
+        $ori_map_stop  = $map_stop  = $map_array->[0]{'map_stop'};
+    }
+
+print STDERR "$map_id\n";
+    my ( $min_start, $max_start, $max_stop )
+        = $sql_object->get_feature_bounds_on_map(
+        cmap_object => $self,
+        map_id      => $map_id,
+        );
+print STDERR Dumper( $min_start, $max_start, $max_stop)."\n";
+
+    #
+    # Verify that the map start and stop coordinates at least
+    # take into account the extremes of the feature coordinates.
+    #
+    $min_start = 0 unless defined $min_start;
+    $max_start = 0 unless defined $max_start;
+    $max_stop  = 0 unless defined $max_stop;
+    $map_start = 0 unless defined $map_start;
+    $map_stop  = 0 unless defined $map_stop;
+
+    $max_stop  = $max_start if $max_start > $max_stop;
+    $map_start = $min_start if $min_start < $map_start;
+    $map_stop  = $max_stop  if $max_stop > $map_stop;
+
+print STDERR "ori $ori_map_start $ori_map_stop\n";
+print STDERR "new $map_start $map_stop\n";
+    if (   $ori_map_start != $map_start
+        or $ori_map_stop != $map_stop )
+    {
+print STDERR "Updating maps\n";
+        $map_id = $sql_object->update_map(
+            cmap_object => $self,
+            map_id      => $map_id,
+            map_start   => $map_start,
+            map_stop    => $map_stop,
+        );
+    }
 
     return 1;
 }
