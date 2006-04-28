@@ -30,7 +30,7 @@ use DBI;
 use Pod::Usage;
 use Benchmark;
 use Data::Dumper;
-use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 
@@ -68,15 +68,15 @@ my $options = {
 my $dbh = DBI->connect( $chado_datasource, $user, $password, $options );
 
 # Create the CMap object that will do the CMap grunt work 
-my $cmap_object = Bio::GMOD::CMap->new(data_source => $cmap_datasource,);
+my $cmap_admin = Bio::GMOD::CMap::Admin->new(data_source => $cmap_datasource,);
 
 # If the data source is wrong, it won't match what was created
-if ($cmap_datasource ne $cmap_object->data_source()){
+if ($cmap_datasource ne $cmap_admin->data_source()){
     die qq{'$cmap_datasource' is not a proper CMap data source};
 }
 
 # This object is a direct link to the sql queries for CMap.
-my $cmap_sql_object = $cmap_object->sql();
+my $cmap_sql_object = $cmap_admin->sql();
 
 my $db_ids_ref = get_set_all_dbs( $dbh );
 
@@ -86,7 +86,7 @@ my @selected_featureset_ids = select_featureset();
 my %chado_to_cmap_species = get_set_cmap_species(
     dbh             => $dbh,
     cmap_sql_object => $cmap_sql_object,
-    cmap_object     => $cmap_object,
+    cmap_object     => $cmap_admin,
     species_db_id   => $db_ids_ref->{'species'},
     selected_featureset_ids =>\@selected_featureset_ids,
 );
@@ -95,7 +95,7 @@ print "Dealing with Map Sets\n";
 my @inserted_featureset_ids = get_set_cmap_map_set(
     dbh                       => $dbh,
     cmap_sql_object           => $cmap_sql_object,
-    cmap_object               => $cmap_object,
+    cmap_object               => $cmap_admin,
     map_set_db_id             => $db_ids_ref->{'map_set'},
     chado_to_cmap_species_ref => \%chado_to_cmap_species,
     selected_featureset_ids =>\@selected_featureset_ids,
@@ -107,7 +107,7 @@ for my $featureset_id (@inserted_featureset_ids){
     my %tmp_chado_to_cmap_map = get_set_cmap_map(
         dbh             => $dbh,
         cmap_sql_object => $cmap_sql_object,
-        cmap_object     => $cmap_object,
+        cmap_object     => $cmap_admin,
         map_db_id       => $db_ids_ref->{'map'},
         map_set_db_id   => $db_ids_ref->{'map_set'},
         featureset_id   => $featureset_id,
@@ -120,7 +120,7 @@ print "Dealing with Features\n";
 get_set_cmap_feature(
     dbh             => $dbh,
     cmap_sql_object => $cmap_sql_object,
-    cmap_object     => $cmap_object,
+    cmap_object     => $cmap_admin,
     chado_to_cmap_map_ref     => \%chado_to_cmap_map,
     map_db_id       => $db_ids_ref->{'map'},
     feature_db_id   => $db_ids_ref->{'feature'},
@@ -202,7 +202,7 @@ sub get_set_cmap_species {
     my %args = @_;
     my $dbh = $args{'dbh'};
     my $cmap_sql_object = $args{'cmap_sql_object'};
-    my $cmap_object = $args{'cmap_object'};
+    my $cmap_admin = $args{'cmap_object'};
     my $species_db_id = $args{'species_db_id'};
     my $selected_featureset_ids = $args{'selected_featureset_ids'};
     
@@ -290,7 +290,7 @@ sub get_set_cmap_species {
         my $display_order = 1;
        
         my $species_id = $cmap_sql_object->insert_species(
-            cmap_object         => $cmap_object,
+            cmap_object         => $cmap_admin,
             species_common_name => $species_common_name,
             species_full_name   => $species_full_name,
             display_order       => $display_order,
@@ -327,7 +327,7 @@ sub get_set_cmap_map_set {
     my %args = @_;
     my $dbh = $args{'dbh'};
     my $cmap_sql_object = $args{'cmap_sql_object'};
-    my $cmap_object = $args{'cmap_object'};
+    my $cmap_admin = $args{'cmap_object'};
     my $map_set_db_id = $args{'map_set_db_id'};
     my $chado_to_cmap_species_ref = $args{'chado_to_cmap_species_ref'};
     my $selected_featureset_ids = $args{'selected_featureset_ids'};
@@ -403,7 +403,7 @@ sub get_set_cmap_map_set {
         my $map_type_acc = $new_featureset->{'type_name'};
         $map_type_acc =~ s/\s+/_/g;
 
-        my $map_type_data = $cmap_object->map_type_data($map_type_acc);
+        my $map_type_data = $cmap_admin->map_type_data($map_type_acc);
         unless($map_type_data and %$map_type_data){
             print qq{Map type accession, '$map_type_acc' }
                 . qq{not found in the CMap config file.\n};
@@ -429,15 +429,15 @@ sub get_set_cmap_map_set {
         my $display_order      = 1;
         my $is_enabled         = 1;
         my $shape              = $map_type_data->{'shape'}
-            || $cmap_object->config_data("map_shape")
+            || $cmap_admin->config_data("map_shape")
             || DEFAULT->{'map_shape'}
             || 'box';
         my $width = $map_type_data->{'width'}
-            || $cmap_object->config_data("map_width")
+            || $cmap_admin->config_data("map_width")
             || DEFAULT->{'map_width'}
             || '0';
         my $color = $map_type_data->{'color'}
-            || $cmap_object->config_data("map_color")
+            || $cmap_admin->config_data("map_color")
             || DEFAULT->{'map_color'}
             || 'black';
         my $map_units         = $map_type_data->{'map_units'}         || 'bp';
@@ -445,7 +445,7 @@ sub get_set_cmap_map_set {
        
         # Insert
         my $map_set_id = $cmap_sql_object->insert_map_set(
-            cmap_object        => $cmap_object,
+            cmap_object        => $cmap_admin,
             map_set_name       => $map_set_name,
             map_set_short_name => $map_set_short_name,
             map_type_acc       => $map_type_acc,
@@ -490,7 +490,7 @@ sub get_set_cmap_map {
     my %args = @_;
     my $dbh = $args{'dbh'};
     my $cmap_sql_object = $args{'cmap_sql_object'};
-    my $cmap_object = $args{'cmap_object'};
+    my $cmap_admin = $args{'cmap_object'};
     my $map_db_id = $args{'map_db_id'};
     my $map_set_db_id = $args{'map_set_db_id'};
     my $featureset_id = $args{'featureset_id'};
@@ -561,12 +561,12 @@ sub get_set_cmap_map {
             || $new_feature->{'uniquename'}
             || 'UNNAMED';
         my $display_order = 1;
-        my $map_start     = 1;
+        my $map_start     = 0;
         my $map_stop      = $new_feature->{'seqlen'};
        
         # Insert
         my $map_id = $cmap_sql_object->insert_map(
-            cmap_object   => $cmap_object,
+            cmap_object   => $cmap_admin,
             map_set_id    => $map_set_id,
             map_name      => $map_name,
             display_order => $display_order,
@@ -604,13 +604,13 @@ sub get_set_cmap_feature {
     my %args = @_;
     my $dbh = $args{'dbh'};
     my $cmap_sql_object = $args{'cmap_sql_object'};
-    my $cmap_object = $args{'cmap_object'};
+    my $cmap_admin = $args{'cmap_object'};
     my $chado_to_cmap_map_ref = $args{'chado_to_cmap_map_ref'};
     my $map_db_id = $args{'map_db_id'};
     my $feature_db_id = $args{'feature_db_id'};
     
-    my $all_feature_types = fake_selectall_arrayref( $cmap_object,
-        $cmap_object->feature_type_data(),
+    my $all_feature_types = fake_selectall_arrayref( $cmap_admin,
+        $cmap_admin->feature_type_data(),
         'feature_type_acc', 'feature_type' );
 
     $all_feature_types = sort_selectall_arrayref( $all_feature_types, 'feature_type' );
@@ -631,7 +631,7 @@ sub get_set_cmap_feature {
 
     my %failed_feature_types;
     for my $chado_map_id (keys %{$chado_to_cmap_map_ref||{}}){
-    print "Handling Map $chado_map_id\n";
+        print "Handling Map $chado_map_id\n";
 
         # Get new inserts
         my $feature_sql = q[
@@ -687,7 +687,7 @@ sub get_set_cmap_feature {
                 next;
             }
 
-            my $feature_type_data = $cmap_object->feature_type_data($feature_type_acc);
+            my $feature_type_data = $cmap_admin->feature_type_data($feature_type_acc);
             unless($feature_type_data and %$feature_type_data){
                 $failed_feature_types{$feature_type_acc}=1;
                 print qq{Feature type accession, '$feature_type_acc' }
@@ -721,7 +721,7 @@ sub get_set_cmap_feature {
            
             # Insert
             my $cmap_feature_id = $cmap_sql_object->insert_feature(
-                cmap_object      => $cmap_object,
+                cmap_object      => $cmap_admin,
                 map_id           => $cmap_map_id,
                 feature_type_acc => $feature_type_acc,
                 feature_name     => $feature_name,
@@ -751,6 +751,8 @@ sub get_set_cmap_feature {
                 ], {}, ($dbxref_id,$featureloc_id)
             );
         }
+        $cmap_admin->validate_update_map_start_stop(
+            $chado_to_cmap_map_ref->{$chado_map_id} );
     }
 
     return 1;

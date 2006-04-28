@@ -295,7 +295,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
         || $rv->{\'rows\'}[0]{\'uniquename\'}
         || \'UNNAMED\';
     my $display_order = 1;
-    my $map_start     = 1;
+    my $map_start     = 0;
     my $map_stop      = $rv->{\'rows\'}[0]{\'seqlen\'};
 
     # Insert
@@ -417,7 +417,9 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
             );
         }
     }
-
+    
+    $cmap_admin->validate_update_map_start_stop($map_id);
+    
     return;
 ' LANGUAGE plperlu;
 
@@ -561,6 +563,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
                     . $featureloc_id . q[\')]
             );
         }
+        $cmap_admin->validate_update_map_start_stop($map_id);
     }
 
     return;
@@ -589,6 +592,11 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_updated() RETURNS trigger AS '
             );
         my $feature_start = $_TD->{new}{fmin};
         my $feature_stop  = $_TD->{new}{fmax};
+        my $validate_map = 0;
+        if ($_TD->{new}{fmin} < $_TD->{old}{fmin} 
+            or $_TD->{new}{fmax} > $_TD->{old}{fmax}){
+            $validate_map = 1;
+        }
         unless ( defined $feature_stop ) {
             $feature_stop = $feature_start;
         }
@@ -612,6 +620,14 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_updated() RETURNS trigger AS '
                 feature_stop  => $feature_stop,
                 direction     => $direction,
             );
+            if ($validate_map){
+                my $cmap_feature = $cmap_admin->sql->get_features(
+                    cmap_object => $cmap_admin,
+                    feature_id  => $cmap_feature_id,
+                );
+                next unless ( @{ $cmap_feature || [] } );
+                $cmap_admin->validate_update_map_start_stop($cmap_feature->[0]{\'map_id\'});
+            }
         }
     }
     return;
@@ -685,6 +701,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
                     map_name    => $map_name,
                     map_stop    => $map_stop,
                 );
+                $cmap_admin->validate_update_map_start_stop($map_id);
             }
         }
     }
