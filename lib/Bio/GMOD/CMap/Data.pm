@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.269 2006-03-21 22:10:19 mwz444 Exp $
+# $Id: Data.pm,v 1.270 2006-04-28 17:51:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.269 $)[-1];
+$VERSION = (qw$Revision: 1.270 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -36,7 +36,6 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Export;
 use Bio::GMOD::CMap::Admin::ManageLinks;
-use Algorithm::Cluster qw/kcluster/;
 
 use base 'Bio::GMOD::CMap';
 
@@ -46,7 +45,6 @@ sub init {
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
-    $self->cluster_corr( $config->{'cluster_corr'} );
     $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
     $self->split_agg_ev( $config->{'split_agg_ev'} );
     $self->ref_map_order( $config->{'ref_map_order'} );
@@ -2843,7 +2841,6 @@ sub count_correspondences {
     my $ref_slot_info
         = defined($ref_slot_no) ? $self->slot_info->{$ref_slot_no} : {};
 
-    my $cluster_no          = $self->cluster_corr;
     my $show_intraslot_corr = ( $self->show_intraslot_corr
             and scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) )
             > 1 );
@@ -2873,243 +2870,120 @@ sub count_correspondences {
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
     my %corr_lookup;
     if (@$map_corrs_for_counting) {
-        if ($cluster_no) {
+        my $current_map_id1 = 0;
+        my $current_map_id2 = 0;
+        my $current_evidence_type_acc;
+        my $corr_count        = 0;
+        my $min_position1     = undef;
+        my $min_position2     = undef;
+        my $avg_position_sum1 = 0;
+        my $avg_position_sum2 = 0;
+        my $max_position1     = 0;
+        my $max_position2     = 0;
 
-            # Make the position values
-            foreach my $row (@$map_corrs_for_counting) {
-                $row->{'position1'} =
-                    defined( $row->{'feature_stop1'} )
-                    ? (
-                    ( $row->{'feature_stop1'} + $row->{'feature_start1'} ) /
-                        2 )
-                    : $row->{'feature_start1'};
-                $row->{'position2'} =
-                    defined( $row->{'feature_stop2'} )
-                    ? (
-                    ( $row->{'feature_stop2'} + $row->{'feature_start2'} ) /
-                        2 )
-                    : $row->{'feature_start2'};
-                if ( $row->{'map_id1'} == 55571 ) {
+        for my $row (@$map_corrs_for_counting) {
+            next unless $map_id_lookup{ $row->{'map_id1'} };
+            if (   $row->{'map_id1'} != $current_map_id1
+                or $row->{'map_id2'} != $current_map_id2
+                or $row->{'evidence_type_acc'} ne $current_evidence_type_acc )
+            {
+                if ($current_map_id1) {
+
+                    # Create the data object
+                    push @{ $map_correspondences->{$this_slot_no}
+                            {$current_map_id1}{$current_map_id2} },
+                        {
+                        evidence_type_acc => $current_evidence_type_acc,
+                        map_id1           => $current_map_id1,
+                        map_id2           => $current_map_id2,
+                        no_corr           => $corr_count,
+                        min_position1     => $min_position1,
+                        min_position2     => $min_position2,
+                        max_position1     => $max_position1,
+                        max_position2     => $max_position2,
+                        avg_mid1          => $avg_position_sum1 / $corr_count,
+                        avg_mid2          => $avg_position_sum2 / $corr_count,
+                        };
+                    $corr_lookup{$current_map_id1} += $corr_count;
                 }
 
+                # Reset values
+                $current_map_id1           = $row->{'map_id1'};
+                $current_map_id2           = $row->{'map_id2'};
+                $current_evidence_type_acc = $row->{'evidence_type_acc'};
+                $corr_count                = 0;
+                $min_position1             = undef;
+                $min_position2             = undef;
+                $avg_position_sum1         = 0;
+                $avg_position_sum2         = 0;
+                $max_position1             = 0;
+                $max_position2             = 0;
             }
+            $corr_count++;
 
-            my %params = (
-                nclusters => $cluster_no,
-                transpose => 0,
-                npass     => 100,
-                method    => 'a',
-                dist      => 'e',
-            );
+            my $map_start1     = $this_slot_info->{$current_map_id1}[0];
+            my $map_start2     = $ref_slot_info->{$current_map_id2}[0];
+            my $map_stop1      = $this_slot_info->{$current_map_id1}[1];
+            my $map_stop2      = $ref_slot_info->{$current_map_id2}[1];
+            my $feature_start1 =
+                ( defined($map_start1)
+                    and $map_start1 > $row->{'feature_start1'} )
+                ? $map_start1
+                : $row->{'feature_start1'};
+            my $feature_start2 =
+                ( defined($map_start2)
+                    and $map_start2 > $row->{'feature_start2'} )
+                ? $map_start2
+                : $row->{'feature_start2'};
+            my $feature_stop1 =
+                ( defined($map_stop1)
+                    and $map_stop1 < $row->{'feature_stop1'} )
+                ? $map_stop1
+                : $row->{'feature_stop1'};
+            my $feature_stop2 =
+                ( defined($map_stop2)
+                    and $map_stop2 < $row->{'feature_stop2'} )
+                ? $map_stop2
+                : $row->{'feature_stop2'};
 
-            my %corr_data;
-            my $cluster_array;
-            my $weight = [ 1, 1 ];
-            my $mask;
-            my ( $no_corr, $min_pos1, $max_pos1, $min_pos2, $max_pos2 );
-            my ( $avg_pos1, $avg_pos2, $total_pos1, $total_pos2 );
+            $avg_position_sum1 += ( $feature_stop1 + $feature_start1 ) / 2;
+            $avg_position_sum2 += ( $feature_stop2 + $feature_start2 ) / 2;
 
-            for my $count (@$map_corrs_for_counting) {
-                next unless $map_id_lookup{ $count->{'map_id1'} };
-                push @{ $corr_data{ $count->{'map_id1'} }
-                        { $count->{'map_id2'} }
-                        { $count->{'evidence_type_acc'} } },
-                    [ $count->{'position1'}, $count->{'position2'} ];
-            }
-            foreach my $map_id1 ( keys(%corr_data) ) {
-                foreach my $map_id2 ( keys( %{ $corr_data{$map_id1} } ) ) {
-                    foreach my $et_acc (
-                        keys( %{ $corr_data{$map_id1}{$map_id2} } ) )
-                    {
-                        $cluster_array
-                            = $corr_data{$map_id1}{$map_id2}{$et_acc};
-                        foreach (@$cluster_array) {
-                            push @$mask, [ 1, 1 ];
-                        }
-                        my ( $clusters, $centroids, $error, $found )
-                            = kcluster(
-                            %params,
-                            data   => $cluster_array,
-                            mask   => $mask,
-                            weight => $weight,
-                            );
-                        foreach my $cluster_id ( 0 .. $cluster_no - 1 ) {
-                            ### Get the positions of the corrs in this cluster.
-                            my @cluster_positions
-                                = map { $cluster_array->[$_] }
-                                grep  { $clusters->[$_] == $cluster_id }
-                                ( 0 .. $#{$cluster_array} );
-                            $no_corr    = 0;
-                            $total_pos1 = 0;
-                            $total_pos2 = 0;
-                            ( $min_pos1, $max_pos1, $min_pos2, $max_pos2 )
-                                = ( undef, undef, undef, undef );
-                            foreach my $pos_array (@cluster_positions) {
-                                my ( $pos1, $pos2 ) = @$pos_array;
-                                $no_corr++;
-                                $total_pos1 += $pos1;
-                                $total_pos2 += $pos2;
-                                $min_pos1 = $pos1
-                                    if ( not defined($min_pos1)
-                                    or $min_pos1 > $pos1 );
-                                $max_pos1 = $pos1
-                                    if ( not defined($max_pos1)
-                                    or $max_pos1 < $pos1 );
-                                $min_pos2 = $pos2
-                                    if ( not defined($min_pos2)
-                                    or $min_pos2 > $pos2 );
-                                $max_pos2 = $pos2
-                                    if ( not defined($max_pos2)
-                                    or $max_pos2 < $pos2 );
-                            }
-                            $avg_pos1 = $no_corr ? $total_pos1 / $no_corr : 0;
-                            $avg_pos2 = $no_corr ? $total_pos2 / $no_corr : 0;
-
-                            # The reference map is now number 2
-                            # meaning that map_id2 is the old ref_map_id
-                            push @{ $map_correspondences->{$this_slot_no}
-                                    {$map_id1}{$map_id2} },
-                                {
-                                evidence_type_acc => $et_acc,
-                                map_id1           => $map_id1,
-                                map_id2           => $map_id2,
-                                no_corr           => $no_corr,
-                                min_start1        => $min_pos1,
-                                max_start1        => $max_pos1,
-                                min_start2        => $min_pos2,
-                                max_start2        => $max_pos2,
-                                avg_mid1          => $avg_pos1,
-                                avg_mid2          => $avg_pos2,
-                                start_avg2        => $avg_pos1,
-                                start_avg1        => $avg_pos2,
-                                };
-                            $corr_lookup{$map_id1} += $no_corr;
-                        }
-
-                    }
-                }
-            }
+            $min_position1 = $feature_start1
+                if ( not defined($min_position1)
+                or $min_position1 > $feature_start1 );
+            $min_position2 = $feature_start2
+                if ( not defined($min_position2)
+                or $min_position2 > $feature_start2 );
+            $max_position1 = $feature_stop1
+                if ( not defined($max_position1)
+                or $max_position1 < $feature_stop1 );
+            $max_position2 = $feature_stop2
+                if ( not defined($max_position2)
+                or $max_position2 < $feature_stop2 );
         }
-        else {
-            my $current_map_id1 = 0;
-            my $current_map_id2 = 0;
-            my $current_evidence_type_acc;
-            my $corr_count        = 0;
-            my $min_position1     = undef;
-            my $min_position2     = undef;
-            my $avg_position_sum1 = 0;
-            my $avg_position_sum2 = 0;
-            my $max_position1     = 0;
-            my $max_position2     = 0;
 
-            for my $row (@$map_corrs_for_counting) {
-                next unless $map_id_lookup{ $row->{'map_id1'} };
-                if (   $row->{'map_id1'} != $current_map_id1
-                    or $row->{'map_id2'} != $current_map_id2
-                    or $row->{'evidence_type_acc'} ne
-                    $current_evidence_type_acc )
+        # Catch the last one.
+        if ($current_map_id1) {
+
+            # Create the data object
+            push @{ $map_correspondences->{$this_slot_no}{$current_map_id1}
+                    {$current_map_id2} },
                 {
-                    if ($current_map_id1) {
-
-                        # Create the data object
-                        push @{ $map_correspondences->{$this_slot_no}
-                                {$current_map_id1}{$current_map_id2} },
-                            {
-                            evidence_type_acc => $current_evidence_type_acc,
-                            map_id1           => $current_map_id1,
-                            map_id2           => $current_map_id2,
-                            no_corr           => $corr_count,
-                            min_position1     => $min_position1,
-                            min_position2     => $min_position2,
-                            max_position1     => $max_position1,
-                            max_position2     => $max_position2,
-                            avg_mid1 => $avg_position_sum1 / $corr_count,
-                            avg_mid2 => $avg_position_sum2 / $corr_count,
-                            };
-                        $corr_lookup{$current_map_id1} += $corr_count;
-                    }
-
-                    # Reset values
-                    $current_map_id1           = $row->{'map_id1'};
-                    $current_map_id2           = $row->{'map_id2'};
-                    $current_evidence_type_acc = $row->{'evidence_type_acc'};
-                    $corr_count                = 0;
-                    $min_position1             = undef;
-                    $min_position2             = undef;
-                    $avg_position_sum1         = 0;
-                    $avg_position_sum2         = 0;
-                    $max_position1             = 0;
-                    $max_position2             = 0;
-                }
-                $corr_count++;
-
-                my $map_start1     = $this_slot_info->{$current_map_id1}[0];
-                my $map_start2     = $ref_slot_info->{$current_map_id2}[0];
-                my $map_stop1      = $this_slot_info->{$current_map_id1}[1];
-                my $map_stop2      = $ref_slot_info->{$current_map_id2}[1];
-                my $feature_start1 =
-                    ( defined($map_start1)
-                        and $map_start1 > $row->{'feature_start1'} )
-                    ? $map_start1
-                    : $row->{'feature_start1'};
-                my $feature_start2 =
-                    ( defined($map_start2)
-                        and $map_start2 > $row->{'feature_start2'} )
-                    ? $map_start2
-                    : $row->{'feature_start2'};
-                my $feature_stop1 =
-                    ( defined($map_stop1)
-                        and $map_stop1 < $row->{'feature_stop1'} )
-                    ? $map_stop1
-                    : $row->{'feature_stop1'};
-                my $feature_stop2 =
-                    ( defined($map_stop2)
-                        and $map_stop2 < $row->{'feature_stop2'} )
-                    ? $map_stop2
-                    : $row->{'feature_stop2'};
-
-                $avg_position_sum1
-                    += ( $feature_stop1 + $feature_start1 ) / 2;
-                $avg_position_sum2
-                    += ( $feature_stop2 + $feature_start2 ) / 2;
-
-                $min_position1 = $feature_start1
-                    if ( not defined($min_position1)
-                    or $min_position1 > $feature_start1 );
-                $min_position2 = $feature_start2
-                    if ( not defined($min_position2)
-                    or $min_position2 > $feature_start2 );
-                $max_position1 = $feature_stop1
-                    if ( not defined($max_position1)
-                    or $max_position1 < $feature_stop1 );
-                $max_position2 = $feature_stop2
-                    if ( not defined($max_position2)
-                    or $max_position2 < $feature_stop2 );
-            }
-
-            # Catch the last one.
-            if ($current_map_id1) {
-
-                # Create the data object
-                push
-                    @{ $map_correspondences->{$this_slot_no}{$current_map_id1}
-                        {$current_map_id2} },
-                    {
-                    evidence_type_acc => $current_evidence_type_acc,
-                    map_id1           => $current_map_id1,
-                    map_id2           => $current_map_id2,
-                    no_corr           => $corr_count,
-                    min_position1     => $min_position1,
-                    min_position2     => $min_position2,
-                    max_position1     => $max_position1,
-                    max_position2     => $max_position2,
-                    avg_mid1          => $avg_position_sum1 / $corr_count,
-                    avg_mid2          => $avg_position_sum2 / $corr_count,
-                    };
-                $corr_lookup{$current_map_id1} += $corr_count;
-            }
-
+                evidence_type_acc => $current_evidence_type_acc,
+                map_id1           => $current_map_id1,
+                map_id2           => $current_map_id2,
+                no_corr           => $corr_count,
+                min_position1     => $min_position1,
+                min_position2     => $min_position2,
+                max_position1     => $max_position1,
+                max_position2     => $max_position2,
+                avg_mid1          => $avg_position_sum1 / $corr_count,
+                avg_mid2          => $avg_position_sum2 / $corr_count,
+                };
+            $corr_lookup{$current_map_id1} += $corr_count;
         }
+
     }
     return \%corr_lookup;
 }

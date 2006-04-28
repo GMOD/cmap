@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.55 2006-04-06 00:32:29 mwz444 Exp $
+# $Id: Build.PL,v 1.56 2006-04-28 17:51:20 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -194,7 +194,6 @@ my $builder = CMapBuilder->new(
     script_files      => ['bin/cmap_admin.pl'],
     sign              => 1,
     requires          => {
-        'Algorithm::Cluster'           => 0,
         'Algorithm::Numerical::Sample' => 0,
         'Apache::Htpasswd'             => 0,
         'Bit::Vector'                  => 0,

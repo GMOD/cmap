@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.72 2006-03-14 16:33:16 mwz444 Exp $
+# $Id: Utils.pm,v 1.73 2006-04-28 17:51:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -46,7 +46,7 @@ $VERSION = (qw$Revision: 1.72 $)[-1];
     link_group               flip
     session_mod              page_no
     menu_min_corrs           collapse_features
-    aggregate                cluster_corr
+    aggregate                
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
     ignore_image_map_sanity
@@ -1174,7 +1174,7 @@ sub _get_options_from_url {
         menu_min_corrs
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
-        cluster_corr             show_intraslot_corr split_agg_ev
+        show_intraslot_corr      split_agg_ev
         clean_view               corrs_to_map        reuse_step
         ignore_image_map_sanity  scale_maps          stack_maps
         comp_menu_order          ref_map_order       prev_ref_map_order
@@ -1583,7 +1583,7 @@ sub parse_url {
   # otherwise, simply initialize the avalue.
     for my $param (
         qw[
-        aggregate       cluster_corr show_intraslot_corr
+        aggregate       show_intraslot_corr
         split_agg_ev    clean_view
         scale_maps      stack_maps   omit_area_boxes
         comp_menu_order ]

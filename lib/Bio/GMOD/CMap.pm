@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.104 2006-02-15 18:44:05 mwz444 Exp $
+# $Id: CMap.pm,v 1.105 2006-04-28 17:51:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -432,30 +432,6 @@ The default is 1.
 }
 
 # ----------------------------------------------------
-sub cluster_corr {
-
-=pod
-
-=head3 cluster_corr
-
-Returns the number of clusters that the correspondences should be broken into.
-It will return 0 if not clustering.
-
-The default is 0.
-
-=cut
-
-    my $self = shift;
-    my $val  = shift;
-    $self->{'cluster_corr'} = $val if defined $val;
-    $self->{'cluster_corr'} = $self->config_data('cluster_correspondences')
-        || 0
-        unless defined $self->{'cluster_corr'};
-    $self->{'cluster_corr'} = 0 unless ( $self->aggregate == 3 );
-    return $self->{'cluster_corr'};
-}
-
-# ----------------------------------------------------
 sub show_intraslot_corr {
 
 =pod
@@ -713,7 +689,6 @@ Returns a handle to the data module.
             data_source         => $self->data_source,
             config              => $self->config,
             aggregate           => $self->aggregate,
-            cluster_corr        => $self->cluster_corr,
             show_intraslot_corr => $self->show_intraslot_corr,
             split_agg_ev        => $self->split_agg_ev,
             ref_map_order       => $self->ref_map_order,
@@ -1204,7 +1179,6 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
-    my $cluster_corr                = $args{'cluster_corr'};
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
     my $omit_area_boxes             = $args{'omit_area_boxes'};
@@ -1367,8 +1341,6 @@ Given information about the link, creates a url to cmap_viewer.
         if ( defined($label_features) and $label_features ne '' );
     $url .= "collapse_features=$collapse_features;"
         if ( defined($collapse_features) and $collapse_features ne '' );
-    $url .= "cluster_corr=$cluster_corr;"
-        if ( defined($cluster_corr) and $cluster_corr ne '' );
     $url .= "aggregate=$aggregate;"
         if ( defined($aggregate) and $aggregate ne '' );
     $url .= "scale_maps=$scale_maps;"

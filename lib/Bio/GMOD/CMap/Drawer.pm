@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.121 2006-02-23 17:12:00 mwz444 Exp $
+# $Id: Drawer.pm,v 1.122 2006-04-28 17:51:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,6 @@ The base map drawing module.
         map_view => $map_view,
         data_module => $data_module,
         aggregate => $aggregate,
-        cluster_corr => $cluster_corr,
         show_intraslot_corr => $show_intraslot_corr,
         split_agg_ev => $split_agg_ev,
         clean_view => $clean_view,
@@ -258,13 +257,6 @@ Set to 1 to aggregate the correspondences with one line.
 
 Set to 2 to aggregate the correspondences with two lines.
 
-Set to 3 to cluster the correspondences into groups based on the cluster_corr
-value.
-
-=item * cluster_corr
-
-Set to the number of clusters desired.  Will only be used if aggregated == 3.
-
 =item * show_intraslot_corr
 
 Set to 1 to diplsyed intraslot correspondences.
@@ -347,7 +339,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -369,7 +361,7 @@ my @INIT_PARAMS = qw[
     config data_source left_min_corrs right_min_corrs
     general_min_corrs menu_min_corrs slots_min_corrs
     collapse_features cache_dir map_view data_module
-    aggregate cluster_corr show_intraslot_corr clean_view
+    aggregate show_intraslot_corr clean_view
     scale_maps stack_maps ref_map_order comp_menu_order
     omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
     corrs_to_map session_id next_step ignore_image_map_sanity skip_drawing
@@ -3009,7 +3001,6 @@ Creates default link parameters for CMap->create_viewer_link()
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
-    my $cluster_corr                = $args{'cluster_corr'};
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
     my $omit_area_boxes             = $args{'omit_area_boxes'};
@@ -3115,9 +3106,6 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($aggregate) ) {
         $aggregate = $self->aggregate();
-    }
-    unless ( defined($cluster_corr) ) {
-        $cluster_corr = $self->cluster_corr();
     }
     unless ( defined($scale_maps) ) {
         $scale_maps = $self->scale_maps();
@@ -3235,7 +3223,6 @@ Creates default link parameters for CMap->create_viewer_link()
         label_features              => $label_features,
         collapse_features           => $collapse_features,
         aggregate                   => $aggregate,
-        cluster_corr                => $cluster_corr,
         scale_maps                  => $scale_maps,
         stack_maps                  => $stack_maps,
         omit_area_boxes             => $omit_area_boxes,

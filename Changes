@@ -1,5 +1,11 @@
                       Revision history for CMap
 
+0.16 
+
+-   Updated menus
+-   Removed cluster correspondence option
+-   Bug fixes
+
 0.15    2005-01-05
 
 -   Server side sessions are used to store the information about what is being 

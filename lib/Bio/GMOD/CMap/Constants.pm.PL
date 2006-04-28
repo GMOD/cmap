@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.43 2006-03-21 22:10:19 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.44 2006-04-28 17:51:20 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -557,7 +557,6 @@ use constant PREFERENCE_FIELDS => [ qw(
     label_features
     ref_species_acc
     aggregate
-    cluster_corr
     scale_maps
     corrs_to_map
     stack_maps
