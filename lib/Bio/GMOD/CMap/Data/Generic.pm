@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.140 2006-04-27 20:21:52 mwz444 Exp $
+# $Id: Generic.pm,v 1.141 2006-04-29 02:41:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.140 $)[-1];
+$VERSION = (qw$Revision: 1.141 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7826,6 +7826,9 @@ Correspondence Evidence id
         || $args{'evidence_type_accession'}
         or return;
     my $score                       = $args{'score'};
+    if ($score eq ''){
+        $score = undef;
+    }
     my $correspondence_evidence_acc = $args{'correspondence_evidence_acc'}
         || $args{'accession_id'};
     my $feature_correspondence_id = $args{'feature_correspondence_id'};

@@ -29,10 +29,10 @@
             Evidence Type:
         </td>
         <td>
-            <select name="evidence_type">
+            <select name="evidence_type_acc">
                 <option value="">--Please Select--</option>
                 [% FOREACH et=evidence_types %]
-                    <option value="[% et.evidence_type %]"[% IF et.evidence_type==evidence.evidence_type %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
+                    <option value="[% et.evidence_type_acc %]"[% IF et.evidence_type_acc==evidence.evidence_type_acc %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
                 [% END %]
             </select>
         </td>

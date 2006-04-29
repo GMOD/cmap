@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.93 2006-02-23 17:12:02 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.94 2006-04-29 02:41:47 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.93 $)[-1];
+$VERSION    = (qw$Revision: 1.94 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -1036,8 +1036,9 @@ sub feature_insert {
     my $self       = shift;
     my $admin      = $self->admin;
     my $apr        = $self->apr;
+    my $map_id = $apr->param('map_id') || 0;
     my $feature_id = $admin->feature_create(
-        map_id => $apr->param('map_id') || 0,
+        map_id => $map_id,
         feature_acc => $apr->param('feature_acc')
             || $apr->param('feature_aid')
             || '',
@@ -1051,6 +1052,7 @@ sub feature_insert {
         feature_stop  => $apr->param('feature_stop')
         )
         or return $self->feature_create( errors => $admin->error );
+    $self->admin()->validate_update_map_start_stop($map_id);
     $admin->purge_cache(3);
 
     return $self->redirect_home(
@@ -1488,7 +1490,7 @@ sub corr_evidence_edit {
 
     my $evidences = $sql_object->get_correspondence_evidences(
         cmap_object               => $self,
-        feature_correspondence_id => $correspondence_evidence_id,
+        correspondence_evidence_id => $correspondence_evidence_id,
     );
     return $self->error(
         "No feature evidnece for ID '$correspondence_evidence_id'")
@@ -1523,6 +1525,8 @@ sub corr_evidence_insert {
     my $evidence_type_acc = $apr->param('evidence_type_acc')
         || $apr->param('evidence_type_aid')
         or push @errors, 'No evidence type';
+    my $score = $apr->param('score');
+    $score = '' unless (defined $score);
 
     $sql_object->insert_correspondence_evidence(
         cmap_object                 => $self,
@@ -1530,8 +1534,8 @@ sub corr_evidence_insert {
         feature_correspondence_id   => $feature_correspondence_id,
         correspondence_evidence_acc =>
             $apr->param('correspondence_evidence_acc')
-            || $apr->param('correspondence_evidence_aid'),
-        score => $apr->param('score'),
+            || $apr->param('correspondence_evidence_aid') || '',
+        score => $score,
     );
 
     return $self->redirect_home( ADMIN_HOME_URI
@@ -1551,18 +1555,18 @@ sub corr_evidence_update {
     my $feature_correspondence_id = $apr->param('feature_correspondence_id');
     return $self->corr_evidence_edit( errors => \@errors ) if @errors;
     my $admin = $self->admin or return;
+    my $rank = $apr->param('rank') || 1;
+    my $score = $apr->param('score');
+    $score = '' unless (defined $score);
 
     $sql_object->update_correspondence_evidence(
         cmap_object                => $self,
         correspondence_evidence_id => $correspondence_evidence_id,
-        evidence_type_acc          => $apr->param('evidence_type_acc')
-            || $apr->param('evidence_type_aid'),
+        evidence_type_acc          => $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid'),
         feature_correspondence_id   => $feature_correspondence_id,
-        correspondence_evidence_acc =>
-            $apr->param('correspondence_evidence_acc')
-            || $apr->param('correspondence_evidence_aid'),
-        score => $apr->param('score'),
-        rank  => $apr->param('rank'),
+        correspondence_evidence_acc => $apr->param('correspondence_evidence_acc') || $apr->param('correspondence_evidence_aid'),
+        score => $score,
+        rank  => $rank,
     );
 
     $admin->purge_cache(4);
