@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.141 2006-04-29 02:41:47 mwz444 Exp $
+# $Id: Generic.pm,v 1.142 2006-05-01 15:18:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.141 $)[-1];
+$VERSION = (qw$Revision: 1.142 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3406,6 +3406,92 @@ If you don't want CMap to delete from your database, make this a dummy method.
     return 1;
 }
 
+#-----------------------------------------------
+sub get_feature_id_bounds_on_map {
+
+=pod
+
+=head2 get_feature_id_bounds_on_map()
+
+=over 4
+
+=item * Description
+
+Given a map_id give the highest and lowest feature_ids on the map.
+
+=item * Required Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=item - Map ID (map_id)
+
+=back
+
+=item * Optional Input
+
+=over 4
+
+=back
+
+=item * Output
+
+Array of Hashes:
+
+  Keys:
+    map_id
+    min_feature_id
+    max_feature_id
+
+=item * Cache Level (If Used): 3
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 1,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $map_id      = $args{'map_id'};
+    my $db          = $cmap_object->db;
+    my $return_object;
+    my $sql_str = qq[
+        select  map_id,
+                max(feature_id) as max_feature_id, 
+                min(feature_id) as min_feature_id 
+        from    cmap_feature
+    ];
+    my $where_sql = '';
+
+    if ($map_id) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " map_id = $map_id ";
+    }
+
+    my $group_by_sql = " group by map_id ";
+    $sql_str .= $where_sql . $group_by_sql;
+
+    unless ( $return_object
+        = $cmap_object->get_cached_results( 3, $sql_str ) )
+    {
+        $return_object
+            = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+        return {} unless $return_object;
+
+        $cmap_object->store_cached_results( 4, $sql_str, $return_object );
+    }
+
+    return $return_object;
+}
+
 =pod
 
 =head1 Feature Methods
@@ -3797,6 +3883,10 @@ get_features() provides and doesn't involve any table joins.
 
 =item - Feature Accession (feature_acc)
 
+=item - Minimum Feature ID (min_feature_id)
+
+=item - Maximum Feature ID (max_feature_id)
+
 =item - Feature Name (feature_name)
 
 =item - Feature Type Accession (feature_type_acc)
@@ -3812,6 +3902,8 @@ Array of Hashes:
   Keys:
     feature_id
     feature_acc
+    min_feature_id
+    max_feature_id
     feature_name
     is_landmark
     feature_start
@@ -3834,6 +3926,8 @@ Not using cache because this query is quicker.
         no_validation            => 0,
         map_id                   => 0,
         feature_id               => 0,
+        min_feature_id           => 0,
+        max_feature_id           => 0,
         feature_acc              => 0,
         feature_name             => 0,
         feature_type_acc         => 0,
@@ -3842,11 +3936,13 @@ Not using cache because this query is quicker.
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
-    my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
-    my $map_id       = $args{'map_id'};
-    my $feature_id   = $args{'feature_id'};
-    my $feature_acc  = $args{'feature_acc'};
-    my $feature_name = $args{'feature_name'};
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $map_id      = $args{'map_id'};
+    my $feature_id  = $args{'feature_id'};
+    my $feature_acc = $args{'feature_acc'};
+    my $min_feature_id           = $args{'min_feature_id'};
+    my $max_feature_id           = $args{'max_feature_id'};
+    my $feature_name             = $args{'feature_name'};
     my $feature_type_acc         = $args{'feature_type_acc'};
     my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
     my $db                       = $cmap_object->db;
@@ -3872,6 +3968,14 @@ Not using cache because this query is quicker.
     elsif ($feature_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " feature_acc = '$feature_acc' ";
+    }
+    if ($min_feature_id) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_id >= $min_feature_id ";
+    }
+    if ($max_feature_id) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_id <= $max_feature_id ";
     }
     if ($map_id) {
         $where_sql .= $where_sql ? " and " : " where ";
@@ -5177,6 +5281,10 @@ If Map information is part of the input, then the map tables need to be brought 
 
 =item - feature_alias_id (feature_alias_id)
 
+=item - Minimum Feature ID (min_feature_id)
+
+=item - Maximum Feature ID (max_feature_id)
+
 =item - List of Feature IDs (feature_ids)
 
 =item - Feature Accession (feature_acc)
@@ -5203,6 +5311,8 @@ Array of Hashes:
     feature_alias_id,
     alias,
     feature_id,
+    min_feature_id,
+    max_feature_id,
     feature_acc,
     feature_name,
     feature_type_acc
@@ -5221,6 +5331,8 @@ Not using cache because this query is quicker.
         cmap_object              => 1,
         no_validation            => 0,
         feature_id               => 0,
+        min_feature_id           => 0,
+        max_feature_id           => 0,
         feature_alias_id         => 0,
         feature_ids              => 0,
         feature_acc              => 0,
@@ -5239,6 +5351,8 @@ Not using cache because this query is quicker.
     my $feature_alias_id         = $args{'feature_alias_id'};
     my $feature_ids              = $args{'feature_ids'} || [];
     my $feature_acc              = $args{'feature_acc'};
+    my $min_feature_id           = $args{'min_feature_id'};
+    my $max_feature_id           = $args{'max_feature_id'};
     my $alias                    = $args{'alias'};
     my $map_id                   = $args{'map_id'};
     my $map_acc                  = $args{'map_acc'};
@@ -5298,7 +5412,14 @@ Not using cache because this query is quicker.
         push @identifiers, $feature_acc;
         $where_sql .= " and f.feature_acc = ? ";
     }
-
+    if ($min_feature_id) {
+        push @identifiers, $min_feature_id;
+        $where_sql .= " and f.feature_id >= ? ";
+    }
+    if ($max_feature_id) {
+        push @identifiers, $max_feature_id;
+        $where_sql .= " and f.feature_id <= ? ";
+    }
     if ($alias) {
         my $comparison = $alias =~ m/%/ ? 'like' : '=';
         if ( $alias ne '%' ) {
@@ -7825,8 +7946,8 @@ Correspondence Evidence id
         || $args{'evidence_type_aid'}
         || $args{'evidence_type_accession'}
         or return;
-    my $score                       = $args{'score'};
-    if ($score eq ''){
+    my $score = $args{'score'};
+    if ( $score eq '' ) {
         $score = undef;
     }
     my $correspondence_evidence_acc = $args{'correspondence_evidence_acc'}
