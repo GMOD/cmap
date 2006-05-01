@@ -367,6 +367,8 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_array,
         element                  => { %generic_scalar_def, },
     },
+    make_corr_feature_divisor =>
+        { %generic_scalar_def, option_type => 'integer', },
     map_titles => {
         validation_method        => \&validate_array,
         print_valididated_method => \&print_validated_array,

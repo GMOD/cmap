@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.24 $
+$Revision: 1.25 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -963,6 +963,13 @@ line, e.g., "foo bar baz."
 
 List of feature types that cannot have name correspondences with features of
 the SAME type.
+
+=item * make_corr_feature_divisor [ default: 1 ]
+
+In response to database problems making correspondences with really large maps,
+the features on a map can be divided (based on feature_id) to decrease the
+number of features that the database has to handle and one time.  If you are
+not having this problem, it will not help you at all.
 
 =back
 
