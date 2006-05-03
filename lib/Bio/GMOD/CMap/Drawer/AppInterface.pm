@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.4 2006-04-27 20:16:14 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -551,7 +551,16 @@ Draws and re-draws on the canvas
         $panel_layout->{'sub_changed'} = 0;
     }
 
-    $canvas->configure( -scrollregion => $panel_layout->{'bounds'} );
+    my $canvas_width
+        = $panel_layout->{'bounds'}[2] - $panel_layout->{'bounds'}[0] + 1;
+    my $canvas_height
+        = $panel_layout->{'bounds'}[3] - $panel_layout->{'bounds'}[1] + 1;
+
+    $canvas->configure(
+        -scrollregion => $panel_layout->{'bounds'},
+        -height       => $canvas_height,
+        -width        => $canvas_width,
+    );
 
     return;
 }
@@ -970,6 +979,7 @@ sub select_reference_maps {
     my $selectable_ref_map_ids = [];
     my $load_button            = $ref_selection_window->Button(
         -text    => 'Load Maps',
+        -state   => 'disabled',    # Disabled until map is selected
         -command => sub {
 
             if ( $map_listbox->curselection() ) {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.4 2006-04-27 20:16:14 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use constant SLOT_BACKGROUNDS      => [qw[ white lightblue ]];
 use constant SLOT_SEPARATOR_HEIGHT => 3;
@@ -371,8 +371,11 @@ Lays out sub maps in a slot.
                 ->map_data( map_id => $parent_id, );
             $parent_start    = $parent_data->{'map_start'};
             $parent_stop     = $parent_data->{'map_stop'};
-            $pixels_per_unit = ( $parent_x2 - $parent_x1 + 1 ) /
-                ( $parent_data->{'map_stop'} - $parent_data->{'map_start'} );
+            $pixels_per_unit = $app_display_data->{'scaffold'}{$parent_key}
+                {'pixels_per_unit'};
+
+            #$pixels_per_unit = ( $parent_x2 - $parent_x1 + 1 ) /
+            #    ( $parent_data->{'map_stop'} - $parent_data->{'map_start'} );
             $pixels_per_unit{$parent_key} = $pixels_per_unit;
         }
 
@@ -382,8 +385,8 @@ Lays out sub maps in a slot.
         my $x2_on_map
             = ( ( $feature_stop - $parent_start ) * $pixels_per_unit )
             * $scale;
-        my $x1        = ( $parent_x1 * $scale ) + $x1_on_map;
-        my $x2        = ( $parent_x1 * $scale ) + $x2_on_map;
+        my $x1        = $parent_x1 + $x1_on_map;
+        my $x2        = $parent_x1 + $x2_on_map;
         my $row_index = simple_column_distribution(
             low        => $x1_on_map,
             high       => $x2_on_map,

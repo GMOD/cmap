@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.4 2006-04-27 20:16:14 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -347,17 +347,33 @@ Zoom slots
     my $slot_scaffold = $self->{'scaffold'}{$slot_key};
 
     if ($cascading) {
+        if ( $self->{'scaffold'}{$slot_key}{'attached_to_parent'} ) {
 
-        # Get Offset from parent
-        $slot_scaffold->{'x_offset'}
-            = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }{'x_offset'};
+            # Get Offset from parent
+            $slot_scaffold->{'x_offset'}
+                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                {'x_offset'};
 
-        $self->relayout_sub_map_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
-        );
-        return;    # Return is needed so we don't redaw for each slot
+            $self->relayout_sub_map_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        }
+        else {
+            $self->{'scaffold'}{$slot_key}{'scale'} /= $zoom_value;
+            if ( $slot_scaffold->{'scale'} == 1 ) {
+                $self->attach_slot_to_parent(
+                    slot_key  => $slot_key,
+                    panel_key => $panel_key,
+                );
+                $self->relayout_sub_map_slot(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key   => $slot_key,
+                );
+            }
+        }
     }
     elsif ( $slot_scaffold->{'is_top'} ) {
         $slot_scaffold->{'scale'}           *= $zoom_value;
@@ -401,25 +417,22 @@ Zoom slots
     }
 
     foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
-        if ( $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} ) {
-            $self->zoom_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $child_slot_key,
-                zoom_value => 1,
-                cascading  => 1,
-            );
-        }
-        else {
-            $self->{'scaffold'}{$child_slot_key}{'scale'} *= $zoom_value;
-        }
+        $self->zoom_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $child_slot_key,
+            zoom_value => $zoom_value,
+            cascading  => 1,
+        );
     }
 
-    $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_panel(
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    unless ($cascading) {
+        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_panel(
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
     return;
 }
 
