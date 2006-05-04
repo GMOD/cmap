@@ -231,6 +231,20 @@ Included in this directory is a file called trigger.template.  This holds the te
 
 =back
 
+=head1 Removing Linkage
+
+If you want to remove the links to CMap in the chado database, run
+remove_sync_from_chado.pl (in this directory).  This will remove all of the
+dbxref that point to the CMap database.
+
+  $ chado_integration/chado_synchronize/remove_sync_from_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] [--db_base_name db_base_name]
+
+The options are similar to cmap_syncronize_chado.pl except db_base_name.  This
+is the base name used to name the entries in the "db" table.  It will be set to
+"cmap" by default (which is fine if the value in cmap_syncronize_chado.pl
+wasn't changed). Only if there are multiple CMap databases that need to be
+connected will this value be changed. 
+
 =head1 Future stuff
 
 Maybe include the trigger installation in the cmap_syncronize_chado.pl script
