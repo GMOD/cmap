@@ -2,9 +2,20 @@
 
 0.16 
 
--   Updated menus
+-   Updated menus to be more intuitive
+-   Added AJAX to load the comparative maps menu separately to speed up page
+    loading
+-   Added more options to opening menu
 -   Removed cluster correspondence option
 -   Bug fixes
+-   Added chado syncronization tools
+-   Added commas to the matrix
+-   Some query optimization
+-   Added script to order, orient and stack relational maps based on a
+    reference map for easier viewing
+-   Allow for custom map size
+-   Modified the make name correspondence code to work with really large maps
+-   Modified the delete duplicate correspondence code for speed
 
 0.15    2005-01-05
 
