@@ -1,0 +1,31 @@
+This document describes how to get the CMap application (that will become an
+editor) running.
+
+Currently, the application has very little functionality.
+
+1. Add the table in editor_tables.sql to the CMap database.
+    - This will add a table to link a feature to a map.  This identifies the
+      feature and map as the same entity.
+
+2. Load data
+    - To best utilize the editor, load maps as features on other maps.
+    - See the file editor_test_data for an example.
+
+3. Populate the cmap_map_to_feature table with connections between features
+that are also maps.  
+    - Currently, this has to be done manually in the database.  
+    - Example sql:
+        insert into cmap_map_to_feature 
+            (map_id,map_acc,feature_id,feature_acc) 
+            select m.map_id, 
+                m.map_acc, 
+                f.feature_id, 
+                f.feature_acc 
+            from cmap_map m, 
+                cmap_feature f 
+            where m.map_name=f.feature_name;
+
+4. Run the launch_editor.pl to launch the editor.  Supply a CMap data source or
+it will use the default.
+
+    $ ./launch_editor.pl [data_source]
