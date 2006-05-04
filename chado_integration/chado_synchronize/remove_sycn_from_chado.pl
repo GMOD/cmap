@@ -20,7 +20,7 @@ Options:
 =head1 DESCRIPTION
 
 With a little input from the user, this removes the dbxrefs that point to the
-CMap database from a syncronized chado database.
+CMap database from a synchronized chado database.
 
 =cut
 

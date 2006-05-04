@@ -1,5 +1,5 @@
 
-cmap_syncronize_chado.pl
+cmap_synchronize_chado.pl
  - Have an "automatic" and "manual" modes.  Automatic will try to guess certain things like ranks if not supplied.  Manual will prompt the user.
 
  - Have the script create and fill the new table(s) with a little help from the user?)

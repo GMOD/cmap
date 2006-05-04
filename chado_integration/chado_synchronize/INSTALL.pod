@@ -104,7 +104,7 @@ You will need to insert new map types and feature types into the CMap config
 file.  The accessions for these types should be the cvterm "name" but with
 spaces replaced by "_".
 
-=head1 Run cmap_syncronize_chado.pl
+=head1 Run cmap_synchronize_chado.pl
 
 This script will look at the featuresets that you've inserted and insert the
 data into CMap.  
@@ -112,7 +112,7 @@ data into CMap.
 You will have several options.  The most import is the feature types to look
 at.  If you select too many, it may take a long time.
 
-  $ chado_integration/chado_synchronize/cmap_syncronize_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] --cmap_datasource cmap_datasource
+  $ chado_integration/chado_synchronize/cmap_synchronize_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] --cmap_datasource cmap_datasource
 
 =head1 Create Correspondences
 
@@ -121,7 +121,7 @@ newly created features.
 
 =head1 Triggers
 
-Postgres triggers have been written to keep the data in the CMap database syncronized with chado.  
+Postgres triggers have been written to keep the data in the CMap database synchronized with chado.  
 
 =head2 Installing the Triggers
 
@@ -141,7 +141,7 @@ Included in this directory is a file called trigger.template.  This holds the te
 
 =over 4
 
-=item - CMAP_BASE_NAME: This needs to be changed to what "CMAP_BASE_NAME" is set to in the cmap_syncronize_chado.pl script.  It is initially "cmap".
+=item - CMAP_BASE_NAME: This needs to be changed to what "CMAP_BASE_NAME" is set to in the cmap_synchronize_chado.pl script.  It is initially "cmap".
 
   :s/CMAP_BASE_NAME/cmap/g
 
@@ -239,15 +239,15 @@ dbxref that point to the CMap database.
 
   $ chado_integration/chado_synchronize/remove_sync_from_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] [--db_base_name db_base_name]
 
-The options are similar to cmap_syncronize_chado.pl except db_base_name.  This
+The options are similar to cmap_synchronize_chado.pl except db_base_name.  This
 is the base name used to name the entries in the "db" table.  It will be set to
-"cmap" by default (which is fine if the value in cmap_syncronize_chado.pl
+"cmap" by default (which is fine if the value in cmap_synchronize_chado.pl
 wasn't changed). Only if there are multiple CMap databases that need to be
 connected will this value be changed. 
 
 =head1 Future stuff
 
-Maybe include the trigger installation in the cmap_syncronize_chado.pl script
+Maybe include the trigger installation in the cmap_synchronize_chado.pl script
 or at the least replace the text in the trigger.template file to make it easier
 for the user.
 
