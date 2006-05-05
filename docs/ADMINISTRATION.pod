@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.25 $
+$Revision: 1.26 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -2610,6 +2610,45 @@ SQL:::Translator mailing list.  SQL::Translator is available on CPAN.
 For more information, see here:
 
   http://sqlfairy.sourceforget.net/
+
+=head1 TROUBLESHOOTING
+
+Here are the solutions to a few common problems:
+
+=over 4
+
+=item * Error: File does not exist (image)
+
+This is a usually a permissions problem caused by the web server's
+/document_root/cmap/tmp directory is not executable by the web server.  Change
+the permissions to allow the user that the server runs as the ability to
+execute and it should be fixed.
+
+=item * Error: .../cmap.conf: not a directory
+
+This is a also usually a permissions problem caused by the web server's
+/path/to/cmap.conf directory (or one of the parent directories) is not
+executable by the web server.  Change the permissions to allow the user that
+the server runs as the ability to execute and it should be fixed.
+
+=item * CMap image does not respond to changes in config file or data displayed on the image is strange
+
+After changing a config file (or changing the data without using cmap_admin.pl), the query cache needs to be purged.   Not doing so, often results in a mix of old and new information being displayed, which can be confusing.
+
+To purge the cache use cmap/bin/cmap_admin.pl.  You can either use the menu system or by command line: 
+
+  $ cmap_admin.pl [-d data_source] --action purge_query_cache
+
+See "perldoc cmap_admin.pl" for more options.
+
+=item * Other
+
+Contact the CMap list, gmod-cmap@lists.sourceforge.net with a detailed description of the problem and the version of CMap that you are using.
+
+You can also leave a bug report for CMap at the SourceForge site for GMOD, http://sourceforge.net/projects/gmod/.
+
+=back
+
 
 =head1 AUTHOR
 
