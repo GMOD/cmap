@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.15 $
+$Revision: 1.16 $
 
 =head1 QUICK START
 
@@ -281,29 +281,37 @@ script included with this distribution.  It is possible to install the
 CMap application without installing these modules, but you will see a
 lot of errors, and, of course, things won't work in the end.  
 
-Here are the CPAN modules required:
+Required Modules:
 
 =over 4
 
 =item *   Algorithm::Numerical::Sample
 
+=item *   Apache::Htpasswd
+
 =item *   Bit::Vector
 
-=item *   Cache::FileCache
+=item *   Cache::Cache
 
 =item *   CGI
 
+=item *   CGI::Session
+
 =item *   Class::Base
+
+=item *   Clone
 
 =item *   Config::General
 
-=item *   CWD
+=item *   Data::Dumper
+
+=item *   Date::Format
 
 =item *   Data::Page
 
 =item *   Data::Pageset
 
-=item *   Date::Format
+=item *   Data::Stag
 
 =item *   DBI
 
@@ -317,19 +325,17 @@ Here are the CPAN modules required:
 
 =item *   DBD::Sybase (if you're using Sybase)
 
-=item *   File::Basename
-
-=item *   File::Path
-
-=item *   File::Spec
+=item *   Digest::MD5
 
 =item *   File::Temp
+
+=item *   Filesys::Df
 
 =item *   GD
 
 =item *   GD::SVG
 
-=item *   IO::Tee
+=item *   Params::Validate
 
 =item *   Regexp::Common
 
@@ -337,17 +343,36 @@ Here are the CPAN modules required:
 
 =item *   Template
 
+=item *   Template::Plugin::Comma
+
 =item *   Text::RecordParser
 
 =item *   Text::ParseWords
 
-=item *   Time::Piece 
-
 =item *   Time::ParseDate
+
+=item *   Time::Piece 
 
 =item *   URI::Escape
 
 =item *   XML::Simple
+
+=back
+
+Optional Modules:
+
+=over 4
+
+=item *   Bio::Perl
+
+Bioperl is needed if you want to import BLAST files directly with
+cmap_admin.pl.  For more information see "perldoc
+Bio::GMOD::CMap::Admin::ImportAlignments".
+
+=item *   Apache
+
+The Apache module is only needed if you plan to run CMap under
+mod_perl.
 
 =back
 

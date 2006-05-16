@@ -6,9 +6,10 @@
 -   Added AJAX to load the comparative maps menu separately to speed up page
     loading
 -   Added more options to opening menu
+-   Caches the first view of a map (before sessions are invoked)
 -   Removed cluster correspondence option
 -   Bug fixes
--   Added chado syncronization tools
+-   Added chado synchronization tools
 -   Added commas to the matrix
 -   Some query optimization
 -   Added script to order, orient and stack relational maps based on a

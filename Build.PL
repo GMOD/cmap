@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.56 2006-04-28 17:51:20 mwz444 Exp $
+# $Id: Build.PL,v 1.57 2006-05-16 02:05:56 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -197,22 +197,21 @@ my $builder = CMapBuilder->new(
         'Algorithm::Numerical::Sample' => 0,
         'Apache::Htpasswd'             => 0,
         'Bit::Vector'                  => 0,
-        'Cache::FileCache'             => 0,
-        'Class::Base'                  => 0,
+        'Cache::Cache'                 => 0,
         'CGI'                          => 0,
         'CGI::Session'                 => 0,
+        'Class::Base'                  => 0,
         'Clone'                        => 0,
         'Config::General'              => 0,
         'Data::Dumper'                 => 0,
+        'Date::Format'                 => 0,
         'Data::Page'                   => 0,
         'Data::Pageset'                => 0,
         'Data::Stag'                   => 0,
-        'Date::Format'                 => 0,
         'DBI'                          => 1.20,
         'Digest::MD5'                  => 0,
         'File::Temp'                   => 0,
         'Filesys::Df'                  => 0,
-        'IO::Tee'                      => 0,
         'GD'                           => 2.11,
         'GD::SVG'                      => 0.25,
         'Params::Validate'             => 0,
@@ -221,15 +220,20 @@ my $builder = CMapBuilder->new(
         'Template'                     => 2.00,
         'Template::Plugin::Comma'      => 0,
         'Text::RecordParser'           => 0.02,
-        'Time::Piece'                  => 0,
         'Time::ParseDate'              => 0,
+        'Time::Piece'                  => 0,
         'URI::Escape'                  => 0,
         'XML::Simple'                  => 0,
+    },
+    recommends => {
+        'Apache'    => 0,
+        'Bio::Perl' => 0,
     },
     PL_files => {
         'cgi-bin/cmap.PL'                   => 'cgi-bin/cmap',
         'conf/global.conf.PL'               => 'conf/cmap.conf/global.conf',
-        'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
+        'lib/Bio/GMOD/CMap/Constants.pm.PL' =>
+            'lib/Bio/GMOD/CMap/Constants.pm',
     },
 );
 
