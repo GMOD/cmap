@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.6 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.7 2006-05-16 02:12:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -12,7 +12,7 @@ Bio::GMOD::CMap::Admin::ImportAlignments - import alignments such as BLAST
 
   use Bio::GMOD::CMap::Admin::ImportAlignments;
   my $importer = Bio::GMOD::CMap::Admin::ImportAlignments->new;
-  $importer->import(
+  $importer->import_alignments(
       fh       => $fh,
       log_fh   => $self->log_fh,
   ) or return $importer->error;
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
