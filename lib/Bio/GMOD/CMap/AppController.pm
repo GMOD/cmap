@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.5 2006-04-27 20:16:14 mwz444 Exp $
+# $Id: AppController.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -49,7 +49,7 @@ Initializes the object.
     $self->config();
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 0;
+    my $developement = 1;
     if ($developement) {
         $self->load_first_slot(
             window_key               => $window_key,
@@ -272,7 +272,7 @@ sub zoom_slot {
 
 =pod
 
-=head2 close_window
+=head2 zoom_slot
 
 Handler for zooming a slot.
 
@@ -289,6 +289,31 @@ Handler for zooming a slot.
         panel_key  => $panel_key,
         slot_key   => $slot_key,
         zoom_value => $zoom_value,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub expand_slot {
+
+=pod
+
+=head2 expand_slot
+
+Handler for expanding a slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+
+    $self->app_display_data()->expand_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $slot_key,
     );
 
     return;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -470,8 +470,19 @@ Adds control buttons to the slot_controls_pane.
         },
         -font => $font,
     );
+    my $expand_button = $slot_controls_pane->Button(
+        -text    => "Expand",
+        -command => sub {
+            $self->app_controller()->expand_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        },
+        -font => $font,
+    );
     Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid( $zoom_button1, $zoom_button2, -sticky => "nw", );
+    Tk::grid( $zoom_button1, $zoom_button2, '-', $expand_button, -sticky => "nw", );
     return;
 }
 
@@ -919,9 +930,7 @@ Returns the canvas object.
                 '-relief'      => 'sunken',
                 '-borderwidth' => 2,
                 '-background'  => 'white',
-                '-scrollbars'  => 'se',
-
-                # '-scrollregion' => [ 0, 0, 100, 100 ],
+                '-scrollbars'  => 's',
             ),
         )->pack( -side => 'top', -fill => 'both', );
     }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use constant SLOT_BACKGROUNDS      => [qw[ white lightblue ]];
 use constant SLOT_SEPARATOR_HEIGHT => 3;
@@ -222,6 +222,8 @@ Lays out reference maps in a new slot
     my $map_x_buffer  = 15;
     my $map_y_buffer  = 15;
 
+    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'} || 0;
+
     my $left_bound  = $slot_layout->{'bounds'}[0] + $map_x_buffer;
     my $right_bound = $slot_layout->{'bounds'}[2] - $map_x_buffer;
     my $slot_width  = $right_bound - $left_bound;
@@ -273,6 +275,12 @@ Lays out reference maps in a new slot
             $row_max_x = $left_bound;
             $row_min_y = $row_max_y + $map_y_buffer;
         }
+        if ( ( $row_max_x + $map_container_width - $x_offset )
+            < $slot_layout->{'bounds'}[0]
+            or $row_max_x - $x_offset > $slot_layout->{'bounds'}[2] )
+        {
+            next;
+        }
         my $tmp_map_max_y = _layout_contained_map(
             app_display_data => $app_display_data,
             window_key       => $window_key,
@@ -322,6 +330,7 @@ Lays out sub maps in a slot.
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
 
     my $scale = $app_display_data->{'scaffold'}{$slot_key}{'scale'} || 1;
+    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'} || 0;
 
     #  Options that should be defined elsewhere
     my $map_x_buffer = 15;
@@ -413,6 +422,13 @@ Lays out sub maps in a slot.
                 ->map_data( map_id => $sub_map_id, );
             my $parent_key
                 = $app_display_data->{'sub_maps'}{$sub_map_key}{'parent_key'};
+            my $map_container_width = $x2 - $x1 + 1;
+
+            if (   $x2 - $x_offset < $slot_layout->{'bounds'}[0]
+                or $x1 - $x_offset > $slot_layout->{'bounds'}[2] )
+            {
+                next;
+            }
 
             my $tmp_map_max_y = _layout_contained_map(
                 app_display_data => $app_display_data,
@@ -692,8 +708,9 @@ returns the number of pixesl per map unit.
                 my $other_space
                     = ( 1 + scalar(@$ordered_map_ids) ) * $map_x_buffer
                     + ( $min_map_width * $min_length_map_count );
-                $pixels_per_unit
-                    = ( $slot_width - $other_space ) / $length_sum;
+                $pixels_per_unit = $length_sum
+                    ? ( $slot_width - $other_space ) / $length_sum
+                    : 0;
 
                 # Check this ppu to see if it makes any
                 #   new maps drop below the minimum

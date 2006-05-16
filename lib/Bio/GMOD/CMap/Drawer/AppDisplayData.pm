@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.5 2006-05-03 15:44:43 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -433,6 +433,29 @@ Zoom slots
             app_display_data => $self,
         );
     }
+    return;
+}
+
+# ----------------------------------------------------
+sub expand_slot {
+
+=pod
+
+=head2 expand_slot
+
+expand slots
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+
+    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+
+print STDERR "Expanding\n";
+
     return;
 }
 
