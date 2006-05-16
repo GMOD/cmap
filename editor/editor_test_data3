@@ -1,0 +1,25 @@
+map_name	feature_name	feature_start	feature_stop	feature_type_acc	feature_aliases
+bac_1_1	bc_1_1_1	1	150	bac_contig	
+bac_1_1	bc_1_1_2	130	250	bac_contig	
+bac_1_2	bc_1_2_1	240	700	bac_contig	
+bac_1_2	bc_1_2_2	240	700	bac_contig	
+bac_1_3	bc_1_3_1	500	900	bac_contig	
+bac_1_4	bc_1_4_1	600	1000	bac_contig	
+bac_2_1	bc_2_1_1	1	250	bac_contig	
+bac_2_2	bc_2_2_1	240	700	bac_contig	
+bac_2_3	bc_2_3_1	500	900	bac_contig	
+bac_2_4	bc_2_4_1	600	1201	bac_contig	
+bac_3_1	bc_3_1_1	1	1999	bac_contig	
+bac_4_1	bc_4_1_1	1	899	bac_contig	
+bac_1_1	read_1_1_1	50	150	read	
+bac_1_1	read_1_1_2	130	220	read	
+bac_1_2	read_1_2_1	240	600	read	
+bac_1_2	read_1_2_2	250	700	read	
+bac_1_3	read_1_3_1	700	800	read	
+bac_1_4	read_1_4_1	600	900	read	
+bac_2_1	read_2_1_1	1	150	read	
+bac_2_2	read_2_2_1	240	400	read	
+bac_2_3	read_2_3_1	500	340	read	
+bac_2_4	read_2_4_1	600	900	read	
+bac_3_1	read_3_1_1	1	199	read	
+bac_4_1	read_4_1_1	500	899	read	
