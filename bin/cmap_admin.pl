@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.127 2006-02-23 17:11:48 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.128 2006-05-16 02:05:29 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 #
 # Get command-line options
@@ -260,7 +260,6 @@ use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
-use Bio::GMOD::CMap::Admin::ImportAlignments();
 use Bio::GMOD::CMap::Admin::ManageLinks();
 use Bio::GMOD::CMap::Admin::SavedLink;
 use Benchmark;
@@ -1023,6 +1022,7 @@ sub delete_maps {
     }
     else {
         my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+print STDERR Dumper($map_sets)."\n";
         return unless @{ $map_sets || [] };
         $map_set    = $map_sets->[0];
         $map_set_id = $map_set->{'map_set_id'};
@@ -2008,7 +2008,7 @@ sub get_map_sets {
             display    => 'map_type',
             return     => 'map_type_acc',
             allow_null => 0,
-            allow_mult => $allow_mult,
+            allow_mult => 1,
             allow_all  => 1,
             data       => $map_type_results,
         );
@@ -2039,7 +2039,7 @@ sub get_map_sets {
             display    => 'species_common_name',
             return     => 'species_id',
             allow_null => 0,
-            allow_mult => $allow_mult,
+            allow_mult => 1,
             allow_all  => 1,
             data       => $map_set_species,
         );
@@ -2055,8 +2055,8 @@ sub get_map_sets {
         );
 
         my $map_set_ids = $self->show_menu(
-            title      => 'Select Map Sets',
-            prompt     => 'Which map sets?',
+            title      => 'Select Map Set',
+            prompt     => 'Which map set?',
             display    => 'map_type,species_common_name,map_set_short_name',
             return     => 'map_set_id',
             allow_null => $allow_null,
@@ -2679,6 +2679,7 @@ sub import_alignments {
         return if $answer =~ /^[Nn]/;
     }
 
+    require Bio::GMOD::CMap::Admin::ImportAlignments();
     my $importer =
       Bio::GMOD::CMap::Admin::ImportAlignments->new(
         data_source => $self->data_source, );
@@ -2772,7 +2773,7 @@ sub purge_query_cache {
         config      => $self->config,
         data_source => $self->data_source,
     );
-    print "Purging cache at level $cache_level.\n";
+    print "Purging cache at level $cache_level of ".$self->data_source().".\n";
     $admin->purge_cache($cache_level);
     print "Cache Purged\n";
 }
@@ -3552,13 +3553,18 @@ sub show_menu {
     my @return = split( /,/, $args{'return'} )
       or die "No return field(s) defined\n";
     my @display = split( /,/, $args{'display'} );
+    my $allow_null = $args{'allow_null'};
+    my $allow_mult = $args{'allow_mult'};
+    my $allow_all = $args{'allow_all'};
+    my $title = $args{'title'};
+    my $prompt = $args{'prompt'} || 'Please select';
     my $result;
 
-    if ( scalar @$data > 1 || $args{'allow_null'} ) {
+    if ( scalar @$data > 1 || $allow_null ) {
         my $i      = 1;
         my %lookup = ();
 
-        my $title = $args{'title'} || '';
+        my $title = $title || '';
         print $title ? "\n$title\n" : "\n";
         for my $row (@$data) {
             print "[$i] ", join( ' : ', map { $row->{$_} } @display ), "\n";
@@ -3569,28 +3575,27 @@ sub show_menu {
             $i++;
         }
 
-        if ( $args{'allow_all'} ) {
+        if ( $allow_all and $allow_mult) {
             print "[$i] All of the above\n";
         }
 
-        my $prompt = $args{'prompt'} || 'Please select';
         $prompt .=
-             $args{'allow_null'}
-          && $args{'allow_mult'} ? "\n(<Enter> for nothing, multiple allowed): "
-          : $args{'allow_null'}  ? ' (0 or <Enter> for nothing): '
-          : $args{'allow_mult'}  ? ' (multiple allowed): '
-          : $args{'allow_mult'}  ? ' (multiple allowed):'
+             $allow_null
+          && $allow_mult ? "\n(<Enter> for nothing, multiple allowed): "
+          : $allow_null  ? ' (0 or <Enter> for nothing): '
+          : $allow_mult  ? ' (multiple allowed): '
+          : $allow_mult  ? ' (multiple allowed):'
           : ' (one choice only): ';
 
         for ( ; ; ) {
             print "\n$prompt";
             chomp( my $answer = <STDIN> );
 
-            if ( $args{'allow_null'} && !$answer ) {
+            if ( $allow_null && !$answer ) {
                 $result = undef;
                 last;
             }
-            elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
+            elsif ( $allow_all || $allow_mult ) {
                 my %numbers =
 
                   # make a lookup
@@ -3605,7 +3610,7 @@ sub show_menu {
                   # split on space or comma
                   split /[,\s]+/, $answer;
 
-                if ( $args{'allow_all'} && grep {$_ == $i} keys %numbers ) {
+                if ( $allow_all && grep {$_ == $i} keys %numbers ) {
                     $result = [ map { $lookup{$_} } 1 .. $i - 1 ];
                     last;
                 }
@@ -3633,12 +3638,12 @@ sub show_menu {
 
         # only one choice, use it.
         $result = [ map { $data->[0]->{$_} } @return ];
-        $result = [$result] if ( $args{'allow_mult'} );
+        $result = [$result] if ( $allow_mult );
         unless ( wantarray or scalar(@$result) != 1 ) {
             $result = $result->[0];
         }
         my $value = join( ' : ', map { $data->[0]->{$_} } @display );
-        my $title = $args{'title'} || '';
+        my $title = $title || '';
         print $title ? "\n$title\n" : "\n";
         print "Using '$value'\n";
     }
