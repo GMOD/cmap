@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.270 2006-04-28 17:51:20 mwz444 Exp $
+# $Id: Data.pm,v 1.271 2006-05-16 02:03:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.270 $)[-1];
+$VERSION = (qw$Revision: 1.271 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -262,7 +262,7 @@ sub cmap_data {
     #print ST#DERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $slots                      = $args{'slots'};
-    my $slots_min_corrs            = $args{'slots_min_corrs'} || {};
+    my $slot_min_corrs             = $args{'slot_min_corrs'} || {};
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
@@ -299,10 +299,10 @@ sub cmap_data {
         $slots,                       $ignored_feature_type_accs,
         $included_evidence_type_accs, $less_evidence_type_accs,
         $greater_evidence_type_accs,  $evidence_type_score,
-        $slots_min_corrs,
+        $slot_min_corrs,
         )
         or return;
-    $self->update_slots( $slots, $slots_min_corrs, );
+    $self->update_slots( $slots, $slot_min_corrs, );
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -405,7 +405,8 @@ sub slot_data {
     my $ref_slot_no  = $args{'ref_slot_no'};
 
     # my $min_correspondences         = $args{'min_correspondences'} || 0;
-    my $included_feature_type_accs  = $args{'included_feature_type_accs'};
+    my $included_feature_type_accs = $args{'included_feature_type_accs'}
+        || [];
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
     my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
     my $less_evidence_type_accs     = $args{'less_evidence_type_accs'};
@@ -418,13 +419,14 @@ sub slot_data {
     my $map_correspondences         = $args{'map_correspondences'};
     my $correspondence_evidence     = $args{'correspondence_evidence'};
     my $feature_types_seen          = $args{'feature_types'};
-    my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
-    my $ignored_feature_type_accs   = $args{'ignored_feature_type_accs'};
-    my $map_type_accs               = $args{'map_type_accs'};
-    my $pid                         = $args{'pid'};
-    my $max_no_features             = 200000;
-    my $sql_object                  = $self->sql or return;
-    my $slot_info                   = $self->slot_info or return;
+    my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
+        || [];
+    my $ignored_feature_type_accs = $args{'ignored_feature_type_accs'};
+    my $map_type_accs             = $args{'map_type_accs'};
+    my $pid                       = $args{'pid'};
+    my $max_no_features           = 200000;
+    my $sql_object                = $self->sql or return;
+    my $slot_info                 = $self->slot_info or return;
 
     #
     # If there is more than 1 map in this slot, we will return totals
@@ -503,7 +505,8 @@ sub slot_data {
     my $ft = $sql_object->get_used_feature_types(
         cmap_object => $self,
         map_ids     => [ keys( %{ $slot_info->{$this_slot_no} } ) ],
-        included_feature_type_accs => $included_feature_type_accs,
+        included_feature_type_accs =>
+            [ @$included_feature_type_accs, @$corr_only_feature_type_accs ],
     );
     $feature_types_seen->{ $_->{'feature_type_acc'} } = $_ for @$ft;
 
@@ -1455,7 +1458,7 @@ sub correspondence_form_data {
     my $less_evidence_type_accs     = $args{'less_evidence_types'}     || [];
     my $greater_evidence_type_accs  = $args{'greater_evidence_types'}  || [];
     my $evidence_type_score         = $args{'evidence_type_score'}     || {};
-    my $slots_min_corrs             = $args{'slots_min_corrs'}         || {};
+    my $slot_min_corrs              = $args{'slot_min_corrs'}          || {};
     my $side                        = $args{'side'}                    || q{};
 
     my @ref_maps = ();
@@ -1473,7 +1476,7 @@ sub correspondence_form_data {
         $slots,                       $ignored_feature_type_accs,
         $included_evidence_type_accs, $less_evidence_type_accs,
         $greater_evidence_type_accs,  $evidence_type_score,
-        $slots_min_corrs,
+        $slot_min_corrs,
         )
         or return;
 
@@ -1774,12 +1777,16 @@ sub fill_out_slots {
             );
             $maps = sort_selectall_arrayref( $maps, '#display_order',
                 'map_name', 'map_acc' );
-            my $grey_cell=0;
+            my $grey_cell = 0;
             foreach my $map ( @{ $maps || [] } ) {
                 my $map_acc = $map->{'map_acc'};
-                push @{$filled_slot->{'map_order'}},$map_acc;
+                push @{ $filled_slot->{'map_order'} }, $map_acc;
                 $filled_slot->{'maps'}{$map_acc}{'map_name'}
                     = $map->{'map_name'};
+                $filled_slot->{'maps'}{$map_acc}{'ori_map_start'}
+                    = $map->{'map_start'};
+                $filled_slot->{'maps'}{$map_acc}{'ori_map_stop'}
+                    = $map->{'map_stop'};
                 unless ( defined $filled_slot->{'maps'}{$map_acc}{'start'} ) {
                     $filled_slot->{'maps'}{$map_acc}{'start'}
                         = $map->{'map_start'};
@@ -4040,10 +4047,10 @@ Data Structures:
   
 =cut
 
-    my $self            = shift;
-    my $slots           = shift;
-    my $slots_min_corrs = shift;
-    my $slot_info       = $self->slot_info;
+    my $self           = shift;
+    my $slots          = shift;
+    my $slot_min_corrs = shift;
+    my $slot_info      = $self->slot_info;
 
     my %used_slot_nos;
 
@@ -4067,8 +4074,8 @@ Data Structures:
             delete( $slots->{$slot_no} );
             next;
         }
-        $slots->{$slot_no}->{'min_corrs'} = $slots_min_corrs->{$slot_no}
-            if defined( $slots_min_corrs->{$slot_no} );
+        $slots->{$slot_no}->{'min_corrs'} = $slot_min_corrs->{$slot_no}
+            if defined( $slot_min_corrs->{$slot_no} );
     }
 }
 
@@ -4102,7 +4109,7 @@ original start and stop.
     my $less_evidence_type_accs     = shift;
     my $greater_evidence_type_accs  = shift;
     my $evidence_type_score         = shift;
-    my $slots_min_corrs             = shift;
+    my $slot_min_corrs              = shift;
     my $sql_object                  = $self->sql;
 
     # Return slot_info is not setting it.
@@ -4116,7 +4123,7 @@ original start and stop.
         less_evidence_type_accs     => $less_evidence_type_accs,
         greater_evidence_type_accs  => $greater_evidence_type_accs,
         evidence_type_score         => $evidence_type_score,
-        slots_min_corrs             => $slots_min_corrs,
+        slot_min_corrs              => $slot_min_corrs,
         )
         or return $self->error( $sql_object->error() );
 

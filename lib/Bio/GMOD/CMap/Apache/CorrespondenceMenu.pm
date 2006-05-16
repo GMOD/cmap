@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceMenu;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceMenu.pm,v 1.2 2006-03-21 22:10:21 mwz444 Exp $
+# $Id: CorrespondenceMenu.pm,v 1.3 2006-05-16 02:03:26 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -63,7 +63,7 @@ sub handler {
             less_evidence_types    => $url_options{'less_evidence_types'},
             greater_evidence_types => $url_options{'greater_evidence_types'},
             evidence_type_score    => $url_options{'evidence_type_score'},
-            slots_min_corrs        => $url_options{'slots_min_corrs'},
+            slot_min_corrs         => $url_options{'slot_min_corrs'},
             side                   => $side,
             )
             or return $self->error( $data->error );

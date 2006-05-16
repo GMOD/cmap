@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.142 2006-05-01 15:18:38 mwz444 Exp $
+# $Id: Generic.pm,v 1.143 2006-05-16 02:03:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.142 $)[-1];
+$VERSION = (qw$Revision: 1.143 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -678,7 +678,7 @@ It might be a good idea to follow the code follows.
 
 =item - Feature Type Accessions to ignore (ignored_feature_type_accs)
 
-=item - Hash that holds the minimum number of correspondences for each slot (slots_min_corrs)
+=item - Hash that holds the minimum number of correspondences for each slot (slot_min_corrs)
 
 =back
 
@@ -710,7 +710,7 @@ original start and stop.
         less_evidence_type_accs     => 0,
         greater_evidence_type_accs  => 0,
         evidence_type_score         => 0,
-        slots_min_corrs             => 0,
+        slot_min_corrs              => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -724,7 +724,7 @@ original start and stop.
     my $greater_evidence_type_accs = $args{'greater_evidence_type_accs'}
         || [];
     my $evidence_type_score = $args{'evidence_type_score'} || {};
-    my $slots_min_corrs     = $args{'slots_min_corrs'}     || {};
+    my $slot_min_corrs      = $args{'slot_min_corrs'}      || {};
     my $db                  = $cmap_object->db;
     my $return_object       = {};
 
@@ -759,7 +759,7 @@ original start and stop.
         my $maps                 = $slots->{$slot_no}{'maps'};
         my $ori_min_corrs        = $slots->{$slot_no}{'min_corrs'};
         my $applied_min_corrs    = $ori_min_corrs;
-        my $new_min_corrs        = $slots_min_corrs->{$slot_no};
+        my $new_min_corrs        = $slot_min_corrs->{$slot_no};
         my $use_corr_restriction = 0;
 
         if ( $slot_no == 0 ) {

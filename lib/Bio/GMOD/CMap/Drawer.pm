@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.122 2006-04-28 17:51:21 mwz444 Exp $
+# $Id: Drawer.pm,v 1.123 2006-05-16 02:03:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ The base map drawing module.
         right_min_corrs => $right_min_corrs,
         general_min_corrs => $general_min_corrs,
         menu_min_corrs => $menu_min_corrs,
-        slots_min_corrs => $slots_min_corrs,
+        slot_min_corrs => $slot_min_corrs,
         collapse_features => $collapse_features,
         cache_dir => $cache_dir,
         map_view => $map_view,
@@ -229,7 +229,7 @@ or the left most.
 
 The minimum number of correspondences for the menu
 
-=item * slots_min_corrs
+=item * slot_min_corrs
 
 The data structure that holds the  minimum number of correspondences for each slot
 
@@ -339,7 +339,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -359,7 +359,7 @@ my @INIT_PARAMS = qw[
     included_evidence_types ignored_evidence_types ignored_feature_types
     less_evidence_types greater_evidence_types evidence_type_score
     config data_source left_min_corrs right_min_corrs
-    general_min_corrs menu_min_corrs slots_min_corrs
+    general_min_corrs menu_min_corrs slot_min_corrs
     collapse_features cache_dir map_view data_module
     aggregate show_intraslot_corr clean_view
     scale_maps stack_maps ref_map_order comp_menu_order
@@ -1628,7 +1628,7 @@ necessary data for drawing.
         my $data = $self->data_module or return;
         ( $self->{'data'}, $self->{'slots'} ) = $data->cmap_data(
             slots                       => $self->{'slots'},
-            slots_min_corrs             => $self->slots_min_corrs,
+            slot_min_corrs              => $self->slot_min_corrs,
             included_feature_type_accs  => $self->included_feature_types,
             corr_only_feature_type_accs => $self->corr_only_feature_types,
             ignored_feature_type_accs   => $self->ignored_feature_types,
@@ -2298,11 +2298,11 @@ Default: undef
 }
 
 # ----------------------------------------------------
-sub slots_min_corrs {
+sub slot_min_corrs {
 
 =pod
 
-=head2 slots_min_corrs
+=head2 slot_min_corrs
 
 Gets/sets the object that holds the minimum number of correspondences for each
 slot.
@@ -2312,8 +2312,8 @@ Default: undef
 =cut
 
     my $self = shift;
-    $self->{'slots_min_corrs'} = shift if @_;
-    return $self->{'slots_min_corrs'};
+    $self->{'slot_min_corrs'} = shift if @_;
+    return $self->{'slot_min_corrs'};
 }
 
 # ----------------------------------------------------
