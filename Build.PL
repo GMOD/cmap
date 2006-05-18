@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.57 2006-05-16 02:05:56 mwz444 Exp $
+# $Id: Build.PL,v 1.58 2006-05-18 18:30:01 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -19,7 +19,7 @@ my @OPTION_LIST = qw[
     CACHE
     SESSIONS
 ];
-my @ARGS = (qw[ 'PREFIX' ], @OPTION_LIST);
+my @ARGS = (qw[ PREFIX ], @OPTION_LIST);
 my %ARGS = (
     PREFIX => {
         desc    => 'A directory prefix for all install arguments',
