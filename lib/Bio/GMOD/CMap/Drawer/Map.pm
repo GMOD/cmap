@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.195 2006-03-21 20:34:31 mwz444 Exp $
+# $Id: Map.pm,v 1.196 2006-05-18 14:40:20 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.195 $)[-1];
+$VERSION = (qw$Revision: 1.196 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3598,16 +3598,16 @@ Returns the map's tick mark interval.
 
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length = $self->map_stop($map_id) - $self->map_start($map_id);
-        my $map_scale  = int( log( abs($map_length) ) / log(10) );
+        if ($map_length) {
+            my $map_scale = int( log( abs($map_length) ) / log(10) );
+            push @{ $map->{'tick_mark_interval'} },
+                ( 10**( $map_scale - 1 ), $map_scale );
+        }
+        else {
 
-      #if (int(($map_length/(10**$map_scale))+.5)>=2){
-      #    push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
-      #}
-      #else{
-        push @{ $map->{'tick_mark_interval'} },
-            ( 10**( $map_scale - 1 ), $map_scale );
-
-        #}
+            # default tick_mark_interval for maps of length 0
+            push @{ $map->{'tick_mark_interval'} }, ( 1, 1 );
+        }
     }
 
     return $map->{'tick_mark_interval'};
