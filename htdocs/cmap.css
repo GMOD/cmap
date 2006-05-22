@@ -186,7 +186,7 @@ DD                { font-family: sans-serif; }
 /* for help form header */
 .helpheader{ font: bold 14pt sans-serif;
 	color: #666600;
-	background-coloer: #FFFFCC;
+	background-color: #FFFFCC;
 }
 
 .smallnote {
@@ -317,14 +317,14 @@ TH A	{
     background-color: yellow;
 }
 .colored { 
-    background-color: lightgrey;
+    background-color: #D3D3D3;
 }
 .monotonic {
     background-color: white;
 }
 
 .maptitle {
-    background-color: lightgrey;
+    background-color: #D3D3D3;
 }
 
 .grain {
