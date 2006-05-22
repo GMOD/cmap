@@ -18,6 +18,7 @@ Here is what I had to do:
 =item - Dumped old posgres db
 
   $ pg_dumpall > outputfile
+
 =item - kill current posgres
 
 =item - Install Postgres 8.0+ with Perl
@@ -35,11 +36,12 @@ use the  --with-perl flag during config
 
   $ /usr/local/pgsql/bin/psql -d postgres -f outputfile
 
+=back
+
 =head1 Add "untrusted" perl to the db
+
   $ createlang plperlu template1
   $ createlang plperlu dbname
-
-=back
 
 =head1 Add new tables to chado.  
  
