@@ -26,7 +26,6 @@ use base 'Module::Build';
 # ----------------------------------------------------
 sub ACTION_build {
     my $self = shift;
-    $self->ACTION_build_html;
     $self->SUPER::ACTION_build;
 }
 
@@ -34,7 +33,7 @@ sub ACTION_build {
 sub ACTION_install {
     my $self = shift;
     my %args = map { $_, 1 } @{ $self->{'args'}{'ARGV'} || [] };
-    $self->ACTION_html      unless $args{'nohtml'};
+    $self->ACTION_install_html      unless $args{'nohtml'};
     $self->ACTION_templates unless $args{'notemplates'};
 
     #
@@ -43,7 +42,7 @@ sub ACTION_install {
     unless ( $args{'noconf'} ) {
         my $conf_dir = $self->notes('CONF');
         unless ( -d $conf_dir ) {
-            eval { mkpath( $conf_dir, 0, 0700 ) };
+            eval { mkpath( $conf_dir, 0, 0755 ) };
             warn "Can't create conf dir $conf_dir: $@\n" if $@;
         }
 
@@ -114,7 +113,7 @@ sub ACTION_realclean {
 }
 
 # ----------------------------------------------------
-sub ACTION_build_html {
+sub ACTION_html {
     my $self = shift;
     my $cwd  = cwd();
 
@@ -297,7 +296,7 @@ sub ACTION_build_html {
 }
 
 # ----------------------------------------------------
-sub ACTION_html {
+sub ACTION_install_html {
     my $self   = shift;
     my $to_dir = $self->notes('HTDOCS');
     my $from   = 'htdocs';
