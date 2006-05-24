@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.126 2006-03-21 22:10:21 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.127 2006-05-24 19:38:41 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.126 $)[-1];
+$VERSION = (qw$Revision: 1.127 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -236,9 +236,23 @@ sub handler {
 
         my $feature_default_display = $data->feature_default_display;
 
-        $form_data->{'feature_types'}
-            = [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-                @{ $self->data_module->get_all_feature_types } ];
+        if (!$drawer->{'image_name'} and $parsed_url_options{'ref_map_set_acc'}){
+            my $ref_map_set_id = $self->sql()->acc_id_to_internal_id(
+                cmap_object => $self,
+                object_type => 'map_set',
+                acc_id      => $parsed_url_options{'ref_map_set_acc'},
+            );
+            $form_data->{'feature_types'} = [
+                sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+                    @{
+                    $self->sql()->get_used_feature_types(
+                        cmap_object => $self,
+                        map_set_ids => [ $ref_map_set_id, ],
+                        )
+                        || []
+                    }
+            ];
+        }
 
         my %evidence_type_menu_select = (
             (   map { $_ => 0 }
@@ -274,9 +288,6 @@ sub handler {
                 selected => $selected
                 };
         }
-        my @sorted_feature_type
-            = sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-            values %{ $self->feature_type_data() };
 
         my $t = $self->template or return;
         $t->process(
@@ -306,7 +317,6 @@ sub handler {
                     $parsed_url_options{'evidence_type_score'},
                 feature_types => join( ',',
                     @{ $parsed_url_options{'included_feature_types'} } ),
-                sorted_feature_type => \@sorted_feature_type,
                 evidence_types      => join( ',',
                     @{ $parsed_url_options{'included_evidence_types'} } ),
                 extra_code              => $extra_code,
