@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.128 2006-05-16 02:05:29 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.129 2006-05-24 13:14:38 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 #
 # Get command-line options
@@ -2679,7 +2679,7 @@ sub import_alignments {
         return if $answer =~ /^[Nn]/;
     }
 
-    require Bio::GMOD::CMap::Admin::ImportAlignments();
+    require Bio::GMOD::CMap::Admin::ImportAlignments;
     my $importer =
       Bio::GMOD::CMap::Admin::ImportAlignments->new(
         data_source => $self->data_source, );
