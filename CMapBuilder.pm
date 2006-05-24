@@ -82,6 +82,8 @@ sub ACTION_install {
     my $cache_dir = $self->notes('CACHE');
     unless ( -d $cache_dir ) {
         eval { mkpath( $cache_dir, 0, 0777 ) };
+        # mkpath won't give more permissive permissions than the parent
+        chmod 0777, $cache_dir or die "Cannot make '$cache_dir' read/write/executable: $!\n";
         warn "Can't create image cache dir $cache_dir: $@\n" if $@;
     }
 
