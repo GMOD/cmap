@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.16 $
+$Revision: 1.17 $
 
 =head1 QUICK START
 
@@ -166,7 +166,7 @@ grant appropriate permissions to a user "joe" with the password
   $ mysql -uroot -p CMAP < sql/cmap.create.mysql
   $ mysql -uroot -p CMAP -e 'grant select, insert, update, delete 
     on CMAP.* to joe@localhost identified by "foobar"'
-  $ mysqladmin -uroot -p CMAP flush-privileges
+  $ mysqladmin -uroot -p flush-privileges
 
 In the above example, you'll be required to type the root password
 for MySQL.
@@ -334,6 +334,8 @@ Required Modules:
 =item *   GD
 
 =item *   GD::SVG
+
+=item *   IO::Tee
 
 =item *   Params::Validate
 
