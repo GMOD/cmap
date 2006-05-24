@@ -93,6 +93,8 @@ sub ACTION_install {
     my $session_dir = $self->notes('SESSIONS');
     unless ( -d $session_dir ) {
         eval { mkpath( $session_dir, 0, 0777 ) };
+        # mkpath won't give more permissive permissions than the parent
+        chmod 0777, $session_dir or die "Cannot make '$session_dir' read/write/executable: $!\n";
         warn "Can't create image session dir $session_dir: $@\n" if $@;
     }
 
