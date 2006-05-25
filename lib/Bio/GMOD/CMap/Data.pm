@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.271 2006-05-16 02:03:26 mwz444 Exp $
+# $Id: Data.pm,v 1.272 2006-05-25 23:22:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.271 $)[-1];
+$VERSION = (qw$Revision: 1.272 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3116,22 +3116,17 @@ sub cmap_map_search_data {
             ### Work out the numbers per unit and reformat them.
             foreach my $map_id ( keys(%$map_info) ) {
                 ### Comp Map Count
-                my $raw_no = (
-                    $map_info->{$map_id}{'cmap_count'} / (
-                        $map_info->{$map_id}{'map_stop'}
-                            - $map_info->{$map_id}{'map_start'}
-                    )
-                );
+                my $divisor =
+                  ( $map_info->{$map_id}{'map_stop'} -
+                      $map_info->{$map_id}{'map_start'} )
+                  || 1;
+                my $raw_no = $map_info->{$map_id}{'cmap_count'} / $divisor;
                 $map_info->{$map_id}{'cmap_count_per'}
                     = presentable_number_per($raw_no);
                 $map_info->{$map_id}{'cmap_count_per_raw'} = $raw_no;
                 ### Correspondence Count
-                $raw_no = (
-                    $map_info->{$map_id}{'corr_count'} / (
-                        $map_info->{$map_id}{'map_stop'}
-                            - $map_info->{$map_id}{'map_start'}
-                    )
-                );
+                $raw_no = $map_info->{$map_id}{'corr_count'} / $divisor;
+                
                 $map_info->{$map_id}{'corr_count_per'}
                     = presentable_number_per($raw_no);
                 $map_info->{$map_id}{'corr_count_per_raw'} = $raw_no;
