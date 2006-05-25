@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.17 $
+$Revision: 1.18 $
 
 =head1 QUICK START
 
@@ -356,6 +356,8 @@ Required Modules:
 =item *   Time::Piece 
 
 =item *   URI::Escape
+
+=item *   XML::Parser::PerlSAX
 
 =item *   XML::Simple
 

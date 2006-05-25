@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.59 2006-05-24 13:14:08 mwz444 Exp $
+# $Id: Build.PL,v 1.60 2006-05-25 23:23:35 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -224,6 +224,7 @@ my $builder = CMapBuilder->new(
         'Time::ParseDate'              => 0,
         'Time::Piece'                  => 0,
         'URI::Escape'                  => 0,
+        'XML::Parser::PerlSAX'         => 0,
         'XML::Simple'                  => 0,
     },
     recommends => {
