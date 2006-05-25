@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.91 2006-04-28 15:13:31 mwz444 Exp $
+# $Id: Admin.pm,v 1.92 2006-05-25 18:27:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -671,7 +671,7 @@ Nothing
         cmap_object => $self );
     print "Retrieved list of correspondences\n\n";
     print
-        "Examining correspondences.\n (A '.' will appear for each deleted correspondence\n";
+        "Examining correspondences.\n (A '.' will appear for each deleted correspondence)\n";
 
     my $feature_count = 0;
     my $delete_count  = 0;
