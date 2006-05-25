@@ -366,7 +366,7 @@ function stringify_form(form) {
                       <td>Display if<br>Correspondence</td>
                       <td>Always Display</td>
                     </tr>
-                    [%- FOREACH ft=sorted_feature_type -%]
+                    [%- FOREACH ft=form_data.feature_types -%]
                       <tr>
                         <td><a href="feature_type_info?feature_type_acc=[%- ft.feature_type_acc -%]">[%- ft.feature_type -%]</a></td>
                         <td>
