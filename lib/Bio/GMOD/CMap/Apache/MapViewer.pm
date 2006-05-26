@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.128 2006-05-26 19:00:37 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.129 2006-05-26 19:44:43 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -253,6 +253,11 @@ sub handler {
                         || []
                     }
             ];
+        }
+        else{
+            $form_data->{'feature_types'}
+                = [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+                    @{ $self->data_module->get_all_feature_types } ];
         }
 
         my %evidence_type_menu_select = (
