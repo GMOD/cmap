@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.127 2006-05-24 19:38:41 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.128 2006-05-26 19:00:37 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -54,7 +54,6 @@ sub handler {
     # read session data.  Calls "show_form."
     #
     my ( $self, $apr ) = @_;
-    my $data = $self->data_module;
 
     # decide if we should use the whole page cache.
     # we will not if there is a session going.
@@ -84,6 +83,8 @@ sub handler {
     # parse the url
     my %parsed_url_options = Bio::GMOD::CMap::Utils->parse_url( $apr, $self )
         or return $self->error();
+
+    my $data = $self->data_module;
 
     $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
         || '';
