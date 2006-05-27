@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.272 2006-05-25 23:22:40 mwz444 Exp $
+# $Id: Data.pm,v 1.273 2006-05-27 05:45:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.272 $)[-1];
+$VERSION = (qw$Revision: 1.273 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2449,14 +2449,15 @@ Returns the detail info for a map.
     #
     # Get the reference map features.
     #
-    my $features = $sql_object->get_features(
+    my $features = [];
+    $features = $sql_object->get_features(
         cmap_object       => $self,
         map_id            => $map_id,
         feature_type_accs =>
             [ ( @$feature_type_accs, @$corr_only_feature_type_accs ) ],
         map_start => $map_start,
         map_stop  => $map_stop,
-    );
+    ) if ( @$feature_type_accs, @$corr_only_feature_type_accs );
 
     my $feature_count_by_type = $sql_object->get_feature_count(
         cmap_object           => $self,
