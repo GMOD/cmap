@@ -17,3 +17,9 @@ Constants.pm$
 ^MANIFEST\.SKIP$
 ^SIGNATURE.tmp$
 ^cmap.*\.tar.gz$
+^lib/Bio/GMOD/CMap/AppController.pm
+^lib/Bio/GMOD/CMap/Data/AppData.pm
+^lib/Bio/GMOD/CMap/Drawer/AppDisplayData.pm
+^lib/Bio/GMOD/CMap/Drawer/AppInterface.pm
+^lib/Bio/GMOD/CMap/Drawer/AppLayout.pm
+^editor/
