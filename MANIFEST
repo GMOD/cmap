@@ -1,5 +1,6 @@
 bin/cmap-fix-map-display-order.pl
 bin/cmap_admin.pl
+bin/cmap_create_stacked_maps.pl
 bin/cmap_manageParsedAceFile.pl
 bin/cmap_matrix_compare.pl
 bin/cmap_metrics.pl
@@ -14,7 +15,15 @@ BUGS
 Build.PL
 cgi-bin/cmap.PL
 chado_integration/chado_integration.pod
+chado_integration/chado_synchronize/chado_sync_tables.sql
+chado_integration/chado_synchronize/cmap_synchronize_chado.pl
+chado_integration/chado_synchronize/cmap_syncronize_chado.pl
+chado_integration/chado_synchronize/INSTALL.pod
+chado_integration/chado_synchronize/remove_sycn_from_chado.pl
+chado_integration/chado_synchronize/TODO
+chado_integration/chado_synchronize/trigger.template
 chado_integration/linker_table.sql
+chado_integration/README
 Changes
 CMapBuilder.pm
 conf/example.conf
@@ -22,6 +31,8 @@ conf/global.conf.PL
 CREDITS
 data/sample_saved_link.xml
 data/tabtest-dump.sql
+data/tabtest-export.xml
+data/tabtest.corr
 data/tabtest1
 data/tabtest2
 docs/ADMINISTRATION.pod
@@ -272,6 +283,7 @@ lib/Bio/GMOD/CMap/Admin/ManageLinks.pm
 lib/Bio/GMOD/CMap/Admin/SavedLink.pm
 lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
+lib/Bio/GMOD/CMap/Apache/CorrespondenceMenu.pm
 lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
 lib/Bio/GMOD/CMap/Apache/DataDownloader.pm
 lib/Bio/GMOD/CMap/Apache/EvidenceTypeViewer.pm
@@ -362,6 +374,7 @@ templates/admin_xrefs_view_embedded.tmpl
 templates/cmap_viewer.tmpl
 templates/cmap_viewer_comparative_map_select.tmpl
 templates/correspondence_detail.tmpl
+templates/correspondence_menu.tmpl
 templates/data_downloader.tmpl
 templates/error.tmpl
 templates/evidence_type_info.tmpl
@@ -410,5 +423,6 @@ upgrade/cmap_typetables_to_config.pl
 upgrade/upgrade-12-to-13.pod
 upgrade/upgrade-13-to-14.pod
 upgrade/upgrade-14-to-15.pod
+upgrade/upgrade-15-to-16.pod
 upgrade/upgrade_attributes_xrefs_14_to_15.pl
 upgrade/upgrade_config_14_to_15.pl
