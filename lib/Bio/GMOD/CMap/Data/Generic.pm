@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.144 2006-05-31 17:52:33 mwz444 Exp $
+# $Id: Generic.pm,v 1.145 2006-05-31 18:43:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.144 $)[-1];
+$VERSION = (qw$Revision: 1.145 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -5381,12 +5381,13 @@ Not using cache because this query is quicker.
     my $where_sql = qq[
             where   fa.feature_id=f.feature_id
     ];
+    my $where_extra = '';
     my @feature_ids_sql_list;
 
     # add the were clause for each possible identifier
     if ($feature_alias_id) {
         push @identifiers, $feature_alias_id;
-        $where_sql .= " and fa.feature_alias_id = ? ";
+        $where_extra .= " and fa.feature_alias_id = ? ";
     }
     elsif (@$feature_ids) {
         my $group_size = 1000;
@@ -5409,51 +5410,51 @@ Not using cache because this query is quicker.
     }
     elsif ($feature_id) {
         push @identifiers, $feature_id;
-        $where_sql .= " and f.feature_id = ? ";
+        $where_extra .= " and f.feature_id = ? ";
     }
     elsif ($feature_acc) {
         push @identifiers, $feature_acc;
-        $where_sql .= " and f.feature_acc = ? ";
+        $where_extra .= " and f.feature_acc = ? ";
     }
     if ($min_feature_id) {
         push @identifiers, $min_feature_id;
-        $where_sql .= " and f.feature_id >= ? ";
+        $where_extra .= " and f.feature_id >= ? ";
     }
     if ($max_feature_id) {
         push @identifiers, $max_feature_id;
-        $where_sql .= " and f.feature_id <= ? ";
+        $where_extra .= " and f.feature_id <= ? ";
     }
     if ($alias) {
         my $comparison = $alias =~ m/%/ ? 'like' : '=';
         if ( $alias ne '%' ) {
             push @identifiers, uc $alias;
-            $where_sql .= " and upper(fa.alias) $comparison ? ";
+            $where_extra .= " and upper(fa.alias) $comparison ? ";
         }
     }
 
     if ($map_id) {
         push @identifiers, $map_id;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = f.map_id and map.map_id = ? ";
+        $where_extra .= " and map.map_id = f.map_id and map.map_id = ? ";
     }
     elsif ($map_acc) {
         push @identifiers, $map_acc;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = f.map_id and map.map_acc = ? ";
+        $where_extra .= " and map.map_id = f.map_id and map.map_acc = ? ";
     }
     elsif ($map_set_id) {
         push @identifiers, $map_set_id;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = f.map_id and map.map_set_id = ? ";
+        $where_extra .= " and map.map_id = f.map_id and map.map_set_id = ? ";
     }
     elsif (@$map_set_ids) {
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = f.map_id "
+        $where_extra .= " and map.map_id = f.map_id "
             . " and map.map_set_id in ("
             . join( ",", sort @$map_set_ids ) . ") ";
     }
     if (@$ignore_feature_type_accs) {
-        $where_sql .= " and f.feature_type_acc not in ('"
+        $where_extra .= " and f.feature_type_acc not in ('"
             . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
     my $order_by_sql = qq[
@@ -5467,6 +5468,7 @@ Not using cache because this query is quicker.
             $sql_str = $select_sql
                 . $from_sql
                 . $where_sql
+                . $where_extra
                 . $f_id_sql
                 . $order_by_sql;
             my $tmp_return_object
@@ -5476,7 +5478,15 @@ Not using cache because this query is quicker.
         }
     }
     else {
-        $sql_str = $select_sql . $from_sql . $where_sql . $order_by_sql;
+        die "Alias query too large"
+            . "cowardly refusing to run a killer query"
+            . Dumper( caller() ) . "\n"
+            unless $where_extra;
+        $sql_str = $select_sql
+            . $from_sql
+            . $where_sql
+            . $where_extra
+            . $order_by_sql;
         $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
             @identifiers );
     }
