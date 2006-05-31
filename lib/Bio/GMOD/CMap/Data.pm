@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.273 2006-05-27 05:45:55 mwz444 Exp $
+# $Id: Data.pm,v 1.274 2006-05-31 18:42:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.273 $)[-1];
+$VERSION = (qw$Revision: 1.274 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -65,7 +65,6 @@ Gets the specifics on a feature correspondence record.
 
 sub correspondence_detail_data {
 
-    #print ST#DERR "correspondence_detail_data\n";
     my ( $self, %args ) = @_;
     my $correspondence_acc = $args{'correspondence_acc'}
         or return $self->error('No correspondence accession ID');
@@ -259,7 +258,6 @@ Organizes the data for drawing comparative maps.
 
 sub cmap_data {
 
-    #print ST#DERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $slots                      = $args{'slots'};
     my $slot_min_corrs             = $args{'slot_min_corrs'} || {};
@@ -399,7 +397,6 @@ Returns the feature and correspondence data for the maps in a slot.
 
 sub slot_data {
 
-    #print ST#DERR "slot_data\n";
     my ( $self, %args ) = @_;
     my $this_slot_no = $args{'slot_no'};
     my $ref_slot_no  = $args{'ref_slot_no'};
@@ -772,7 +769,6 @@ and the provided id.
 
 sub get_feature_correspondences {
 
-    #print ST#DERR "get_feature_correspondences\n";
     my ($self,                       $feature_correspondences,
         $correspondence_evidence,    $map_id,
         $slot_no,                    $included_evidence_type_accs,
@@ -1283,7 +1279,6 @@ Returns the data for the main comparative map HTML form.
 
 sub cmap_form_data {
 
-    #print ST#DERR "cmap_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $menu_min_corrs              = $args{'menu_min_corrs'}          || 0;
@@ -1444,7 +1439,6 @@ Returns the data for the main comparative map HTML form.
 
 sub correspondence_form_data {
 
-    #print ST#DERR "correspondence_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $menu_min_corrs = $args{'menu_min_corrs'} || 0;
@@ -1714,7 +1708,6 @@ Gets the names, IDs, etc., of the maps in the slots.
 
 sub fill_out_slots {
 
-    #print ST#DERR "fill_out_slots\n";
     my $self             = shift;
     my $slots            = shift;
     my $flip_list        = shift || [];
@@ -2457,7 +2450,7 @@ Returns the detail info for a map.
             [ ( @$feature_type_accs, @$corr_only_feature_type_accs ) ],
         map_start => $map_start,
         map_stop  => $map_stop,
-    ) if ( @$feature_type_accs, @$corr_only_feature_type_accs );
+    ) if ( @$feature_type_accs || @$corr_only_feature_type_accs );
 
     my $feature_count_by_type = $sql_object->get_feature_count(
         cmap_object           => $self,
@@ -3893,7 +3886,6 @@ Organizes the data for drawing comparative maps.
 
 sub fill_type_arrays {
 
-    #print ST#DERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
@@ -4123,7 +4115,6 @@ original start and stop.
         )
         or return $self->error( $sql_object->error() );
 
-    #print ST#DERR Dumper($self->{'slot_info'})."\n";
     return $self->{'slot_info'};
 }
 
