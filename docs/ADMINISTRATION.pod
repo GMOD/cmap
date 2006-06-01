@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.26 $
+$Revision: 1.27 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -69,10 +69,10 @@ syntax where the two are separated by whitespace or an equal sign.  For
 more information on the syntax, read the POD for Config::General (by 
 executing "perldoc Config::General" on your system).
 
-Each configuration setting is documented in comments.  Legal and
-default values are listed along with a brief description of the
-option.  Except for the "database" settings, there is a reasonable 
-default, hard coded value for every configuration setting (so you could 
+Each configuration setting is documented in comments.  Legal and default values
+are listed along with a brief description of the option.  Except for the
+"database" and map/feature/evidence_type settings, there is a reasonable
+default, hard coded value for every configuration setting (so you could
 actually comment out all of the "optional settings" in the file).
 
 Whenever you make a change to cmap.conf, it will most likely be
@@ -134,7 +134,8 @@ directory.
 
 =item * file_age_to_purge [ default: 300 ]
 
-The age (in seconds) of an image file that an image has to be to be purged.  
+The age (in seconds) of an image file that an image has to be before it can be
+removed by CMap.  
 
 The default is set to five minutes so that any http requests accessing current
 images will have a chance to get them.  Setting to 0 may cause problems with
@@ -142,13 +143,15 @@ concurrent requests.
 
 =item * max_image_map_objects [ default: 20000 ]
 
-The maximum number of area boxes that CMap will print before it drops them all.
-This can save a browser from crashing.  No commas allowed.
+The maximum number of area boxes (clickable image elements) that CMap will try
+to print before issuing a warning message and ignoring all area boxes.  This
+can save a browser from crashing.  No commas allowed.
 
 =item * max_query_cache_size [ default: 26214400 ]
 
 How large the size limit should be for the query cache in bytes.  The value 0
-will cause the size to not be limited.  This is used in the cmap_reduce_cache_size.pl (L<REDUCING QUERY CACHE SIZE>) script
+will cause the size to not be limited.  This is used in the
+cmap_reduce_cache_size.pl (L<REDUCING QUERY CACHE SIZE>) script
 
 =back
 
@@ -181,123 +184,14 @@ When you are done customizing your config file, make sure you set
 
 =item * is_enabled
 
-Set to 1 to enable and 0 to keep this configuration file from being 
+Set to 1 to enable or 0 to keep this configuration file from being 
 used.
 
 =item * <database>
 
 Contains the database connection parameters. The 'name' field is the
-name that this config file and the data source will be called.  
+name that this config file and the data source will be referred to as.  
 Therefor, it is important to keep it unique.
-
-=item * feature_default_display
-
-Dictates the default choice of the feature type display menu.
-
-=item * <scalable>
-
-Dictates which map units can be used to scale maps to each other.  Maps 
-with units described here will be scaled against maps with the same 
-units.  
-
-=item * <aggregated_correspondence_colors>
-
-This option dictates the color of aggregated correspondence lines based on the
-number of correspondences between the maps.  The default is black.
-
-The format is "upper_bound color" where upper_bound is the cap that this color
-is used for.  In the following example, from 0-1 corr, the line will be light
-grey.  If there are 2 corr, the line will be blue.  From 3-5 (inclusive), the
-line will be purple.  Anything ABOVE 20 will be black, which is denoted by an
-upper_bound of 0 (in this case it means infinity).
-
- <aggregated_correspondence_colors>
-    1    lightgrey
-    2   blue
-    5   purple
-    20  red
-    0    black
- </aggregated_correspondence_colors>
-
-=item * <scale_conversion>
-
-If you want to scale maps with different map units, the conversion factor must
-be specified here.
-
-For an example (a completely non-sensical example), lets pretend that a
-centimorgan (cM) is 100 base pair (bp).  The config would look something like
-the following, which is read 'One centimorgan is the size of 100 base pairs'. 
-
- <scale_conversion>
-   <cM>
-     bp 100
-   </cM>
- </scale_conversion>
-
-Since the directionality doesn't matter, this is the same as: 
-
- <scale_conversion>
-   <bp>
-     cM .01
-   </bp>
- </scale_conversion>
-
-There is no reason to define the conversion in both directions since only one
-factor will be used and it could create inconsistancies if one direction was
-different from the other.
-
-Also, multiple conversions can be difined as in this (non-sensical) example.
-
- <scale_conversion>
-   <bp>
-     cM .01
-     bands .1
-   </bp>
-   <cM>
-     bands 10
-   </cM>
- </scale_conversion>
-
-It is appropriate to describe all relationships as CMap won't neccessarily
-figure out the relationship between a band and a centimorgan transitively (but
-it might depending on the order of the map sets).  Therefor, to avoid
-inconsistancies, please make sure to define all relationships (and define them
-correctly).
-
-=item * omit_area_boxes [ default: 0 ]
-
-This determines which area boxes are rendered.  The area boxes create clickable
-areas on the image.  Rendering all the boxes gives the most functionality but
-can be slow if there are a lot of features.  The option to omit feature area
-boxes can help speed things up while leaving the navigation buttons.  There is
-also an option to ignore all of the area boxes, which is not recommended.
-
- Values:
-    0 : render all of the area boxes
-    1 : omit the feature area boxes 
-    2 : omits all area boxes
-
-=item * disable_cache
-
-Set to one if the query cache should not be used.  This is handy for 
-speed testing or debugging.
-
-=item * comp_menu_order
-
-Dictates the default value of how the comparison maps will be ordered in the
-menu select box.  The choices are 'display_order' and 'corrs'.  'display_order'
-is the classical order based on the maps display order and their names.
-Specifying 'corrs' orders the maps by the number of correspondences.
-
-Default: 'display_order'
-
-=item * corrs_to_map [ default: 0 ]
-
-This determines where the correspondence lines are terminated.
-
- Values:
-    0 : Lines connect features
-    1 : Lines connect maps
 
 =back
 
@@ -341,7 +235,7 @@ Attributes of feature, evidence and map types have been moved out of the
 database and into the config file.
 
 Attributes are essentially name, value pairs which describe something about the
-type.  They must be definined in <attribute> tags.  Here is an example entry:
+type.  They must be defined in <attribute> tags.  Here is an example entry:
 
  <attribute>
    name Description
@@ -361,7 +255,7 @@ Cross-references of feature, evidence and map types have been moved out of the
 database and into the config file.
 
 Cross-references (xrefs) are links from this type to another website.  They
-consist of a name and a url.  If the url is inside the "cmap/" namespace you
+consist of a name and a URL.  If the URL is inside the "cmap/" namespace you
 can define just the end portion.  However if you want to link outside this
 website, you must include the "http://".  Here is an example entry:
 
@@ -376,7 +270,7 @@ website, you must include the "http://".  Here is an example entry:
 
 =item * area_code (map and feature types only)
 
-CMap allows you to change the url, the alternet message or specify javascript
+CMap allows you to change the URL, the alternate message or specify JavaScript
 to be included in the area box over the drawings of map and features.  The
 following example makes the map name appear in the status bar of the browser on
 mouse over.  It also changes the alternate message to the map name and makes
@@ -387,7 +281,7 @@ the url search google.
  $url=sprintf("www.google.com/search?q=%s",$map->{'map_name'});
 
 This is Perl code that lets you change the values of three variables; $code,
-$alt and $url.  $code hold the javascript commands that the area will use.
+$alt and $url.  $code hold the JavaScript commands that the area will use.
 $alt holds the alternate message that will pop up when the mouse is hovered
 over the area box.  $url is the URL that the browser will go to when clicking
 the area box.  These are evaluated for each map of this type which enables
@@ -435,7 +329,7 @@ The accession id of the feature type (of course you already know this)
 =item * required_page_code (map and feature types only)
 
 This field takes a list of page_code accessions.  Page_code is used 
-to insert functions that map/feature javascript will use.  This is 
+to insert functions that map/feature JavaScript will use.  This is 
 handy if multiple types do the same complex thing.  Creating page_code
 is described later.
 
@@ -490,7 +384,7 @@ deletions.
 Creates an open (unfilled) box that straddles the map. While it's
 possible to place a box in a lane other than "1" (i.e., there's no
 code in place to stop you), it really doesn't look very good.  This
-shape was really intended just to represent infrequently occuring
+shape was really intended just to represent infrequently occurring
 features, like a centromere. The boxes get progressively larger as
 they start to collide and are quite confusing when there are many. Use
 sparingly.
@@ -669,9 +563,45 @@ How wide a map will be drawn.
 
 =back
 
-=head3 Data Drawing Options
+=head3 Menu Defaults
 
-=over 4
+=head4 Map Menu Options
+
+=over4
+
+=item * stack_maps [ default: 0 ]
+
+Place the reference maps vertically rather than side by side. 
+
+=item * menu_bgcolor [ default: white ]
+
+The background color of some areas of the menu
+
+Values: color
+
+=item * menu_bgcolor_tint [ default: lightgrey ]
+
+The background color of tinted areas of the menu
+
+Values: color
+
+=item * menu_ref_bgcolor [ default: aqua ]
+
+The background color of some of the reference map areas of the menu
+
+Values: color
+
+=item * menu_ref_bgcolor_tint [ default: lightblue ]
+
+The background color of tinted reference map areas of the menu
+
+Values: color
+
+=back
+
+=head4 Feature Menu Options
+
+=over4
 
 =item * label_features [ default: all ]
 
@@ -687,19 +617,21 @@ Collapse features glyphs into one glyph if they overlap
     0:  don't collapse
     1:  collapse
 
-=item * scale_maps [ default: 1 ]
+=item * feature_default_display [ default: display ]
 
-Allow scaleable (set by scalable) maps to be drawn in scale
+Dictates the default choice of the feature type display menu that aren't
+defined in the individual feature_type.
 
- Values: 
-    0:  don't scale
-    1:  scale
+ Values:
+    display:   Display all features of this type
+    corr_only: Display only features of this type with displayed correspondences
+    ignore:    Completely ignore features of this type.  
 
-=item * <scalable> [ Optional ]
+=back
 
-Dictates which map units can be used to scale maps to each other.  Maps 
-with units described here will be scaled against maps with the same 
-units.  
+=head4 Correspondence Menu Options
+
+=over4
 
 =item * aggregate_correspondences [ default: 1 ]
 
@@ -710,15 +642,6 @@ Set default, aggregate correspondences into one or two lines.
     1:  one line 
     2:  two lines
 
-=item * feature_default_display [ default: display ]
-
-Dictates the default choice of the feature type display menu.
-
- Values:
-    display:   Display all features of this type
-    corr_only: Display only features of this type with displayed correspondences
-    ignore:    Completely ignore features of this type.  
-
 =item * evidence_default_display [ default: display ]
 
 Dictates the default choice of the evidence type display menu.  You cannot
@@ -728,11 +651,28 @@ default to the greater than or less than score options.
     display:      Display all correspondences with evidence of this type
     ignore:       Completely ignore the evidence of this type when considering correspondences.  
 
+=item * show_intraslot_correspondences [ default: 0 ]
+
+Display correspondences between maps in the same slot (map_set).
+
+=item * corrs_to_map [ default: 0 ]
+
+This determines where the correspondence lines are terminated.
+
+ Values:
+    0 : Lines connect features
+    1 : Lines connect maps
+
+=item * split_agg_evespondences [ default: 0 ]
+
+If multiple correspondence types are present, aggregate them separately from
+each other.
+
 =back
 
-=head3 Drawing Defaults
+=head4 Display Menu Options
 
-=over 4
+=over4
 
 =item * font_size [ default: small ]
 
@@ -753,6 +693,108 @@ installed
 
 Values: png, jpeg, svg and maybe gif
 
+=item *  clean_view [ default: 0 ]
+
+If set to 1, the control buttons on the image are removed.  This is useful for
+taking images for publication.
+
+=back
+
+=head4 Advanced Menu Options
+
+=over4
+
+=item * scale_maps [ default: 1 ]
+
+Allow scaleable (set by scalable) maps to be drawn in scale
+
+ Values: 
+    0:  don't scale
+    1:  scale
+
+=item * <scalable> [ Optional ]
+
+Dictates which map units can be used to scale maps to each other.  Maps 
+with units described here will be scaled against maps with the same 
+units.  
+
+=item * <scale_conversion>
+
+If you want to scale maps with different map units, the conversion factor must
+be specified here.
+
+For an example (a completely nonsensical example), lets pretend that a
+centimorgan (cM) is 100 base pair (bp).  The config would look something like
+the following, which is read 'One centimorgan is the size of 100 base pairs'. 
+
+ <scale_conversion>
+   <cM>
+     bp 100
+   </cM>
+ </scale_conversion>
+
+Since the directionality doesn't matter, this is the same as: 
+
+ <scale_conversion>
+   <bp>
+     cM .01
+   </bp>
+ </scale_conversion>
+
+There is no reason to define the conversion in both directions since only one
+factor will be used and it could create inconsistencies if one direction was
+different from the other.
+
+Also, multiple conversions can be defined as in this (nonsensical) example.
+
+ <scale_conversion>
+   <bp>
+     cM .01
+     bands .1
+   </bp>
+   <cM>
+     bands 10
+   </cM>
+ </scale_conversion>
+
+It is appropriate to describe all relationships as CMap won't necessarily
+figure out the relationship between a band and a centimorgan transitively (but
+it might depending on the order of the map sets).  Therefor, to avoid
+inconsistencies, please make sure to define all relationships (and define them
+correctly).
+
+=item * omit_area_boxes [ default: 0 ]
+
+This determines which area boxes are rendered.  The area boxes create clickable
+areas on the image.  Rendering all the boxes gives the most functionality but
+can be slow if there are a lot of features.  The option to omit feature area
+boxes can help speed things up while leaving the navigation buttons.  There is
+also an option to ignore all of the area boxes, which is not recommended.
+
+ Values:
+    0 : render all of the area boxes
+    1 : omit the feature area boxes 
+    2 : omits all area boxes
+
+=item * comp_menu_order [ default: 'display_order' ]
+
+Dictates the default value of how the comparison maps will be ordered in the
+menu select box.  The choices are 'display_order' and 'corrs'.  'display_order'
+is the classical order based on the maps display order and their names.
+Specifying 'corrs' orders the maps by the number of correspondences.
+
+=item * ignore_image_map_sanity [ default: 0 ]
+
+A sanity check on the size of the image map (number of clickable objects) is
+performed unless this is set to 1.  If the sanity check fails, the image will
+not be clickable and a warning message will be displayed.
+
+=back
+
+=head3 Presentation Options
+
+=over 4
+
 =item * min_map_pixel_height [ default: 20 ]
 
 The smallest any map can be drawn, in pixels
@@ -763,36 +805,9 @@ Values: any positive integer (within reason)
 
 Set the minimum number of pixels between tick marks on map.
 
-=item * background_color [ default: lightgoldenrodyellow ]
-
-The background color of the map image
-
-Values: any color found in the COLORS array of Bio::GMOD::CMap::Constants To
-view this file, either look in the "lib" directory of the original CMap source
-directory, or, if you have the very handy "pmtools" installed on your system,
-type "pmcat Bio::GMOD::CMap::Constants" on your command-line.
-
-=item * slot_background_color [ default: beige ]
-
-The colors of the slot background and border.
-
-Values: see background_color
-
-=item * slot_border_color [ default: khaki ]
-
-The colors of the slot border.
-
-Values: see background_color
-
 =item * feature_color [ default: black ]
 
 Default color of a feature if the feature type's "color" is "Default"
-
-Values: see background_color
-
-=item * connecting_line_color [ default: lightblue ]
-
-The color of the line connecting feature correspondences
 
 Values: see background_color
 
@@ -805,6 +820,12 @@ Values: see background_color
 =item * feature_highlight_fg_color [ default: yellow ]
 
 Color of background behind a highlighted feature
+
+Values: see background_color
+
+=item * connecting_line_color [ default: lightblue ]
+
+The color of the line connecting feature correspondences
 
 Values: see background_color
 
@@ -834,88 +855,26 @@ upper_bound of 0 (in this case it means infinity).
     0    black
  </aggregated_correspondence_colors>
 
-=item * map_color [ default: lightgrey ]
+=item * background_color [ default: lightgoldenrodyellow ]
 
-Default color of a map if the "color" field of both the map type and the map
-set are "Default"
+The background color of the map image
+
+Values: any color found in the COLORS array of Bio::GMOD::CMap::Constants To
+view this file, either look in the "lib" directory of the original CMap source
+directory, or, if you have the very handy "pmtools" installed on your system,
+type "pmcat Bio::GMOD::CMap::Constants" on your command-line.
+
+=item * slot_background_color [ default: beige ]
+
+The colors of the slot background and border.
 
 Values: see background_color
 
-=item * map_shape [ default: box ]
+=item * slot_border_color [ default: khaki ]
 
-Default shape of a map if the "shape" field of both the map type and the map
-set are "Default"
+The colors of the slot border.
 
-Values: any shape found in the VALID hash under map_shape in Bio::GMOD::CMap::Constants 
-
-=item * map_width [ default: 8 ]
-
-Default width of the maps
-
-Value: any number from 1 to 10
-
-=back
-
-=head3 Menu Display Options
-
-=over 4
-
-=item * menu_bgcolor [ default: white ]
-
-The background color of some areas of the menu
-
-Values: color
-
-=item * menu_bgcolor_tint [ default: lightgrey ]
-
-The background color of tinted areas of the menu
-
-Values: color
-
-=item * menu_ref_bgcolor [ default: aqua ]
-
-The background color of some of the reference map areas of the menu
-
-Values: color
-
-=item * menu_ref_bgcolor_tint [ default: lightblue ]
-
-The background color of tinted reference map areas of the menu
-
-Values: color
-
-=back
-
-
-=head3 Title and Intro Text
-
-Titles and Introductory texts for various pages.
-
-=over 4
-
-=item * cmap_title [ default: CMap ]
-
-=item * cmap_home_intro [ Optional ]
-
-=item * map_viewer_intro [ Optional ]
-
-=item * species_info_intro [ Optional ]
-
-=item * map_set_info_intro [ Optional ]
-
-=item * feature_type_info_intro [ Optional ]
-
-=item * map_type_info_intro [ Optional ]
-
-=item * evidence_type_info_intro [ Optional ]
-
-=item * feature_search_intro [ Optional ]
-
-=item * matrix_title [ Optional ]
-
-=item * matrix_intro [ Optional ]
-
-=item * link_info_intro [ Optional ]
+Values: see background_color
 
 =back
 
@@ -941,35 +900,34 @@ This is the base url for the page that describes the feature type.
 
 This is the base url for the page that describes the evidence type.
 
-=back 
+=back
 
-=head3 Data Manipulation
+=head3 JavaScript options
+
+These options are only used to allow complex JavaScript to be specified in the
+config document.  These can be used in conjunction with the area_code of
+feature_types and map_types.
 
 =over 4
 
-=item * add_name_correspondence [ Optional ]
+=item * page_code 
 
-When making name-based correspondences, the default behavior is to allow
-correspondences between features of the *exact* same type.  If you wish to
-expand the feature types allowed when making name-based correspondences, then
-add their accession IDs to this section.  The relationships will be reciprocal,
-so if you say "foo bar" then correspondences from features with the accession
-ID "foo" will be allowed to those with the accession ID "bar" and vice versa.
-Separate feature types with spaces.  Assert all equivalent feature types on one
-line, e.g., "foo bar baz."
+Each page_code has one field called "page_code" that takes in script 
+information in plain text.  It is not as complicated as the area_code 
+in map and feature types.  The example is JavaScript but it really can 
+be anything recognized by your browser.  
 
+This can be used to specify functions that the individual maps or 
+features need to use.  When a feature or map type is used that requests 
+a page_code object, the code is inserted at the top of the page.
 
-=item * disallow_name_correspondence [ Optional ]
+=item * extra_form 
 
-List of feature types that cannot have name correspondences with features of
-the SAME type.
-
-=item * make_corr_feature_divisor [ default: 1 ]
-
-In response to database problems making correspondences with really large maps,
-the features on a map can be divided (based on feature_id) to decrease the
-number of features that the database has to handle and one time.  If you are
-not having this problem, it will not help you at all.
+Similar to page_code, one or more extra_forms can be called from map or
+feature types.  Each extra_form has one field called 'extra_form' which
+takes standard html and will insert it into the main CMap viewer form. 
+These can be used for anything from hidden fields that store data to 
+buttons that submit the page to a different place.  
 
 =back
 
@@ -979,7 +937,7 @@ not having this problem, it will not help you at all.
 
 =item * disable_cache [ default: 0 ]
 
-Set to 1 isable the query caching feature.  This is good for speed testing or
+Set to 1 to disable the query caching feature.  This is good for speed testing or
 debugging.
 
 =item * feature_search_field [ default: feature_name ]
@@ -1020,32 +978,96 @@ return anything.
 
 =back
 
-=head3 Javascript options
+=head3 Title and Intro Text Options
 
-These options are only used to allow complex javascript to be specified in the
-config document.  These can be used in conjunction with the area_code of
-feature_types and map_types.
+Titles and Introductory texts for various pages.
 
 =over 4
 
-=item * page_code 
+=item * cmap_title [ default: CMap ]
 
-Each page_code has one field called "page_code" that takes in script 
-information in plain text.  It is not as complicated as the area_code 
-in map and feature types.  The example is javascript but it really can 
-be anything recognized by your browser.  
+=item * cmap_home_intro [ Optional ]
 
-This can be used to specify functions that the individual maps or 
-features need to use.  When a feature or map type is used that requests 
-a page_code object, the code is inserted at the top of the page.
+=item * map_viewer_intro [ Optional ]
 
-=item * extra_form 
+=item * species_info_intro [ Optional ]
 
-Similar to page_code, one or more extra_forms can be called from map or
-feature types.  Each extra_form has one field called 'extra_form' which
-takes standard html and will insert it into the main CMap viewer form. 
-These can be used for anything from hidden fields that store data to 
-buttons that submit the page to a different place.  
+=item * map_set_info_intro [ Optional ]
+
+=item * feature_type_info_intro [ Optional ]
+
+=item * map_type_info_intro [ Optional ]
+
+=item * evidence_type_info_intro [ Optional ]
+
+=item * feature_search_intro [ Optional ]
+
+=item * matrix_title [ Optional ]
+
+=item * matrix_intro [ Optional ]
+
+=item * link_info_intro [ Optional ]
+
+=item * map_titles [ default: species_common_name map_set_short_name map_name ]
+
+The list of information to display in the map title box.
+
+=back
+
+=head3 Administration Options 
+
+=over 4
+
+=item * add_name_correspondence [ Optional ]
+
+When making name-based correspondences, the default behavior is to allow
+correspondences between features of the *exact* same type.  If you wish to
+expand the feature types allowed when making name-based correspondences, then
+add their accession IDs to this section.  The relationships will be reciprocal,
+so if you say "foo bar" then correspondences from features with the accession
+ID "foo" will be allowed to those with the accession ID "bar" and vice versa.
+Separate feature types with spaces.  Assert all equivalent feature types on one
+line, e.g., "foo bar baz."
+
+=item * disallow_name_correspondence [ Optional ]
+
+List of feature types that cannot have name correspondences with features of
+the SAME type.
+
+=item * make_corr_feature_divisor [ default: 1 ]
+
+In response to database problems making correspondences with really large maps,
+the features on a map can be divided (based on feature_id) to decrease the
+number of features that the database has to handle and one time.  If you are
+not having this problem, it will not help you at all.
+
+=back
+
+=head4 Map Set Creation Defaults
+
+These are the default settings for when map sets are created.
+
+=over 4
+
+=item * map_color [ default: lightgrey ]
+
+Default color of a map if the "color" field of both the map type and the map
+set are "Default"
+
+Values: see background_color
+
+=item * map_shape [ default: box ]
+
+Default shape of a map if the "shape" field of both the map type and the map
+set are "Default"
+
+Values: any shape found in the VALID hash under map_shape in Bio::GMOD::CMap::Constants 
+
+=item * map_width [ default: 8 ]
+
+Default width of the maps
+
+Value: any number from 1 to 10
 
 =back
 
@@ -1063,7 +1085,51 @@ will be read as a separate config file.
 
 =head2 VALIDATING CONFIGURATION FILES
 
-You can use the cmap_validate_config.pl (L<VALIDATE CONFIG FILES>) to test your individual config files (not global.conf yet) and make sure that they are valid.  This can save you a lot of headaches dealing with configuration problems.  See the secion on L<VALIDATE CONFIG FILES> for more information.
+You can use the cmap_validate_config.pl (L<VALIDATE CONFIG FILES>) to test your
+individual config files (not global.conf yet) and make sure that they are
+valid.  This can save you a lot of headaches dealing with configuration
+problems.  See the section on L<VALIDATE CONFIG FILES> for more information.
+
+=head2 CONFIGURING FOR SPEED AND CLARITY
+
+There are a few configuration options that can be used to increase the speed
+and clarity of CMap.  This is a collection of those options.  The details are
+described above.
+
+All of these can be overridden by the user.
+
+=over 4
+
+=item * aggregate_correspondences
+
+Setting aggregate_correspondences to 1 (or 2) will cause the correspondences in
+slots with multiple maps to be aggregated.  This reduces the clutter if there
+are many correspondences to draw.
+
+=item * collapse_features
+
+Collapses the features that would be identically drawn into one feature.  This
+is especially important when there are a lot of features on a map and can
+reduce the drawing speed.  It also can make the image more clear.
+
+=item * feature_default_display
+
+Setting feature_default_display to "corr_only" will keep from drawing features
+that do not have correspondences displayed.  This can give a huge savings when
+there are a lot of features on a map.
+
+feature_default_display can be overridden by the feature_type configs and by
+the user.  If there are some feature types that should be displayed initially,
+you can set an individual feature_default_display value in the feature_type
+configuration.
+
+=item * omit_area_boxes
+
+Setting omit_area_boxes to 1 will keep the features from being clickable.  This can have major savings in transmission and render time if there are a lot of features.  The map controls will still be clickable as normal.
+
+Setting omit_area_boxes to 2 will render the whole image unclickable.  This could save time but makes CMap harder to use since it relies on clicking the image for a lot of navigation.  If you do choose to go this route, try setting clean_view to 1 tokeep from drawing the buttons that were rendered useless.
+
+=back
 
 =head1 WEB-ADMIN TOOL
 
@@ -1151,6 +1217,9 @@ required by the database, there is code in place to ensure that the
 accession ID is set to the primary ID of the record if the accession
 ID is empty. Once your accession IDs have been established and
 publicized, they should never change.
+
+Also, it is best to avoid strictly numeric accession ids since the automatic
+accessions are numeric and this can cause conflicts. 
 
 The fields marked "(opt.)" do not require you to enter a value.  If
 one is really required for the database (e.g., the "accession_id"),
@@ -1257,7 +1326,7 @@ Determines whether or not this map set will appear to end users. This
 is intended as a convenient way to temporarily hide some data without
 having to remove it entirely from the database.
 
-=item * Is Relational Map
+=item * Is Relational Only Map
 
 This determines whether or not the map of this map set can serve as reference
 maps, i.e., as a starting point in a user's search, either via the main map
@@ -1655,7 +1724,7 @@ which will be discussed shortly.)
 
 =head2 VIEWING A MAP SET
 
-Choose to "view" one of your map sets.  You'll be taken to the a page
+Choose to "view" one of your map sets.  You'll be taken to a page
 which lists all the data in the map set table as well as a summary of
 all the maps associated with the map set.  Notice that you can change
 any of the data for the map set by clicking the "edit" link at the
@@ -1683,7 +1752,7 @@ automatically restricts the search to the current map being displayed.
 
 =head2 EDITING A MAP
 
-If you click on "Edit" while viewing a map, you will be taken to the a
+If you click on "Edit" while viewing a map, you will be taken to a
 page with the following fields:
 
 =over 4
@@ -1948,7 +2017,7 @@ This is the title of the link.
 
 This is the comment for the link.
 
-=item - slot (Requres slot with number=0)
+=item - slot (Requires slot with number=0)
 
 Specify a slot element for each slot that you want to include.  The slot has an
 attribute of "number".  There must be a slot with a number of 0 for this to
@@ -1972,12 +2041,12 @@ The accession value for the map.
 =item * map_start (optional)
 
 This specifies where on the map the view should start.  If omitted, it will
-start at the begining of the map.
+start at the beginning of the map.
 
 =item * map_stop (optional)
 
 This specifies where on the map the view should stop.  If omitted, it will stop
-at the begining of the map.
+at the beginning of the map.
 
 =item * map_magnification (optional)
 
@@ -2337,19 +2406,19 @@ See L<Map Accession Information Format> for details on the format.
 
 =item * sub
 
-The sub argument is part of a scheme to fix a javascript problem.  The problem
-was that when a javascript, area-box button (on the image) was clicked, it
+The sub argument is part of a scheme to fix a JavaScript problem.  The problem
+was that when a JavaScript, area-box button (on the image) was clicked, it
 would modify some menu objects and submit.  Then if the user hit the back
 button, those menu objects would be the modified values, causing unexpected
 behavior.
 
 To fix this, modified_ref_map and modified_comp_map were added.  When a
-javascript, area-box button is clicked, it modifies modified_ref_map or
+JavaScript, area-box button is clicked, it modifies modified_ref_map or
 modified_comp_map instead of ref_map_aids or comparative_maps.  That way, those
 fields always keep their original values.
 
 To determine if the "modified" values should be used, CMap looks at the value
-of sub.  If there is NO value, then it assumes that it is a javascript link and
+of sub.  If there is NO value, then it assumes that it is a JavaScript link and
 uses the "modified" values preferentially over the regular values.
 
 =item * modified_ref_map
@@ -2377,7 +2446,7 @@ chosen map set.
 
 =item * prev_ref_species_aid
 
-See the above description forprev_ref_map_set_aid and extrapolate.
+See the above description for prev_ref_map_set_aid and extrapolate.
 
 =back
 
@@ -2583,14 +2652,36 @@ would be useful if you wanted to integrate a CMap image on another
 page without the control stuctures.  View the perldoc for instruction
 on how to use Drawer.pm.
 
+=item * Bio::GMOD::CMap::Data::Generic
+
+This module does all of CMaps database querying.  If you need access to the database in code, there is probably already a method created for this.  The advantage of using this module is that if the database changes, you won't have to change your code.
+
+To use you must create an instance of another CMap object.  You can use Bio::GMOD::CMap or Bio::GMOD::CMap::Admin or just about any other module.  Most of the Generic.pm methods require you to pass it this CMap object (as cmap_object) to give it access to the configuration options.
+
+To get access to the Generic.pm object, call "sql()" on the CMap object you created.  Here is an example:
+
+    my $admin = Bio::GMOD::CMap::Admin->new(
+        data_source => $data_source,
+    );
+    my $sql_object = $admin->sql();
+    my $features = $sql_object->get_features(
+        cmap_object       => $admin,
+        feature_type_accs => \@feature_type_accs,
+        map_id            => $map->{'map_id'},
+    );
+
 =back
 
 =head1 SAMPLE DATA
 
-If you would like to see sample import data for CMap, you can find
+The data/ directory has some example data.  The sample-dump.sql.gz file
+contains a full set of CMap data.  The tabtest* files also give some simple
+example files for importing.
+
+If you would like to see other sample import data for CMap, you can find
 many examples from the Gramene site:
 
-  ftp://ftp.gramene.org/pub/gramene/maps
+  ftp://ftp.gramene.org/pub/gramene/CURRENT_RELEASE
 
 =head1 MISCELLANEOUS
 
@@ -2652,7 +2743,7 @@ You can also leave a bug report for CMap at the SourceForge site for GMOD, http:
 
 =head1 AUTHOR
 
-Ken Y. Clark, kclark@cshl.org
-Ben Faga, faga@cshl.org
+Ken Y. Clark, kclark@cshl.edu
+Ben Faga, faga@cshl.edu
 
-Copyright (c) 2002-5 Cold Spring Harbor Laboratory
+Copyright (c) 2002-6 Cold Spring Harbor Laboratory
