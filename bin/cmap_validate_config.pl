@@ -124,6 +124,8 @@ my %config_defs = (
     font_size                 => { %generic_scalar_def, },
     image_size                => { %generic_scalar_def, },
     image_type                => { %generic_scalar_def, },
+    stack_maps                => { %generic_scalar_def, },
+    clean_view                => { %generic_scalar_def, },
     min_map_pixel_height      =>
         { %generic_scalar_def, option_type => 'integer', },
     min_tick_distance => { %generic_scalar_def, option_type => 'integer', },
@@ -391,6 +393,9 @@ my %config_defs = (
         },
     },
     page_object => { %generic_scalar_def, no_report_if_missing => 1 },
+    show_intraslot_correspondences => { %generic_scalar_def, },
+    split_agg_evespondences        => { %generic_scalar_def, },
+    ignore_image_map_sanity        => { %generic_scalar_def, },
 );
 my %global_config_defs = (
     template_dir         => { %generic_scalar_def, required    => 1, },
