@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.92 2006-05-25 18:27:24 mwz444 Exp $
+# $Id: Admin.pm,v 1.93 2006-06-01 19:54:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1642,6 +1642,20 @@ The name of the object being reference.
             && defined $attr_value
             && $attr_value ne '';
 
+        unless ($attr_id) {
+            # Check for duplicate attribute
+            my $attribute = $sql_object->get_attributes(
+                cmap_object    => $self,
+                object_id      => $object_id,
+                object_type    => $object_type,
+                attribute_name => $attr_name,
+                attribute_value => $attr_value,
+            );
+            if ( @{ $attribute || [] } ) {
+                $attr_id = $attribute->[0]{'attribute_id'};
+            }
+        }
+
         if ($attr_id) {
             $sql_object->update_attribute(
                 cmap_object     => $self,
@@ -1750,6 +1764,20 @@ The name of the object being reference.
             && $xref_name ne ''
             && defined $xref_url
             && $xref_url ne '';
+
+        unless ($xref_id) {
+            # Check for duplicate xref
+            my $xref = $sql_object->get_xrefs(
+                cmap_object => $self,
+                object_id   => $object_id,
+                object_type => $object_type,
+                xref_name   => $xref_name,
+                xref_url    => $xref_url,
+            );
+            if ( @{ $xref || [] } ) {
+                $xref_id = $xref->[0]{'xref_id'};
+            }
+        }
 
         if ($xref_id) {
             $sql_object->update_xref(
