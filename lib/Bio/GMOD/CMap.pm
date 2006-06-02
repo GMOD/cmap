@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.105 2006-04-28 17:51:20 mwz444 Exp $
+# $Id: CMap.pm,v 1.106 2006-06-02 16:59:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -194,6 +194,9 @@ Return data from config about map type
     my $config       = $self->config or return;
 
     if ($attribute) {
+        unless (defined $config->get_config('map_type')->{$map_type_acc}){
+            return undef;
+        }
         return $config->get_config('map_type')->{$map_type_acc}{$attribute};
     }
     elsif ($map_type_acc) {
@@ -221,6 +224,9 @@ Return data from config about feature type
     my $config           = $self->config or return;
 
     if ($attribute) {
+        unless (defined $config->get_config('feature_type')->{$feature_type_acc}){
+            return undef;
+        }
         return $config->get_config('feature_type')->{$feature_type_acc}
             ->{$attribute};
     }
@@ -249,6 +255,9 @@ Return data from config about evidence type
     my $config            = $self->config or return;
 
     if ($attribute) {
+        unless (defined $config->get_config('evidence_type')->{$evidence_type_acc}){
+            return undef;
+        }
         return $config->get_config('evidence_type')->{$evidence_type_acc}
             ->{$attribute};
     }
@@ -256,7 +265,7 @@ Return data from config about evidence type
         return $config->get_config('evidence_type')->{$evidence_type_acc};
     }
     else {
-        $config->get_config('evidence_type');
+        return $config->get_config('evidence_type');
     }
 }
 
