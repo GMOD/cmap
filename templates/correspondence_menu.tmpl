@@ -62,6 +62,8 @@
     <br>
     <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu">
     <input type="submit" value="Add Maps" name="sub">
+    <br>
+    Format: <br>Name [Total correspondences to slot, <br>Max correspondences to single map]
 [%- ELSE -%]
   <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Data">
 [%- END -%]
