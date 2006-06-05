@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::FeatureAliasViewer;
 
 # vim: set ft=perl:
 
-# $Id: FeatureAliasViewer.pm,v 1.5 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: FeatureAliasViewer.pm,v 1.6 2006-06-05 21:21:37 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -36,15 +36,16 @@ sub handler {
     my $html;
     $t->process(
         TEMPLATE,
-        {
-            apr        => $self->apr,
-            alias      => $alias,
-            page       => $self->page,
-            stylesheet => $self->stylesheet,
+        {   apr                 => $self->apr,
+            alias               => $alias,
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or return $self->error( $t->error );
+        )
+        or return $self->error( $t->error );
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

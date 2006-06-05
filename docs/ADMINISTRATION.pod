@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.27 $
+$Revision: 1.28 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -2682,6 +2682,69 @@ If you would like to see other sample import data for CMap, you can find
 many examples from the Gramene site:
 
   ftp://ftp.gramene.org/pub/gramene/CURRENT_RELEASE
+
+=head1 MULTIPLE CMAP INSTALLATIONS
+
+There may be occasion to run multiple CMap installations on the same server.
+To do so, use the customizable install options during the "perl Build.PL".  The
+following is an example that creates a secondary install in the
+/usr/local/apache2/htdocs/cmap2/ directory.
+
+  perl Build.PL \
+    PREFIX=/usr/local/apache2/ \
+    CONF=/usr/local/apache2/conf/cmap.conf2 \
+    WEB_DOCUMENT_ROOT=/usr/local/apache2/htdocs/ \
+    CGIBIN=/usr/local/apache2/htdocs/cmap2/cgi-bin \
+    HTDOCS=/usr/local/apache2/htdocs/cmap2/
+
+Here is the breakdown of the options:
+
+=over 4
+
+=item * PREFIX
+
+This is the prefix for the web server install.  The default is "/usr/local/apache/".
+
+=item * CONF
+
+This will create an alternate config directory to store the config files for
+this installation.
+
+=item * WEB_DOCUMENT_ROOT 
+
+This is the absolute path to the document root of the web server.
+
+=item * CGIBIN
+
+This will create an alternate cgi-bin directory where the the "cmap" script.
+When using a non-standard cgi-bin directory, CGIBIN must be in
+WEB_DOCUMENT_ROOT.  
+
+NOTE: It is important that the cgi script be executable by the web server.  To
+do this in Apache 2, the following must be added to the httpd.conf. 
+
+  <Directory /usr/local/apache2/htdocs/cmap2/cgi-bin>
+    Options +ExecCGI
+    SetHandler cgi-script
+  </Directory>
+
+=item * HTDOCS
+
+This is the absolute path to the directory where the cmap files will be stored.
+HTDOCS must be in WEB_DOCUMENT_ROOT.  
+
+=back
+
+The options not used in the example are "TEMPLATE", "CACHE" and "SESSIONS".
+These can also be set if so desired.
+
+To access the CMap from the above example, the address will be "http://127.0.0.1/cmap2/".
+The cmap script will be at "http://127.0.0.1/cmap2/cgi-bin/cmap".  
+
+IMPORTANT NOTE:  When creating the individual config files, the "name" field in
+"<database>" should be unique across the whole server.  Using the same "name"
+for multiple config files, even if they are in different installs, can result
+in clashes over shared cache space.
 
 =head1 MISCELLANEOUS
 

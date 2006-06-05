@@ -1,10 +1,10 @@
 [%-
-    url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
+    url=apr.url();
     DEFAULT title='Compartive &amp; Genetic Maps';
     SET menu = [
         { 
             name    => 'home', 
-            url     => '/cmap',
+            url     => web_cmap_htdocs_dir,
             display => 'CMap Home',
         },
         { 
@@ -64,7 +64,7 @@
         },
         { 
             name    => 'tutorial', 
-            url     => "/cmap/tutorial", 
+            url     => web_cmap_htdocs_dir _ "/tutorial", 
             display => 'Tutorial',
         },
     ];

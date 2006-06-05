@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::SpiderViewer;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -50,21 +50,22 @@ sub handler {
     my $t = $self->template or return;
     $t->process(
         TEMPLATE,
-        {
-            apr              => $apr,
-            map_acc          => $map_acc,
-            degrees_to_crawl => $degrees_to_crawl,
-            min_corrs        => $min_corrs,
-            link_info        => $link_info,
-            intro            => $INTRO,
-            data_source      => $self->data_source,
-            data_sources     => $self->data_sources,
-            title            => 'Welcome to CMap Spider',
-            stylesheet       => $self->stylesheet,
+        {   apr                 => $apr,
+            map_acc             => $map_acc,
+            degrees_to_crawl    => $degrees_to_crawl,
+            min_corrs           => $min_corrs,
+            link_info           => $link_info,
+            intro               => $INTRO,
+            data_source         => $self->data_source,
+            data_sources        => $self->data_sources,
+            title               => 'Welcome to CMap Spider',
+            stylesheet          => $self->stylesheet,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or $html = $t->error;
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

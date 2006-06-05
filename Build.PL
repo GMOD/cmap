@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.60 2006-05-25 23:23:35 mwz444 Exp $
+# $Id: Build.PL,v 1.61 2006-06-05 21:21:31 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -10,11 +10,13 @@ if ( $@ =~ /Can't locate/ ) {
     exit(0);
 }
 
+# HTDOCS must be after WEB_DOCUMENT_ROOT
 # CACHE and SESSIONS must be after HTDOCS
 my @OPTION_LIST = qw[
     CONF
     CGIBIN
     TEMPLATES
+    WEB_DOCUMENT_ROOT
     HTDOCS
     CACHE
     SESSIONS
@@ -37,9 +39,13 @@ my %ARGS = (
         desc    => 'Location for CMap HTML templates',
         default => catdir( 'templates', 'cmap' ),
     },
+    WEB_DOCUMENT_ROOT => {
+        desc    => 'Location of web document root',
+        default => catdir( 'htdocs' ),
+    },
     HTDOCS => {
         desc    => 'Location for static files',
-        default => catdir( 'htdocs', 'cmap' ),
+        default => catdir( 'cmap' ),
     },
     CACHE => {
         desc    => 'Location for temporary image files',
@@ -62,12 +68,14 @@ my $USAGE = join(
         "\n",
         map {
             sprintf(
-                "%10s: %-s\n\t\t(default: %s%s)\n",
+                "%18s: %-s\n\t\t(default: %s%s)\n",
                 $_,
                 $ARGS{$_}{'desc'},
                 $_ eq 'PREFIX' ? ''
+                : ( $_ eq 'HTDOCS' )
+                ? '$PREFIX + $WEB_DOCUMENT_ROOT + '
                 : ( $_ eq 'CACHE' or $_ eq 'SESSIONS' )
-                ? '$PREFIX + $HTDOCS + '
+                ? '$HTDOCS + '
                 : '$PREFIX + ',
                 $ARGS{$_}{'default'}
                 )
@@ -131,42 +139,25 @@ if ( !%OPTIONS ) {
 #
 # Make sure we have usable options.
 #
-if ( $OPTIONS{'PREFIX'} ) {
-    for my $option (@OPTION_LIST) {
-        if ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
-            $OPTIONS{$option}
-                ||= catdir( $OPTIONS{'HTDOCS'} || $ARGS{'HTDOCS'}{'default'},
-                $ARGS{$option}{'default'} );
-        }
-        else {
-            $OPTIONS{$option} ||= $ARGS{$option}{'default'};
-            # Now add the default prefix
-            $OPTIONS{$option} = catdir( $OPTIONS{'PREFIX'}, $OPTIONS{$option} );
-        }
+my $prefix = $OPTIONS{'PREFIX'} || $ARGS{'PREFIX'}{'default'};
 
+for my $option (@OPTION_LIST) {
+
+    if ( $option eq 'HTDOCS' ) {
+        $OPTIONS{$option} ||= catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{$option}{'default'} );
     }
-}
-else {
-    my $prefix = $ARGS{'PREFIX'}{'default'};
-    for my $option (@OPTION_LIST) {
-        if ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
-            $OPTIONS{$option} ||= catdir(
-                $prefix,
-                $ARGS{'HTDOCS'}{'default'},
-                $ARGS{$option}{'default'}
-            );
-        }
-        else {
-            $OPTIONS{$option} ||= catdir( $ARGS{'PREFIX'}{'default'},
-                $ARGS{$option}{'default'} );
-        }
+    elsif ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
+        $OPTIONS{$option} ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{$option}{'default'} );
+    }
+    else {
+        $OPTIONS{$option} ||= catdir( $prefix, $ARGS{$option}{'default'} );
     }
 }
 
 print "The following options will be used to install CMap:\n", join(
     "\n", '',
     (
-        map { sprintf( "%10s: %-s", $_, $OPTIONS{$_} ) }
+        map { sprintf( "%18s: %-s", $_, $OPTIONS{$_} ) }
          @OPTION_LIST
     ),
     '',

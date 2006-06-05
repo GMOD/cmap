@@ -5,10 +5,12 @@ use CMapBuilder;
 use Cwd;
 use File::Basename qw(&basename &dirname);
 
-my $builder         = CMapBuilder->current;
-my $template_dir    = $builder->notes('TEMPLATES');
-my $cache_dir       = $builder->notes('CACHE');
-my $session_dir     = $builder->notes('SESSIONS');
+my $builder               = CMapBuilder->current;
+my $web_document_root_dir = $builder->notes('WEB_DOCUMENT_ROOT');
+my $web_cmap_htdocs_dir     = $builder->notes('HTDOCS');
+my $template_dir          = $builder->notes('TEMPLATES');
+my $cache_dir             = $builder->notes('CACHE');
+my $session_dir           = $builder->notes('SESSIONS');
 
 my $origdir = cwd;
 chdir dirname($0);
@@ -33,11 +35,18 @@ print OUT<<"!GROK!THIS!";
 #   
 template_dir $template_dir
 
+# The absolute path to the document root for the web server.
+web_document_root_dir $web_document_root_dir
+
+# The absolute path to the cmap docs directory.  This must be in the
+# web_document_root directory.
+web_cmap_htdocs_dir $web_cmap_htdocs_dir
+
 #   
-# An absolute path to the directory where images are written.  I would
-# also suggest you purge this directory for old images so you don't
-# fill up your disk.  Here's a simple cron job you can put in your
-# root's crontab (all on one line, of course):
+# An absolute path to the directory where images are written.  This must be
+# within the web_document_root.  I would also suggest you purge this directory
+# for old images so you don't fill up your disk.  Here's a simple cron job you
+# can put in your root's crontab (all on one line, of course):
 #
 # 0 0 * * *  find /usr/local/apache/htdocs/cmap/tmp 
 # -type f -mtime +1 -exec rm -rf {} ;

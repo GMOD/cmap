@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MatrixViewer;
 
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.17 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: MatrixViewer.pm,v 1.18 2006-06-05 21:21:40 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -70,23 +70,24 @@ sub handler {
     my $t = $self->template;
     $t->process(
         TEMPLATE,
-        {
-            apr          => $apr,
-            page         => $self->page,
-            top_row      => $data->{'top_row'},
-            matrix       => $data->{'matrix'},
-            title        => $self->config_data('matrix_title'),
-            species      => $data->{'species'},
-            map_types    => $data->{'map_types'},
-            map_sets     => $data->{'map_sets'},
-            maps         => $data->{'maps'},
-            stylesheet   => $self->stylesheet,
-            data_sources => $self->data_sources,
-            intro        => $INTRO,
+        {   apr                 => $apr,
+            page                => $self->page,
+            top_row             => $data->{'top_row'},
+            matrix              => $data->{'matrix'},
+            title               => $self->config_data('matrix_title'),
+            species             => $data->{'species'},
+            map_types           => $data->{'map_types'},
+            map_sets            => $data->{'map_sets'},
+            maps                => $data->{'maps'},
+            stylesheet          => $self->stylesheet,
+            data_sources        => $self->data_sources,
+            intro               => $INTRO,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or $html = $t->error;
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

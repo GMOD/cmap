@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.7 2005-10-24 21:08:36 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.8 2006-06-05 21:21:40 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -90,15 +90,17 @@ sub saved_links_viewer {
     my $t = $self->template;
     $t->process(
         MULTI_VIEW_TEMPLATE,
-        {   apr               => $apr,
-            current_url       => $apr->url( -path_info => 1, -query => 1 ),
-            page              => $self->page,
-            stylesheet        => $self->stylesheet,
-            data_sources      => $self->data_sources,
-            saved_links       => $saved_links_ref,
-            link_group_counts => $link_group_counts_ref,
-            pager             => $pager,
-            intro             => $INTRO,
+        {   apr                 => $apr,
+            current_url         => $apr->url( -path_info => 1, -query => 1 ),
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            data_sources        => $self->data_sources,
+            saved_links         => $saved_links_ref,
+            link_group_counts   => $link_group_counts_ref,
+            pager               => $pager,
+            intro               => $INTRO,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
         )
@@ -134,13 +136,15 @@ sub saved_link_view {
     my $t = $self->template or return;
     $t->process(
         VIEW_TEMPLATE,
-        {   apr              => $apr,
-            current_url      => $apr->url( -path_info => 1, -query => 1 ),
-            page             => $self->page,
-            stylesheet       => $self->stylesheet,
-            data_sources     => $self->data_sources,
-            saved_link       => $saved_link,
-            url_to_return_to => $url_to_return_to,
+        {   apr                 => $apr,
+            current_url         => $apr->url( -path_info => 1, -query => 1 ),
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            data_sources        => $self->data_sources,
+            saved_link          => $saved_link,
+            url_to_return_to    => $url_to_return_to,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
         )
@@ -213,13 +217,15 @@ sub saved_link_edit {
     my $t = $self->template or return;
     $t->process(
         EDIT_TEMPLATE,
-        {   apr              => $apr,
-            current_url      => $apr->url( -path_info => 1, -query => 1 ),
-            page             => $self->page,
-            stylesheet       => $self->stylesheet,
-            data_sources     => $self->data_sources,
-            saved_link       => $saved_link,
-            url_to_return_to => $url_to_return_to,
+        {   apr                 => $apr,
+            current_url         => $apr->url( -path_info => 1, -query => 1 ),
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            data_sources        => $self->data_sources,
+            saved_link          => $saved_link,
+            url_to_return_to    => $url_to_return_to,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
         )

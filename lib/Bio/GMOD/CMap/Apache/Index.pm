@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::Index;
 # vim: set ft=perl:
 
-# $Id: Index.pm,v 1.9 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: Index.pm,v 1.10 2006-06-05 21:21:38 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -22,16 +22,18 @@ sub handler {
 
     my $html;
     my $t = $self->template or return;
-    $t->process( 
-        TEMPLATE, 
-        { 
-            apr        => $self->apr,
-            page       => $self->page,
-            intro      => $INTRO,
-            stylesheet => $self->stylesheet,
-        }, 
-        \$html 
-    ) or $html = $t->error;
+    $t->process(
+        TEMPLATE,
+        {   apr                 => $self->apr,
+            page                => $self->page,
+            intro               => $INTRO,
+            stylesheet          => $self->stylesheet,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+        },
+        \$html
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

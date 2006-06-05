@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Login;
 
 # vim: set ft=perl:
 
-# $Id: Login.pm,v 1.2 2005-10-24 18:41:28 mwz444 Exp $
+# $Id: Login.pm,v 1.3 2006-06-05 21:21:39 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use strict;
 use Digest::MD5 'md5';
@@ -74,17 +74,19 @@ sub handler {
     else {
         my $t = $self->template or return;
         my $html;
-        $t->process( 
-            TEMPLATE, 
-            { 
-                err_msg      => $err,
-                redirect_url => $redirect_url,
-                apr          => $self->apr,
-                page         => $self->page,
-                stylesheet   => $self->stylesheet,
-            }, 
-            \$html 
-        ) or return $self->error( $t->error );
+        $t->process(
+            TEMPLATE,
+            {   err_msg             => $err,
+                redirect_url        => $redirect_url,
+                apr                 => $self->apr,
+                page                => $self->page,
+                stylesheet          => $self->stylesheet,
+                web_image_cache_dir => $self->web_image_cache_dir(),
+                web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+            },
+            \$html
+            )
+            or return $self->error( $t->error );
 
         print $apr->header( 
             -type   => 'text/html', 

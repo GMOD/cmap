@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -111,8 +111,7 @@ sub handler {
     my $t = $self->template or return;
     $t->process(
         TEMPLATE,
-        {
-            apr                     => $apr,
+        {   apr                     => $apr,
             form_data               => $form_data,
             name_search             => $name_search,
             cur_order_by            => $order_by,
@@ -124,10 +123,12 @@ sub handler {
             title                   => 'Map Search',
             stylesheet              => $self->stylesheet,
             pager                   => $form_data->{'pager'},
+            web_image_cache_dir     => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir     => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or $html = $t->error;
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

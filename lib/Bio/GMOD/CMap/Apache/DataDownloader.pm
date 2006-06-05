@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::DataDownloader;
 
 # vim: set ft=perl:
 
-# $Id: DataDownloader.pm,v 1.4 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: DataDownloader.pm,v 1.5 2006-06-05 21:21:36 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -42,14 +42,15 @@ sub handler {
         my $t = $self->template;
         $t->process(
             TEMPLATE,
-            {
-                apr        => $apr,
-                page       => $self->page,
-                stylesheet => $self->stylesheet,
+            {   apr                 => $apr,
+                page                => $self->page,
+                stylesheet          => $self->stylesheet,
+                web_image_cache_dir => $self->web_image_cache_dir(),
+                web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
             },
             \$html
-          )
-          or $html = $t->error;
+            )
+            or $html = $t->error;
 
         print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
           $html;

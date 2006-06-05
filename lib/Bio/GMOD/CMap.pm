@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.106 2006-06-02 16:59:12 mwz444 Exp $
+# $Id: CMap.pm,v 1.107 2006-06-05 21:21:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,6 +43,7 @@ use URI::Escape;
 use DBI;
 use File::Path;
 use Filesys::Df;
+use File::Spec::Functions qw( abs2rel );
 use Storable qw(freeze thaw);
 use Template;
 
@@ -958,6 +959,74 @@ This is a consistant way of naming the cache levels.
         "Cache Level: $level should not be higher than " . CACHE_LEVELS )
         unless ( $level <= CACHE_LEVELS );
     return $self->config_data('database')->{'name'} . "_L" . $level;
+}
+
+# ----------------------------------------------------
+sub web_image_cache_dir {
+
+=pod
+
+=head3 web_image_cache_dir
+
+Get the image cache directory using the web document root
+
+=cut
+
+    my $self = shift;
+
+    unless ( $self->{'web_image_cache_dir'} ) {
+        my $image_cache_dir   = $self->config_data('cache_dir');
+        my $web_document_root = $self->config_data('web_document_root');
+        if ($web_document_root) {
+            $image_cache_dir
+                = abs2rel( $image_cache_dir, $web_document_root );
+        }
+        else {
+
+            # This is kinda cludgy but it should work if the web_document_root
+            # isn't defined in the config file.
+            $image_cache_dir =~ s{.+htdocs}{};
+            $image_cache_dir =~ s{.+www}{};
+            $image_cache_dir =~ s{.+html}{};
+        }
+        $self->{'web_image_cache_dir'} = $image_cache_dir;
+    }
+    return $self->{'web_image_cache_dir'};
+
+}
+
+# ----------------------------------------------------
+sub web_cmap_htdocs_dir {
+
+=pod
+
+=head3 web_cmap_htdocs_dir
+
+Get the htdocs directory using the web document root
+
+=cut
+
+    my $self = shift;
+
+    unless ( $self->{'web_cmap_htdocs_dir'} ) {
+        my $cmap_htdocs_dir   = $self->config_data('web_cmap_htdocs_dir');
+        my $web_document_root = $self->config_data('web_document_root');
+        if ($web_document_root) {
+            $cmap_htdocs_dir
+                = abs2rel( $cmap_htdocs_dir, $web_document_root );
+        }
+        else {
+
+            # This is kinda cludgy but it should work if the web_document_root
+            # isn't defined in the config file.
+            $cmap_htdocs_dir =~ s{.+htdocs}{};
+            $cmap_htdocs_dir =~ s{.+www}{};
+            $cmap_htdocs_dir =~ s{.+html}{};
+        }
+        $self->{'web_cmap_htdocs_dir'} = $cmap_htdocs_dir;
+    }
+    return $self->{'web_cmap_htdocs_dir'};
+
 }
 
 # ----------------------------------------------------

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::FeatureSearch;
 
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.23 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: FeatureSearch.pm,v 1.24 2006-06-05 21:21:37 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -81,8 +81,7 @@ sub handler {
     my $t = $self->template;
     $t->process(
         TEMPLATE,
-        {
-            apr                     => $apr,
+        {   apr                     => $apr,
             page                    => $self->page,
             stylesheet              => $self->stylesheet,
             pager                   => $results->{'pager'},
@@ -93,10 +92,12 @@ sub handler {
             feature_type_acc_lookup => { map { $_, 1 } @feature_type_accs },
             data_sources            => $self->data_sources,
             intro                   => $INTRO,
+            web_image_cache_dir     => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir     => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or $html = $t->error;
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

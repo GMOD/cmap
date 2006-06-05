@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceViewer;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceViewer.pm,v 1.4 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: CorrespondenceViewer.pm,v 1.5 2006-06-05 21:21:36 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -34,17 +34,18 @@ sub handler {
     my $html;
     $t->process(
         TEMPLATE,
-        {
-            apr        => $self->apr,
-            corr       => $data->{'correspondence'},
-            feature1   => $data->{'feature1'},
-            feature2   => $data->{'feature2'},
-            page       => $self->page,
-            stylesheet => $self->stylesheet,
+        {   apr                 => $self->apr,
+            corr                => $data->{'correspondence'},
+            feature1            => $data->{'feature1'},
+            feature2            => $data->{'feature2'},
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or return $self->error( $t->error );
+        )
+        or return $self->error( $t->error );
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

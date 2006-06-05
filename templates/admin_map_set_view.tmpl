@@ -127,7 +127,7 @@
     <table width="100%">
         <tr>
             <td colspan="9" align="center">
-                [% SET pager_url="/cmap/admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url=apr.url _ "/admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>

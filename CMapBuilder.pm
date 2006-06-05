@@ -17,7 +17,7 @@ use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Path;
-use File::Spec::Functions;
+use File::Spec::Functions qw( catfile catdir abs2rel );
 use Module::Build;
 use Pod::Html;
 
@@ -69,11 +69,19 @@ sub ACTION_install {
     #
     my $from_cgi = 'cgi-bin/cmap';
     my $to_cgi = catfile( $self->notes('CGIBIN'), 'cmap' );
+
+    my $copy_cgi = 1;
+    if ( -e $to_cgi ) {
+        $copy_cgi = $self->y_n( 
+            "'$to_cgi' exists.  Overwrite?", 'n' 
+        );
+    }
+
     $self->copy_if_modified(
         from    => $from_cgi,
         to      => $to_cgi,
         flatten => 0,
-    );
+    ) if $copy_cgi;
     chmod 0755, $to_cgi or die "Cannot make '$to_cgi' executable: $!\n";
 
     #
@@ -121,12 +129,19 @@ sub ACTION_html {
     my $self = shift;
     my $cwd  = cwd();
 
+    my $cgi_dir = "/".abs2rel($self->notes('CGIBIN'),$self->notes('WEB_DOCUMENT_ROOT'));
+    if ($cgi_dir =~ /\.\./){
+        $cgi_dir = '/cgi-bin';
+    }
+    my $cmap_htdoc_dir = "/".abs2rel($self->notes('HTDOCS'),$self->notes('WEB_DOCUMENT_ROOT'));
+
     #
     # Turn all POD files into HTML and install into "htdocs."
     #
     my ( @pod_files, @cleanup );
     find(
         sub {
+            return if ($File::Find::name =~ /upgrade/);
             push @pod_files, $File::Find::name
               if -f $_ && $File::Find::name =~ /\.pod$/;
         },
@@ -137,10 +152,10 @@ sub ACTION_html {
     # Prepare a list of the base files to include in the default index page.
     #
     my @html_links = (
-        [ '/cgi-bin/cmap/viewer', 'CMap Viewer' ],
-        [ '/cgi-bin/cmap/admin',  'Web Admin Tool' ],
-        [ '/cmap/tutorial/',      'User Tutorial' ],
-        [ '/cmap/admintut/',      'Admin Tutorial' ],
+        [ $cgi_dir.'/cmap/viewer', 'CMap Viewer' ],
+        [ $cgi_dir.'/cmap/admin',  'Web Admin Tool' ],
+        [ $cmap_htdoc_dir.'/tutorial/',      'User Tutorial' ],
+        [ $cmap_htdoc_dir.'/admintut/',      'Admin Tutorial' ],
     );
 
     for my $pod (@pod_files) {
@@ -152,7 +167,7 @@ sub ACTION_html {
         my $outpath = catfile( $cwd, 'htdocs', $outfile );
         print "pod2html $pod -> $outpath\n";
         pod2html( $pod, "--outfile=$outpath", "--backlink=Back to Top",
-            "--title=$filename", "--css=/cmap/pod-style.css", );
+            "--title=$filename", "--css=".$cmap_htdoc_dir."/pod-style.css", );
         push @html_links, [ $outfile, $filename ];
         push @cleanup, $outpath;
     }
@@ -183,6 +198,7 @@ sub ACTION_html {
     #
     # Create the main CMap index page with a summary of the install.
     #
+    
     my $index = catfile( 'htdocs', 'index.html' );
     open INDEX, ">$index" or die "Can't write new index file '$index': $!\n";
     my $q      = CGI->new;
@@ -195,18 +211,18 @@ sub ACTION_html {
               : $q->b( $_->[0] )
           } (
             [ 'CMap Home'      => '' ],
-            [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
-            [ 'Map Search'     => '/cgi-bin/cmap/map_search' ],
-            [ 'Feature Search' => '/cgi-bin/cmap/feature_search' ],
-            [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
-            [ 'Map Sets'       => '/cgi-bin/cmap/map_set_info' ],
-            [ 'Feature Types'  => '/cgi-bin/cmap/feature_type_info' ],
-            [ 'Map Types'      => '/cgi-bin/cmap/map_type_info' ],
-            [ 'Evidence Types' => '/cgi-bin/cmap/evidence_type_info' ],
-            [ 'Species'        => '/cgi-bin/cmap/species_info' ],
-            [ 'Saved Links'    => '/cgi-bin/cmap/saved_link' ],
-            [ 'Help'           => '/cgi-bin/cmap/help' ],
-            [ 'Tutorial'       => '/cmap/tutorial' ],
+            [ 'Maps'           => $cgi_dir.'/cmap/viewer' ],
+            [ 'Map Search'     => $cgi_dir.'/cmap/map_search' ],
+            [ 'Feature Search' => $cgi_dir.'/cmap/feature_search' ],
+            [ 'Matrix'         => $cgi_dir.'/cmap/matrix' ],
+            [ 'Map Sets'       => $cgi_dir.'/cmap/map_set_info' ],
+            [ 'Feature Types'  => $cgi_dir.'/cmap/feature_type_info' ],
+            [ 'Map Types'      => $cgi_dir.'/cmap/map_type_info' ],
+            [ 'Evidence Types' => $cgi_dir.'/cmap/evidence_type_info' ],
+            [ 'Species'        => $cgi_dir.'/cmap/species_info' ],
+            [ 'Saved Links'    => $cgi_dir.'/cmap/saved_link' ],
+            [ 'Help'           => $cgi_dir.'/cmap/help' ],
+            [ 'Tutorial'       => $cmap_htdoc_dir.'/tutorial' ],
           )
     );
 
@@ -229,36 +245,36 @@ sub ACTION_html {
         ),
         $q->ul(
             $q->li(
-                $q->a( { -href => '/cgi-bin/cmap/viewer' },
+                $q->a( { -href =>  $cgi_dir.'/cmap/viewer' },
                     'Maps' )
                     . " - Use a menu to select your starting maps\n"
             ),
             $q->li(
                 $q->a(
-                    { -href => '/cgi-bin/cmap/map_search' }, 'Map Search'
+                    { -href => $cgi_dir.'/cmap/map_search' }, 'Map Search'
                     )
                     . " - If the map set is quite large, the Map Search page can be quicker than sorting through menus.\n"
             ),
             $q->li(
-                $q->a( { -href => '/cgi-bin/cmap/feature_search' },
+                $q->a( { -href => $cgi_dir.'/cmap/feature_search' },
                     'Feature Search' )
                     . " - Search for a specific feature and display it on a map.\n"
             ),
             $q->li(
-                $q->a( { -href => '/cgi-bin/cmap/matrix' }, 'Matrix' )
+                $q->a( { -href => $cgi_dir.'/cmap/matrix' }, 'Matrix' )
                     . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
             ),
             $q->li(
-                $q->a( { -href => '/cgi-bin/cmap/saved_link' },
+                $q->a( { -href => $cgi_dir.'/cmap/saved_link' },
                     'Saved Links' )
                     . " - View pages previously saved or imported.\n"
             ),
             ),
         $q->p(
             'For an introduction to the basic consepts of CMap, please see the '
-                . $q->a( { -href => '/cgi-bin/cmap/help' }, 'help pages' )
+                . $q->a( { -href => $cgi_dir.'/cmap/help' }, 'help pages' )
                 . ' or the '
-                . $q->a( { -href => '/cmap/tutorial' }, 'tutorial' )
+                . $q->a( { -href => $cmap_htdoc_dir.'/tutorial' }, 'tutorial' )
                 . ".\n" ),
         $q->p(
             'We would appreciate you would include an acknowlegement of CMap '

@@ -16,8 +16,8 @@ Congratulations on your decision to upgrade from CMap version 0.15 to
 0.16.  This guide will take you through upgrade.
  
 This release does not change the database and only new options have
-been added to the configuration files.  Therefor, you just need to
-upgrade
+been added to the individual configuration files.  Therefor, you just
+need to upgrade the templates, the Perl modules and your global.conf.
 
 Please make sure you back up both any template files that you may have
 changed as well as your config files.  It is best not to take any
@@ -42,8 +42,27 @@ There are no database changes in this release.
 
 =head1 CONFIGURATION FILE UPDATE
 
-There are no required configuration changes in this release.  Please
-see the ADMINISTRATION.pod for further information on config options.
+There are two new options that must be added to global.conf.
+
+=over 4
+
+=item * web_document_root_dir   
+
+The absolute path to the document root for the web server.
+
+=item * web_cmap_htdocs_dir
+
+The absolute path to the cmap docs directory.  This must be in the
+web_document_root directory.
+
+=back
+
+After running ./Build, take a look at the global.conf in conf/ for
+what these values should be.
+
+There are no required changes to the individual configuration files in
+this release.  Please see the ADMINISTRATION.pod for further
+information on config options.
 
 =head1 CONCLUSION
 

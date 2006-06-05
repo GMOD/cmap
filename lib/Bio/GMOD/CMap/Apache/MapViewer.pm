@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.129 2006-05-26 19:44:43 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.130 2006-06-05 21:21:39 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.129 $)[-1];
+$VERSION = (qw$Revision: 1.130 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -323,7 +323,7 @@ sub handler {
                     $parsed_url_options{'evidence_type_score'},
                 feature_types => join( ',',
                     @{ $parsed_url_options{'included_feature_types'} } ),
-                evidence_types      => join( ',',
+                evidence_types => join( ',',
                     @{ $parsed_url_options{'included_evidence_types'} } ),
                 extra_code              => $extra_code,
                 extra_form              => $extra_form,
@@ -346,6 +346,8 @@ sub handler {
                     || DEFAULT->{'menu_ref_bgcolor_tint'},
                 menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
                     || DEFAULT->{'menu_ref_bgcolor'},
+                web_image_cache_dir => $self->web_image_cache_dir(),
+                web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
 
             },
             \$html

@@ -1,10 +1,14 @@
 #!perl
 use Config;
+use CMapBuilder;
 use File::Basename qw(&basename &dirname);
 use File::Spec::Functions;
 
 my $dir = dirname($0);
 $file   = shift || catfile( $dir, basename( $0, '.PL','.PLS' ) );
+
+my $builder         = CMapBuilder->current;
+my $conf_dir    = $builder->notes('CONF');
 
 open OUT, ">$file" or die "Can't write to file '$file': $!";
 
@@ -20,7 +24,7 @@ use Bio::GMOD::CMap::Apache;
 # To use a config directory other than the default,
 # call handler with the config_dir argument.
 # Bio::GMOD::CMap::Apache::handler( config_dir => '/path/to/cmap.conf' );
-eval { Bio::GMOD::CMap::Apache::handler(); };
+eval { Bio::GMOD::CMap::Apache::handler( config_dir => ']. $conf_dir . q[' ); };
 
 if ( my $err = $@ ) {
     print "Content-type: text/plain\n\nError: $err";

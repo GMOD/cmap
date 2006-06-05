@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.94 2006-04-29 02:41:47 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.95 2006-06-05 21:21:35 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.94 $)[-1];
+$VERSION    = (qw$Revision: 1.95 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -2081,9 +2081,11 @@ sub map_types_view {
 sub process_template {
     my ( $self, $template, $params ) = @_;
 
-    $params->{'stylesheet'}   = $self->stylesheet;
-    $params->{'data_source'}  = $self->data_source;
-    $params->{'data_sources'} = $self->data_sources;
+    $params->{'stylesheet'}          = $self->stylesheet;
+    $params->{'data_source'}         = $self->data_source;
+    $params->{'data_sources'}        = $self->data_sources;
+    $params->{'web_image_cache_dir'} = $self->web_image_cache_dir();
+    $params->{'web_cmap_htdocs_dir'} = $self->web_cmap_htdocs_dir();
 
     my $output;
     my $t = $self->template or return;

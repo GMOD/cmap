@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 # vim: set ft=perl:
 
-# $Id: HelpViewer.pm,v 1.15 2005-11-11 21:46:55 mwz444 Exp $
+# $Id: HelpViewer.pm,v 1.16 2006-06-05 21:21:38 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -40,15 +40,17 @@ sub handler {
 
     my $html;
     my $t = $self->template;
-    $t->process( 
-        $template, 
-        { 
-            apr        => $self->apr,
-            page       => $self->page,
-            stylesheet => $self->stylesheet,
-        }, 
-        \$html 
-    ) or $html = $t->error;
+    $t->process(
+        $template,
+        {   apr                 => $self->apr,
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+        },
+        \$html
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

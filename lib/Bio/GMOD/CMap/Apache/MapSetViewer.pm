@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapSetViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.21 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: MapSetViewer.pm,v 1.22 2006-06-05 21:21:39 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -72,22 +72,23 @@ sub handler {
     my $t = $self->template;
     $t->process(
         TEMPLATE,
-        {
-            apr              => $apr,
-            page             => $self->page,
-            stylesheet       => $self->stylesheet,
-            data_sources     => $self->data_sources,
-            map_sets         => $map_sets,
-            pager            => $pager,
-            show_restriction => @map_set_accs ? 0 : 1,
-            species          => $data->{'species'},
-            map_types        => $data->{'map_types'},
-            intro            => $INTRO,
-            title            => $title,
+        {   apr                 => $apr,
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            data_sources        => $self->data_sources,
+            map_sets            => $map_sets,
+            pager               => $pager,
+            show_restriction    => @map_set_accs ? 0 : 1,
+            species             => $data->{'species'},
+            map_types           => $data->{'map_types'},
+            intro               => $INTRO,
+            title               => $title,
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-      )
-      or $html = $t->error;
+        )
+        or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;

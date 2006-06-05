@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceMenu;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceMenu.pm,v 1.3 2006-05-16 02:03:26 mwz444 Exp $
+# $Id: CorrespondenceMenu.pm,v 1.4 2006-06-05 21:21:36 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -85,6 +85,8 @@ sub handler {
                 || DEFAULT->{'menu_ref_bgcolor_tint'},
             menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
                 || DEFAULT->{'menu_ref_bgcolor'},
+            web_image_cache_dir => $self->web_image_cache_dir(),
+            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
         )
