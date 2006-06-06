@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.274 2006-05-31 18:42:12 mwz444 Exp $
+# $Id: Data.pm,v 1.275 2006-06-06 14:32:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.274 $)[-1];
+$VERSION = (qw$Revision: 1.275 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3110,6 +3110,8 @@ sub cmap_map_search_data {
             ### Work out the numbers per unit and reformat them.
             foreach my $map_id ( keys(%$map_info) ) {
                 ### Comp Map Count
+                # Divisor set to one if map length == 0 
+                # Contributed by David Shibeci
                 my $divisor =
                   ( $map_info->{$map_id}{'map_stop'} -
                       $map_info->{$map_id}{'map_start'} )
