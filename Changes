@@ -17,6 +17,7 @@
 -   Allow for custom map size
 -   Modified the make name correspondence code to work with really large maps
 -   Modified the delete duplicate correspondence code for speed
+-   Allow for multiple installations on the same machine
 
 0.15    2005-01-05
 
