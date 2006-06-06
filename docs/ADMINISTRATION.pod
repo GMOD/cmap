@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.29 $
+$Revision: 1.30 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -298,6 +298,8 @@ Some useful keys in $map (which are used $map->{'key'}):
 
 =item - map_id
 
+The database identifier, useful for making queries.
+
 =item - map_acc 
 
 The map accession id
@@ -305,6 +307,14 @@ The map accession id
 =item - map_type_acc
 
 The accession id of the map type (of course you already know this)
+
+=item - Other Map Keys 
+
+map_start, map_stop, display_order, map_set_id, map_set_acc, map_set_name,
+map_set_short_name, published_on, shape, width, color, map_units,
+is_relational_map, species_id, species_acc, species_common_name,
+species_full_name, map_type_display_order, map_type, epoch_published_on,
+default_shape default_color default_width
 
 =back 
 
@@ -316,6 +326,8 @@ Some useful keys in $feature (which are used $feature->{'key'}):
 
 =item - feature_id
 
+The database identifier, useful for making queries.
+
 =item - feature_acc 
 
 The feature accession id
@@ -324,7 +336,33 @@ The feature accession id
 
 The accession id of the feature type (of course you already know this)
 
+=item - Other Feature Keys 
+
+feature_start, feature_stop, direction, map_id, map_acc, map_name, map_units,
+feature_type, default_rank, shape color drawing_lane, drawing_priority,
+
 =back 
+
+Since area_code allows you to inject Perl to be executed, the Bio::GMOD::CMap::Data::Generic can be used gather data from the db.  To access the module, use the "$self->sql()" method.  You can use the object returned to call data retrieval methods.  For an list and explanation of the possible methods, execute "perldoc Bio::GMOD::CMap::Data::Generic".
+
+The following is an example of how to get an xref from the database.
+
+  area_code <<EOF
+    my $dbxrefs = $self->sql()->get_xrefs(
+      cmap_object => $self,
+      object_id   => $feature->{'feature_id'},
+      object_type => 'feature',
+      xref_name   => 'Chado',
+    );
+    my $new_url = '';
+    if ( @{ $dbxrefs || [] } ) {
+      my $t = $self->template;
+      $t->process( \$dbxrefs->[0]{'xref_url'},
+          { object => $feature }, \$new_url );
+    }
+    $url = $new_url;
+    $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_type_acc'});
+  EOF
 
 =item * required_page_code (map and feature types only)
 

@@ -247,6 +247,37 @@ is the base name used to name the entries in the "db" table.  It will be set to
 wasn't changed). Only if there are multiple CMap databases that need to be
 connected will this value be changed. 
 
+=head1 Creating Links For Features and Maps Between CMap and Chado
+
+From the CMap side, you can specify cross-references (xrefs) for each feature
+or map.  This is not automatic however.
+
+Then to create the link in the image, you can modify the area_code option in
+the config directory for each feature type.
+
+The following is an example of how to get an xref from the database.
+
+  area_code <<EOF
+    my $dbxrefs = $self->sql()->get_xrefs(
+      cmap_object => $self,
+      object_id   => $feature->{'feature_id'},
+      object_type => 'feature',
+      xref_name   => 'Chado',
+    );
+    my $new_url = '';
+    if ( @{ $dbxrefs || [] } ) {
+      my $t = $self->template;
+      $t->process( \$dbxrefs->[0]{'xref_url'},
+          { object => $feature }, \$new_url );
+    }
+    $url = $new_url;
+    $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_type_acc'});
+  EOF
+
+For more information about how the area_code works, see the "Map, Feature and Evidence Type Information" section of ADMINISTRATION.html.
+
+For more information about how cross-references work, see attributes-and-xrefs.html.
+
 =head1 Future stuff
 
 Maybe include the trigger installation in the cmap_synchronize_chado.pl script
