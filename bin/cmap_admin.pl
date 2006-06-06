@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.129 2006-05-24 13:14:38 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.130 2006-06-06 04:33:35 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,13 +9,16 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.129 $)[-1];
+$VERSION = (qw$Revision: 1.130 $)[-1];
 
 #
 # Get command-line options
 #
 my ( $show_help, $show_info, $show_version, $no_log, $datasource, $Quiet );
 my ($ACTION);
+
+# get the config dir for when there are multiple installs
+my ($config_dir);
 
 #create species values
 my ( $species_full_name, $species_common_name, $species_acc );
@@ -66,6 +69,7 @@ GetOptions(
     'no-log'                => \$no_log,                # Don't keep a log
     'd|datasource=s'        => \$datasource,            # Default data source
     'q|quiet'               => \$Quiet,                 # Only print necessities
+    'c|config_dir=s'        => \$config_dir,            # location of the config files
     'a|action=s'            => \$ACTION,                # Command line action
     'species_full_name=s'   => \$species_full_name,
     'species_common_name=s' => \$species_common_name,
@@ -122,6 +126,7 @@ my $cli = Bio::GMOD::CMap::CLI::Admin->new(
     no_log     => $no_log,
     datasource => $datasource,
     file       => shift,
+    config_dir => $config_dir,
 );
 
 my %command_line_actions = (
@@ -279,9 +284,10 @@ $| = 1;
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->params( $config, qw[ file user no_log ] );
+    $self->params( $config, qw[ config_dir file user no_log ] );
     unless ( $self->{'config'} ) {
-        $self->{'config'} = Bio::GMOD::CMap::Config->new();
+        $self->{'config'} = Bio::GMOD::CMap::Config->new(
+            config_dir => $self->{'config_dir'}, );
     }
 
     if ( $config->{'datasource'} ) {
@@ -3738,6 +3744,7 @@ cmap_admin.pl - command-line CMap administrative tool
     -i|info          Display more options
     -v|version       Display version
     -d|--datasource  The default data source to use
+    -c|--config_dir  The location of the config files to use (useful when multiple installs)
     --no-log         Don't keep a log of actions
     --action         Command line action. See --info for more information
 

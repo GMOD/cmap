@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.28 $
+$Revision: 1.29 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -2086,6 +2086,10 @@ The menu_options holds objects that resemble the menu options (see L<LINKING IN>
 
 =back
 
+Note: If there are multiple CMap installations on the same machine, you may
+have to specify the --config_dir option to be sure that cmap_admin.pl is using
+the correct config directory.
+
 =head1 REDUCING QUERY CACHE SIZE
 
 cmap_reduce_cache_size.pl
@@ -2745,6 +2749,16 @@ IMPORTANT NOTE:  When creating the individual config files, the "name" field in
 "<database>" should be unique across the whole server.  Using the same "name"
 for multiple config files, even if they are in different installs, can result
 in clashes over shared cache space.
+
+OTHER NOTES:
+
+=over 4
+
+=item * The last install will become the default install for when no config_dir is specified.  This should only affect cmap_admin.pl.  To manually change the default install, modify the value of "CONFIG_DIR" in Bio::GMOD::CMap::Constants.
+
+=item * When using cmap_admin.pl, it will be important to supply a "--config_dir" value which points to the config directory to be used.
+
+=back
 
 =head1 MISCELLANEOUS
 
