@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.30 $
+$Revision: 1.31 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -94,6 +94,15 @@ configurations.  You will want to set the default_db value.
 
 Automatically set to the path of the directory that contains the html
 templates.
+
+=item * web_document_root_dir
+
+Automatically set to the absolute path of the document root for the web server.
+
+=item * web_cmap_htdocs_dir
+
+Automatically set the absolute path to the cmap docs directory.  This must be
+in the web_document_root directory.
 
 =item * cache_dir
 
