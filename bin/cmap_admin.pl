@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.130 2006-06-06 04:33:35 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.131 2006-06-14 14:07:31 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.130 $)[-1];
+$VERSION = (qw$Revision: 1.131 $)[-1];
 
 #
 # Get command-line options
@@ -60,7 +60,7 @@ my ( $evidence_type_accs, );
 
 #make name corr
 my ( $from_map_set_accs, $to_map_set_accs, $skip_feature_type_accs,
-    $name_regex );
+    $name_regex, $from_group_size );
 
 GetOptions(
     'h|help'                => \$show_help,             # Show help and exit
@@ -105,6 +105,7 @@ GetOptions(
     'exclude_fields=s'         => \$exclude_fields,
     'directory=s'              => \$directory,
     'name_regex=s'             => \$name_regex,
+    'from_group_size=s'        => \$from_group_size,
     'link_group=s'             => \$link_group,
 
   )
@@ -208,6 +209,7 @@ while ($continue) {
         exclude_fields         => $exclude_fields,
         directory              => $directory,
         name_regex             => $name_regex,
+        from_group_size        => $from_group_size,
         map_accs               => $map_accs,
         link_group             => $link_group,
 
@@ -244,7 +246,7 @@ while ($continue) {
 
 # ./bin/cmap_admin.pl -d WashU -a delete_correspondences --species_acc SP1 --evidence_type_accs all
 
-# ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --name_regex exact_match
+# ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --name_regex exact_match --from_group_size 500
 
 # ----------------------------------------------------
 package Bio::GMOD::CMap::CLI::Admin;
@@ -1028,7 +1030,6 @@ sub delete_maps {
     }
     else {
         my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
-print STDERR Dumper($map_sets)."\n";
         return unless @{ $map_sets || [] };
         $map_set    = $map_sets->[0];
         $map_set_id = $map_set->{'map_set_id'};
@@ -3002,6 +3003,7 @@ sub make_name_correspondences {
     my $skip_feature_type_accs_str = $args{'skip_feature_type_accs'};
     my $allow_update               = $args{'allow_update'} || 0;
     my $name_regex_option          = $args{'name_regex'};
+    my $from_group_size            = $args{'from_group_size'} || 1;
     my $sql_object                 = $self->sql;
 
     my @from_map_set_ids;
@@ -3017,6 +3019,11 @@ sub make_name_correspondences {
             regex_title => q[read pairs '(\S+)\.\w\d$'],
             regex       => '(\S+)\.\w\d$',
             option_name => 'read_pair',
+        },
+        {
+            regex_title => q[washu read pairs '(\S+)\.\w\d$'],
+            regex       => '(\S+)[a-z]\.\w\d$',
+            option_name => 'washu_read_pair',
         },
     ];
 
@@ -3129,6 +3136,13 @@ sub make_name_correspondences {
         else {
             $name_regex = '';
         }
+        if ($from_group_size) {
+            unless ($from_group_size =~ /^\d+$/ ) {
+                print STDERR
+                  "The from_group_size '$from_group_size' is not valid.\n";
+                push @missing, 'valid from_group_size';
+            }
+        }
 
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
@@ -3215,6 +3229,18 @@ sub make_name_correspondences {
             data       => $regex_options,
         );
 
+        print "Number of 'from' maps to consider at once when comparing:  \n"
+            . "A higher number is more efficient but takes more memory.\n"
+            . "This is useful when the from map set has a lot of maps \n"
+            . "with few features on each one. [1]: ";
+        chomp( $from_group_size = <STDIN> );
+        $from_group_size ||= 1;
+        unless ( $from_group_size =~ /^\d+$/ ) {
+            print STDERR
+                "The from_group_size '$from_group_size' is not valid.\n";
+            return;
+        }
+
         my $from = join(
             "\n",
             map {
@@ -3261,6 +3287,7 @@ sub make_name_correspondences {
         quiet                  => $Quiet,
         name_regex             => $name_regex,
         allow_update           => $allow_update,
+        from_group_size        => $from_group_size,
       )
       or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
@@ -3567,6 +3594,9 @@ sub show_menu {
     my $result;
 
     if ( scalar @$data > 1 || $allow_null ) {
+print STDERR scalar(@$data) . "\n";
+use Devel::Size qw(total_size);
+print STDERR "dSize:" . total_size($data) . "\n";
         my $i      = 1;
         my %lookup = ();
 
@@ -3888,7 +3918,7 @@ cmap_admin.pl [-d data_source] --action import_object_data [--overwrite] file1 [
 
 =head2 make_name_correspondences
 
-cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_type_acc acc --from_map_set_accs "accession [, acc2...]" [--to_map_set_accs "accession [, acc2...]"] [--skip_feature_type_accs "accession [, acc2...]"] [--allow_update] [--name_regex name]
+cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_type_acc acc --from_map_set_accs "accession [, acc2...]" [--to_map_set_accs "accession [, acc2...]"] [--skip_feature_type_accs "accession [, acc2...]"] [--allow_update] [--name_regex name] [--from_group_size number]
 
   Required:
     --evidence_type_acc : Accession ID of the evidence type to be created
@@ -3904,6 +3934,9 @@ cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_typ
     --name_regex : The name of the regular expression to be used
                     (default: exact_match)
                     Options: exact_match, read_pair
+    --from_group_size : The number of maps from the "from" map set to group 
+        together during name based correspondence creation.
+                    (default: 1)
 
 =head2 reload_correspondence_matrix
 
