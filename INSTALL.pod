@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.18 $
+$Revision: 1.19 $
 
 =head1 QUICK START
 
@@ -470,7 +470,8 @@ to match the "TEMPLATES" and "CACHE" arguments to "Build.PL,"
 respectively.  It will then be copied to the "CONF" location.
 Additionally, an example individual database config file, example.conf
 will be copied into the cmap.conf directory.  Individual config files
-should be edited with specific database information.
+should be edited with specific database information and have
+is_enabled set to 1.
 
 For additional information on editing config files see
 ADMINISTRATION.pod.
