@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.145 2006-05-31 18:43:37 mwz444 Exp $
+# $Id: Generic.pm,v 1.146 2006-06-15 02:53:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.145 $)[-1];
+$VERSION = (qw$Revision: 1.146 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3823,7 +3823,7 @@ Not using cache because this query is quicker.
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
         @identifiers );
 
-    if ( !$aliases_get_rows and !$ignore_aliases ) {
+    if ( !$aliases_get_rows and !$ignore_aliases and @{$return_object} ) {
         my @feature_ids = map { $_->{'feature_id'} } @$return_object;
         my $aliases = $self->get_feature_aliases(
             cmap_object => $cmap_object,
