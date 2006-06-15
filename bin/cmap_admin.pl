@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.132 2006-06-15 02:52:41 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.133 2006-06-15 14:37:39 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.132 $)[-1];
+$VERSION = (qw$Revision: 1.133 $)[-1];
 
 #
 # Get command-line options
@@ -3791,7 +3791,7 @@ cmap_admin.pl [-d data_source] --action create_species --species_full_name "full
 
 =head2 create_map_set
 
-cmap_admin.pl [-d data_source] --action  required_optionste_map_set --map_set_name "Map Set Name" (--species_id id OR --species_acc accession) --map_type_acc "Map_type_accession" [--map_set_short_name "Short Name"] [--map_set_acc accesssion] [--map_shape shape] [--map_color color] [--map_width integer]
+cmap_admin.pl [-d data_source] --action  create_map_set --map_set_name "Map Set Name" (--species_id id OR --species_acc accession) --map_type_acc "Map_type_accession" [--map_set_short_name "Short Name"] [--map_set_acc accesssion] [--map_shape shape] [--map_color color] [--map_width integer]
 
   Required:
     --map_set_name
