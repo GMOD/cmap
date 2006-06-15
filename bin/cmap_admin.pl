@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.131 2006-06-14 14:07:31 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.132 2006-06-15 02:52:41 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 #
 # Get command-line options
@@ -3594,9 +3594,6 @@ sub show_menu {
     my $result;
 
     if ( scalar @$data > 1 || $allow_null ) {
-print STDERR scalar(@$data) . "\n";
-use Devel::Size qw(total_size);
-print STDERR "dSize:" . total_size($data) . "\n";
         my $i      = 1;
         my %lookup = ();
 
