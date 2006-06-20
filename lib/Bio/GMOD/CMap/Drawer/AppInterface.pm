@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -114,9 +114,10 @@ This method will create the Application.
         window_key => $window_key,
         panel_key  => $panel_key,
     );
-    $self->panel_controls_pane( panel_key => $panel_key, );
+    $self->panel_overview_pane( panel_key => $panel_key, );
     $self->panel_slot_controls_pane( panel_key => $panel_key, );
     $self->panel_canvas_pane( panel_key => $panel_key, );
+    $self->overview_canvas( panel_key => $panel_key, );
     $self->canvas( panel_key => $panel_key, );
 
     return;
@@ -294,29 +295,29 @@ Returns the panel_pane object.
 }
 
 # ----------------------------------------------------
-sub panel_controls_pane {
+sub panel_overview_pane {
 
 =pod
 
-=head2 panel_controls_pane
+=head2 panel_overview_pane
 
-Returns the panel_controls_pane object.
+Returns the panel_overview_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
-    unless ( $self->{'panel_controls_pane'}{$panel_key} ) {
+    unless ( $self->{'panel_overview_pane'}{$panel_key} ) {
         my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'panel_controls_pane'}{$panel_key} = $panel_pane->Frame(
+        $self->{'panel_overview_pane'}{$panel_key} = $panel_pane->Frame(
             -relief     => 'groove',
             -border     => 1,
             -background => "white",
         );
-        $self->{'panel_controls_pane'}{$panel_key}
+        $self->{'panel_overview_pane'}{$panel_key}
             ->pack( -side => 'top', -fill => 'x', );
     }
-    return $self->{'panel_controls_pane'}{$panel_key};
+    return $self->{'panel_overview_pane'}{$panel_key};
 }
 
 # ----------------------------------------------------
@@ -482,7 +483,8 @@ Adds control buttons to the slot_controls_pane.
         -font => $font,
     );
     Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid( $zoom_button1, $zoom_button2, '-', $expand_button, -sticky => "nw", );
+    Tk::grid( $zoom_button1, $zoom_button2, '-', $expand_button,
+        -sticky => "nw", );
     return;
 }
 
@@ -573,6 +575,144 @@ Draws and re-draws on the canvas
         -width        => $canvas_width,
     );
 
+    $self->draw_overview(
+        panel_key        => $panel_key,
+        canvas           => $canvas,
+        app_display_data => $app_display_data,
+    );
+
+    $self->layer_tagged_items( canvas => $canvas, );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub draw_overview {
+
+=pod
+
+=head2 draw_overview
+
+Draws and re-draws on the overview canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'}
+        or die 'no panel key for draw_overview';
+    my $app_display_data = $args{'app_display_data'};
+
+    my $canvas = $self->overview_canvas( panel_key => $panel_key, );
+
+    my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
+    my $top_slot_key
+        = $app_display_data->{'overview'}{$panel_key}{'slot_key'};
+
+    if ( $overview_layout->{'changed'} ) {
+        foreach my $drawing_section (qw[ misc_items]) {
+            $self->draw_items(
+                canvas => $canvas,
+                items  => $overview_layout->{$drawing_section},
+                tags   => [ 'on_top', ],
+            );
+        }
+        foreach my $button ( @{ $overview_layout->{'buttons'} || [] } ) {
+            $self->draw_button(
+                canvas => $canvas,
+                button => $button,
+            );
+        }
+        $overview_layout->{'changed'} = 0;
+    }
+    if ( $overview_layout->{'sub_changed'} ) {
+
+        # SLOTS
+        foreach my $slot_key ( $top_slot_key,
+            @{ $overview_layout->{'child_slot_order'} || [] } )
+        {
+            $self->draw_overview_slot(
+                slot_key             => $slot_key,
+                canvas               => $canvas,
+                app_display_data     => $app_display_data,
+                overview_slot_layout =>
+                    $overview_layout->{'slots'}{$slot_key},
+            );
+        }
+        $overview_layout->{'sub_changed'} = 0;
+    }
+
+    my $canvas_width
+        = $overview_layout->{'bounds'}[2] - $overview_layout->{'bounds'}[0]
+        + 1;
+    my $canvas_height
+        = $overview_layout->{'bounds'}[3] - $overview_layout->{'bounds'}[1]
+        + 1;
+
+    $canvas->configure(
+        -scrollregion => $overview_layout->{'bounds'},
+        -height       => $canvas_height,
+        -width        => $canvas_width,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub draw_overview_slot {
+
+=pod
+
+=head2 draw_overview_slot
+
+Draws and re-draws on the canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_key = $args{'slot_key'}
+        or die 'no slot key for draw';
+    my $canvas = $args{'canvas'}
+        || $self->canvas( panel_key => $args{'panel_key'}, );
+    my $app_display_data     = $args{'app_display_data'};
+    my $overview_slot_layout = $args{'overview_slot_layout'};
+
+    if ( $overview_slot_layout->{'changed'} ) {
+        $self->draw_items(
+            canvas => $canvas,
+            items  => $overview_slot_layout->{'viewed_region'},
+            tags   => [ 'on_bottom', ],
+        );
+        $self->draw_items(
+            canvas => $canvas,
+            items  => $overview_slot_layout->{'misc_items'},
+            tags   => [ 'on_top', ],
+        );
+        foreach my $button ( @{ $overview_slot_layout->{'buttons'} || [] } ) {
+            $self->draw_button(
+                canvas => $canvas,
+                button => $button,
+            );
+        }
+        $overview_slot_layout->{'changed'} = 0;
+    }
+    if ( $overview_slot_layout->{'sub_changed'} ) {
+
+        # MAPS
+        foreach my $map_key (
+            @{ $app_display_data->{'map_order'}{$slot_key} || {} } )
+        {
+            my $map_layout = $overview_slot_layout->{'maps'}{$map_key};
+            next unless ( $map_layout->{'changed'} );
+            $self->draw_items(
+                canvas => $canvas,
+                items  => $map_layout->{'items'},
+                tags   => [ 'on_top', 'overview_map', ],
+            );
+            $map_layout->{'changed'} = 0;
+        }
+        $overview_slot_layout->{'sub_changed'} = 0;
+    }
+
     return;
 }
 
@@ -596,13 +736,16 @@ Draws and re-draws on the canvas
 
     my $slot_layout = $app_display_data->{'slot_layout'}{$slot_key};
     if ( $slot_layout->{'changed'} ) {
-        foreach my $drawing_section (qw[ background separator ]) {
-            $self->draw_items(
-                canvas => $canvas,
-                items  => $slot_layout->{$drawing_section},
-                tags   => [ 'on_top', ],
-            );
-        }
+        $self->draw_items(
+            canvas => $canvas,
+            items  => $slot_layout->{'separator'},
+            tags   => [ 'on_top', ],
+        );
+        $self->draw_items(
+            canvas => $canvas,
+            items  => $slot_layout->{'background'},
+            tags   => [ 'on_bottom', ],
+        );
         foreach my $button ( @{ $slot_layout->{'buttons'} || [] } ) {
             $self->draw_button(
                 canvas => $canvas,
@@ -625,7 +768,7 @@ Draws and re-draws on the canvas
                     canvas   => $canvas,
                     x_offset => $x_offset,
                     items    => $map_layout->{$drawing_section},
-                    tags     => [ 'display', ],
+                    tags     => [ 'middle_layer', 'display', ],
                 );
             }
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
@@ -654,6 +797,7 @@ Draws and re-draws on the canvas
                 }
                 $map_layout->{'sub_changed'} = 0;
             }
+            $map_layout->{'changed'} = 0;
         }
         $slot_layout->{'sub_changed'} = 0;
     }
@@ -810,6 +954,7 @@ Item structure:
         }
         $items->[$i][0] = 0;
     }
+
 }
 
 # ----------------------------------------------------
@@ -926,7 +1071,7 @@ Returns the canvas object.
         $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
             'Canvas',
             (   '-width'       => 1100,
-                '-height'      => 700,
+                '-height'      => 800,
                 '-relief'      => 'sunken',
                 '-borderwidth' => 2,
                 '-background'  => 'white',
@@ -935,6 +1080,38 @@ Returns the canvas object.
         )->pack( -side => 'top', -fill => 'both', );
     }
     return $self->{'canvas'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub overview_canvas {
+
+=pod
+
+=head2 overview_canvas
+
+Returns the overview_canvas object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'} or return undef;
+
+    unless ( $self->{'overview_canvas'}{$panel_key} ) {
+        my $overview_canvas_frame
+            = $self->{'panel_overview_pane'}{$panel_key};
+        $self->{'overview_canvas'}{$panel_key}
+            = $overview_canvas_frame->Scrolled(
+            'Canvas',
+            (   '-width'       => 1100,
+                '-height'      => 300,
+                '-relief'      => 'sunken',
+                '-borderwidth' => 2,
+                '-background'  => 'white',
+                '-scrollbars'  => 's',
+            ),
+            )->pack( -side => 'top', -fill => 'both', );
+    }
+    return $self->{'overview_canvas'}{$panel_key};
 }
 
 # ----------------------------------------------------
@@ -992,7 +1169,7 @@ sub select_reference_maps {
         -command => sub {
 
             if ( $map_listbox->curselection() ) {
-                $controller->load_first_slot(
+                $controller->load_new_window(
                     selectable_ref_map_ids => $selectable_ref_map_ids,
                     selections => [ $map_listbox->curselection() ],
                     window_key => $window_key,
@@ -1223,11 +1400,15 @@ Deletes all widgets in the provided list
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'};
-    my $items     = $args{'items'} || return;
+    my $panel_key   = $args{'panel_key'};
+    my $items       = $args{'items'} || return;
+    my $is_overview = $args{'is_overview'};
 
-    $self->canvas( panel_key => $panel_key, )
-        ->delete( map { $_->[1] } @$items );
+    my $canvas =
+          $is_overview
+        ? $self->overview_canvas( panel_key => $panel_key, )
+        : $self->canvas( panel_key => $panel_key, );
+    $canvas->delete( map { $_->[1] } @$items );
 
     # Maybe clear bindings if they aren't destroyed with delete.
 
@@ -1256,6 +1437,27 @@ Deletes all widgets in the current window.
     }
 
     # Maybe clear bindings if they aren't destroyed with delete.
+
+    return;
+}
+
+# ----------------------------------------------------
+sub layer_tagged_items {
+
+=pod
+
+=head2 layer_tagged_items
+
+Handle the placement of tagged items in layers
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $canvas      = $args{'canvas'};
+    my $real_canvas = $canvas->Subwidget("canvas");
+
+    $real_canvas->raise( 'on_top', 'middle_layer' );
+    $real_canvas->lower( 'on_bottom', 'middle_layer' );
 
     return;
 }

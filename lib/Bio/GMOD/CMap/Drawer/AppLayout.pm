@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use constant SLOT_BACKGROUNDS      => [qw[ white lightblue ]];
 use constant SLOT_SEPARATOR_HEIGHT => 3;
@@ -38,6 +38,8 @@ use base 'Exporter';
 
 my @subs = qw[
     layout_new_panel
+    layout_overview
+    overview_selected_area
     layout_reference_maps
     layout_sub_maps
     add_slot_separator
@@ -64,7 +66,7 @@ sub layout_new_panel {
 
     # Initialize bounds
     # But have a height of 0.
-    $panel_layout->{'bounds'} = [ 0, 0, 700, 0, ];
+    $panel_layout->{'bounds'} = [ 0, 0, 900, 0, ];
 
     my $panel_height_change = 0;
     my $slot_position       = 0;
@@ -90,6 +92,188 @@ sub layout_new_panel {
     }
 
     $panel_layout->{'changed'} = 1;
+
+    return;
+}
+
+# ----------------------------------------------------
+sub layout_overview {
+
+=pod
+
+=head2 layout_overview
+
+
+
+=cut
+
+    my %args             = @_;
+    my $window_key       = $args{'window_key'};
+    my $panel_key        = $args{'panel_key'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
+    my $top_slot_key
+        = $app_display_data->{'overview'}{$panel_key}{'slot_key'};
+
+    my $map_height = 5;
+    $overview_layout->{'map_buffer_y'} = 5;
+    my $slot_buffer_y = 15;
+    my $slot_buffer_x = 15;
+
+    $overview_layout->{'bounds'} = [ 0, 0, 1100, 0 ];
+    $overview_layout->{'maps_min_x'}
+        = $overview_layout->{'bounds'}[0] + $slot_buffer_x;
+    $overview_layout->{'maps_max_x'}
+        = $overview_layout->{'bounds'}[2] - $slot_buffer_x;
+    my $slot_min_y = 0;
+    my $slot_max_y = 0;
+
+    $slot_min_y += $slot_buffer_y;
+
+    # slot_max_y is going to be used to place maps.
+    $slot_max_y = $slot_min_y;
+
+    my $slot_width
+        = $overview_layout->{'maps_max_x'} - $overview_layout->{'maps_min_x'}
+        + 1;
+
+    # Layout Top Slot
+    my $main_slot_layout = $app_display_data->{'slot_layout'}{$top_slot_key};
+    my $top_pixel_factor = $slot_width / ( $main_slot_layout->{'maps_max_x'}
+            - $main_slot_layout->{'maps_min_x'} );
+    my $overview_slot_layout = $overview_layout->{'slots'}{$top_slot_key};
+    $overview_slot_layout->{'scale_factor_from_main'} = $top_pixel_factor;
+    $overview_slot_layout->{'bounds'}                 = [
+        $overview_layout->{'maps_min_x'}, $slot_min_y,
+        $overview_layout->{'maps_max_x'}, $slot_min_y
+    ];
+
+    $overview_layout->{'main_pixel_offset'}
+        = $main_slot_layout->{'maps_min_x'};
+
+    my @sorted_map_keys = sort {
+        $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
+            <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
+
+    } @{ $app_display_data->{'map_order'}{$top_slot_key} };
+
+    return unless (@sorted_map_keys);
+
+    my $last_y
+        = $app_display_data->{'map_layout'}{ $sorted_map_keys[0] }{'bounds'}
+        [1];
+    foreach my $map_key (@sorted_map_keys) {
+        unless ( $last_y
+            == $app_display_data->{'map_layout'}{$map_key}{'bounds'}[1] )
+        {
+            $slot_max_y += $map_height + $overview_layout->{'map_buffer_y'};
+
+            $last_y
+                = $app_display_data->{'map_layout'}{$map_key}{'bounds'}[1];
+        }
+        my $o_map_x1 = $top_pixel_factor
+            * ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                - $overview_layout->{'main_pixel_offset'} )
+            + $overview_layout->{'maps_min_x'};
+        my $o_map_x2 = $top_pixel_factor
+            * ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                - $overview_layout->{'main_pixel_offset'} )
+            + $overview_layout->{'maps_min_x'};
+        push @{ $overview_slot_layout->{'maps'}{$map_key}{'items'} },
+            (
+            [   1, undef,
+                'rectangle',
+                [   $o_map_x1, $slot_max_y,
+                    $o_map_x2, $slot_max_y + $map_height
+                ],
+                { -fill => 'blue', }
+            ]
+            );
+    }
+    $overview_slot_layout->{'bounds'}[3]
+        = $slot_max_y + $overview_layout->{'map_buffer_y'};
+    $slot_max_y += $map_height + $slot_buffer_y;
+
+    #xxx
+    # create selected region
+    overview_selected_area(
+        slot_key         => $top_slot_key,
+        panel_key        => $panel_key,
+        app_display_data => $app_display_data,
+    );
+
+    foreach my $child_slot_key ( @{ $overview_layout->{'child_slot_order'} } )
+    {
+        $main_slot_layout
+            = $app_display_data->{'slot_layout'}{$child_slot_key};
+        $overview_slot_layout = $overview_layout->{'slots'}{$child_slot_key};
+        $overview_slot_layout->{'bounds'}[0]
+            = $overview_layout->{'maps_min_x'};
+        $overview_slot_layout->{'bounds'}[1]
+            = $slot_max_y - $overview_layout->{'map_buffer_y'};
+        $overview_slot_layout->{'bounds'}[2]
+            = $overview_layout->{'maps_max_x'};
+
+        my $child_pixel_factor = $top_pixel_factor
+            * $app_display_data->{'scaffold'}{$child_slot_key}{'scale'};
+        $overview_slot_layout->{'scale_factor_from_main'}
+            = $child_pixel_factor;
+
+        @sorted_map_keys = sort {
+            $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
+                <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
+
+        } @{ $app_display_data->{'map_order'}{$child_slot_key} };
+
+        next unless (@sorted_map_keys);
+
+        my $last_y = $app_display_data->{'map_layout'}{ $sorted_map_keys[0] }
+            {'bounds'}[1];
+        foreach my $map_key (@sorted_map_keys) {
+            unless ( $last_y
+                == $app_display_data->{'map_layout'}{$map_key}{'bounds'}[1] )
+            {
+                $slot_max_y
+                    += $map_height + $overview_layout->{'map_buffer_y'};
+
+                $last_y
+                    = $app_display_data->{'map_layout'}{$map_key}{'bounds'}
+                    [1];
+            }
+            my $o_map_x1 = $child_pixel_factor
+                * ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                    - $overview_layout->{'main_pixel_offset'} )
+                + $overview_layout->{'maps_min_x'};
+            my $o_map_x2 = $child_pixel_factor
+                * ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                    - $overview_layout->{'main_pixel_offset'} )
+                + $overview_layout->{'maps_min_x'};
+            push @{ $overview_slot_layout->{'maps'}{$map_key}{'items'} },
+                (
+                [   1, undef,
+                    'rectangle',
+                    [   $o_map_x1, $slot_max_y,
+                        $o_map_x2, $slot_max_y + $map_height
+                    ],
+                    { -fill => 'blue', }
+                ]
+                );
+        }
+
+        $slot_max_y += $map_height;
+        $overview_slot_layout->{'bounds'}[3] = $slot_max_y;
+        $slot_max_y += $slot_buffer_y;
+
+        # create selected region
+        overview_selected_area(
+            slot_key         => $child_slot_key,
+            panel_key        => $panel_key,
+            app_display_data => $app_display_data,
+        );
+    }
+
+    $overview_layout->{'bounds'}[3] = $slot_max_y;
 
     return;
 }
@@ -158,8 +342,9 @@ Lays out a brand new slot
     my $bgcolor = SLOT_BACKGROUNDS->[ $slot_position %
         scalar @{ +SLOT_BACKGROUNDS } ];
     $slot_layout->{'background'} = [
-        [   1, undef, 'rectangle',
-            $app_display_data->{'slot_layout'}{$slot_key}{'bounds'},
+        [   1, undef,
+            'rectangle',
+            [ @{ $app_display_data->{'slot_layout'}{$slot_key}{'bounds'} } ],
             { -fill => $bgcolor, }
         ]
     ];
@@ -222,7 +407,8 @@ Lays out reference maps in a new slot
     my $map_x_buffer  = 15;
     my $map_y_buffer  = 15;
 
-    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'} || 0;
+    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'}
+        || 0;
 
     my $left_bound  = $slot_layout->{'bounds'}[0] + $map_x_buffer;
     my $right_bound = $slot_layout->{'bounds'}[2] - $map_x_buffer;
@@ -254,11 +440,13 @@ Lays out reference maps in a new slot
     $app_display_data->{'scaffold'}{$slot_key}{'pixels_per_unit'}
         = $pixels_per_unit;
 
-    my $row_max_x   = $left_bound;
+    my $map_min_x   = $left_bound;
     my $row_min_y   = $slot_layout->{'bounds'}[1];
     my $start_min_y = $row_min_y;
     $row_min_y += $map_y_buffer;
     my $row_max_y = $row_min_y;
+
+    $slot_layout->{'maps_min_x'} = $map_min_x;
 
     foreach
         my $map_key ( @{ $app_display_data->{'map_order'}{$slot_key} || [] } )
@@ -272,12 +460,26 @@ Lays out reference maps in a new slot
             if ( $map_container_width < $min_map_width );
 
         if ($stacked) {
-            $row_max_x = $left_bound;
+            $map_min_x = $left_bound;
             $row_min_y = $row_max_y + $map_y_buffer;
         }
-        if ( ( $row_max_x + $map_container_width - $x_offset )
+        my $map_max_x = $map_min_x + $map_container_width;
+
+        # Set bounds so overview can access it later even if it
+        # isn't on the screen.
+        $app_display_data->{'map_layout'}{$map_key}{'bounds'}
+            = [ $map_min_x, $row_min_y, $map_max_x, $row_min_y ];
+
+        if ( ( not defined $slot_layout->{'maps_max_x'} )
+            or $slot_layout->{'maps_max_x'} < $map_max_x )
+        {
+            $slot_layout->{'maps_max_x'} = $map_max_x;
+        }
+
+        # If map is not on the screen, doen't lay it out.
+        if ( ( $map_min_x + $map_container_width - $x_offset )
             < $slot_layout->{'bounds'}[0]
-            or $row_max_x - $x_offset > $slot_layout->{'bounds'}[2] )
+            or $map_min_x - $x_offset > $slot_layout->{'bounds'}[2] )
         {
             next;
         }
@@ -288,8 +490,8 @@ Lays out reference maps in a new slot
             slot_key         => $slot_key,
             map_key          => $map_key,
             map              => $map,
-            min_x            => $row_max_x,
-            width            => $map_container_width,
+            min_x            => $map_min_x,
+            max_x            => $map_max_x,
             min_y            => $row_min_y,
             pixels_per_unit  => $pixels_per_unit,
         );
@@ -297,7 +499,7 @@ Lays out reference maps in a new slot
             $row_max_y = $tmp_map_max_y;
         }
 
-        $row_max_x += $map_container_width + $map_x_buffer;
+        $map_min_x += $map_container_width + $map_x_buffer;
         $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
     }
 
@@ -330,7 +532,8 @@ Lays out sub maps in a slot.
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
 
     my $scale = $app_display_data->{'scaffold'}{$slot_key}{'scale'} || 1;
-    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'} || 0;
+    my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'}
+        || 0;
 
     #  Options that should be defined elsewhere
     my $map_x_buffer = 15;
@@ -422,8 +625,24 @@ Lays out sub maps in a slot.
                 ->map_data( map_id => $sub_map_id, );
             my $parent_key
                 = $app_display_data->{'sub_maps'}{$sub_map_key}{'parent_key'};
-            my $map_container_width = $x2 - $x1 + 1;
 
+            # Set bounds so overview can access it later even if it
+            # isn't on the screen.
+            $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}
+                = [ $x1, $row_min_y, $x2, $row_min_y ];
+
+            if ( ( not defined $slot_layout->{'maps_min_x'} )
+                or $slot_layout->{'maps_min_x'} > $x1 )
+            {
+                $slot_layout->{'maps_min_x'} = $x1;
+            }
+            if ( ( not defined $slot_layout->{'maps_max_x'} )
+                or $slot_layout->{'maps_max_x'} < $x2 )
+            {
+                $slot_layout->{'maps_max_x'} = $x2;
+            }
+
+            # If map is not on the screen, doen't lay it out.
             if (   $x2 - $x_offset < $slot_layout->{'bounds'}[0]
                 or $x1 - $x_offset > $slot_layout->{'bounds'}[2] )
             {
@@ -438,7 +657,7 @@ Lays out sub maps in a slot.
                 map_key          => $sub_map_key,
                 map              => $sub_map_data,
                 min_x            => $x1,
-                width            => $x2 - $x1 + 1,
+                max_x            => $x2,
                 min_y            => $row_min_y,
                 pixels_per_unit  => $pixels_per_unit{$parent_key},
             );
@@ -480,23 +699,20 @@ Lays out a maps in a contained area.
     my $map_key          = $args{'map_key'};
     my $map              = $args{'map'};
     my $min_x            = $args{'min_x'};
+    my $max_x            = $args{'max_x'};
     my $min_y            = $args{'min_y'};
-    my $width            = $args{'width'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
 
     my $buffer = 2;
 
-    my $x1 = $min_x;
-    my $y1 = $min_y;
-    my $x2 = $x1 + $width;
-    my $y2;
+    my $max_y;
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
     push @{ $map_layout->{'items'} },
         (
         [   1, undef, 'text',
-            [ $x1, $y1 ],
+            [ $min_x, $min_y ],
             {   -text   => $map->{'map_name'},
                 -anchor => 'nw',
                 -fill   => 'black',
@@ -504,35 +720,35 @@ Lays out a maps in a contained area.
         ]
         );
 
-    $y1 += 15;
-    $y2 = $y1 + 5;
+    $min_y += 15;
+    $max_y = $min_y + 5;
     push @{ $map_layout->{'items'} },
         (
-        [   1, undef,
-            'rectangle', [ $x1, $y1, $x2, $y2 ],
+        [   1, undef, 'rectangle',
+            [ $min_x, $min_y, $max_x, $max_y ],
             { -fill => 'blue', }
         ]
         );
 
-    $y1 = $y2 + $buffer;
+    $min_y = $max_y + $buffer;
 
     if ( $app_display_data->{'scaffold'}{$slot_key}{'expanded'} ) {
-        $y2 = _layout_features(
+        $max_y = _layout_features(
             app_display_data => $app_display_data,
             slot_key         => $slot_key,
             map_key          => $map_key,
             map              => $map,
-            min_x            => $x1,
-            width            => $width,
-            min_y            => $y1,
+            min_x            => $min_x,
+            max_x            => $max_x,
+            min_y            => $min_y,
             pixels_per_unit  => $pixels_per_unit,
         );
     }
-    $map_layout->{'bounds'} = [ $x1, $min_y, $x2, $y2 ];
+    $map_layout->{'bounds'} = [ $min_x, $min_y, $max_x, $max_y ];
 
     $map_layout->{'sub_changed'} = 1;
 
-    return $y2;
+    return $max_y;
 }
 
 # ----------------------------------------------------
@@ -553,7 +769,7 @@ Lays out feautures
     my $map              = $args{'map'};
     my $min_x            = $args{'min_x'};
     my $min_y            = $args{'min_y'};
-    my $width            = $args{'width'};
+    my $max_x            = $args{'max_x'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
 
     my $max_y = $min_y;
@@ -598,7 +814,7 @@ Lays out feautures
                 low        => $adjusted_left,
                 high       => $adjusted_right,
                 columns    => \@fcolumns,
-                map_height => $width,
+                map_height => $max_x - $min_x + 1,
                 buffer     => $buffer,
             );
 
@@ -734,6 +950,127 @@ returns the number of pixesl per map unit.
     }
 
     return $app_display_data->{'scaffold'}{$slot_key}{'pixels_per_unit'};
+}
+
+# ----------------------------------------------------
+sub overview_selected_area {
+
+=pod
+
+=head2 overview_selected_area
+
+Shows the selected region.
+
+=cut
+
+    my %args             = @_;
+    my $slot_key         = $args{'slot_key'};
+    my $panel_key        = $args{'panel_key'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
+    my $overview_slot_layout = $overview_layout->{'slots'}{$slot_key};
+    my $main_slot_layout     = $app_display_data->{'slot_layout'}{$slot_key};
+    my $main_offset_x
+        = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'};
+
+    my $bracket_y1 = $overview_slot_layout->{'bounds'}[1]
+        - $overview_layout->{'map_buffer_y'};
+    my $bracket_y2 = $overview_slot_layout->{'bounds'}[3]
+        + $overview_layout->{'map_buffer_y'};
+    my $scale_factor_from_main
+        = $overview_slot_layout->{'scale_factor_from_main'};
+    my $min_x =
+        (
+        $main_slot_layout->{'bounds'}[0] > $main_slot_layout->{'maps_min_x'} )
+        ? $main_slot_layout->{'bounds'}[0]
+        : $main_slot_layout->{'maps_min_x'};
+    my $max_x =
+        (
+        $main_slot_layout->{'bounds'}[2] < $main_slot_layout->{'maps_max_x'} )
+        ? $main_slot_layout->{'bounds'}[2]
+        : $main_slot_layout->{'maps_max_x'};
+    $min_x -= $overview_layout->{'main_pixel_offset'};
+    $max_x -= $overview_layout->{'main_pixel_offset'};
+
+    my $bracket_x1 = ( ( $min_x + $main_offset_x ) * $scale_factor_from_main )
+        + $overview_layout->{'maps_min_x'};
+    my $bracket_x2 = ( ( $max_x + $main_offset_x ) * $scale_factor_from_main )
+        + $overview_layout->{'maps_min_x'};
+
+    my $bracket_width = 5;
+
+    my $use_brackets = 0;
+    if ($use_brackets) {
+
+        # Left bracket
+        push @{ $overview_slot_layout->{'viewed_region'} },
+            (
+            [   1, undef, 'line',
+                [   ( $bracket_x1 + $bracket_width, $bracket_y1 ),
+                    ( $bracket_x1,                  $bracket_y1 ),
+                    ( $bracket_x1,                  $bracket_y2 ),
+                    ( $bracket_x1 + $bracket_width, $bracket_y2 ),
+                ],
+                { -fill => 'orange', -width => '3', }
+            ]
+            );
+
+        # Right bracket
+        push @{ $overview_slot_layout->{'viewed_region'} },
+            (
+            [   1, undef, 'line',
+                [   ( $bracket_x2 - $bracket_width, $bracket_y1 ),
+                    ( $bracket_x2,                  $bracket_y1 ),
+                    ( $bracket_x2,                  $bracket_y2 ),
+                    ( $bracket_x2 - $bracket_width, $bracket_y2 ),
+                ],
+                { -fill => 'orange', -width => '3', }
+            ]
+            );
+
+        # top line
+        push @{ $overview_slot_layout->{'viewed_region'} },
+            (
+            [   1, undef, 'line',
+                [   ( $bracket_x1, $bracket_y1 ),
+                    ( $bracket_x2, $bracket_y1 ),
+                ],
+                { -fill => 'orange', -width => '1', }
+            ]
+            );
+
+        # bottom line
+        push @{ $overview_slot_layout->{'viewed_region'} },
+            (
+            [   1, undef, 'line',
+                [   ( $bracket_x1, $bracket_y2 ),
+                    ( $bracket_x2, $bracket_y2 ),
+                ],
+                { -fill => 'orange', -width => '1', }
+            ]
+            );
+    }
+    else {
+
+        # rectangle
+        push @{ $overview_slot_layout->{'viewed_region'} }, (
+            [   1, undef,
+                'rectangle',
+                [   ( $bracket_x1, $bracket_y1 ),
+                    ( $bracket_x2, $bracket_y2 ),
+                ],
+                {   -outline => 'orange',
+
+                    #            -fill    => 'orange',
+                    -width => '1',
+                }
+            ]
+        );
+    }
+    $overview_layout->{'sub_changed'}  = 1;
+    $overview_slot_layout->{'changed'} = 1;
+
 }
 
 1;

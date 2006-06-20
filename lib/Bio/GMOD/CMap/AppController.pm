@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
+# $Id: AppController.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -51,7 +51,7 @@ Initializes the object.
     my $window_key   = $self->start_application();
     my $developement = 1;
     if ($developement) {
-        $self->load_first_slot(
+        $self->load_new_window(
             window_key               => $window_key,
             'selections'             => ['0'],
             'selectable_ref_map_ids' => ['1'],
@@ -212,11 +212,11 @@ sub new_reference_maps {
 =cut
 
 # ----------------------------------------------------
-sub load_first_slot {
+sub load_new_window {
 
 =pod
 
-=head2 load_first_slot
+=head2 load_new_window
 
 Load the first slot of a page.
 
@@ -231,7 +231,7 @@ Load the first slot of a page.
     my @selected_map_ids = map { $selectable_ref_map_ids->[$_] } @$selections;
 
     if (@selected_map_ids) {
-        $self->app_display_data()->load_first_slot_of_window(
+        $self->app_display_data()->dd_load_new_window(
             window_key => $window_key,
             map_ids    => \@selected_map_ids,
         );

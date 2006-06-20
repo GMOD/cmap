@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.6 2006-05-16 02:15:12 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,11 +52,13 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
     layout_new_panel
+    layout_overview
+    overview_selected_area
     layout_reference_maps
     layout_sub_maps
     add_slot_separator ];
@@ -125,7 +127,7 @@ sub create_window {
 
 =pod
 
-=head2 load_first_slot_of_window
+=head2 create_window
 
 Adds the first slot
 
@@ -147,11 +149,11 @@ Adds the first slot
 }
 
 # ----------------------------------------------------
-sub load_first_slot_of_window {
+sub dd_load_new_window {
 
 =pod
 
-=head2 load_first_slot_of_window
+=head2 dd_load_new_window
 
 Adds the first slot
 
@@ -212,7 +214,19 @@ Adds the first slot
         parent_slot_key => $slot_key,
     );
 
+    # Handle overview after the regular slots, so we can use that info
+    $self->{'overview'}{$panel_key} = {
+        slot_key   => $slot_key,     # top slot in overview
+        window_key => $window_key,
+    };
+    $self->initialize_overview_layout($panel_key);
+
     layout_new_panel(
+        window_key       => $window_key,
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
+    layout_overview(
         window_key       => $window_key,
         panel_key        => $panel_key,
         app_display_data => $self,
@@ -345,9 +359,12 @@ Zoom slots
     my $zoom_value = $args{'zoom_value'} or return;
 
     my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+    my $overview_slot_layout
+        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
 
     if ($cascading) {
-        if ( $self->{'scaffold'}{$slot_key}{'attached_to_parent'} ) {
+        if ( $slot_scaffold->{'attached_to_parent'} ) {
+            $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
 
             # Get Offset from parent
             $slot_scaffold->{'x_offset'}
@@ -361,7 +378,7 @@ Zoom slots
             );
         }
         else {
-            $self->{'scaffold'}{$slot_key}{'scale'} /= $zoom_value;
+            $slot_scaffold->{'scale'} /= $zoom_value;
             if ( $slot_scaffold->{'scale'} == 1 ) {
                 $self->attach_slot_to_parent(
                     slot_key  => $slot_key,
@@ -378,6 +395,7 @@ Zoom slots
     elsif ( $slot_scaffold->{'is_top'} ) {
         $slot_scaffold->{'scale'}           *= $zoom_value;
         $slot_scaffold->{'pixels_per_unit'} *= $zoom_value;
+        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
         $self->set_new_zoomed_offset(
             window_key => $window_key,
             panel_key  => $panel_key,
@@ -391,6 +409,7 @@ Zoom slots
         );
     }
     else {
+        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
         $slot_scaffold->{'scale'} *= $zoom_value;
         if ( $slot_scaffold->{'attached_to_parent'} ) {
             $self->detach_slot_from_parent( slot_key => $slot_key, );
@@ -415,6 +434,21 @@ Zoom slots
             slot_key   => $slot_key,
         );
     }
+
+    # handle overview highlighting
+    $self->destroy_items(
+        items => $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+            {'viewed_region'},
+        panel_key   => $panel_key,
+        is_overview => 1,
+    );
+    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+        {'viewed_region'} = [];
+    overview_selected_area(
+        slot_key         => $slot_key,
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
 
     foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
         $self->zoom_slot(
@@ -454,7 +488,7 @@ expand slots
 
     my $slot_scaffold = $self->{'scaffold'}{$slot_key};
 
-print STDERR "Expanding\n";
+    print STDERR "Expanding\n";
 
     return;
 }
@@ -743,6 +777,73 @@ Initializes panel_layout
 }
 
 # ----------------------------------------------------
+sub initialize_overview_layout {
+
+=pod
+
+=head2 initialize_overview_layout
+
+Initializes overview_layout
+
+=cut
+
+    my $self      = shift;
+    my $panel_key = shift;
+
+    my $top_slot_key = $self->{'overview'}{$panel_key}{'slot_key'};
+
+    $self->{'overview_layout'}{$panel_key} = {
+        bounds           => [ 0, 0, 0, 0 ],
+        misc_items       => [],
+        buttons          => [],
+        changed          => 1,
+        sub_changed      => 1,
+        slots            => {},
+        child_slot_order => [],
+    };
+
+    # Create an ordered list of the slots in the overview.
+    my %child_slots;
+    foreach my $child_slot_key (
+        @{ $self->{'scaffold'}{$top_slot_key}{'children'} || [] } )
+    {
+        $child_slots{$child_slot_key} = 1;
+    }
+    foreach
+        my $ordered_slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
+    {
+        if ( $child_slots{$ordered_slot_key} ) {
+            push @{ $self->{'overview_layout'}{$panel_key}
+                    {'child_slot_order'} }, $ordered_slot_key;
+        }
+    }
+
+    foreach my $slot_key ( $top_slot_key,
+        @{ $self->{'overview_layout'}{$panel_key}{'child_slot_order'} } )
+    {
+        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} = {
+            bounds                 => [ 0, 0, 0, 0 ],
+            misc_items             => [],
+            buttons                => [],
+            viewed_region          => [],
+            changed                => 1,
+            sub_changed            => 1,
+            maps                   => {},
+            scale_factor_from_main => 0,
+        };
+        foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
+            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}{'maps'}
+                {$map_key} = {
+                items   => [],
+                changed => 1,
+                };
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub set_default_window_layout {
 
 =pod
@@ -832,12 +933,14 @@ Destroys items that were drawn
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'};
-    my $items     = $args{'items'};
+    my $panel_key   = $args{'panel_key'};
+    my $items       = $args{'items'};
+    my $is_overview = $args{'is_overview'};
 
     $self->app_interface()->int_destroy_items(
-        panel_key => $panel_key,
-        items     => $items,
+        panel_key   => $panel_key,
+        items       => $items,
+        is_overview => $is_overview,
     );
 }
 
@@ -873,6 +976,8 @@ Returns the number of remaining windows.
         }
         delete $self->{'panel_layout'}{$panel_key};
         delete $self->{'slot_order'}{$panel_key};
+        delete $self->{'overview'}{$panel_key};
+        delete $self->{'overview_layout'}{$panel_key};
     }
     delete $self->{'panel_order'}{$window_key};
 
