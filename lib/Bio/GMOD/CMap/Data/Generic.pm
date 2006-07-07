@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.146 2006-06-15 02:53:59 mwz444 Exp $
+# $Id: Generic.pm,v 1.147 2006-07-07 18:11:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146 $)[-1];
+$VERSION = (qw$Revision: 1.147 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -8460,7 +8460,9 @@ Attribute id
     my $object_type     = $args{'object_type'};
     my $is_public       = $args{'is_public'} || 1;
     my $attribute_name  = $args{'attribute_name'} || q{};
-    my $attribute_value = $args{'attribute_value'} || q{};
+    my $attribute_value = defined( $args{'attribute_value'} )
+        ? $args{'attribute_value'}
+        : q{};
     my $object_id       = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @insert_args = (

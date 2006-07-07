@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.93 2006-06-01 19:54:43 mwz444 Exp $
+# $Id: Admin.pm,v 1.94 2006-07-07 18:11:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1630,9 +1630,12 @@ The name of the object being reference.
     }
 
     for my $attr (@attributes) {
-        my $attr_id       = $attr->{'attribute_id'};
-        my $attr_name     = $attr->{'name'} || $attr->{'attribute_name'};
-        my $attr_value    = $attr->{'value'} || $attr->{'attribute_value'};
+        my $attr_id    = $attr->{'attribute_id'};
+        my $attr_name  = $attr->{'name'} || $attr->{'attribute_name'};
+        my $attr_value =
+            defined( $attr->{'value'} )
+            ? $attr->{'value'}
+            : $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
         my $display_order = $attr->{'display_order'};
 
