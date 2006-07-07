@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.108 2006-06-06 17:44:45 mwz444 Exp $
+# $Id: CMap.pm,v 1.109 2006-07-07 18:20:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -1084,7 +1084,7 @@ Returns the correct SQL module driver for the RDBMS we're using.
     my $db_driver = lc shift;
 
     unless ( defined $self->{'sql_module'} ) {
-        my $db = $self->db or return;
+        my $db = $self->db or die "Can't access database\n";
         $db_driver = lc $db->{'Driver'}->{'Name'} || '';
         $db_driver = DEFAULT->{'sql_driver_module'}
             unless VALID->{'sql_driver_module'}{$db_driver};
