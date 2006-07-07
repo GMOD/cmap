@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.147 2006-07-07 18:11:16 mwz444 Exp $
+# $Id: Generic.pm,v 1.148 2006-07-07 18:18:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.147 $)[-1];
+$VERSION = (qw$Revision: 1.148 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6526,18 +6526,14 @@ DEFAULT->{'aggregated_type_substitute'}).
 
  Structure:
     { 
-      slot_no => {
         map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ],
-      }
     }
 
 =item - The "slot_info" object (slot_info2)
 
  Structure:
     { 
-      slot_no => {
         map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ],
-      }
     }
 
 =back
@@ -6549,10 +6545,6 @@ DEFAULT->{'aggregated_type_substitute'}).
 =item - split_evidence_types (split_evidence_types)
 
 =item - show_intraslot_corr (show_intraslot_corr)
-
-=item - List of Map Accessions (map_accs)
-
-=item - List of Map Accessions to Ignore (ignore_map_accs)
 
 =item - Included Evidence Types Accessions (included_evidence_type_accs)
 
@@ -6596,8 +6588,6 @@ Array of Hashes:
         slot_info2                  => 1,
         split_evidence_types        => 0,
         show_intraslot_corr         => 0,
-        map_accs                    => 0,
-        ignore_map_accs             => 0,
         included_evidence_type_accs => 0,
         ignored_evidence_type_accs  => 0,
         less_evidence_type_accs     => 0,
@@ -6613,8 +6603,6 @@ Array of Hashes:
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $slot_info                   = $args{'slot_info'} || {};
     my $slot_info2                  = $args{'slot_info2'} || {};
-    my $map_accs                    = $args{'map_accs'} || [];
-    my $ignore_map_accs             = $args{'ignore_map_accs'} || [];
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'}
         || [];
     my $ignored_evidence_type_accs = $args{'ignored_evidence_type_accs'}
