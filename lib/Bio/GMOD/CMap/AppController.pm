@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
+# $Id: AppController.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -295,6 +295,33 @@ Handler for zooming a slot.
 }
 
 # ----------------------------------------------------
+sub scroll_slot {
+
+=pod
+
+=head2 scroll_slot
+
+Handler for scrolling a slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $panel_key    = $args{'panel_key'};
+    my $slot_key     = $args{'slot_key'};
+    my $scroll_value = $args{'scroll_value'} || 1;
+
+    $self->app_display_data()->scroll_slot(
+        window_key   => $window_key,
+        panel_key    => $panel_key,
+        slot_key     => $slot_key,
+        scroll_value => $scroll_value,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub expand_slot {
 
 =pod
@@ -311,6 +338,31 @@ Handler for expanding a slot.
     my $slot_key   = $args{'slot_key'};
 
     $self->app_display_data()->expand_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $slot_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub toggle_corrs_slot {
+
+=pod
+
+=head2 toggle_corrs_slot
+
+Handler for toggling correspondences for a slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+
+    $self->app_display_data()->toggle_corrs_slot(
         window_key => $window_key,
         panel_key  => $panel_key,
         slot_key   => $slot_key,

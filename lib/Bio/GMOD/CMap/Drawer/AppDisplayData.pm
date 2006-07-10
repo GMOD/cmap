@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -61,6 +61,7 @@ use Bio::GMOD::CMap::Drawer::AppLayout qw[
     overview_selected_area
     layout_reference_maps
     layout_sub_maps
+    add_correspondences
     add_slot_separator ];
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
@@ -204,6 +205,7 @@ Adds the first slot
         my $map_key = $self->next_internal_key('map');
         push @{ $self->{'map_order'}{$slot_key} },   $map_key;
         push @{ $self->{'map_id_to_key'}{$map_id} }, $map_key;
+        $self->{'map_id_to_key_by_slot'}{$slot_key}{$map_id} = $map_key;
         $self->{'map_key_to_id'}{$map_key} = $map_id;
         $self->initialize_map_layout($map_key);
     }
@@ -335,6 +337,8 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
         foreach my $map_key ( @{ $maps_by_set{$set_key} || [] } ) {
             push @{ $self->{'map_order'}{$child_slot_key} }, $map_key;
+            $self->{'map_id_to_key_by_slot'}{$child_slot_key}
+                { $self->{'map_key_to_id'}{$map_key} } = $map_key;
             $self->initialize_map_layout($map_key);
         }
     }
@@ -379,7 +383,12 @@ Zoom slots
         }
         else {
             $slot_scaffold->{'scale'} /= $zoom_value;
-            if ( $slot_scaffold->{'scale'} == 1 ) {
+            if ($slot_scaffold->{'scale'} == 1
+                and ( $slot_scaffold->{'x_offset'} 
+                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                    {'x_offset'} )
+                )
+            {
                 $self->attach_slot_to_parent(
                     slot_key  => $slot_key,
                     panel_key => $panel_key,
@@ -414,7 +423,13 @@ Zoom slots
         if ( $slot_scaffold->{'attached_to_parent'} ) {
             $self->detach_slot_from_parent( slot_key => $slot_key, );
         }
-        elsif ( $slot_scaffold->{'scale'} == 1 ) {
+        elsif (
+            $slot_scaffold->{'scale'} == 1
+            and ( $slot_scaffold->{'x_offset'}
+                == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                {'x_offset'} )
+            )
+        {
             $self->attach_slot_to_parent(
                 slot_key  => $slot_key,
                 panel_key => $panel_key,
@@ -467,6 +482,218 @@ Zoom slots
             app_display_data => $self,
         );
     }
+    return;
+}
+
+# ----------------------------------------------------
+sub scroll_slot {
+
+=pod
+
+=head2 scroll_slot
+
+Scroll slots
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+    my $cascading  = $args{'cascading'} || 0;
+    my $scroll_value = $args{'scroll_value'} or return;
+
+    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+    my $overview_slot_layout
+        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+
+    if ($cascading) {
+        if ( $slot_scaffold->{'attached_to_parent'} ) {
+
+            # Get Offset from parent
+            $slot_scaffold->{'x_offset'}
+                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                {'x_offset'};
+
+            $self->relayout_sub_map_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        }
+        else {
+            if ($slot_scaffold->{'scale'} == 1
+                and ( $slot_scaffold->{'x_offset'} + $scroll_value
+                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                    {'x_offset'} )
+                )
+            {
+                $slot_scaffold->{'x_offset'} += $scroll_value;
+                $self->attach_slot_to_parent(
+                    slot_key  => $slot_key,
+                    panel_key => $panel_key,
+                );
+                $self->relayout_sub_map_slot(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key   => $slot_key,
+                );
+            }
+        }
+    }
+    elsif ( $slot_scaffold->{'is_top'} ) {
+        $slot_scaffold->{'x_offset'} += $scroll_value;
+        $self->relayout_ref_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+        );
+    }
+    else {
+        $slot_scaffold->{'x_offset'} += $scroll_value;
+        if ( $slot_scaffold->{'attached_to_parent'} ) {
+            $self->detach_slot_from_parent( slot_key => $slot_key, );
+        }
+        elsif (
+            $slot_scaffold->{'scale'} == 1
+            and ( $slot_scaffold->{'x_offset'} 
+                == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                {'x_offset'} )
+            )
+        {
+            $self->attach_slot_to_parent(
+                slot_key  => $slot_key,
+                panel_key => $panel_key,
+            );
+        }
+
+        $self->relayout_sub_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+        );
+    }
+
+    # handle overview highlighting
+    $self->destroy_items(
+        items => $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+            {'viewed_region'},
+        panel_key   => $panel_key,
+        is_overview => 1,
+    );
+    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+        {'viewed_region'} = [];
+    overview_selected_area(
+        slot_key         => $slot_key,
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
+
+    foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
+        $self->scroll_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $child_slot_key,
+            scroll_value => $scroll_value,
+            cascading  => 1,
+        );
+    }
+
+    unless ($cascading) {
+        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_panel(
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
+    return;
+}
+
+# ----------------------------------------------------
+sub toggle_corrs_slot {
+
+=pod
+
+=head2 toggle_corrs_slot
+
+toggle the correspondences for a slot
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key1   = $args{'slot_key'};
+
+    my $slot_key2 = $self->{'scaffold'}{$slot_key1}{'parent'};
+    return unless ($slot_key2);
+
+    my ( $low_slot_key, $high_slot_key )
+        = ( $slot_key1 < $slot_key2 )
+        ? ( $slot_key1, $slot_key2 )
+        : ( $slot_key2, $slot_key1 );
+
+    if ($self->{'correspondences_on'}{$low_slot_key}{$high_slot_key}) {
+        $self->{'correspondences_on'}{$low_slot_key}{$high_slot_key} = 0;
+    }
+    else{
+        $self->{'correspondences_on'}{$low_slot_key}{$high_slot_key} = 1;
+    }
+
+    $self->handle_corrs(
+        window_key => $window_key,
+        panel_key => $panel_key,
+        slot_key1 => $slot_key1,
+        slot_key2 => $slot_key2,
+    );
+    
+    return;
+}
+
+# ----------------------------------------------------
+sub handle_corrs {
+
+=pod
+
+=head2 handle_corrs
+
+print or remove the correspondences for a slot
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key1   = $args{'slot_key1'};
+    my $slot_key2   = $args{'slot_key2'};
+
+    my ( $low_slot_key, $high_slot_key )
+        = ( $slot_key1 < $slot_key2 )
+        ? ( $slot_key1, $slot_key2 )
+        : ( $slot_key2, $slot_key1 );
+
+    if ($self->{'correspondences_on'}{$low_slot_key}{$high_slot_key}) {
+        add_correspondences(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            slot_key1        => $slot_key1,
+            slot_key2        => $slot_key2,
+            app_display_data => $self,
+        );
+        $self->app_interface()->draw_corrs(
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
+    else{
+        $self->clear_slot_corrs(
+            panel_key        => $panel_key,
+            slot_key1        => $slot_key1,
+            slot_key2        => $slot_key2,
+        );
+    }
+
+
     return;
 }
 
@@ -877,6 +1104,7 @@ Clears a slot of map data and calls on the interface to remove the drawings.
     my $panel_key = $args{'panel_key'} or return;
     my $slot_key  = $args{'slot_key'}  or return;
 
+    delete $self->{'slot_info'}{$slot_key};
     foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
         foreach my $feature_acc (
             keys %{ $self->{'map_layout'}{$map_key}{'features'} || {} } )
@@ -893,6 +1121,48 @@ Clears a slot of map data and calls on the interface to remove the drawings.
             panel_key => $panel_key,
         );
         $self->initialize_map_layout($map_key);
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub clear_slot_corrs {
+
+=pod
+
+=head2 clear_slot_corrs
+
+Clears a slot of correspondences and calls on the interface to remove the drawings.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'} or return;
+    my $slot_key1 = $args{'slot_key1'} or return;
+    my $slot_key2 = $args{'slot_key2'} or return;
+
+    my %slot2_maps;
+    map { $slot2_maps{$_} = 1 } @{ $self->{'map_order'}{$slot_key2} || [] };
+
+    foreach my $map_key1 ( @{ $self->{'map_order'}{$slot_key1} || [] } ) {
+        foreach my $map_key2 (keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} ||{}}){
+            next unless($slot2_maps{$map_key2});
+            $self->destroy_items(
+                items => $self->{'corr_layout'}{'maps'}{$map_key1}
+                    {$map_key2}{'items'},
+                panel_key => $panel_key,
+            );
+            delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
+            delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
+
+            unless (keys %{ $self->{'corr_layout'}{'maps'}{$map_key2} || {}}){
+                delete $self->{'corr_layout'}{'maps'}{$map_key2};
+            }
+        }
+        unless (keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {}}){
+            delete $self->{'corr_layout'}{'maps'}{$map_key1};
+        }
     }
 
     return;
@@ -973,6 +1243,8 @@ Returns the number of remaining windows.
             delete $self->{'slot_layout'}{$slot_key};
             delete $self->{'scaffold'}{$slot_key};
             delete $self->{'map_order'}{$slot_key};
+            delete $self->{'slot_info'}{$slot_key};
+            delete $self->{'map_id_to_key_by_slot'}{$slot_key};
         }
         delete $self->{'panel_layout'}{$panel_key};
         delete $self->{'slot_order'}{$panel_key};

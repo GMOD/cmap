@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -442,11 +442,11 @@ Adds control buttons to the slot_controls_pane.
         -family => 'Times',
         -size   => 12,
     ];
-    my $zoom_label1 = $slot_controls_pane->Label(
-        -text       => "Zoom",
-        -font       => $font,
-        -background => 'grey',
-    );
+#    my $zoom_label1 = $slot_controls_pane->Label(
+#        -text       => "Zoom",
+#        -font       => $font,
+#        -background => 'grey',
+#    );
     my $zoom_button1 = $slot_controls_pane->Button(
         -text    => "+",
         -command => sub {
@@ -471,6 +471,17 @@ Adds control buttons to the slot_controls_pane.
         },
         -font => $font,
     );
+    my $toggle_corrs_button = $slot_controls_pane->Button(
+        -text    => "Corrs",
+        -command => sub {
+            $self->app_controller()->toggle_corrs_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        },
+        -font => $font,
+    );
     my $expand_button = $slot_controls_pane->Button(
         -text    => "Expand",
         -command => sub {
@@ -482,9 +493,62 @@ Adds control buttons to the slot_controls_pane.
         },
         -font => $font,
     );
-    Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid( $zoom_button1, $zoom_button2, '-', $expand_button,
+    my $scroll_left_button = $slot_controls_pane->Button(
+        -text    => "<",
+        -command => sub {
+            $self->app_controller()->scroll_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+                scroll_value => -10,
+            );
+        },
+        -font => $font,
+    );
+    my $scroll_right_button = $slot_controls_pane->Button(
+        -text    => ">",
+        -command => sub {
+            $self->app_controller()->scroll_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+                scroll_value => 10,
+            );
+        },
+        -font => $font,
+    );
+    my $scroll_far_left_button = $slot_controls_pane->Button(
+        -text    => "<<",
+        -command => sub {
+            $self->app_controller()->scroll_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+                scroll_value => -200,
+            );
+        },
+        -font => $font,
+    );
+    my $scroll_far_right_button = $slot_controls_pane->Button(
+        -text    => ">>",
+        -command => sub {
+            $self->app_controller()->scroll_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+                scroll_value => 200,
+            );
+        },
+        -font => $font,
+    );
+#    Tk::grid( $zoom_label1, -sticky => "nw", );
+    Tk::grid( $zoom_button1, $zoom_button2, $toggle_corrs_button, $expand_button,
         -sticky => "nw", );
+    Tk::grid(
+        $scroll_far_left_button, $scroll_left_button,
+        $scroll_right_button,    $scroll_far_right_button,
+        -sticky => "nw",
+    );
     return;
 }
 
@@ -573,6 +637,11 @@ Draws and re-draws on the canvas
         -scrollregion => $panel_layout->{'bounds'},
         -height       => $canvas_height,
         -width        => $canvas_width,
+    );
+
+    $self->draw_corrs(
+        canvas           => $canvas,
+        app_display_data => $app_display_data,
     );
 
     $self->draw_overview(
@@ -801,6 +870,85 @@ Draws and re-draws on the canvas
         }
         $slot_layout->{'sub_changed'} = 0;
     }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub draw_corrs {
+
+=pod
+
+=head2 draw_corrs
+
+Draws and re-draws correspondences on the canvas
+
+This has it's own item drawing code because the offsets for each end of the
+corr can be different.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $canvas = $args{'canvas'}
+        || $self->canvas( panel_key => $args{'panel_key'}, );
+    my $app_display_data = $args{'app_display_data'};
+
+    my $corr_layout = $app_display_data->{'corr_layout'};
+
+    return unless ( $corr_layout->{'changed'} );
+
+    MAP1: foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {}} ) {
+        MAP2: foreach my $tmp_map_key2 (
+            keys %{ $corr_layout->{'maps'}{$tmp_map_key1} || {} } )
+        {
+            next MAP2
+                unless ( $corr_layout->{'maps'}{$tmp_map_key1}{$tmp_map_key2}
+                {'changed'} );
+            my $map_corr_layout
+                = $corr_layout->{'maps'}{$tmp_map_key1}{$tmp_map_key2};
+            my $slot_key1 = $map_corr_layout->{'slot_key1'};
+            my $slot_key2 = $map_corr_layout->{'slot_key2'};
+            my $map_key1  = $map_corr_layout->{'map_key1'};
+            my $map_key2  = $map_corr_layout->{'map_key2'};
+            my $x_offset1
+                = $app_display_data->{'scaffold'}{$slot_key1}{'x_offset'};
+            my $x_offset2
+                = $app_display_data->{'scaffold'}{$slot_key2}{'x_offset'};
+            my $tags = [];
+
+            foreach my $item ( @{ $map_corr_layout->{'items'} || [] } ) {
+
+                # Has item been changed
+                next unless ( $item->[0] or not defined( $item->[0] ) );
+
+                my $item_id = $item->[1];
+                my $type    = $item->[2];
+                my @coords  = @{ $item->[3] };    # creates duplicate array
+                my $options = $item->[4];
+
+                $coords[0] -= $x_offset1;
+                $coords[2] -= $x_offset2;
+
+                if ( defined($item_id) ) {
+                    $canvas->coords( $item_id, @coords );
+                    $canvas->itemconfigure( $item_id, %{ $options || {} } );
+                }
+                else {
+                    $canvas->coords( $item_id, @coords );
+                    my $create_method = 'create' . ucfirst lc $type;
+                    $item->[1]
+                        = $canvas->$create_method( @coords, %{$options} );
+                    foreach my $tag (@$tags) {
+                        $canvas->addtag( $tag, 'withtag', $item->[1] );
+                    }
+                }
+                $item->[0] = 0;
+            }
+            $map_corr_layout->{'changed'} = 0;
+
+        }
+    }
+    $corr_layout->{'changed'} = 0;
 
     return;
 }

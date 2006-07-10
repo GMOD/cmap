@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.7 2006-06-20 20:33:53 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.8 2006-07-10 19:57:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use constant SLOT_BACKGROUNDS      => [qw[ white lightblue ]];
 use constant SLOT_SEPARATOR_HEIGHT => 3;
@@ -43,6 +43,7 @@ my @subs = qw[
     layout_reference_maps
     layout_sub_maps
     add_slot_separator
+    add_correspondences
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -195,7 +196,6 @@ sub layout_overview {
         = $slot_max_y + $overview_layout->{'map_buffer_y'};
     $slot_max_y += $map_height + $slot_buffer_y;
 
-    #xxx
     # create selected region
     overview_selected_area(
         slot_key         => $top_slot_key,
@@ -456,8 +456,20 @@ Lays out reference maps in a new slot
         my $length = $map->{'map_stop'} - $map->{'map_start'};
         my $map_container_width = $length * $pixels_per_unit;
 
-        $map_container_width = $min_map_width
-            if ( $map_container_width < $min_map_width );
+        # If the map is the minimum width, 
+        # Set the individual ppu otherwise clear it.
+        if ( $map_container_width < $min_map_width ) {
+            $map_container_width = $min_map_width;
+            $app_display_data->{'map_pixels_per_unit'}{$map_key}
+                = $map_container_width / $length;
+        }
+        elsif ( $app_display_data->{'map_pixels_per_unit'}{$map_key} ){
+            delete $app_display_data->{'map_pixels_per_unit'}{$map_key};
+        }
+
+        my $map_pixels_per_unit
+            = $app_display_data->{'map_pixels_per_unit'}{$map_key}
+            || $pixels_per_unit;
 
         if ($stacked) {
             $map_min_x = $left_bound;
@@ -481,8 +493,24 @@ Lays out reference maps in a new slot
             < $slot_layout->{'bounds'}[0]
             or $map_min_x - $x_offset > $slot_layout->{'bounds'}[2] )
         {
-            next;
+            
         }
+
+        # Add info to slot_info needed for creation of correspondences
+        _add_to_slot_info(
+            app_display_data => $app_display_data,
+            slot_key         => $slot_key,
+            min_bound        => $slot_layout->{'bounds'}[0],
+            max_bound        => $slot_layout->{'bounds'}[2],
+            map_min_x        => $map_min_x,
+            map_max_x        => $map_max_x,
+            map_start        => $map->{'map_start'},
+            map_stop         => $map->{'map_stop'},
+            map_id           => $map->{'map_id'},
+            x_offset         => $x_offset,
+            pixels_per_unit  => $map_pixels_per_unit,
+        );
+
         my $tmp_map_max_y = _layout_contained_map(
             app_display_data => $app_display_data,
             window_key       => $window_key,
@@ -493,7 +521,7 @@ Lays out reference maps in a new slot
             min_x            => $map_min_x,
             max_x            => $map_max_x,
             min_y            => $row_min_y,
-            pixels_per_unit  => $pixels_per_unit,
+            pixels_per_unit  => $map_pixels_per_unit,
         );
         if ( $row_max_y < $tmp_map_max_y ) {
             $row_max_y = $tmp_map_max_y;
@@ -560,8 +588,7 @@ Lays out sub maps in a slot.
 
     my $current_parent_key = '-1';
     my ( $parent_x1, $parent_x2, $parent_data, $parent_start, $parent_stop,
-        $parent_id, $pixels_per_unit, );
-    my %pixels_per_unit;
+        $parent_id, $parent_pixels_per_unit, );
 
     foreach my $sub_map_key (@sub_map_keys) {
         my $parent_key
@@ -583,19 +610,17 @@ Lays out sub maps in a slot.
                 ->map_data( map_id => $parent_id, );
             $parent_start    = $parent_data->{'map_start'};
             $parent_stop     = $parent_data->{'map_stop'};
-            $pixels_per_unit = $app_display_data->{'scaffold'}{$parent_key}
+            $parent_pixels_per_unit
+                = $app_display_data->{'map_pixels_per_unit'}{$parent_key}
+                || $app_display_data->{'scaffold'}{$parent_key}
                 {'pixels_per_unit'};
-
-            #$pixels_per_unit = ( $parent_x2 - $parent_x1 + 1 ) /
-            #    ( $parent_data->{'map_stop'} - $parent_data->{'map_start'} );
-            $pixels_per_unit{$parent_key} = $pixels_per_unit;
         }
 
         my $x1_on_map
-            = ( ( $feature_start - $parent_start ) * $pixels_per_unit )
+            = ( ( $feature_start - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
         my $x2_on_map
-            = ( ( $feature_stop - $parent_start ) * $pixels_per_unit )
+            = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
         my $x1        = $parent_x1 + $x1_on_map;
         my $x2        = $parent_x1 + $x2_on_map;
@@ -613,6 +638,7 @@ Lays out sub maps in a slot.
 
     my $row_min_y = $start_min_y + $map_y_buffer;
     my $row_max_y = $row_min_y;
+    my $map_pixels_per_unit;
 
     foreach my $row (@rows) {
         foreach my $row_sub_map ( @{ $row || [] } ) {
@@ -649,6 +675,26 @@ Lays out sub maps in a slot.
                 next;
             }
 
+            $map_pixels_per_unit = $app_display_data->{'map_pixels_per_unit'}{$sub_map_key}
+                = ( $x2 - $x1 ) / (
+                $sub_map_data->{'map_stop'} - $sub_map_data->{'map_start'} );
+
+            # Add info to slot_info needed for creation of correspondences
+            _add_to_slot_info(
+                app_display_data => $app_display_data,
+                slot_key         => $slot_key,
+                min_bound        => $slot_layout->{'bounds'}[0],
+                max_bound        => $slot_layout->{'bounds'}[2],
+                map_min_x        => $x1,
+                map_max_x        => $x2,
+                map_start        => $sub_map_data->{'map_start'},
+                map_stop         => $sub_map_data->{'map_stop'},
+                map_id           => $sub_map_data->{'map_id'},
+                x_offset         => $x_offset,
+                pixels_per_unit  => $map_pixels_per_unit,
+            );
+
+
             my $tmp_map_max_y = _layout_contained_map(
                 app_display_data => $app_display_data,
                 window_key       => $window_key,
@@ -659,7 +705,7 @@ Lays out sub maps in a slot.
                 min_x            => $x1,
                 max_x            => $x2,
                 min_y            => $row_min_y,
-                pixels_per_unit  => $pixels_per_unit{$parent_key},
+                pixels_per_unit  => $map_pixels_per_unit,
             );
 
             if ( $row_max_y < $tmp_map_max_y ) {
@@ -729,6 +775,7 @@ Lays out a maps in a contained area.
             { -fill => 'blue', }
         ]
         );
+    $map_layout->{'coords'} = [ $min_x, $min_y, $max_x, $max_y ];
 
     $min_y = $max_y + $buffer;
 
@@ -856,6 +903,153 @@ Lays out feautures
     }
 
     return $max_y;
+}
+
+# ----------------------------------------------------
+sub add_correspondences {
+
+=pod
+
+=head2 add_correspondences
+
+Lays out correspondences between two slots
+
+=cut
+
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $window_key       = $args{'window_key'};
+    my $panel_key        = $args{'panel_key'};
+    my $slot_key1        = $args{'slot_key1'};
+    my $slot_key2        = $args{'slot_key2'};
+
+    ( $slot_key1, $slot_key2 ) = ( $slot_key2, $slot_key1 )
+        if ( $slot_key1 > $slot_key2 );
+    
+    # Get Correspondence Data
+    my $corrs = $app_display_data->app_data_module()->slot_correspondences(
+        slot_key1  => $slot_key1,
+        slot_key2  => $slot_key2,
+        slot_info1 => $app_display_data->{'slot_info'}{$slot_key1},
+        slot_info2 => $app_display_data->{'slot_info'}{$slot_key2},
+    );
+
+
+    if ( @{ $corrs || [] } ) {
+        $app_display_data->{'corr_layout'}{'changed'} = 1;
+    }
+
+    foreach my $corr ( @{ $corrs || [] } ) {
+        my $map_key1
+            = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key1}
+            { $corr->{'map_id1'} };
+        my $map_key2
+            = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key2}
+            { $corr->{'map_id2'} };
+        my $map1_x1
+            = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
+        my $map2_x1
+            = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[0];
+        my ( $corr_y1, $corr_y2 );
+        if ( $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1]
+            < $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1] )
+        {
+            $corr_y1
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[3];
+            $corr_y2
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
+        }
+        else {
+            $corr_y1
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
+            $corr_y2
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[3];
+        }
+        my $map1_pixels_per_unit
+            = $app_display_data->{'map_pixels_per_unit'}{$map_key1}
+            || $app_display_data->{'scaffold'}{$slot_key1}{'pixels_per_unit'};
+        my $map2_pixels_per_unit
+            = $app_display_data->{'map_pixels_per_unit'}{$map_key2}
+            || $app_display_data->{'scaffold'}{$slot_key2}{'pixels_per_unit'};
+        my $corr_avg_x1
+            = ( $corr->{'feature_start1'} + $corr->{'feature_stop1'} ) / 2;
+        my $corr_x1 = $map1_x1 + ( $map1_pixels_per_unit * $corr_avg_x1 );
+        my $corr_avg_x2
+            = ( $corr->{'feature_start2'} + $corr->{'feature_stop2'} ) / 2;
+        my $corr_x2 = $map2_x1 + ( $map2_pixels_per_unit * $corr_avg_x2 );
+
+        unless (
+            $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2} )
+        {
+            $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
+                = {
+                changed   => 1,
+                items     => [],
+                slot_key1 => $slot_key1,
+                slot_key2 => $slot_key2,
+                map_key1  => $map_key1,
+                map_key2  => $map_key2,
+                };
+
+            # point a reference to the corrs from each map.
+            $app_display_data->{'corr_layout'}{'maps'}{$map_key2}{$map_key1}
+                = $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
+                {$map_key2};
+        }
+        $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}{'changed'}=1;
+        push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
+                {'items'} },
+            (
+            [   1, undef, 'line',
+                [ ( $corr_x1, $corr_y1 ), ( $corr_x2, $corr_y2 ), ],
+                { -fill => 'red', -width => '1', }
+            ]
+            );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub _add_to_slot_info {
+
+=pod
+
+=head2 _add_to_slot_info
+
+Add data to slot_info object
+
+=cut
+
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $slot_key         = $args{'slot_key'};
+    my $map_min_x        = $args{'map_min_x'};
+    my $map_max_x        = $args{'map_max_x'};
+    my $min_bound        = $args{'min_bound'};
+    my $max_bound        = $args{'max_bound'};
+    my $map_start        = $args{'map_start'};
+    my $map_stop         = $args{'map_stop'};
+    my $map_id           = $args{'map_id'};
+    my $x_offset         = $args{'x_offset'};
+    my $pixels_per_unit  = $args{'pixels_per_unit'};
+
+    my $adjusted_map_min_x = $map_min_x - $x_offset;
+    my $adjusted_map_max_x = $map_max_x - $x_offset;
+
+    $app_display_data->{'slot_info'}{$slot_key}{$map_id}
+        = [ undef, undef, $map_start, $map_stop, 1 ];
+    if ( $adjusted_map_min_x < $min_bound )
+    {
+        $app_display_data->{'slot_info'}{$slot_key}{$map_id}[0]
+            = $map_start + ( ( $min_bound - $adjusted_map_min_x ) / $pixels_per_unit );
+    }
+    if ( $adjusted_map_max_x > $max_bound ) {
+        $app_display_data->{'slot_info'}{$slot_key}{$map_id}[1]
+            = $map_stop - ( ( $adjusted_map_max_x - $max_bound ) / $pixels_per_unit );
+    }
+
+    return;
 }
 
 # ----------------------------------------------------
