@@ -1,9 +1,9 @@
-map_name	feature_name	feature_start	feature_stop	feature_type_acc	feature_aliases
-gen_1	fpc_contig_1	1	1000	contig	
-gen_1	fpc_contig_2	500	1700	contig	
-gen_1	fpc_contig_3	700	2700	contig	
-gen_1	fpc_contig_4	2500	3400	contig	
-gen_1	M1	300	300	marker	
-gen_1	M2	500	500	marker	
-gen_1	M3	1700	1700	marker	
-gen_1	M4	2900	2900	marker	
+map_name	feature_name	feature_acc	feature_start	feature_stop	feature_type_acc	feature_aliases
+gen_1	fpc_contig_1	fpc_contig_1	1	1000	contig	
+gen_1	fpc_contig_2	fpc_contig_2	500	1700	contig	
+gen_1	fpc_contig_3	fpc_contig_3	700	2700	contig	
+gen_1	fpc_contig_4	fpc_contig_4	2500	3400	contig	
+gen_1	M1	M1	300	300	marker	
+gen_1	M2	M2	500	500	marker	
+gen_1	M3	M3	1700	1700	marker	
+gen_1	M4	M4	2900	2900	marker	
