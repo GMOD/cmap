@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.9 2006-07-11 19:15:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -442,11 +442,12 @@ Adds control buttons to the slot_controls_pane.
         -family => 'Times',
         -size   => 12,
     ];
-#    my $zoom_label1 = $slot_controls_pane->Label(
-#        -text       => "Zoom",
-#        -font       => $font,
-#        -background => 'grey',
-#    );
+
+    #    my $zoom_label1 = $slot_controls_pane->Label(
+    #        -text       => "Zoom",
+    #        -font       => $font,
+    #        -background => 'grey',
+    #    );
     my $zoom_button1 = $slot_controls_pane->Button(
         -text    => "+",
         -command => sub {
@@ -497,9 +498,9 @@ Adds control buttons to the slot_controls_pane.
         -text    => "<",
         -command => sub {
             $self->app_controller()->scroll_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                window_key   => $window_key,
+                panel_key    => $panel_key,
+                slot_key     => $slot_key,
                 scroll_value => -10,
             );
         },
@@ -509,9 +510,9 @@ Adds control buttons to the slot_controls_pane.
         -text    => ">",
         -command => sub {
             $self->app_controller()->scroll_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                window_key   => $window_key,
+                panel_key    => $panel_key,
+                slot_key     => $slot_key,
                 scroll_value => 10,
             );
         },
@@ -521,9 +522,9 @@ Adds control buttons to the slot_controls_pane.
         -text    => "<<",
         -command => sub {
             $self->app_controller()->scroll_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                window_key   => $window_key,
+                panel_key    => $panel_key,
+                slot_key     => $slot_key,
                 scroll_value => -200,
             );
         },
@@ -533,17 +534,20 @@ Adds control buttons to the slot_controls_pane.
         -text    => ">>",
         -command => sub {
             $self->app_controller()->scroll_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                window_key   => $window_key,
+                panel_key    => $panel_key,
+                slot_key     => $slot_key,
                 scroll_value => 200,
             );
         },
         -font => $font,
     );
-#    Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid( $zoom_button1, $zoom_button2, $toggle_corrs_button, $expand_button,
-        -sticky => "nw", );
+
+    #    Tk::grid( $zoom_label1, -sticky => "nw", );
+    Tk::grid(
+        $zoom_button1,  $zoom_button2, $toggle_corrs_button,
+        $expand_button, -sticky        => "nw",
+    );
     Tk::grid(
         $scroll_far_left_button, $scroll_left_button,
         $scroll_right_button,    $scroll_far_right_button,
@@ -897,8 +901,11 @@ corr can be different.
 
     return unless ( $corr_layout->{'changed'} );
 
-    MAP1: foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {}} ) {
-        MAP2: foreach my $tmp_map_key2 (
+MAP1:
+    foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {} } )
+    {
+    MAP2:
+        foreach my $tmp_map_key2 (
             keys %{ $corr_layout->{'maps'}{$tmp_map_key1} || {} } )
         {
             next MAP2

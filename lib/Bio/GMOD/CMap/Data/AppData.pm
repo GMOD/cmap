@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.5 2006-07-10 19:57:01 mwz444 Exp $
+# $Id: AppData.pm,v 1.6 2006-07-11 19:15:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -233,8 +233,8 @@ sub sub_maps {
     unless ( $self->{'sub_map_data'}{$map_id} ) {
 
         my $features = $sql_object->get_features_sub_maps_version(
-            cmap_object => $self,
-            map_id      => $map_id,
+            cmap_object  => $self,
+            map_id       => $map_id,
             get_sub_maps => 1,
             )
             || [];
@@ -272,6 +272,7 @@ sub sorted_feature_data {
         my $features = $self->feature_data( map_id => $map_id, )
             || [];
         if (@$features) {
+
             # The features are already sorted by start and stop.
             # All we need to do now is break them apart by lane and priority
 
@@ -333,15 +334,15 @@ sub slot_correspondences {
     my $slot_info1 = $args{'slot_info1'} or return undef;
     my $slot_info2 = $args{'slot_info2'} or return undef;
 
-    if ( $slot_key1 > $slot_key2 ) { 
+    if ( $slot_key1 > $slot_key2 ) {
         die "AppData->slot_correspondences called with slot1 > slot2\n";
     }
     my $sql_object = $self->sql();
     my $cache_key  = md5_hex( Dumper( $slot_info1, $slot_info2 ) );
 
     unless ($self->{'slot_corr_data'}{$slot_key1}{$slot_key2}
-        and $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'cache_key'}
-        eq $cache_key )
+        and $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'cache_key'} eq
+        $cache_key )
     {
 
         my $corrs = $sql_object->get_feature_correspondence_for_counting(

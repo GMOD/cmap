@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.9 2006-07-11 19:15:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -380,11 +380,19 @@ Zoom slots
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
             );
+
+            # Reset correspondences
+            $self->reset_slot_corrs(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key1  => $slot_key,
+                slot_key2  => $slot_scaffold->{'parent'},
+            );
         }
         else {
             $slot_scaffold->{'scale'} /= $zoom_value;
             if ($slot_scaffold->{'scale'} == 1
-                and ( $slot_scaffold->{'x_offset'} 
+                and ( $slot_scaffold->{'x_offset'}
                     == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
                     {'x_offset'} )
                 )
@@ -397,6 +405,14 @@ Zoom slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
+                );
+
+                # Reset correspondences
+                $self->reset_slot_corrs(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key1  => $slot_key,
+                    slot_key2  => $slot_scaffold->{'parent'},
                 );
             }
         }
@@ -448,6 +464,14 @@ Zoom slots
             panel_key  => $panel_key,
             slot_key   => $slot_key,
         );
+
+        # Reset correspondences
+        $self->reset_slot_corrs(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key1  => $slot_key,
+            slot_key2  => $slot_scaffold->{'parent'},
+        );
     }
 
     # handle overview highlighting
@@ -497,10 +521,10 @@ Scroll slots
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key   = $args{'slot_key'};
-    my $cascading  = $args{'cascading'} || 0;
+    my $window_key   = $args{'window_key'};
+    my $panel_key    = $args{'panel_key'};
+    my $slot_key     = $args{'slot_key'};
+    my $cascading    = $args{'cascading'} || 0;
     my $scroll_value = $args{'scroll_value'} or return;
 
     my $slot_scaffold = $self->{'scaffold'}{$slot_key};
@@ -520,6 +544,14 @@ Scroll slots
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
             );
+
+            # Reset correspondences
+            $self->reset_slot_corrs(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key1  => $slot_key,
+                slot_key2  => $slot_scaffold->{'parent'},
+            );
         }
         else {
             if ($slot_scaffold->{'scale'} == 1
@@ -537,6 +569,14 @@ Scroll slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
+                );
+
+                # Reset correspondences
+                $self->reset_slot_corrs(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key1  => $slot_key,
+                    slot_key2  => $slot_scaffold->{'parent'},
                 );
             }
         }
@@ -556,7 +596,7 @@ Scroll slots
         }
         elsif (
             $slot_scaffold->{'scale'} == 1
-            and ( $slot_scaffold->{'x_offset'} 
+            and ( $slot_scaffold->{'x_offset'}
                 == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
                 {'x_offset'} )
             )
@@ -571,6 +611,14 @@ Scroll slots
             window_key => $window_key,
             panel_key  => $panel_key,
             slot_key   => $slot_key,
+        );
+
+        # Reset correspondences
+        $self->reset_slot_corrs(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key1  => $slot_key,
+            slot_key2  => $slot_scaffold->{'parent'},
         );
     }
 
@@ -591,11 +639,11 @@ Scroll slots
 
     foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
         $self->scroll_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $child_slot_key,
+            window_key   => $window_key,
+            panel_key    => $panel_key,
+            slot_key     => $child_slot_key,
             scroll_value => $scroll_value,
-            cascading  => 1,
+            cascading    => 1,
         );
     }
 
@@ -623,76 +671,30 @@ toggle the correspondences for a slot
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
     my $panel_key  = $args{'panel_key'};
-    my $slot_key1   = $args{'slot_key'};
+    my $slot_key1  = $args{'slot_key'};
 
     my $slot_key2 = $self->{'scaffold'}{$slot_key1}{'parent'};
     return unless ($slot_key2);
 
-    my ( $low_slot_key, $high_slot_key )
-        = ( $slot_key1 < $slot_key2 )
-        ? ( $slot_key1, $slot_key2 )
-        : ( $slot_key2, $slot_key1 );
-
-    if ($self->{'correspondences_on'}{$low_slot_key}{$high_slot_key}) {
-        $self->{'correspondences_on'}{$low_slot_key}{$high_slot_key} = 0;
-    }
-    else{
-        $self->{'correspondences_on'}{$low_slot_key}{$high_slot_key} = 1;
-    }
-
-    $self->handle_corrs(
-        window_key => $window_key,
-        panel_key => $panel_key,
-        slot_key1 => $slot_key1,
-        slot_key2 => $slot_key2,
-    );
-    
-    return;
-}
-
-# ----------------------------------------------------
-sub handle_corrs {
-
-=pod
-
-=head2 handle_corrs
-
-print or remove the correspondences for a slot
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key1   = $args{'slot_key1'};
-    my $slot_key2   = $args{'slot_key2'};
-
-    my ( $low_slot_key, $high_slot_key )
-        = ( $slot_key1 < $slot_key2 )
-        ? ( $slot_key1, $slot_key2 )
-        : ( $slot_key2, $slot_key1 );
-
-    if ($self->{'correspondences_on'}{$low_slot_key}{$high_slot_key}) {
-        add_correspondences(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            slot_key1        => $slot_key1,
-            slot_key2        => $slot_key2,
-            app_display_data => $self,
-        );
-        $self->app_interface()->draw_corrs(
-            panel_key        => $panel_key,
-            app_display_data => $self,
-        );
-    }
-    else{
+    if ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} ) {
+        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 0;
+        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 0;
         $self->clear_slot_corrs(
-            panel_key        => $panel_key,
-            slot_key1        => $slot_key1,
-            slot_key2        => $slot_key2,
+            panel_key => $panel_key,
+            slot_key1 => $slot_key1,
+            slot_key2 => $slot_key2,
         );
     }
-
+    else {
+        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
+        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
+        $self->add_slot_corrs(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key1  => $slot_key1,
+            slot_key2  => $slot_key2,
+        );
+    }
 
     return;
 }
@@ -1146,24 +1148,94 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
     map { $slot2_maps{$_} = 1 } @{ $self->{'map_order'}{$slot_key2} || [] };
 
     foreach my $map_key1 ( @{ $self->{'map_order'}{$slot_key1} || [] } ) {
-        foreach my $map_key2 (keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} ||{}}){
-            next unless($slot2_maps{$map_key2});
+        foreach my $map_key2 (
+            keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
+        {
+            next unless ( $slot2_maps{$map_key2} );
             $self->destroy_items(
-                items => $self->{'corr_layout'}{'maps'}{$map_key1}
-                    {$map_key2}{'items'},
+                items => $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
+                    {'items'},
                 panel_key => $panel_key,
             );
             delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
             delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
 
-            unless (keys %{ $self->{'corr_layout'}{'maps'}{$map_key2} || {}}){
+            unless (
+                keys %{ $self->{'corr_layout'}{'maps'}{$map_key2} || {} } )
+            {
                 delete $self->{'corr_layout'}{'maps'}{$map_key2};
             }
         }
-        unless (keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {}}){
+        unless ( keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } ) {
             delete $self->{'corr_layout'}{'maps'}{$map_key1};
         }
     }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub add_slot_corrs {
+
+=pod
+
+=head2 add_slot_corrs
+
+Adds a slot of correspondences
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key1  = $args{'slot_key1'}  or return;
+    my $slot_key2  = $args{'slot_key2'}  or return;
+
+    add_correspondences(
+        window_key       => $window_key,
+        panel_key        => $panel_key,
+        slot_key1        => $slot_key1,
+        slot_key2        => $slot_key2,
+        app_display_data => $self,
+    );
+    $self->app_interface()->draw_corrs(
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub reset_slot_corrs {
+
+=pod
+
+=head2 add_slot_corrs
+
+Adds a slot of correspondences
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key1  = $args{'slot_key1'}  or return;
+    my $slot_key2  = $args{'slot_key2'}  or return;
+
+    return unless ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} );
+
+    $self->clear_slot_corrs(
+        panel_key => $panel_key,
+        slot_key1 => $slot_key1,
+        slot_key2 => $slot_key2,
+    );
+    $self->add_slot_corrs(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key1  => $slot_key1,
+        slot_key2  => $slot_key2,
+    );
 
     return;
 }
