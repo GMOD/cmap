@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.9 2006-07-11 19:15:31 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.10 2006-07-12 15:54:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -203,8 +203,8 @@ Adds the first slot
 
     foreach my $map_id ( @{ $map_ids || [] } ) {
         my $map_key = $self->next_internal_key('map');
-        push @{ $self->{'map_order'}{$slot_key} },   $map_key;
-        push @{ $self->{'map_id_to_key'}{$map_id} }, $map_key;
+        push @{ $self->{'map_order'}{$slot_key} },    $map_key;
+        push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
         $self->{'map_id_to_key_by_slot'}{$slot_key}{$map_id} = $map_key;
         $self->{'map_key_to_id'}{$map_key} = $map_id;
         $self->initialize_map_layout($map_key);
@@ -277,13 +277,13 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             my $sub_map_id  = $sub_map->{'sub_map_id'};
             my $sub_map_key = $self->next_internal_key('map');
 
-            push @{ $self->{'map_id_to_key'}{$sub_map_id} }, $sub_map_key;
+            push @{ $self->{'map_id_to_keys'}{$sub_map_id} }, $sub_map_key;
             $self->{'map_key_to_id'}{$sub_map_key} = $sub_map_id;
 
             $self->{'sub_maps'}{$sub_map_key} = {
-                parent_key    => $map_key,
-                feature_start => $sub_map->{'feature_start'},
-                feature_stop  => $sub_map->{'feature_stop'},
+                parent_map_key => $map_key,
+                feature_start  => $sub_map->{'feature_start'},
+                feature_stop   => $sub_map->{'feature_stop'},
             };
             push @sub_map_keys, $sub_map_id;
 
@@ -379,14 +379,7 @@ Zoom slots
                 window_key => $window_key,
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
-            );
-
-            # Reset correspondences
-            $self->reset_slot_corrs(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key1  => $slot_key,
-                slot_key2  => $slot_scaffold->{'parent'},
+                parent_key => $slot_scaffold->{'parent'},
             );
         }
         else {
@@ -405,7 +398,10 @@ Zoom slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
+                    parent_key => $slot_scaffold->{'parent'},
                 );
+            }
+            else {
 
                 # Reset correspondences
                 $self->reset_slot_corrs(
@@ -463,14 +459,7 @@ Zoom slots
             window_key => $window_key,
             panel_key  => $panel_key,
             slot_key   => $slot_key,
-        );
-
-        # Reset correspondences
-        $self->reset_slot_corrs(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key1  => $slot_key,
-            slot_key2  => $slot_scaffold->{'parent'},
+            parent_key => $slot_scaffold->{'parent'},
         );
     }
 
@@ -543,14 +532,7 @@ Scroll slots
                 window_key => $window_key,
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
-            );
-
-            # Reset correspondences
-            $self->reset_slot_corrs(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key1  => $slot_key,
-                slot_key2  => $slot_scaffold->{'parent'},
+                parent_key => $slot_scaffold->{'parent'},
             );
         }
         else {
@@ -569,7 +551,10 @@ Scroll slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
+                    parent_key => $slot_scaffold->{'parent'},
                 );
+            }
+            else {
 
                 # Reset correspondences
                 $self->reset_slot_corrs(
@@ -611,14 +596,7 @@ Scroll slots
             window_key => $window_key,
             panel_key  => $panel_key,
             slot_key   => $slot_key,
-        );
-
-        # Reset correspondences
-        $self->reset_slot_corrs(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key1  => $slot_key,
-            slot_key2  => $slot_scaffold->{'parent'},
+            parent_key => $slot_scaffold->{'parent'},
         );
     }
 
@@ -793,6 +771,7 @@ sub relayout_sub_map_slot {
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key   = $args{'slot_key'}   or return;
+    my $parent_key = $args{'parent_key'} or return;
 
     $self->clear_slot_maps(
         panel_key => $panel_key,
@@ -805,6 +784,14 @@ sub relayout_sub_map_slot {
         panel_key        => $panel_key,
         slot_key         => $slot_key,
         app_display_data => $self,
+    );
+
+    # Reset correspondences
+    $self->reset_slot_corrs(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key1  => $slot_key,
+        slot_key2  => $parent_key,
     );
 
     return;
@@ -944,11 +931,13 @@ Initializes map_layout
     my $map_key = shift;
 
     $self->{'map_layout'}{$map_key} = {
-        bounds   => [ 0, 0, 0, 0 ],
-        buttons  => [],
-        features => {},
-        items    => [],
-        changed  => 1,
+        bounds      => [ 0, 0, 0, 0 ],
+        coords      => [ 0, 0, 0, 0 ],
+        buttons     => [],
+        features    => {},
+        items       => [],
+        changed     => 1,
+        sub_changed => 1,
     };
 
     return;
@@ -1307,7 +1296,7 @@ Returns the number of remaining windows.
         {
             foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } )
             {
-                delete $self->{'map_id_to_key'}
+                delete $self->{'map_id_to_keys'}
                     { $self->{'map_key_to_id'}{$map_key} };
                 delete $self->{'map_key_to_id'}{$map_key};
                 delete $self->{'map_layout'}{$map_key};
@@ -1338,6 +1327,232 @@ Returns the number of remaining windows.
 # ----------------------------------------------------
 
 =pod
+
+=head1 INTERNAL DATA STRUCTURES
+
+=head2 Other Module Handles
+
+=head3 Data Module Handle
+
+    $self->{'app_data_module'};  # data module
+
+=head3 Interface Module Handle
+
+    $self->{'app_interface'};
+
+=head2 Parameters
+
+=head3 Correspondences On
+
+Set when correspondences are on on between two slots.  Both directions are
+stored.
+
+    $self->{'correspondences_on'} = { 
+        $slot_key1 => { 
+            $slot_key2 => 1,
+        } 
+    }
+
+=head3 Pixels Per Unit for each map
+
+This is a conversion factor to get from map units to pixels.
+
+    $self->{'map_pixels_per_unit'} = {
+        $map_key => $pixels_per_unit,
+    }
+
+=head2 Map ID and Key Translators
+
+    $self->{'map_id_to_keys'} = { 
+        $map_id => [ $map_key, ],
+    }
+
+    $self->{'map_id_to_key_by_slot'} = {
+        $slot_key => {
+            $map_id => $map_key,
+        }
+    }
+
+    $self->{'map_key_to_id'} = {
+        $map_key => $map_id,
+    }
+    
+
+=head2 Order
+
+=head3 Map Order in Slot
+    $self->{'map_order'} = {
+        $slot_key => [ $map_key, ]
+    }
+
+=head3 Slot Order in Panel
+    $self->{'slot_order'} = {
+        $panel_key => [ $slot_key, ]
+    }
+
+=head3 Panel Order in Window
+    $self->{'panel_order'} = {
+        $window_key => [ $panel_key, ]
+    }
+
+=head2 Scaffold Stuff
+
+=head3 Overview Slot Info
+
+    $self->{'overview'} = {
+        $panel_key => {
+            slot_key   => $slot_key,     # top slot in overview
+            window_key => $window_key,
+        }
+    }
+
+=head3 Main Scaffold
+
+    $self->{'scaffold'} = {
+        $slot_key => {
+            parent             => $parent_slot_key,
+            children           => [$child_slot_key, ],
+            scale              => 1,
+            x_offset           => 0,
+            attached_to_parent => 1,
+            expanded           => 0,
+            is_top             => 0,
+            pixels_per_unit    => 0,
+        }
+    }
+
+=head2 Stored Bio Data
+
+=head3 Slot Info
+
+Slot info is needed for correspondence finding.  It stores the visible region
+of each map in the slot and this gets passed to the slot_correspondences()
+method in AppData.
+
+    $self->{'slot_info'} = {
+        $slot_key => {
+            map_id => [ 
+                current_start, 
+                current_stop, 
+                ori_start, 
+                ori_stop,
+                magnification, 
+            ]
+        } 
+    }
+
+=head3 Sub Maps Info
+
+This stores the location of a sub map on the parent.
+
+    self->{'sub_maps'} = {
+        $map_key => {
+            parent_key    => $parent_map_key,
+            feature_start => $feature_start,
+            feature_stop  => $feature_stop,
+        }
+    }
+
+=head2 Layout Objects
+
+The layout objects hold the drawing information as well as other info relevant
+to drawing.
+
+=head3 Window Layout
+
+    $self->{'window_layout'} = {
+        $window_key => {
+            title => $title,
+        }
+    }
+
+=head3 Panel Layout
+
+    $self->{'panel_layout'} = {
+        $panel_key => {
+            bounds      => [ 0, 0, 0, 0 ],
+            misc_items  => [],
+            buttons     => [],
+            changed     => 1,
+            sub_changed => 1,
+        }
+    }
+
+=head3 Slot Layout
+
+    $self->{'slot_layout'} = {
+        $slot_key => {
+            bounds      => [ 0, 0, 0, 0 ],
+            separator   => [],
+            background  => [],
+            buttons     => [],
+            changed     => 1,
+            sub_changed => 1,
+        }
+    }
+
+=head3 Map Layout
+
+    $self->{'map_layout'} = {
+        $map_key => {
+            bounds   => [ 0, 0, 0, 0 ],
+            coords   => [ 0, 0, 0, 0 ],
+            buttons  => [],
+            items    => [],
+            changed  => 1,
+            sub_changed => 1,
+            features => {
+                $feature_acc => {
+                    changed => 1,
+                    items => [],
+                }
+            },
+        }
+    }
+
+=head3 Overview Layout
+
+    $self->{'overview_layout'} = {
+        $panel_key => {
+            bounds           => [ 0, 0, 0, 0 ],
+            misc_items       => [],
+            buttons          => [],
+            changed          => 1,
+            sub_changed      => 1,
+            child_slot_order => [ $child_slot_key, ],
+            slots            => {
+                bounds                 => [ 0, 0, 0, 0 ],
+                misc_items             => [],
+                buttons                => [],
+                viewed_region          => [],
+                changed                => 1,
+                sub_changed            => 1,
+                scale_factor_from_main => 0,
+                maps                   => {
+                    $map_key => {
+                        items   => [],
+                        changed => 1,
+                    }
+                }
+            }
+        }
+    }
+
+=head3 Correspondence Layout
+
+    $self->{'corr_layout'} = {
+        changed = 1,
+        maps => {
+            $map_key => { 
+                changed   => 1,
+                items     => [],
+                slot_key1 => $slot_key1,
+                slot_key2 => $slot_key2,
+                map_key1  => $map_key1,
+                map_key2  => $map_key2,
+            }
+        }
+    }
 
 =head1 SEE ALSO
 

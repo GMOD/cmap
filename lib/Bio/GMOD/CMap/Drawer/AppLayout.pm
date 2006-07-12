@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.9 2006-07-11 19:15:31 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.10 2006-07-12 15:54:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use constant SLOT_BACKGROUNDS      => [qw[ white lightblue ]];
 use constant SLOT_SEPARATOR_HEIGHT => 3;
@@ -572,8 +572,8 @@ Lays out sub maps in a slot.
     # Sort maps for easier layout
     my @sub_map_keys = sort {
         $app_display_data->{'sub_maps'}{$a}
-            {'parent_key'} <=> $app_display_data->{'sub_maps'}{$b}
-            {'parent_key'}
+            {'parent_map_key'} <=> $app_display_data->{'sub_maps'}{$b}
+            {'parent_map_key'}
             || $app_display_data->{'sub_maps'}{$a}
             {'feature_start'} <=> $app_display_data->{'sub_maps'}{$b}
             {'feature_start'}
@@ -586,33 +586,34 @@ Lays out sub maps in a slot.
     my @row_distribution_aray;
     my @rows;
 
-    my $current_parent_key = '-1';
+    my $current_parent_map_key = '-1';
     my ( $parent_x1, $parent_x2, $parent_data, $parent_start, $parent_stop,
         $parent_id, $parent_pixels_per_unit, );
 
     foreach my $sub_map_key (@sub_map_keys) {
-        my $parent_key
-            = $app_display_data->{'sub_maps'}{$sub_map_key}{'parent_key'};
+        my $parent_map_key
+            = $app_display_data->{'sub_maps'}{$sub_map_key}{'parent_map_key'};
         my $feature_start
             = $app_display_data->{'sub_maps'}{$sub_map_key}{'feature_start'};
         my $feature_stop
             = $app_display_data->{'sub_maps'}{$sub_map_key}{'feature_stop'};
-        unless ( $parent_key eq $current_parent_key ) {
-            $current_parent_key = $parent_key;
-            $parent_id = $app_display_data->{'map_key_to_id'}{$parent_key};
+        unless ( $parent_map_key eq $current_parent_map_key ) {
+            $current_parent_map_key = $parent_map_key;
+            $parent_id
+                = $app_display_data->{'map_key_to_id'}{$parent_map_key};
             $parent_x1
-                = $app_display_data->{'map_layout'}{$current_parent_key}
+                = $app_display_data->{'map_layout'}{$current_parent_map_key}
                 {'bounds'}[0];
             $parent_x2
-                = $app_display_data->{'map_layout'}{$current_parent_key}
+                = $app_display_data->{'map_layout'}{$current_parent_map_key}
                 {'bounds'}[2];
             $parent_data = $app_display_data->app_data_module()
                 ->map_data( map_id => $parent_id, );
             $parent_start = $parent_data->{'map_start'};
             $parent_stop  = $parent_data->{'map_stop'};
             $parent_pixels_per_unit
-                = $app_display_data->{'map_pixels_per_unit'}{$parent_key}
-                || $app_display_data->{'scaffold'}{$parent_key}
+                = $app_display_data->{'map_pixels_per_unit'}{$parent_map_key}
+                || $app_display_data->{'scaffold'}{$parent_map_key}
                 {'pixels_per_unit'};
         }
 
@@ -649,8 +650,8 @@ Lays out sub maps in a slot.
                 = $app_display_data->{'map_key_to_id'}{$sub_map_key};
             my $sub_map_data = $app_display_data->app_data_module()
                 ->map_data( map_id => $sub_map_id, );
-            my $parent_key
-                = $app_display_data->{'sub_maps'}{$sub_map_key}{'parent_key'};
+            my $parent_map_key = $app_display_data->{'sub_maps'}{$sub_map_key}
+                {'parent_map_key'};
 
             # Set bounds so overview can access it later even if it
             # isn't on the screen.
