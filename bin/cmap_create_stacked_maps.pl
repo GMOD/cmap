@@ -43,6 +43,10 @@ data into a new map set (that you must create before hand).
 Any relational maps that do not correspond to the reference map will be
 SILENTLY dropped.  In the future, we may add reporting of this.
 
+Attributes are created for each contig feature that reports the number of corrs
+to each reference map.  Also, an xref is created to link back to the original
+map.
+
 Note: The stacking portion may act strangly if map units are not integers.
 
 =head1 BEFORE YOU START
@@ -158,6 +162,8 @@ my %stack_direction;
 my $count        = 1;
 my $report_count = 100;
 
+my %corrs_to_refs_for_map;
+
 foreach my $stack_map ( @{ $stack_maps || [] } ) {
     my $stack_map_id = $stack_map->{'map_id'};
     $stack_start{$stack_map_id}    = $stack_map->{'map_start'};
@@ -179,8 +185,8 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
             = ($corr->{'feature_stop2'} + $corr->{'feature_start2'})/2;
         push @{ $corr_locs_to_map{ $corr->{'map_id2'} } },
             [ $corr_stack_loc, $corr_ref_loc ];
-
     }
+
 
     # The best reference map is determined by total number of corrs.
     my $best_ref_map_id;
@@ -188,6 +194,8 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
 
     # the keys are sorted so that results will be reproducible.
     foreach my $ref_map_id ( sort { $a <=> $b } keys %corr_locs_to_map ) {
+        $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
+            = scalar @{ $corr_locs_to_map{$ref_map_id} };
         if ( scalar @{ $corr_locs_to_map{$ref_map_id} } > $best_corr_num ) {
             $best_ref_map_id = $ref_map_id;
             $best_corr_num   = scalar @{ $corr_locs_to_map{$ref_map_id} };
@@ -265,7 +273,7 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             = $current_composite_length - $stack_start{$stack_map_id} + 1;
         my $new_composite_end = $current_composite_length + $stack_map_length;
 
-        $sql_object->insert_feature(
+        my $new_feature_id = $sql_object->insert_feature(
             cmap_object      => $cmap_admin,
             map_id           => $new_map_id,
             feature_name     => $stack_map_name{$stack_map_id},
@@ -274,6 +282,32 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             feature_stop     => $current_composite_length + $stack_map_length,
             feature_type_acc => $stack_feature_type_acc,
             direction        => $stack_direction{$stack_map_id},
+        );
+
+        # Create attributes to hold the number of corrs to each ref map
+        foreach my $corr_ref_map_id (
+            keys %{ $corrs_to_refs_for_map{$stack_map_id} || {} } )
+        {
+            $sql_object->insert_attribute(
+                cmap_object     => $cmap_admin,
+                display_order   => ( $ref_map_id = $corr_ref_map_id ) ? 1 : 2,
+                object_type     => 'feature',
+                object_id       => $new_feature_id,
+                is_public       => 1,
+                attribute_name  => 'Reference Map Correspondences',
+                attribute_value => $ref_map_lookup{$ref_map_id}->{'map_name'}
+                    . ":"
+                    . $corrs_to_refs_for_map{$stack_map_id}{$corr_ref_map_id},
+            );
+        }
+
+        # Create dbxref to link back to the original map
+        $sql_object->insert_xref(
+            cmap_object => $cmap_admin,
+            object_type => 'feature',
+            object_id   => $new_feature_id,
+            xref_name   => 'Original Map',
+            xref_url    => 'viewer?ref_map_accs='.$ref_map_lookup{$ref_map_id}->{'map_acc'},
         );
 
         my $features = $sql_object->get_features_simple(
