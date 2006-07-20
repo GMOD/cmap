@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.94 2006-07-07 18:11:16 mwz444 Exp $
+# $Id: Admin.pm,v 1.95 2006-07-20 13:45:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -155,6 +155,7 @@ Nothing
         = $evidences->[0]{'feature_correspondence_id'};
 
     $self->attribute_delete( 'correspondence_evidence', $corr_evidence_id );
+    $self->xref_delete( 'correspondence_evidence', $corr_evidence_id );
 
     $sql_object->delete_evidence(
         cmap_object                => $self,
@@ -420,6 +421,7 @@ Nothing
     }
 
     $self->attribute_delete( 'feature', $feature_id );
+    $self->xref_delete( 'feature', $feature_id );
 
     $sql_object->delete_feature_alias(
         cmap_object => $self,
@@ -835,6 +837,8 @@ Nothing
     );
 
     $self->attribute_delete( 'feature_correspondence',
+        $feature_correspondence_id, );
+    $self->xref_delete( 'feature_correspondence',
         $feature_correspondence_id, );
 
     return 1;
@@ -1309,6 +1313,7 @@ Nothing
     }
 
     $self->attribute_delete( 'map', $map_id );
+    $self->xref_delete( 'map', $map_id );
 
     $sql_object->delete_map(
         cmap_object => $self,
@@ -1518,6 +1523,7 @@ Nothing
     }
 
     $self->attribute_delete( 'map_set', $map_set_id );
+    $self->xref_delete( 'map_set', $map_set_id );
 
     $sql_object->delete_map_set(
         cmap_object => $self,
@@ -1952,6 +1958,7 @@ Nothing
     }
 
     $self->attribute_delete( 'species', $species_id );
+    $self->xref_delete( 'species', $species_id );
 
     $sql_object->delete_species(
         cmap_object => $self,
