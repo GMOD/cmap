@@ -84,9 +84,9 @@ use Pod::Usage;
 my ( $help, $datasource, $stack_map_set_acc, $ref_map_set_acc,
     $new_map_set_acc, $stack_feature_type_acc, );
 GetOptions(
-    'help|h|?'                                 => \$help,
-    'd:s'                                      => \$datasource,
-    'map_set_to_stack|stack_map_set_acc|s|m:s' => \$stack_map_set_acc,
+    'help|h|?'                                    => \$help,
+    'd:s'                                         => \$datasource,
+    'map_set_to_stack|stack_map_set_acc|s|m:s'    => \$stack_map_set_acc,
     'reference_map_set|ref_map_set_acc|r:s'       => \$ref_map_set_acc,
     'new_map_set|new_map_set_acc|n:s'             => \$new_map_set_acc,
     'feature_type_acc|stack_feature_type_acc|f:s' => \$stack_feature_type_acc,
@@ -158,6 +158,7 @@ my %stack_start;
 my %stack_stop;
 my %stack_mean_loc;
 my %stack_map_name;
+my %stack_map_acc;
 my %stack_direction;
 my $count        = 1;
 my $report_count = 100;
@@ -169,6 +170,7 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
     $stack_start{$stack_map_id}    = $stack_map->{'map_start'};
     $stack_stop{$stack_map_id}     = $stack_map->{'map_stop'};
     $stack_map_name{$stack_map_id} = $stack_map->{'map_name'};
+    $stack_map_acc{$stack_map_id}  = $stack_map->{'map_acc'};
     my $corrs = $sql_object->get_feature_correspondence_for_counting(
         cmap_object => $cmap_admin,
         slot_info   => { $stack_map_id => [], },
@@ -180,13 +182,12 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
     my %corr_locs_to_map;
     foreach my $corr ( @{$corrs} ) {
         my $corr_stack_loc
-            = ($corr->{'feature_stop1'} + $corr->{'feature_start1'})/2;
+            = ( $corr->{'feature_stop1'} + $corr->{'feature_start1'} ) / 2;
         my $corr_ref_loc
-            = ($corr->{'feature_stop2'} + $corr->{'feature_start2'})/2;
+            = ( $corr->{'feature_stop2'} + $corr->{'feature_start2'} ) / 2;
         push @{ $corr_locs_to_map{ $corr->{'map_id2'} } },
             [ $corr_stack_loc, $corr_ref_loc ];
     }
-
 
     # The best reference map is determined by total number of corrs.
     my $best_ref_map_id;
@@ -244,7 +245,9 @@ print "Done Reading Maps\n";
 
 foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
     print "--------------------------------------\n";
-    print "Reference Map: ".$ref_map_lookup{$ref_map_id}->{'map_name'}." ($ref_map_id)\n";
+    print "Reference Map: "
+        . $ref_map_lookup{$ref_map_id}->{'map_name'}
+        . " ($ref_map_id)\n";
     my @stack_map_ids = @{ $stack_maps_on_ref_map{$ref_map_id} };
     @stack_map_ids = sort {
                ( $stack_median_loc{$a} <=> $stack_median_loc{$b} )
@@ -285,20 +288,26 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
         );
 
         # Create attributes to hold the number of corrs to each ref map
+        my $drawing_order = 1;
         foreach my $corr_ref_map_id (
-            keys %{ $corrs_to_refs_for_map{$stack_map_id} || {} } )
+            sort {
+                $corrs_to_refs_for_map{$stack_map_id}
+                    {$b} <=> $corrs_to_refs_for_map{$stack_map_id}{$a}
+            } keys %{ $corrs_to_refs_for_map{$stack_map_id} || {} }
+            )
         {
             $sql_object->insert_attribute(
                 cmap_object     => $cmap_admin,
-                display_order   => ( $ref_map_id = $corr_ref_map_id ) ? 1 : 2,
+                display_order   => $drawing_order,
                 object_type     => 'feature',
                 object_id       => $new_feature_id,
                 is_public       => 1,
                 attribute_name  => 'Reference Map Correspondences',
-                attribute_value => $ref_map_lookup{$ref_map_id}->{'map_name'}
-                    . ":"
+                attribute_value =>
+                    $ref_map_lookup{$corr_ref_map_id}->{'map_name'} . ":"
                     . $corrs_to_refs_for_map{$stack_map_id}{$corr_ref_map_id},
             );
+            $drawing_order++;
         }
 
         # Create dbxref to link back to the original map
@@ -307,7 +316,8 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             object_type => 'feature',
             object_id   => $new_feature_id,
             xref_name   => 'Original Map',
-            xref_url    => 'viewer?ref_map_accs='.$ref_map_lookup{$ref_map_id}->{'map_acc'},
+            xref_url    => 'viewer?ref_map_accs='
+                . $stack_map_acc{$stack_map_id},
         );
 
         my $features = $sql_object->get_features_simple(
@@ -462,7 +472,7 @@ sub validate_params {
     if (@missing) {
         print STDERR "Missing the following arguments:\n";
         print STDERR join( "\n", sort @missing ) . "\n";
-        return 0
+        return 0;
     }
     return 1;
 }
