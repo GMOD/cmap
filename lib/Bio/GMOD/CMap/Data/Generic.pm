@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.148 2006-07-07 18:18:10 mwz444 Exp $
+# $Id: Generic.pm,v 1.149 2006-07-20 14:36:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.148 $)[-1];
+$VERSION = (qw$Revision: 1.149 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4560,12 +4560,27 @@ Array of Hashes:
         return {} unless $return_object;
 
         foreach my $row ( @{$return_object} ) {
+            my $feature_type_acc = $row->{'feature_type_acc'};
             $row->{$_}
-                = $feature_type_data->{ $row->{'feature_type_acc'} }{$_}
+                = $feature_type_data->{ $feature_type_acc }{$_}
                 for qw[
                 feature_type default_rank shape color
                 drawing_lane drawing_priority
             ];
+            if ($feature_type_data->{ $feature_type_acc }{'get_attributes'}){
+                $row->{'attributes'} = $self->get_attributes(
+                    cmap_object => $cmap_object,
+                    object_type  => 'feature',
+                    object_id  => $row->{'feature_id'},
+                );
+            }
+            if ($feature_type_data->{ $feature_type_acc }{'get_xrefs'}){
+                $row->{'xrefs'} = $self->get_xrefs(
+                    cmap_object => $cmap_object,
+                    object_type  => 'feature',
+                    object_id  => $row->{'feature_id'},
+                );
+            }
         }
 
         $cmap_object->store_cached_results( 4, $sql_str, $return_object );
@@ -7948,7 +7963,7 @@ Correspondence Evidence id
         || $args{'evidence_type_accession'}
         or return;
     my $score = $args{'score'};
-    if ( $score eq '' ) {
+    if ( defined($score) and $score eq '' ) {
         $score = undef;
     }
     my $correspondence_evidence_acc = $args{'correspondence_evidence_acc'}
