@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.9 2006-07-11 19:15:31 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.10 2006-07-24 03:31:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -115,7 +115,11 @@ This method will create the Application.
         panel_key  => $panel_key,
     );
     $self->panel_overview_pane( panel_key => $panel_key, );
-    $self->panel_slot_controls_pane( panel_key => $panel_key, );
+    $self->panel_slot_toggle_pane( panel_key => $panel_key, );
+    $self->panel_slot_controls_pane(
+        panel_key  => $panel_key,
+        window_key => $window_key,
+    );
     $self->panel_canvas_pane( panel_key => $panel_key, );
     $self->overview_canvas( panel_key => $panel_key, );
     $self->canvas( panel_key => $panel_key, );
@@ -142,24 +146,46 @@ This method will create the slot controls for the panel.
     foreach
         my $slot_key ( @{ $app_display_data->{'slot_order'}{$panel_key} } )
     {
-        my $y_val
-            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1];
-        my $height
-            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[3]
-            - $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1] + 1;
-        $self->slot_controls_pane(
-            panel_key => $panel_key,
-            slot_key  => $slot_key,
-            y_val     => $y_val,
-            height    => $height,
-        );
-        $self->_add_slot_control_buttons(
+        $self->add_slot_controls(
             window_key       => $window_key,
             panel_key        => $panel_key,
             slot_key         => $slot_key,
             app_display_data => $app_display_data,
         );
     }
+    ${$self->{'selected_slot_key_scalar'}} = $app_display_data->{'slot_order'}{$panel_key}[0] || 0;
+
+    return;
+}
+
+# ----------------------------------------------------
+sub add_slot_controls {
+
+=pod
+
+=head2 add_slot_controls
+
+This method will create the slot controls for one slot
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key  = $args{'slot_key'}  or return;
+    my $app_display_data = $args{'app_display_data'};
+
+    $self->toggle_slot_pane(
+        panel_key => $panel_key,
+        slot_key  => $slot_key,
+        app_display_data => $app_display_data,
+    );
+    $self->_add_slot_toggle_buttons(
+        window_key       => $window_key,
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
+        app_display_data => $app_display_data,
+    );
 
     return;
 }
@@ -257,7 +283,7 @@ Returns the window_pane object.
         $self->{'window_pane'}{$window_key} = $window->Scrolled(
             "Pane",
             -scrollbars => "oe",
-            -background => "white",
+            -background => "grey",
             -height     => $window->screenheight(),
             -width      => $window->screenwidth(),
         );
@@ -285,11 +311,11 @@ Returns the panel_pane object.
         my $window_pane = $self->{'window_pane'}{$window_key};
         $self->{'panel_pane'}{$panel_key} = $window_pane->Frame(
             -relief     => 'groove',
-            -border     => 1,
+            -border     => 0,
             -background => "white"
         );
         $self->{'panel_pane'}{$panel_key}
-            ->pack( -side => 'top', -fill => 'both', );
+            ->pack( -side => 'left', -fill => 'none', );
     }
     return $self->{'panel_pane'}{$panel_key};
 }
@@ -321,31 +347,31 @@ Returns the panel_overview_pane object.
 }
 
 # ----------------------------------------------------
-sub panel_slot_controls_pane {
+sub panel_slot_toggle_pane {
 
 =pod
 
-=head2 panel_slot_controls_pane
+=head2 panel_slot_toggle_pane
 
-Returns the panel_slot_controls_pane object.
+Returns the panel_slot_toggle_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
-    unless ( $self->{'panel_slot_controls_pane'}{$panel_key} ) {
+    unless ( $self->{'panel_slot_toggle_pane'}{$panel_key} ) {
         my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'panel_slot_controls_pane'}{$panel_key} = $panel_pane->Frame(
+        $self->{'panel_slot_toggle_pane'}{$panel_key} = $panel_pane->Frame(
             -relief     => 'groove',
-            -border     => 1,
+            -border     => 0,
             -height     => 500,
             -width      => 200,
             -background => "white",
         );
-        $self->{'panel_slot_controls_pane'}{$panel_key}
+        $self->{'panel_slot_toggle_pane'}{$panel_key}
             ->pack( -side => 'left', -fill => 'both', );
     }
-    return $self->{'panel_slot_controls_pane'}{$panel_key};
+    return $self->{'panel_slot_toggle_pane'}{$panel_key};
 }
 
 # ----------------------------------------------------
@@ -365,7 +391,7 @@ Returns the panel_canvas_pane object.
         my $panel_pane = $self->{'panel_pane'}{$panel_key};
         $self->{'panel_canvas_pane'}{$panel_key} = $panel_pane->Frame(
             -relief     => 'groove',
-            -border     => 1,
+            -border     => 0,
             -background => "white",
         );
         $self->{'panel_canvas_pane'}{$panel_key}
@@ -375,35 +401,84 @@ Returns the panel_canvas_pane object.
 }
 
 # ----------------------------------------------------
-sub slot_controls_pane {
+sub panel_slot_controls_pane {
 
 =pod
 
-=head2 slot_controls_pane
+=head2 panel_slot_controls_pane
 
-Returns the slot_controls_pane object.
+Returns the panel_slot_controls_pane object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'} or return undef;
+    my $window_key = $args{'window_key'} or return undef;
+    unless ( $self->{'panel_slot_controls_pane'}{$panel_key} ) {
+        my $y_val  = $args{'y_val'};
+        my $height = $args{'height'};
+        my $panel_pane = $self->{'panel_pane'}{$panel_key};
+        if (1) {
+            $self->{'panel_slot_controls_pane'}{$panel_key}
+                = $panel_pane->Frame(
+                -borderwidth => 0,
+                -relief      => 'groove',
+                -background  => "white",
+                );
+        }
+        else {
+            $self->{'panel_slot_controls_pane'}{$panel_key}
+                = $panel_pane->Scrolled(
+                "Pane",
+
+                #-scrollbars => "oe",
+                #-relief     => 'groove',
+                -background => "blue",
+                );
+        }
+        $self->_add_slot_control_buttons(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+        );
+        $self->{'panel_slot_controls_pane'}{$panel_key}->pack( -side => 'bottom', -fill => 'x', );
+    }
+    return $self->{'panel_slot_controls_pane'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub toggle_slot_pane {
+
+=pod
+
+=head2 toggle_slot_pane
+
+Returns the toggle_slot_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
     my $slot_key  = $args{'slot_key'}  or return undef;
-    unless ( $self->{'slot_controls_pane'}{$slot_key} ) {
-        my $y_val  = $args{'y_val'};
-        my $height = $args{'height'};
-        my $panel_slot_controls_pane
-            = $self->{'panel_slot_controls_pane'}{$panel_key};
+    unless ( $self->{'toggle_slot_pane'}{$slot_key} ) {
+        my $app_display_data = $args{'app_display_data'} or return undef;
+        my $y_val
+            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1];
+        my $height
+            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[3]
+            - $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1] + 1;
+        my $panel_slot_toggle_pane
+            = $self->{'panel_slot_toggle_pane'}{$panel_key};
         if (1) {
-            $self->{'slot_controls_pane'}{$slot_key}
-                = $panel_slot_controls_pane->Frame(
+            $self->{'toggle_slot_pane'}{$slot_key}
+                = $panel_slot_toggle_pane->Frame(
                 -borderwidth => 1,
                 -relief      => 'groove',
-                -background  => "yellow",
+                -background  => "white",
                 );
         }
         else {
-            $self->{'slot_controls_pane'}{$slot_key}
-                = $panel_slot_controls_pane->Scrolled(
+            $self->{'toggle_slot_pane'}{$slot_key}
+                = $panel_slot_toggle_pane->Scrolled(
                 "Pane",
 
                 #-scrollbars => "oe",
@@ -411,14 +486,57 @@ Returns the slot_controls_pane object.
                 -background => "green",
                 );
         }
-        $self->{'slot_controls_pane'}{$slot_key}->place(
+        $self->{'toggle_slot_pane'}{$slot_key}->place(
             -x        => 5,
             -y        => $y_val,
             -relwidth => .89,
-            -height   => $height
+            -height   => $height +10
         );
     }
-    return $self->{'slot_controls_pane'}{$slot_key};
+    return $self->{'toggle_slot_pane'}{$slot_key};
+}
+
+# ----------------------------------------------------
+sub _add_slot_toggle_buttons {
+
+=pod
+
+=head2 _add_slot_toggle_buttons
+
+Adds control buttons to the toggle_slot_pane.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key   = $args{'slot_key'}   or return;
+    my $app_display_data   = $args{'app_display_data'};
+    my $toggle_slot_pane = $self->{'toggle_slot_pane'}{$slot_key};
+    my $font               = [
+        -family => 'Times',
+        -size   => 12,
+    ];
+
+    my $toggle_button = $toggle_slot_pane->Radiobutton(
+        -text    => "Select",
+        -background => "white",
+        -value   => $slot_key,
+        -command => sub {
+            $self->app_controller()->new_selected_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        },
+        -variable   => \${$self->{'selected_slot_key_scalar'}}
+    );
+    
+    #    Tk::grid( $zoom_label1, -sticky => "nw", );
+    Tk::grid(
+        $toggle_button, -sticky        => "ne",
+    );
+    return;
 }
 
 # ----------------------------------------------------
@@ -428,131 +546,134 @@ sub _add_slot_control_buttons {
 
 =head2 _add_slot_control_buttons
 
-Adds control buttons to the slot_controls_pane.
+Adds control buttons to the panel_slot_controls_pane.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
-    my $app_display_data   = $args{'app_display_data'};
-    my $slot_controls_pane = $self->{'slot_controls_pane'}{$slot_key};
+    my $panel_slot_controls_pane = $self->{'panel_slot_controls_pane'}{$panel_key};
     my $font               = [
         -family => 'Times',
         -size   => 12,
     ];
 
-    #    my $zoom_label1 = $slot_controls_pane->Label(
+    #    my $zoom_label1 = $panel_slot_controls_pane->Label(
     #        -text       => "Zoom",
     #        -font       => $font,
     #        -background => 'grey',
     #    );
-    my $zoom_button1 = $slot_controls_pane->Button(
-        -text    => "+",
+    my $zoom_button1 = $panel_slot_controls_pane->Button(
+        -text    => "Zoom In",
         -command => sub {
             $self->app_controller()->zoom_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 zoom_value => 2,
             );
         },
         -font => $font,
     );
-    my $zoom_button2 = $slot_controls_pane->Button(
-        -text    => "-",
+    my $zoom_button2 = $panel_slot_controls_pane->Button(
+        -text    => "Zoom Out",
         -command => sub {
             $self->app_controller()->zoom_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 zoom_value => .5,
             );
         },
         -font => $font,
     );
-    my $toggle_corrs_button = $slot_controls_pane->Button(
-        -text    => "Corrs",
+    my $toggle_corrs_button = $panel_slot_controls_pane->Button(
+        -text    => "Toggle Correspondences",
         -command => sub {
             $self->app_controller()->toggle_corrs_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
             );
         },
         -font => $font,
     );
-    my $expand_button = $slot_controls_pane->Button(
-        -text    => "Expand",
+    my $expand_button = $panel_slot_controls_pane->Button(
+        -text    => "Add Sub Maps",
         -command => sub {
             $self->app_controller()->expand_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
             );
         },
         -font => $font,
     );
-    my $scroll_left_button = $slot_controls_pane->Button(
+    my $scroll_left_button = $panel_slot_controls_pane->Button(
         -text    => "<",
         -command => sub {
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key     => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 scroll_value => -10,
             );
         },
         -font => $font,
     );
-    my $scroll_right_button = $slot_controls_pane->Button(
+    my $scroll_right_button = $panel_slot_controls_pane->Button(
         -text    => ">",
         -command => sub {
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key     => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 scroll_value => 10,
             );
         },
         -font => $font,
     );
-    my $scroll_far_left_button = $slot_controls_pane->Button(
+    my $scroll_far_left_button = $panel_slot_controls_pane->Button(
         -text    => "<<",
         -command => sub {
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key     => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 scroll_value => -200,
             );
         },
         -font => $font,
     );
-    my $scroll_far_right_button = $slot_controls_pane->Button(
+    my $scroll_far_right_button = $panel_slot_controls_pane->Button(
         -text    => ">>",
         -command => sub {
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key     => $slot_key,
+                slot_key   => ${$self->{'selected_slot_key_scalar'}},
                 scroll_value => 200,
             );
         },
         -font => $font,
     );
+#    my $test_button = $panel_slot_controls_pane->Button(
+#        -text    => "TEST",
+#        -command => sub {
+#            print STDERR ${$self->{'selected_slot_key_scalar'}} . "\n";
+#        },
+#        -font => $font,
+#    );
 
     #    Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid(
-        $zoom_button1,  $zoom_button2, $toggle_corrs_button,
-        $expand_button, -sticky        => "nw",
-    );
-    Tk::grid(
-        $scroll_far_left_button, $scroll_left_button,
-        $scroll_right_button,    $scroll_far_right_button,
-        -sticky => "nw",
-    );
+#    Tk::grid(
+#        $test_button, -sticky        => "nw",
+#    );
+    Tk::grid( $scroll_far_left_button, $scroll_left_button, 'x', 'x',
+        $scroll_right_button, $scroll_far_right_button, -sticky => "nw", );
+    Tk::grid( 'x','x',$zoom_button1, $toggle_corrs_button, -sticky => "nw", );
+    Tk::grid( 'x','x',$zoom_button2, $expand_button,       -sticky => "nw", );
     return;
 }
 
@@ -639,9 +760,11 @@ Draws and re-draws on the canvas
 
     $canvas->configure(
         -scrollregion => $panel_layout->{'bounds'},
-        -height       => $canvas_height,
+       # -height       => 800,#$canvas_height, BF
+        -height       => $canvas_height, 
         -width        => $canvas_width,
     );
+    $canvas->pack( -side => 'top', -fill => 'both', );
 
     $self->draw_corrs(
         canvas           => $canvas,
@@ -1113,6 +1236,40 @@ Item structure:
 }
 
 # ----------------------------------------------------
+sub move_items {
+
+=pod
+
+=head2 move_items
+
+Move items on the canvas rather than redraw it
+
+The underlying coords in the data structure must be changed externally.
+
+Item structure:
+
+  [ changed, item_id, type, coord_array, options_hash ]
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'};
+    my $canvas = $args{'canvas'}
+        || $self->canvas( panel_key => $args{'panel_key'}, );
+    my $x = $args{'x'} || 0;
+    my $y = $args{'y'} || 0;
+    my $items    = $args{'items'} or return;
+
+    for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
+        # make sure item has been drawn
+        next unless ( defined( $items->[$i][1] ) );
+
+        my $item_id = $items->[$i][1];
+        $canvas->move($item_id, $x, $y);
+    }
+}
+
+# ----------------------------------------------------
 sub add_tags_to_items {
 
 =pod
@@ -1223,15 +1380,23 @@ Returns the canvas object.
 
     unless ( $self->{'canvas'}{$panel_key} ) {
         my $canvas_frame = $self->{'panel_canvas_pane'}{$panel_key};
-        $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
-            'Canvas',
-            (   '-width'       => 1100,
+#        $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
+#            'Canvas',
+#            (   '-width'       => 1100,
+#                '-height'      => 800,
+#                '-relief'      => 'sunken',
+#                '-borderwidth' => 2,
+#                '-background'  => 'white',
+#                '-scrollbars'  => 's',
+#            ),
+#        )->pack( -side => 'top', -fill => 'both', );
+        $self->{'canvas'}{$panel_key} = $canvas_frame->Canvas(
+               '-width'       => 1100,
                 '-height'      => 800,
                 '-relief'      => 'sunken',
                 '-borderwidth' => 2,
                 '-background'  => 'white',
-                '-scrollbars'  => 's',
-            ),
+            
         )->pack( -side => 'top', -fill => 'both', );
     }
     return $self->{'canvas'}{$panel_key};
@@ -1254,16 +1419,25 @@ Returns the overview_canvas object.
     unless ( $self->{'overview_canvas'}{$panel_key} ) {
         my $overview_canvas_frame
             = $self->{'panel_overview_pane'}{$panel_key};
+#        $self->{'overview_canvas'}{$panel_key}
+#            = $overview_canvas_frame->Scrolled(
+#            'Canvas',
+#            (   '-width'       => 1100,
+#                '-height'      => 300,
+#                '-relief'      => 'sunken',
+#                '-borderwidth' => 2,
+#                '-background'  => 'white',
+#                '-scrollbars'  => 's',
+#            ),
+#            )->pack( -side => 'top', -fill => 'both', );
         $self->{'overview_canvas'}{$panel_key}
-            = $overview_canvas_frame->Scrolled(
-            'Canvas',
-            (   '-width'       => 1100,
-                '-height'      => 300,
-                '-relief'      => 'sunken',
-                '-borderwidth' => 2,
-                '-background'  => 'white',
-                '-scrollbars'  => 's',
-            ),
+            = $overview_canvas_frame->Canvas(
+            '-width'       => 1100,
+            '-height'      => 300,
+            '-relief'      => 'sunken',
+            '-borderwidth' => 2,
+            '-background'  => 'white',
+
             )->pack( -side => 'top', -fill => 'both', );
     }
     return $self->{'overview_canvas'}{$panel_key};
@@ -1609,13 +1783,38 @@ Handle the placement of tagged items in layers
 
     my ( $self, %args ) = @_;
     my $canvas      = $args{'canvas'};
-    my $real_canvas = $canvas->Subwidget("canvas");
+    #my $real_canvas = $canvas->Subwidget("canvas");
+    my $real_canvas = $canvas;
 
     $real_canvas->raise( 'on_top', 'middle_layer' );
     $real_canvas->lower( 'on_bottom', 'middle_layer' );
 
     return;
 }
+
+# ----------------------------------------------------
+sub destroy_slot_controls {
+
+=pod
+
+=head2 destroy_slot_controls
+
+Remove the interface buttons for a slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key      = $args{'panel_key'};
+    my $slot_key      = $args{'slot_key'};
+    $self->toggle_slot_pane(
+        panel_key => $panel_key,
+        slot_key  => $slot_key,
+    )->destroy();
+    $self->{'toggle_slot_pane'}{$slot_key} = undef;
+    return;
+}
+
+
 
 1;
 

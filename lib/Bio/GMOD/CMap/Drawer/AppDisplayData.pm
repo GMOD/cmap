@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.10 2006-07-12 15:54:24 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.11 2006-07-24 03:31:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,17 +52,22 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
     layout_new_panel
+    layout_new_slot
     layout_overview
     overview_selected_area
     layout_reference_maps
     layout_sub_maps
+    layout_slot_with_current_maps
     add_correspondences
-    add_slot_separator ];
+    add_slot_separator
+    move_slot
+    set_slot_bgcolor
+];
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
@@ -83,6 +88,7 @@ Initializes the drawing object.
         $self->$param( $config->{$param} )
             or die "Failed to pass $param to AppDisplayData\n";
     }
+    $self->{'next_map_set_color_index'}=0;
 
     return $self;
 }
@@ -178,6 +184,7 @@ Adds the first slot
     $self->{'scaffold'}{$slot_key} = {
         window_key         => $window_key,
         panel_key          => $panel_key,
+        map_set_id         => undef,
         parent             => undef,
         children           => [],
         scale              => 1,
@@ -263,6 +270,8 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $window_key      = $args{'window_key'}      or return;
     my $panel_key       = $args{'panel_key'}       or return;
     my $parent_slot_key = $args{'parent_slot_key'} or return;
+    my $slot_order_array = $args{'slot_order_array'}
+        || $self->{'slot_order'}{$panel_key};
 
     my @sub_map_keys;
     foreach my $map_key ( @{ $self->{'map_order'}{$parent_slot_key} || [] } )
@@ -285,19 +294,18 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
                 feature_start  => $sub_map->{'feature_start'},
                 feature_stop   => $sub_map->{'feature_stop'},
             };
-            push @sub_map_keys, $sub_map_id;
+            push @sub_map_keys, $sub_map_key;
 
         }
     }
     unless (@sub_map_keys) {
-
         # No Sub Maps
         return;
     }
 
     my $slot_order_index;
-    for ( my $i = 0; $i <= $#{ $self->{'slot_order'}{$panel_key} }; $i++ ) {
-        if ( $parent_slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
+    for ( my $i = 0; $i <= $#{$slot_order_array}; $i++ ) {
+        if ( $parent_slot_key == $slot_order_array->[$i] ) {
             $slot_order_index = $i;
             last;
         }
@@ -315,18 +323,23 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         push @{ $maps_by_set{ $sub_map_data->{'map_set_id'} } }, $sub_map_key;
     }
 
+    my $parent_x_offset = $self->{'scaffold'}{$parent_slot_key}{'x_offset'};
+    my @new_slot_keys;
     foreach my $set_key ( keys %maps_by_set ) {
         my $child_slot_key = $self->next_internal_key('slot');
+        push @new_slot_keys,$child_slot_key;
         $slot_order_index++;
-        splice @{ $self->{'slot_order'}{$panel_key} }, $slot_order_index, 0,
-            ($child_slot_key);
+        splice @{$slot_order_array}, $slot_order_index, 0, ($child_slot_key);
 
         $self->initialize_slot_layout($child_slot_key);
         $self->{'scaffold'}{$child_slot_key} = {
+            window_key         => $window_key,
+            panel_key          => $panel_key,
+            map_set_id         => undef,
             parent             => $parent_slot_key,
             children           => [],
             scale              => 1,
-            x_offset           => 0,
+            x_offset           => $parent_x_offset,
             attached_to_parent => 1,
             expanded           => 0,
             is_top             => 0,
@@ -342,6 +355,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             $self->initialize_map_layout($map_key);
         }
     }
+    return \@new_slot_keys;
 }
 
 # ----------------------------------------------------
@@ -368,7 +382,8 @@ Zoom slots
 
     if ($cascading) {
         if ( $slot_scaffold->{'attached_to_parent'} ) {
-            $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
+            $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
+                if ($overview_slot_layout);
 
             # Get Offset from parent
             $slot_scaffold->{'x_offset'}
@@ -416,7 +431,8 @@ Zoom slots
     elsif ( $slot_scaffold->{'is_top'} ) {
         $slot_scaffold->{'scale'}           *= $zoom_value;
         $slot_scaffold->{'pixels_per_unit'} *= $zoom_value;
-        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
+        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
+                if ($overview_slot_layout);
         $self->set_new_zoomed_offset(
             window_key => $window_key,
             panel_key  => $panel_key,
@@ -430,7 +446,8 @@ Zoom slots
         );
     }
     else {
-        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value;
+        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
+                if ($overview_slot_layout);
         $slot_scaffold->{'scale'} *= $zoom_value;
         if ( $slot_scaffold->{'attached_to_parent'} ) {
             $self->detach_slot_from_parent( slot_key => $slot_key, );
@@ -464,19 +481,22 @@ Zoom slots
     }
 
     # handle overview highlighting
-    $self->destroy_items(
-        items => $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-            {'viewed_region'},
-        panel_key   => $panel_key,
-        is_overview => 1,
-    );
-    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-        {'viewed_region'} = [];
-    overview_selected_area(
-        slot_key         => $slot_key,
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
+        $self->destroy_items(
+            items =>
+                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                {'viewed_region'},
+            panel_key   => $panel_key,
+            is_overview => 1,
+        );
+        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+            {'viewed_region'} = [];
+        overview_selected_area(
+            slot_key         => $slot_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
 
     foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
         $self->zoom_slot(
@@ -601,19 +621,22 @@ Scroll slots
     }
 
     # handle overview highlighting
-    $self->destroy_items(
-        items => $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-            {'viewed_region'},
-        panel_key   => $panel_key,
-        is_overview => 1,
-    );
-    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-        {'viewed_region'} = [];
-    overview_selected_area(
-        slot_key         => $slot_key,
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
+        $self->destroy_items(
+            items =>
+                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                {'viewed_region'},
+            panel_key   => $panel_key,
+            is_overview => 1,
+        );
+        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+            {'viewed_region'} = [];
+        overview_selected_area(
+            slot_key         => $slot_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
 
     foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
         $self->scroll_slot(
@@ -655,8 +678,6 @@ toggle the correspondences for a slot
     return unless ($slot_key2);
 
     if ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} ) {
-        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 0;
-        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 0;
         $self->clear_slot_corrs(
             panel_key => $panel_key,
             slot_key1 => $slot_key1,
@@ -664,8 +685,6 @@ toggle the correspondences for a slot
         );
     }
     else {
-        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
-        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
         $self->add_slot_corrs(
             window_key => $window_key,
             panel_key  => $panel_key,
@@ -689,13 +708,203 @@ expand slots
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $window_key   = $args{'window_key'};
+    my $panel_key    = $args{'panel_key'};
+    my $old_slot_key = $args{'slot_key'};
 
-    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+    my $old_slot_scaffold = $self->{'scaffold'}{$old_slot_key};
+    my $old_slot_layout   = $self->{'slot_layout'}{$old_slot_key};
 
-    print STDERR "Expanding\n";
+    return if $old_slot_scaffold->{'expanded'};
+
+    my $parent_slot_key = $old_slot_scaffold->{'parent'};
+#print STDERR "++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+
+    my %row_index_maps;
+
+    foreach my $map_key ( @{ $self->{'map_order'}{$old_slot_key} || [] } ) {
+        push @{ $row_index_maps{ $self->{'map_layout'}{$map_key}
+                    {'row_index'} } }, $map_key;
+    }
+    my @slot_order_insert;
+
+    # Get Old slot order position
+    my $old_slot_order_pos = undef;
+    for (
+        my $i = 0;
+        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
+        $i++
+        )
+    {
+        if ( $old_slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
+            $old_slot_order_pos = $i;
+            last;
+        }
+    }
+
+    # Get the Slots where the old slot had corrs with
+    my @corresponding_slot_keys = keys %{$self->{'correspondences_on'}{$old_slot_key}};
+
+    unless ( defined $old_slot_order_pos ) {
+        die "Slot Order position not found for slot $old_slot_key\n";
+    }
+    my $old_slot_y1 = $old_slot_layout->{'bounds'}[1];
+    my $old_slot_y2 = $old_slot_layout->{'bounds'}[3];
+
+    my $start_min_y   = $old_slot_y1;
+    my $slot_buffer_y = 15;
+    my $slot_position = $old_slot_order_pos;
+    foreach my $row_index ( sort {$a <=> $b } keys %row_index_maps ) {
+        # Create Slot
+        my $new_slot_key = $self->next_internal_key('slot');
+        $self->initialize_slot_layout($new_slot_key);
+
+        #Copy important slot info
+        $self->copy_slot_scaffold(
+            old_slot_key => $old_slot_key,
+            new_slot_key => $new_slot_key,
+        );
+
+        # Add as child of parent
+        push @{$self->{'scaffold'}{$parent_slot_key}{'children'}},$new_slot_key;
+
+        # Add Slot to order
+        push @slot_order_insert, $new_slot_key;
+
+        # Move Maps to slot and adjust Y value
+        layout_slot_with_current_maps(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            old_slot_key     => $old_slot_key,
+            new_slot_key     => $new_slot_key,
+            row_index        => $row_index,
+            start_min_y      => $start_min_y,
+            map_keys         => $row_index_maps{$row_index},
+            app_display_data => $self,
+        );
+        $self->{'scaffold'}{$new_slot_key}{'expanded'} = 1;
+
+        # Move slot_info to new slot
+        # and add map_id_to_key_by_slot
+        foreach my $map_key ( @{ $row_index_maps{$row_index} } ) {
+            $self->{'map_id_to_key_by_slot'}{$new_slot_key}
+                { $self->{'map_key_to_id'}{$map_key} } = $map_key;
+            my $map_id = $self->{'map_key_to_id'}{$map_key};
+            $self->{'slot_info'}{$new_slot_key}{$map_id}
+                = $self->{'slot_info'}{$old_slot_key}{$map_id};
+            $self->{'slot_info'}{$old_slot_key}{$map_id} = undef;
+        }
+
+        # Handle inherited correspondences
+        foreach my $slot_key2 (@corresponding_slot_keys) {
+            $self->clear_slot_corrs(
+                panel_key => $panel_key,
+                slot_key1 => $new_slot_key,
+                slot_key2 => $slot_key2,
+            );
+            $self->add_slot_corrs(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key1  => $new_slot_key,
+                slot_key2  => $slot_key2,
+            );
+        }
+
+        $start_min_y = $self->{'slot_layout'}{$new_slot_key}{'bounds'}[3] + $slot_buffer_y;
+
+        # Add Sub Slots
+        my $sub_slot_keys = $self->add_sub_maps(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            parent_slot_key  => $new_slot_key,
+            slot_order_array => \@slot_order_insert,
+        );
+
+        foreach my $sub_slot_key (@$sub_slot_keys){
+            $slot_position++;
+            layout_new_slot(
+                window_key       => $window_key,
+                panel_key        => $panel_key,
+                slot_key         => $sub_slot_key,
+                slot_position    => $slot_position,
+                start_min_y      => $start_min_y,
+                app_display_data => $self,
+            );
+            $start_min_y = $self->{'slot_layout'}{$sub_slot_key}{'bounds'}[3] + $slot_buffer_y;
+        }
+        $slot_position++;
+    }
+
+    # Insert new slots into slot_order in place of the old one.
+    splice @{ $self->{'slot_order'}{$panel_key} }, $old_slot_order_pos, 1,
+        @slot_order_insert;
+
+    # Wipe 'map_order' for this slot so removing slot doesn't kill the maps
+    delete $self->{'map_order'}{$old_slot_key};
+
+    # Remove Old Slot
+    $self->delete_slot(
+        panel_key => $panel_key,
+        slot_key  => $old_slot_key,
+    );
+    $self->app_interface()->destroy_slot_controls(
+        panel_key => $panel_key,
+        slot_key  => $old_slot_key,
+    );
+
+    my $height_change = $start_min_y - $old_slot_y2;
+
+    # Move Lower Slots and re-add their slot menu for recreation later
+    my $first_lower_slot_pos
+        = $old_slot_order_pos + scalar(@slot_order_insert);
+    for (
+        my $i = $first_lower_slot_pos;
+        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
+        $i++
+        )
+    {
+        my $slot_key = $self->{'slot_order'}{$panel_key}[$i];
+        move_slot(
+            panel_key        => $panel_key,
+            slot_key         => $slot_key,
+            y                => $height_change,
+            app_display_data => $self,
+            app_interface    => $self->app_interface(),
+        );
+        $self->app_interface()->destroy_slot_controls(
+            panel_key => $panel_key,
+            slot_key  => $slot_key,
+        );
+        $self->app_interface()->add_slot_controls(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            slot_key         => $slot_key,
+            app_display_data => $self,
+        );
+    }
+    $self->{'panel_layout'}{$panel_key}{'bounds'}[3] += $height_change; 
+
+
+    # Handle Overview
+    $self->recreate_overview(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+    );
+
+    # Add the New Slot Controls
+    foreach my $slot_key (@slot_order_insert){
+        $self->app_interface()->add_slot_controls(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            slot_key         => $slot_key,
+            app_display_data => $self,
+        );
+    }
+
+    $self->app_interface()->draw_panel(
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
 
     return;
 }
@@ -795,6 +1004,76 @@ sub relayout_sub_map_slot {
     );
 
     return;
+}
+
+# ----------------------------------------------------
+sub change_selected_slot {
+
+=pod
+
+=head2 change_selected_slot
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key   = $args{'slot_key'}   or return;
+
+    my $old_selected_slot_key = $self->{'selected_slot_key'};
+    $self->{'selected_slot_key'} = $slot_key;
+
+    if ($old_selected_slot_key and $self->{'scaffold'}{$old_selected_slot_key}) {
+        set_slot_bgcolor(
+            panel_key        => $panel_key,
+            slot_key         => $old_selected_slot_key,
+            app_display_data => $self,
+        );
+    }
+    set_slot_bgcolor(
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
+        app_display_data => $self,
+    );
+
+    $self->app_interface()->draw_panel(
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub slot_bgcolor {
+
+=pod
+
+=head2 slot_bgcolor
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_key   = $args{'slot_key'}   or return;
+
+    my $map_set_id = $self->{'scaffold'}{$slot_key}{'map_set_id'};
+
+    unless ( $self->{'map_set_bgcolor'} and $self->{'map_set_bgcolor'}{$map_set_id} ) {
+
+        my $ms_color_index = $self->{'next_map_set_color_index'} ||= 0;
+
+        $self->{'map_set_bgcolor'}{$map_set_id}
+            = APP_BACKGROUND_COLORS->[$ms_color_index];
+
+        # Create new next ms color index
+        $self->{'next_map_set_color_index'}++;
+        if ($self->{'next_map_set_color_index'} > $#{&APP_BACKGROUND_COLORS} )
+        {
+            $self->{'next_map_set_color_index'} = 0;
+        }
+    }
+
+    return $self->{'map_set_bgcolor'}{$map_set_id};
 }
 
 # ----------------------------------------------------
@@ -938,6 +1217,7 @@ Initializes map_layout
         items       => [],
         changed     => 1,
         sub_changed => 1,
+        row_index   => 0,
     };
 
     return;
@@ -995,6 +1275,71 @@ Initializes panel_layout
 }
 
 # ----------------------------------------------------
+sub recreate_overview {
+
+=pod
+
+=head2 recreate_overview
+
+Destroys then recreates the overview
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key = $args{'panel_key'} or return;
+
+    my $top_slot_key = $self->{'overview'}{$panel_key}{'slot_key'};
+
+    # Destroy slot information and drawings
+    foreach my $slot_key ( $top_slot_key,
+        @{ $self->{'overview_layout'}{$panel_key}{'child_slot_order'} } )
+    {
+        foreach my $map_key (
+            keys %{ $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}{'maps'} || {} } )
+        {
+            $self->destroy_items(
+                panel_key => $panel_key,
+                items     =>
+                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                    {'maps'}{$map_key}{'items'},
+                is_overview => 1,
+            );
+        }
+        foreach my $item_name (qw[ misc_items viewed_region ]) {
+            $self->destroy_items(
+                panel_key => $panel_key,
+                items     =>
+                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                    {$item_name},
+                is_overview => 1,
+            );
+        }
+        delete $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+    }
+
+    # Destroy overview itself
+    $self->destroy_items(
+        panel_key => $panel_key,
+        items     =>
+            $self->{'overview_layout'}{$panel_key}{'misc_items'},
+        is_overview => 1,
+    );
+    delete $self->{'overview_layout'}{$panel_key};
+
+    # Recreate Overveiw
+    $self->initialize_overview_layout($panel_key);
+
+    layout_overview(
+        window_key       => $window_key,
+        panel_key        => $panel_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub initialize_overview_layout {
 
 =pod
@@ -1039,23 +1384,74 @@ Initializes overview_layout
     foreach my $slot_key ( $top_slot_key,
         @{ $self->{'overview_layout'}{$panel_key}{'child_slot_order'} } )
     {
-        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} = {
-            bounds                 => [ 0, 0, 0, 0 ],
-            misc_items             => [],
-            buttons                => [],
-            viewed_region          => [],
-            changed                => 1,
-            sub_changed            => 1,
-            maps                   => {},
-            scale_factor_from_main => 0,
-        };
-        foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
-            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}{'maps'}
-                {$map_key} = {
-                items   => [],
-                changed => 1,
-                };
-        }
+        $self->initialize_overview_slot_layout($panel_key, $slot_key,);
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub initialize_overview_slot_layout {
+
+=pod
+
+=head2 initialize_overview_slot_layout
+
+Initializes overview_layout
+
+=cut
+
+    my $self      = shift;
+    my $panel_key = shift;
+    my $slot_key  = shift;
+
+    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} = {
+        bounds                 => [ 0, 0, 0, 0 ],
+        misc_items             => [],
+        buttons                => [],
+        viewed_region          => [],
+        changed                => 1,
+        sub_changed            => 1,
+        maps                   => {},
+        scale_factor_from_main => 0,
+    };
+    foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
+        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}{'maps'}
+            {$map_key} = {
+            items   => [],
+            changed => 1,
+            };
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub copy_slot_scaffold {
+
+=pod
+
+=head2 copy_slot_scaffold
+
+Copies important info to a new slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $old_slot_key = $args{'old_slot_key'};
+    my $new_slot_key = $args{'new_slot_key'};
+
+    # Scaffold Info
+    foreach my $key (
+        qw[
+        parent     scale   attached_to_parent
+        x_offset   is_top  pixels_per_unit
+        map_set_id
+        ]
+        )
+    {
+        $self->{'scaffold'}{$new_slot_key}{$key}
+            = $self->{'scaffold'}{$old_slot_key}{$key};
     }
 
     return;
@@ -1133,6 +1529,8 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
     my $slot_key1 = $args{'slot_key1'} or return;
     my $slot_key2 = $args{'slot_key2'} or return;
 
+    $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 0;
+    $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 0;
     my %slot2_maps;
     map { $slot2_maps{$_} = 1 } @{ $self->{'map_order'}{$slot_key2} || [] };
 
@@ -1180,6 +1578,9 @@ Adds a slot of correspondences
     my $slot_key1  = $args{'slot_key1'}  or return;
     my $slot_key2  = $args{'slot_key2'}  or return;
 
+    $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
+    $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
+
     add_correspondences(
         window_key       => $window_key,
         panel_key        => $panel_key,
@@ -1200,9 +1601,9 @@ sub reset_slot_corrs {
 
 =pod
 
-=head2 add_slot_corrs
+=head2 reset_slot_corrs
 
-Adds a slot of correspondences
+reset  a slot of correspondences
 
 =cut
 
@@ -1273,6 +1674,83 @@ Destroys items that were drawn
         items       => $items,
         is_overview => $is_overview,
     );
+}
+
+# ----------------------------------------------------
+sub delete_slot {
+
+=pod
+
+=head2 delete_slot
+
+Deletes the slot data and wipes them from the canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key = $args{'panel_key'};
+    my $slot_key  = $args{'slot_key'};
+
+    my $slot_layout = $self->{'slot_layout'}{$slot_key};
+
+    # Remove correspondences 
+    foreach my $slot_key2 (keys %{$self->{'correspondences_on'}{$slot_key}}){
+        $self->clear_slot_corrs(
+            panel_key => $panel_key,
+            slot_key1 => $slot_key,
+            slot_key2 => $slot_key2,
+        );
+    }
+
+    # Remove Drawing info
+    foreach my $drawing_item_name (qw[ separator background ]) {
+        $self->destroy_items(
+            panel_key => $panel_key,
+            items     => $slot_layout->{$drawing_item_name},
+        );
+    }
+
+    foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
+        ### Someday Add a delet_map method
+    }
+
+    # Remove from parent
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    for (
+        my $i = 0;
+        $i <= $#{ $self->{'scaffold'}{$parent_slot_key}{'children'} || [] };
+        $i++
+        )
+    {
+        if ( $slot_key
+            == $self->{'scaffold'}{$parent_slot_key}{'children'}[$i] )
+        {
+            splice @{ $self->{'scaffold'}{$parent_slot_key}{'children'} }, $i,
+                1;
+            last;
+        }
+    }
+
+    delete $self->{'slot_layout'}{$slot_key};
+    delete $self->{'scaffold'}{$slot_key};
+    delete $self->{'map_order'}{$slot_key};
+    delete $self->{'slot_info'}{$slot_key};
+    delete $self->{'map_id_to_key_by_slot'}{$slot_key};
+
+    # Remove from slot_order if it hasn't already been done
+    for (
+        my $i = 0;
+        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
+        $i++
+        )
+    {
+        if ( $slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
+            splice @{ $self->{'slot_order'}{$panel_key} }, $i, 1;
+            last;
+        }
+    }
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -1410,6 +1888,9 @@ This is a conversion factor to get from map units to pixels.
 
     $self->{'scaffold'} = {
         $slot_key => {
+            window_key         => $window_key,
+            panel_key          => $panel_key,
+            map_set_id         => undef,
             parent             => $parent_slot_key,
             children           => [$child_slot_key, ],
             scale              => 1,
@@ -1488,6 +1969,8 @@ to drawing.
             buttons     => [],
             changed     => 1,
             sub_changed => 1,
+            maps_min_x  => $maps_min_x,
+            maps_max_x  => $maps_max_x,
         }
     }
 
@@ -1501,6 +1984,7 @@ to drawing.
             items    => [],
             changed  => 1,
             sub_changed => 1,
+            row_index => 0,
             features => {
                 $feature_acc => {
                     changed => 1,
@@ -1553,6 +2037,18 @@ to drawing.
             }
         }
     }
+
+=head2 Other Values
+
+=head3 selected_slot_key
+
+    $self->{'selected_slot_key'} = $slot_key;
+
+=head3 next_map_set_color_index
+
+The next index for the background color array.
+
+    $self->{'next_map_set_color_index'} = 0;
 
 =head1 SEE ALSO
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.8 2006-07-10 19:57:01 mwz444 Exp $
+# $Id: AppController.pm,v 1.9 2006-07-24 03:31:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -49,7 +49,7 @@ Initializes the object.
     $self->config();
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 1;
+    my $developement = 0;
     if ($developement) {
         $self->load_new_window(
             window_key               => $window_key,
@@ -363,6 +363,31 @@ Handler for toggling correspondences for a slot.
     my $slot_key   = $args{'slot_key'};
 
     $self->app_display_data()->toggle_corrs_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $slot_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub new_selected_slot {
+
+=pod
+
+=head2 new_selected_slot
+
+Handler for selecting a new slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $panel_key  = $args{'panel_key'};
+    my $slot_key   = $args{'slot_key'};
+
+    $self->app_display_data()->change_selected_slot(
         window_key => $window_key,
         panel_key  => $panel_key,
         slot_key   => $slot_key,
