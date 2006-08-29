@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.149 2006-07-20 14:36:49 mwz444 Exp $
+# $Id: Generic.pm,v 1.150 2006-08-29 15:18:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.149 $)[-1];
+$VERSION = (qw$Revision: 1.150 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -284,7 +284,7 @@ Not using cache because this query is quicker.
         cmap_object   => 1,
         no_validation => 0,
         object_type   => 1,
-        acc_id        => 1,
+        id            => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -4385,7 +4385,8 @@ Array of Hashes:
     map_units,
     feature_type,
     default_rank,
-    shape color
+    shape,
+    color,
     drawing_lane,
     drawing_priority,
 
@@ -7408,16 +7409,17 @@ Feature Correspondence id
             #
             # Don't create correspondences among relational maps.
             #
-            return -1
+            next
                 if $feature1->{'map_set_id'} == $feature2->{'map_set_id'}
                 && $feature1->{'is_relational_map'} == 1;
 
             #
             # Don't create correspondences among relational map sets.
             #
-            return -1
+            next
                 if $feature1->{'is_relational_map'}
                 && $feature2->{'is_relational_map'};
+            $self->{'insert_correspondences'} = [];
 
             $sth_fc->execute(
                 $corr_id,     $corr_acc, $feature_id1,
