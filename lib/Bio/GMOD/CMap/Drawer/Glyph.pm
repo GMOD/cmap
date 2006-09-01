@@ -24,12 +24,13 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use base 'Class::Base';
 
 use constant GLYPHS_THAT_CAN_OVERLAP => {
     read_depth => 1,
+    heatmap    => 1,
     banding    => 1,
 };
 
@@ -44,7 +45,7 @@ Boolean that returns whether or not this glyph is allowed to overlap.
 
 =cut
 
-    my ($self, $glyph_name) = @_;
+    my ( $self, $glyph_name ) = @_;
 
     return GLYPHS_THAT_CAN_OVERLAP->{$glyph_name};
 }
@@ -62,17 +63,18 @@ sub line {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-    my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     my $reverse = $label_side eq RIGHT ? -1 : 1;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
     @coords = ( $x_pos2, $y_pos1, $x_pos2, $y_pos2 );
 
     return \@coords;
@@ -91,31 +93,32 @@ sub span {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     my $reverse = $label_side eq RIGHT ? -1 : 1;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
 
     push @$drawing_data,
-      [
+        [
         LINE, $x_pos2,
         $y_pos1, $x_pos2 + ( 3 * $reverse ),
         $y_pos1, $color,
-      ];
+        ];
 
     push @$drawing_data,
-      [
+        [
         LINE, $x_pos2,
         $y_pos2, $x_pos2 + ( 3 * $reverse ),
         $y_pos2, $color,
-      ];
+        ];
 
     if ( $reverse > 0 ) {
         @coords = ( $x_pos2, $y_pos1, $x_pos2 + 3, $y_pos2 );
@@ -130,22 +133,21 @@ sub span {
 # ------------------------------------
 sub direction_arrow {
     my ( $self, %args ) = @_;
-    my $dir = $args{'direction'} || 0;
+    my $dir        = $args{'direction'}  || 0;
     my $is_flipped = $args{'is_flipped'} || 0;
 
-    unless ( $dir ) {
+    unless ($dir) {
         return $self->right_facing_arrow(%args);
     }
-    if ( ($dir>0 and not $is_flipped )
-        or
-         ($dir<0 and $is_flipped)) {
+    if (   ( $dir > 0 and not $is_flipped )
+        or ( $dir < 0 and $is_flipped ) )
+    {
         return $self->down_arrow(%args);
     }
     else {
         return $self->up_arrow(%args);
     }
 }
-
 
 # ------------------------------------
 sub up_arrow {
@@ -159,21 +161,22 @@ sub up_arrow {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2 - 2, $y_pos1 + 2, $color ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2 - 2, $y_pos1 + 2, $color ];
 
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2 + 2, $y_pos1 + 2, $color ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2 + 2, $y_pos1 + 2, $color ];
 
     @coords = ( $x_pos2 - 2, $y_pos2, $x_pos2 + 2, $y_pos1, );
 
@@ -193,21 +196,22 @@ sub down_arrow {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos2, $x_pos2 - 2, $y_pos2 - 2, $color ];
+        [ LINE, $x_pos2, $y_pos2, $x_pos2 - 2, $y_pos2 - 2, $color ];
 
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos2, $x_pos2 + 2, $y_pos2 - 2, $color ];
+        [ LINE, $x_pos2, $y_pos2, $x_pos2 + 2, $y_pos2 - 2, $color ];
 
     @coords = ( $x_pos2 - 2, $y_pos2, $x_pos2 + 2, $y_pos1, );
 
@@ -227,34 +231,25 @@ sub right_facing_arrow {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
-    my $height = $y_pos2-$y_pos1;
-    my $mid_y  = $y_pos1 + ($height/2);
+    my $height = $y_pos2 - $y_pos1;
+    my $mid_y = $y_pos1 + ( $height / 2 );
+    push @$drawing_data, [ LINE, $x_pos1, $mid_y, $x_pos2, $mid_y, $color ];
     push @$drawing_data,
-      [
-        LINE,          $x_pos1,    $mid_y,
-        $x_pos2, $mid_y, $color
-      ];
+        [ LINE, $x_pos2 - 2, $mid_y - 2, $x_pos2, $mid_y, $color ];
     push @$drawing_data,
-      [
-        LINE,                   $x_pos2-2, $mid_y-2 ,
-        $x_pos2, $mid_y,       $color
-      ];
-    push @$drawing_data,
-      [
-        LINE,                   $x_pos2-2, $mid_y+2 ,
-        $x_pos2, $mid_y,       $color
-      ];
+        [ LINE, $x_pos2 - 2, $mid_y + 2, $x_pos2, $mid_y, $color ];
 
-    @coords = ( $x_pos2 , $mid_y+2, $x_pos2, $mid_y+2, );
+    @coords = ( $x_pos2, $mid_y + 2, $x_pos2, $mid_y + 2, );
 
     return \@coords;
 }
@@ -272,26 +267,27 @@ sub double_arrow {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
 
     # my $= $args{''};
     my @coords;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2 - 2, $y_pos1 + 2, $color ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2 - 2, $y_pos1 + 2, $color ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2 + 2, $y_pos1 + 2, $color ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2 + 2, $y_pos1 + 2, $color ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos2, $x_pos2 - 2, $y_pos2 - 2, $color ];
+        [ LINE, $x_pos2, $y_pos2, $x_pos2 - 2, $y_pos2 - 2, $color ];
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos2, $x_pos2 + 2, $y_pos2 - 2, $color ];
+        [ LINE, $x_pos2, $y_pos2, $x_pos2 + 2, $y_pos2 - 2, $color ];
 
     @coords = ( $x_pos2 - 2, $y_pos2, $x_pos2 + 2, $y_pos1, );
 
@@ -311,17 +307,17 @@ sub dumbbell {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
-    my $label_side   = $args{'label_side'} || RIGHT;
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my @coords;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
-    my $width = 4;
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+    my $width = $feature->{'width'} || 4;
 
     unless ( $y_pos1 == $y_pos2 ) {
         $y_pos1 += 2;
@@ -329,13 +325,53 @@ sub dumbbell {
     }
 
     push @$drawing_data,
-      [ ARC, $x_pos2, $y_pos1, $width, $width, 0, 360, $color ];
+        [ ARC, $x_pos2, $y_pos1, $width, $width, 0, 360, $color ];
+    push @$drawing_data, [ FILL, $x_pos2+1, $y_pos1+1, $color ];
     push @$drawing_data,
-      [ ARC, $x_pos2, $y_pos2, $width, $width, 0, 360, $color ];
+        [ ARC, $x_pos2, $y_pos2, $width, $width, 0, 360, $color ];
+    push @$drawing_data, [ FILL, $x_pos2+1, $y_pos2+1, $color ];
+
+    @coords
+        = ( $x_pos2 - $width / 2, $y_pos1, $x_pos2 + $width / 2, $y_pos2 );
+
+    return \@coords;
+}
+
+# ------------------------------------
+sub i_beam {
+
+=pod
+
+=head2
+
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2 = $args{'x_pos2'};
+    my $x_pos1 = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color        = $args{'color'};
+	my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
+    my @coords;
+    my $width = $feature->{'width'} || 4;
+
+    my $half_width = $width/2;
+    push @$drawing_data,
+      [ LINE, $x_pos2+$half_width, $y_pos1, $x_pos2+$half_width, $y_pos2, $color, ];
+
+    push @$drawing_data,
+      [ LINE, $x_pos2, $y_pos1, $x_pos2+$width, $y_pos1,  $color ];
+    push @$drawing_data,
+      [ LINE, $x_pos2, $y_pos2, $x_pos2+$width, $y_pos2, $color ];
 
     @coords = (
-        $x_pos2 - $width / 2, $y_pos1,
-        $x_pos2 + $width / 2, $y_pos2
+        $x_pos2 , $y_pos1,
+        $x_pos2 + $width , $y_pos2
     );
 
     return \@coords;
@@ -354,12 +390,13 @@ sub box {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
@@ -382,31 +419,24 @@ sub filled_box {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
-    my $width = 3;
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+    my $width = $feature->{'width'} || 3;
     push @$drawing_data,
-      [
-        FILLED_RECT,            $x_pos2, $y_pos1,
-        $x_pos2 + $width, $y_pos2,       $color,
-      ];
+        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
     push @$drawing_data,
-      [
-        RECTANGLE, $x_pos2, $y_pos1, $x_pos2 + $width,
-        $y_pos2,   'black',
-      ];
-    @coords = (
-        $x_pos2 - $width / 2, $y_pos1,
-        $x_pos2 + $width / 2, $y_pos2
-    );
+        [ RECTANGLE, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, 'black', ];
+    @coords
+        = ( $x_pos2 - $width / 2, $y_pos1, $x_pos2 + $width / 2, $y_pos2 );
 
     return \@coords;
 }
@@ -429,30 +459,62 @@ sub banding {
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color1       = $args{'color'} || 'red';
-	my $name         = $args{'name'};
-	my $calling_obj  = $args{'calling_obj'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
+    my $calling_obj  = $args{'calling_obj'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
-    my $color2='black';
-    my $color = $calling_obj->{'oscillating_color'} || $color1; 
-    if ($calling_obj->{'oscillating_color'} eq $color2){
-        $calling_obj->{'oscillating_color'} = $color1;
+    my $color2 = 'black';
+    my $oscillating_color_key
+        = 'oscillating_color_' . $feature->{'feature_type_acc'};
+    my $color  = $calling_obj->{$oscillating_color_key} || $color1;
+
+    if ( $calling_obj->{$oscillating_color_key} eq $color2 ) {
+        $calling_obj->{$oscillating_color_key} = $color1;
     }
-    else{
-        $calling_obj->{'oscillating_color'} = $color2;
+    else {
+        $calling_obj->{$oscillating_color_key} = $color2;
     }
+    my $width = $feature->{'width'} || 3;
     push @$drawing_data,
-      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
-    my $width = 3;
+        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
+    @coords
+        = ( $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2 );
+
+    return \@coords;
+}
+
+# ------------------------------------
+sub bar {
+
+=pod
+
+=head2
+
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color       = $args{'color'} || 'red';
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
+    my $calling_obj  = $args{'calling_obj'};
+    my $label_side   = $args{'label_side'} || RIGHT;
+    my @coords;
+
     push @$drawing_data,
-      [
-        FILLED_RECT,            $x_pos2, $y_pos1,
-        $x_pos2 + $width, $y_pos2,       $color,
-      ];
-    @coords = (
-        $x_pos2 - $width / 2, $y_pos1,
-        $x_pos2 + $width / 2, $y_pos2
-    );
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+    my $width = $feature->{'width'} || 3;
+    push @$drawing_data,
+        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
+    @coords
+        = ( $x_pos2 - $width / 2, $y_pos1, $x_pos2 + $width / 2, $y_pos2 );
 
     return \@coords;
 }
@@ -479,7 +541,8 @@ sub out_triangle {
         return $self->right_facing_triangle(%args);
     }
     else {
-        return $self->left_facing_triangle(%args); }
+        return $self->left_facing_triangle(%args);
+    }
 }
 
 # ------------------------------------
@@ -495,34 +558,26 @@ sub right_facing_triangle {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
-    my $width = 3;
-    my $height = $y_pos2-$y_pos1;
-    my $mid_y  = $y_pos1 + ($height/2);
+    my $width  = 3;
+    my $height = $y_pos2 - $y_pos1;
+    my $mid_y  = $y_pos1 + ( $height / 2 );
 
     push @$drawing_data,
-      [
-        LINE,          $x_pos2,    $mid_y - $width,
-        $x_pos2, $mid_y + $width, $color
-      ];
+        [ LINE, $x_pos2, $mid_y - $width, $x_pos2, $mid_y + $width, $color ];
     push @$drawing_data,
-      [
-        LINE,                   $x_pos2, $mid_y - $width,
-        $x_pos2 + $width, $mid_y,       $color
-      ];
+        [ LINE, $x_pos2, $mid_y - $width, $x_pos2 + $width, $mid_y, $color ];
     push @$drawing_data,
-      [
-        LINE,                   $x_pos2, $mid_y + $width,
-        $x_pos2 + $width, $mid_y,       $color
-      ];
+        [ LINE, $x_pos2, $mid_y + $width, $x_pos2 + $width, $mid_y, $color ];
     push @$drawing_data, [ FILL, $x_pos2 + 1, $mid_y + 1, $color ];
 
     @coords = (
@@ -546,40 +601,34 @@ sub left_facing_triangle {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
-    my $width = 3;
-    my $height = $y_pos2-$y_pos1;
-    my $mid_y  = $y_pos1 + ($height/2);
+    my $width  = 3;
+    my $height = $y_pos2 - $y_pos1;
+    my $mid_y  = $y_pos1 + ( $height / 2 );
 
     push @$drawing_data,
-      [
+        [
         LINE,
         $x_pos2 + $width,
         $mid_y - $width,
         $x_pos2 + $width,
         $mid_y + $width,
         $color
-      ];
+        ];
     push @$drawing_data,
-      [
-        LINE,          $x_pos2 + $width, $mid_y - $width,
-        $x_pos2, $mid_y,                $color
-      ];
+        [ LINE, $x_pos2 + $width, $mid_y - $width, $x_pos2, $mid_y, $color ];
     push @$drawing_data,
-      [
-        LINE,                   $x_pos2,    $mid_y,
-        $x_pos2 + $width, $mid_y + $width, $color
-      ];
-    push @$drawing_data,
-      [ FILL, $x_pos2 + $width - 1, $mid_y + 1, $color ];
+        [ LINE, $x_pos2, $mid_y, $x_pos2 + $width, $mid_y + $width, $color ];
+    push @$drawing_data, [ FILL, $x_pos2 + $width - 1, $mid_y + 1, $color ];
 
     @coords = (
         $x_pos2 - $width,
@@ -590,6 +639,7 @@ sub left_facing_triangle {
 
     return \@coords;
 }
+
 # ------------------------------------
 sub read_depth {
 
@@ -603,29 +653,26 @@ sub read_depth {
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
-    my $x_pos2 = $args{'x_pos2'};
-    my $x_pos1 = $args{'x_pos1'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
-	my $name        = $args{'name'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     my $reverse = $label_side eq RIGHT ? 1 : -1;
 
-    if ($name =~ /^$RE{'num'}{'real'}$/){
-        $x_pos2 = $x_pos1+($name * $reverse);
+    if ( $name =~ /^$RE{'num'}{'real'}$/ ) {
+        $x_pos2 = $x_pos1 + ( $name * $reverse );
     }
-    else{
+    else {
         $x_pos2 = $x_pos1;
     }
-    $x_pos2 += (3*$reverse);
+    $x_pos2 += ( 3 * $reverse );
     push @$drawing_data,
-      [
-        LINE, $x_pos2,
-        $y_pos1, $x_pos2,
-        $y_pos2, $color,
-      ];
+        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
 
     if ( $reverse > 0 ) {
         @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -637,6 +684,99 @@ sub read_depth {
     return \@coords;
 }
 
+# ------------------------------------
+sub heatmap {
+
+=pod
+
+=head2
+
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color        = $args{'color'};
+    my $name         = $args{'name'};
+    my $feature      = $args{'feature'};
+    my $drawer       = $args{'drawer'};
+    my $label_side   = $args{'label_side'} || RIGHT;
+    my @coords;
+    my $value = $name;
+
+    unless ( $value =~ /^$RE{'num'}{'real'}$/ ) {
+        return [];
+    }
+
+
+    # Get feature type values
+    my ($top_value, $bot_value,$top_color_array,$bot_color_array,);
+    my $feature_type_acc = $feature->{'feature_type_acc'};
+    unless($top_value = $drawer->{'hm_top_val_'.$feature_type_acc}){ 
+        $top_value = $drawer->feature_type_data( $feature_type_acc, 'max_value' ) || 100;
+        $drawer->{'hm_top_val_'.$feature_type_acc} = $top_value;
+    }
+    unless($bot_value = $drawer->{'hm_bot_val_'.$feature_type_acc}){ 
+        $bot_value = $drawer->feature_type_data( $feature_type_acc, 'min_value' ) || 0;
+        $drawer->{'hm_bot_val_'.$feature_type_acc} = $bot_value;
+    }
+    unless ( $top_color_array = $drawer->{ 'hm_top_color_' . $feature_type_acc } )
+    {
+        $top_color_array = [
+            split /\s*,\s*/,
+            $drawer->feature_type_data(
+                $feature_type_acc, 'max_color_value'
+                )
+                || '0,255,0'
+        ];
+        $drawer->{ 'hm_top_color_' . $feature_type_acc } = $top_color_array;
+    }
+    unless ( $bot_color_array = $drawer->{ 'hm_bot_color_' . $feature_type_acc } )
+    {
+        $bot_color_array = [
+            split /\s*,\s*/,
+            $drawer->feature_type_data(
+                $feature_type_acc, 'min_color_value'
+                )
+                || '255,0,0'
+        ];
+        $drawer->{ 'hm_bot_color_' . $feature_type_acc } = $bot_color_array;
+    }
+
+    # Do Color Math
+    my $value_fraction = ($value - $bot_value + 1)/($top_value-$bot_value + 1);
+    if ($value_fraction < 0){ 
+        $value_fraction = 0;
+    }
+    elsif ($value_fraction > 1){ 
+        $value_fraction = 1;
+    }
+
+    my $r_color
+        = $value_fraction * ( $top_color_array->[0] - $bot_color_array->[0] )
+        + $bot_color_array->[0];
+    my $g_color
+        = $value_fraction * ( $top_color_array->[1] - $bot_color_array->[1] )
+        + $bot_color_array->[1];
+    my $b_color
+        = $value_fraction * ( $top_color_array->[2] - $bot_color_array->[2] )
+        + $bot_color_array->[2];
+
+    my $color = $drawer->define_color([$r_color,$g_color,$b_color]);
+
+    my $width = $feature->{'width'} || 3;
+    push @$drawing_data,
+        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
+    @coords
+        = ( $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2 );
+
+    return \@coords;
+}
 
 1;
 

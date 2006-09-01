@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.150 2006-08-29 15:18:50 mwz444 Exp $
+# $Id: Generic.pm,v 1.151 2006-09-01 19:33:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.150 $)[-1];
+$VERSION = (qw$Revision: 1.151 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4566,7 +4566,7 @@ Array of Hashes:
                 = $feature_type_data->{ $feature_type_acc }{$_}
                 for qw[
                 feature_type default_rank shape color
-                drawing_lane drawing_priority
+                drawing_lane drawing_priority width
             ];
             if ($feature_type_data->{ $feature_type_acc }{'get_attributes'}){
                 $row->{'attributes'} = $self->get_attributes(

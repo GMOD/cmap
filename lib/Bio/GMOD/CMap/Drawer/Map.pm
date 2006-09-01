@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.197 2006-06-06 14:32:52 mwz444 Exp $
+# $Id: Map.pm,v 1.198 2006-09-01 19:33:00 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.197 $)[-1];
+$VERSION = (qw$Revision: 1.198 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2273,8 +2273,7 @@ sub place_map_y {
                   # This places the map in relation to the first reference map
                     my $map_unit_len = $self->map_length($map_id);
                     my $map_start    = $self->map_start($map_id);
-                    my $rstart       = sprintf( "%.2f",
-                        ( $avg_mid - $map_start ) / $map_unit_len );
+                    my $rstart = ( $avg_mid - $map_start ) / $map_unit_len ;
                     $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
                     $max_ref_y = $ref_map_mid_y
                         + ( $pixel_height * ( 1 - $rstart ) );
@@ -2932,11 +2931,11 @@ sub add_feature_to_map {
     my $fstop = $shape_is_triangle ? undef: $feature->{'feature_stop'};
     $fstop = undef if $fstop < $fstart;
 
-    my $rstart = sprintf( "%.2f", ( $fstart - $map_start ) / $map_length );
+    my $rstart = ($fstart - $map_start ) / $map_length;
     $rstart = $rstart > 1 ? 1 : $rstart < 0 ? 0 : $rstart;
     my $rstop =
         defined $fstop
-        ? sprintf( "%.2f", ( $fstop - $map_start ) / $map_length )
+        ? ( $fstop - $map_start ) / $map_length 
         : undef;
     if ( defined $rstop ) {
         $rstop = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
@@ -3075,9 +3074,11 @@ sub add_feature_to_map {
                         name         => $feature->{'feature_name'},
                         label_side   => $label_side,
                         calling_obj  => $self,
+                        feature      => $feature,
+                        drawer       => $drawer,
                     )
                     };
-                unless ($omit_area_boxes) {
+                if (!$omit_area_boxes and @coords) {
                     my $code = '';
                     my $url
                         = $feature_details_url . $feature->{'feature_acc'};

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.123 2006-05-16 02:03:26 mwz444 Exp $
+# $Id: Drawer.pm,v 1.124 2006-09-01 19:33:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -339,7 +339,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.123 $)[-1];
+$VERSION = (qw$Revision: 1.124 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1571,11 +1571,18 @@ Do the actual drawing.
     my $width     = $self->map_width;
     my $img_class = $self->image_class;
     my $img       = $img_class->new( $width, $height );
-    my %colors    =
-        map {
-        $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
-        }
-        keys %{ +COLORS };
+    my %colors = (
+        (   map {
+                $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
+                }
+                keys %{ +COLORS }
+        ),
+        (   map {
+                $_, $img->colorAllocate( @{ $self->{'custom_colors'}{$_} } )
+                }
+                keys %{ $self->{'custom_colors'} }
+        ),
+    );
     $img->interlaced('true');
     $img->filledRectangle( 0, 0, $width, $height,
         $colors{ $self->config_data('background_color') } );
@@ -3260,6 +3267,26 @@ Creates default link parameters for CMap->create_viewer_link()
         new_session                 => $new_session,
         skip_map_info               => $skip_map_info,
     );
+}
+
+# ----------------------------------------------------
+sub define_color {
+
+=pod
+
+=head2 message
+
+Message to be printed out on top of the image.
+
+=cut
+
+    my $self = shift;
+    my $rgb_array_ref  = shift or return;
+
+    my $color_key = join ('_', @{$rgb_array_ref ||[]}) or return;
+    $self->{'custom_colors'}{$color_key} = $rgb_array_ref;
+
+    return $color_key;
 }
 
 # ----------------------------------------------------
