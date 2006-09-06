@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.11 2006-07-24 03:31:48 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.12 2006-09-06 15:34:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,9 +29,13 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
+use constant MAP_Y_BUFFER  => 15;
+use constant MAP_X_BUFFER  => 15;
+use constant SMALL_BUFFER  => 2;
+use constant MIN_MAP_WIDTH => 40;
 
 use base 'Exporter';
 
@@ -302,7 +306,6 @@ Lays out a brand new slot
     my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_key};
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
     my $start_height     = 0;
-    my $buffer           = 2;
 
     # Initialize bounds to the bounds of the panel
     # starting at the lowest point available.
@@ -320,7 +323,7 @@ Lays out a brand new slot
     unless ( $app_display_data->{'scaffold'}{$slot_key}{'is_top'} ) {
 
         # Make room for border if it is possible to have one.
-        $slot_layout->{'bounds'}[3] += SLOT_SEPARATOR_HEIGHT + $buffer;
+        $slot_layout->{'bounds'}[3] += SLOT_SEPARATOR_HEIGHT + SMALL_BUFFER;
     }
 
     if ( $app_display_data->{'scaffold'}{$slot_key}{'attached_to_parent'} ) {
@@ -344,6 +347,7 @@ Lays out a brand new slot
         );
     }
 
+    $slot_layout->{'bounds'}[3] += MAP_Y_BUFFER ;
     set_slot_bgcolor(
             panel_key        => $panel_key,
             slot_key         => $slot_key,
@@ -361,9 +365,9 @@ sub set_slot_bgcolor {
 
 =pod
 
-=head2 add_slot_separator
+=head2 set_slot_bgcolor
 
-Lays out reference maps in a new slot
+
 
 =cut
 
@@ -441,15 +445,12 @@ Lays out reference maps in a new slot
 
     #  Options that should be defined elsewhere
     my $stacked       = 0;
-    my $min_map_width = 40;
-    my $map_x_buffer  = 15;
-    my $map_y_buffer  = 15;
 
     my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'}
         || 0;
 
-    my $left_bound  = $slot_layout->{'bounds'}[0] + $map_x_buffer;
-    my $right_bound = $slot_layout->{'bounds'}[2] - $map_x_buffer;
+    my $left_bound  = $slot_layout->{'bounds'}[0] + MAP_X_BUFFER;
+    my $right_bound = $slot_layout->{'bounds'}[2] - MAP_X_BUFFER;
     my $slot_width  = $right_bound - $left_bound;
     my $maps_num
         = scalar( @{ $app_display_data->{'map_order'}{$slot_key} || [] } );
@@ -469,8 +470,6 @@ Lays out reference maps in a new slot
     my $pixels_per_unit = _pixels_per_map_unit(
         map_data_hash    => $map_data_hash,
         ordered_map_ids  => \@ordered_map_ids,
-        map_x_buffer     => $map_x_buffer,
-        min_map_width    => $min_map_width,
         slot_width       => $slot_width,
         slot_key         => $slot_key,
         stacked          => $stacked,
@@ -484,7 +483,7 @@ Lays out reference maps in a new slot
     my $map_min_x   = $left_bound;
     my $row_min_y   = $slot_layout->{'bounds'}[1];
     my $start_min_y = $row_min_y;
-    $row_min_y += $map_y_buffer;
+    $row_min_y += MAP_Y_BUFFER;
     my $row_max_y = $row_min_y;
     my $row_index = 0;
 
@@ -500,8 +499,8 @@ Lays out reference maps in a new slot
 
         # If the map is the minimum width,
         # Set the individual ppu otherwise clear it.
-        if ( $map_container_width < $min_map_width ) {
-            $map_container_width = $min_map_width;
+        if ( $map_container_width < MIN_MAP_WIDTH ) {
+            $map_container_width = MIN_MAP_WIDTH;
             $app_display_data->{'map_pixels_per_unit'}{$map_key}
                 = $map_container_width / $length;
         }
@@ -515,7 +514,7 @@ Lays out reference maps in a new slot
 
         if ( $stacked and $map_min_x != $left_bound ) {
             $map_min_x = $left_bound;
-            $row_min_y = $row_max_y + $map_y_buffer;
+            $row_min_y = $row_max_y + MAP_Y_BUFFER;
             $row_index++;
         }
         my $map_max_x = $map_min_x + $map_container_width;
@@ -573,11 +572,11 @@ Lays out reference maps in a new slot
             $row_max_y = $tmp_map_max_y;
         }
 
-        $map_min_x += $map_container_width + $map_x_buffer;
+        $map_min_x += $map_container_width + MAP_X_BUFFER;
         $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
     }
 
-    my $height_change = $row_max_y - $start_min_y + $map_y_buffer;
+    my $height_change = $row_max_y - $start_min_y + MAP_Y_BUFFER;
     $app_display_data->modify_slot_bottom_bound(
         slot_key      => $slot_key,
         bounds_change => $height_change,
@@ -610,8 +609,6 @@ Lays out sub maps in a slot.
         || 0;
 
     #  Options that should be defined elsewhere
-    my $map_x_buffer = 15;
-    my $map_y_buffer = 15;
 
     my $start_min_y = $slot_layout->{'bounds'}[1];
 
@@ -683,7 +680,7 @@ Lays out sub maps in a slot.
             columns    => \@row_distribution_aray,
             map_height => ( $parent_x2 - $parent_x1 + 1 )
                 * $scale,    # really width
-            buffer => $map_y_buffer,
+            buffer     => MAP_X_BUFFER,
         );
 
         # Set the row index in case this slot needs to be split
@@ -693,7 +690,7 @@ Lays out sub maps in a slot.
         push @{ $rows[$row_index] }, [ $sub_map_key, $x1, $x2 ];
     }
 
-    my $row_min_y = $start_min_y + $map_y_buffer;
+    my $row_min_y = $start_min_y; 
     my $row_max_y = $row_min_y;
     my $map_pixels_per_unit;
 
@@ -770,7 +767,7 @@ Lays out sub maps in a slot.
             }
             $app_display_data->{'map_layout'}{$sub_map_key}{'changed'} = 1;
         }
-        $row_min_y = $row_max_y + $map_y_buffer;
+        $row_min_y = $row_max_y + MAP_Y_BUFFER;
     }
 
     my $height_change = $row_max_y - $slot_layout->{'bounds'}[3];
@@ -830,18 +827,15 @@ Lays out maps in a slot where they are already placed horizontally.
         add_slot_separator( slot_layout => $new_slot_layout, );
     }
     unless ( $app_display_data->{'scaffold'}{$new_slot_key}{'is_top'} ) {
-        my $buffer = 2;
-
         # Make room for border if it is possible to have one.
-        $new_slot_layout->{'bounds'}[3] += SLOT_SEPARATOR_HEIGHT + $buffer;
+        $new_slot_layout->{'bounds'}[3] += SLOT_SEPARATOR_HEIGHT + SMALL_BUFFER;
     }
 
     # Move Maps
 
     #  Options that should be defined elsewhere
-    my $map_y_buffer = 15;
 
-    my $new_min_y = $new_slot_layout->{'bounds'}[3] + $map_y_buffer;
+    my $new_min_y = $new_slot_layout->{'bounds'}[3] + MAP_Y_BUFFER;
 
     # Look at first map and work out vertical offset.
 
@@ -881,7 +875,7 @@ Lays out maps in a slot where they are already placed horizontally.
         );
     }
 
-    my $height_change = $max_y - $start_min_y + $map_y_buffer;
+    my $height_change = $max_y - $start_min_y + MAP_Y_BUFFER;
     $app_display_data->modify_slot_bottom_bound(
         slot_key      => $new_slot_key,
         bounds_change => $height_change,
@@ -894,7 +888,7 @@ Lays out maps in a slot where they are already placed horizontally.
     $panel_layout->{'sub_changed'} = 1;
     $new_slot_layout->{'sub_changed'} = 1;
     $new_slot_layout->{'changed'} = 1;
-    $new_slot_layout->{'bounds'}[3] = $max_y; 
+    $new_slot_layout->{'bounds'}[3] = $max_y + MAP_Y_BUFFER; 
 
     return $max_y;
 }
@@ -922,8 +916,6 @@ Lays out a maps in a contained area.
     my $min_y            = $args{'min_y'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
 
-    my $buffer = 2;
-
     my $max_y;
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
@@ -950,7 +942,7 @@ Lays out a maps in a contained area.
         );
     $map_layout->{'coords'} = [ $min_x, $min_y, $max_x, $max_y ];
 
-    $min_y = $max_y + $buffer;
+    $min_y = $max_y; 
 
     if ( $app_display_data->{'scaffold'}{$slot_key}{'expanded'} ) {
         $max_y = _layout_features(
@@ -1002,11 +994,10 @@ Lays out feautures
     }
 
     my $map_start = $map->{'map_start'};
-    my $buffer    = 2;
 
     for my $lane ( sort { $a <=> $b } keys %$sorted_feature_data ) {
         my $lane_features = $sorted_feature_data->{$lane};
-        my $lane_min_y    = $max_y + $buffer;
+        my $lane_min_y    = $max_y + SMALL_BUFFER;
         my @fcolumns;
 
         foreach my $feature ( @{ $lane_features || [] } ) {
@@ -1035,7 +1026,7 @@ Lays out feautures
                 high       => $adjusted_right,
                 columns    => \@fcolumns,
                 map_height => $max_x - $min_x + 1,
-                buffer     => $buffer,
+                buffer     => SMALL_BUFFER,
             );
 
             my $label_features = 0;
@@ -1238,8 +1229,6 @@ returns the number of pixesl per map unit.
     my %args             = @_;
     my $map_data_hash    = $args{'map_data_hash'};
     my $ordered_map_ids  = $args{'ordered_map_ids'} || [];
-    my $map_x_buffer     = $args{'map_x_buffer'};
-    my $min_map_width    = $args{'min_map_width'};
     my $slot_width       = $args{'slot_width'};
     my $slot_key         = $args{'slot_key'};
     my $stacked          = $args{'stacked'};
@@ -1259,7 +1248,7 @@ returns the number of pixesl per map unit.
                 $longest_length = $length if ( $length > $longest_length );
             }
             $pixels_per_unit
-                = ( $slot_width - ( 2 * $map_x_buffer ) ) / $longest_length;
+                = ( $slot_width - ( 2 * MAP_X_BUFFER ) ) / $longest_length;
         }
         else {
             my %map_length;
@@ -1288,8 +1277,8 @@ returns the number of pixesl per map unit.
                     }
                 }
                 my $other_space
-                    = ( 1 + scalar(@$ordered_map_ids) ) * $map_x_buffer
-                    + ( $min_map_width * $min_length_map_count );
+                    = ( 1 + scalar(@$ordered_map_ids) ) * MAP_X_BUFFER
+                    + ( MIN_MAP_WIDTH * $min_length_map_count );
                 $pixels_per_unit = $length_sum
                     ? ( $slot_width - $other_space ) / $length_sum
                     : 0;
@@ -1300,7 +1289,7 @@ returns the number of pixesl per map unit.
                 foreach my $map_id (@$ordered_map_ids) {
                     next if ( $map_is_min_length{$map_id} );
                     if ( $map_length{$map_id} * $pixels_per_unit
-                        < $min_map_width )
+                        < MIN_MAP_WIDTH )
                     {
                         $redo = 1;
                         $map_is_min_length{$map_id} = 1;
