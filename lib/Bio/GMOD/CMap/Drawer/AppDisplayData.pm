@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.11 2006-07-24 03:31:48 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.12 2006-09-12 15:10:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -718,7 +718,6 @@ expand slots
     return if $old_slot_scaffold->{'expanded'};
 
     my $parent_slot_key = $old_slot_scaffold->{'parent'};
-#print STDERR "++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 
     my %row_index_maps;
 
@@ -1444,9 +1443,10 @@ Copies important info to a new slot.
     # Scaffold Info
     foreach my $key (
         qw[
-        parent     scale   attached_to_parent
-        x_offset   is_top  pixels_per_unit
-        map_set_id
+        parent      scale       attached_to_parent
+        x_offset    is_top      pixels_per_unit
+        map_set_id  window_key  panel_key
+        children
         ]
         )
     {

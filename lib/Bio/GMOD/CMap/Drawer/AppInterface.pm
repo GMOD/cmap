@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.10 2006-07-24 03:31:48 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.11 2006-09-12 15:10:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -929,6 +929,8 @@ Draws and re-draws on the canvas
     my $canvas = $args{'canvas'}
         || $self->canvas( panel_key => $args{'panel_key'}, );
     my $app_display_data = $args{'app_display_data'};
+    my $window_key = $app_display_data->{'scaffold'}{$slot_key}{'window_key'};
+    my $panel_key  = $app_display_data->{'scaffold'}{$slot_key}{'panel_key'};
 
     my $slot_layout = $app_display_data->{'slot_layout'}{$slot_key};
     if ( $slot_layout->{'changed'} ) {
@@ -940,7 +942,13 @@ Draws and re-draws on the canvas
         $self->draw_items(
             canvas => $canvas,
             items  => $slot_layout->{'background'},
-            tags   => [ 'on_bottom', ],
+            tags   => [
+                'on_bottom',
+                'background_'
+                    . $window_key . '_'
+                    . $panel_key . '_'
+                    . $slot_key
+            ],
         );
         foreach my $button ( @{ $slot_layout->{'buttons'} || [] } ) {
             $self->draw_button(
@@ -964,7 +972,7 @@ Draws and re-draws on the canvas
                     canvas   => $canvas,
                     x_offset => $x_offset,
                     items    => $map_layout->{$drawing_section},
-                    tags     => [ 'middle_layer', 'display', ],
+                    tags     => [ 'middle_layer', 'display', 'map'],
                 );
             }
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
@@ -1396,10 +1404,67 @@ Returns the canvas object.
                 '-relief'      => 'sunken',
                 '-borderwidth' => 2,
                 '-background'  => 'white',
-            
+           
         )->pack( -side => 'top', -fill => 'both', );
+        $self->bind_canvas( canvas => $self->{'canvas'}{$panel_key} );
     }
     return $self->{'canvas'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub bind_canvas {
+
+=pod
+
+=head2 bind_canvas
+
+Bind events to a canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $canvas = $args{'canvas'} or return undef;
+
+    $canvas->CanvasBind(
+        '<1>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->start_drag( $canvas, $e->x, $e->y,);
+        }
+    );
+    $canvas->CanvasBind(
+        '<B1-ButtonRelease>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->stop_drag( $canvas, $e->x, $e->y,);
+        }
+    );
+    $canvas->CanvasBind(
+        '<B1-Motion>' => sub {
+            $self->drag( shift, $Tk::event->x, $Tk::event->y,);
+        }
+    );
+    if ( $^O eq 'MSWin32' ) {
+        $canvas->CanvasBind(
+            '<MouseWheel>' => sub {
+                $self->mouse_wheel_event( $canvas, ( Ev('D') < 0 ) ? 0.5 : 2 );
+            }
+        );
+    }
+    else{
+        $canvas->CanvasBind(
+            '<4>' => sub {
+                $self->mouse_wheel_event($canvas, 0.5);
+            }
+        );
+        $canvas->CanvasBind(
+            '<5>' => sub {
+                $self->mouse_wheel_event($canvas, 2);
+            }
+        );
+        
+    }
+    
 }
 
 # ----------------------------------------------------
@@ -1813,6 +1878,148 @@ Remove the interface buttons for a slot.
     $self->{'toggle_slot_pane'}{$slot_key} = undef;
     return;
 }
+
+=pod
+
+=head1 Drag and Drop Methods
+
+=cut
+
+# ----------------------------------------------------
+sub start_drag {
+
+=pod
+
+=head2 start_drag
+
+Handle starting drag
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+
+    $self->{'drag_ori_x'} = $x;
+    $self->{'drag_ori_y'} = $y;
+    $self->{'drag_ori_id'} = $canvas->find('withtag','current');
+    $self->{'drag_last_x'} = $canvas->canvasx($x);
+    $self->{'drag_last_y'} = $canvas->canvasy($y);
+    if (grep /^map/, $canvas->gettags("current")){
+        return unless ($self->{'drag_ori_id'});
+        $self->{'drag_obj'} = 'map';
+        $self->{'ghost_map_id'} = $canvas->createRectangle(
+            ( $canvas->bbox('current') ),
+            ( '-outline' => 'grey', ),
+        );
+    }
+    elsif (my @tags = grep /^background_/, $canvas->gettags("current")){
+        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_panel_key'} = $2;
+        $self->{'drag_slot_key'} = $3;
+        $self->{'drag_obj'} = 'background';
+    }
+
+}    # end start_drag
+
+# ----------------------------------------------------
+sub drag {
+
+=pod
+
+=head2 drag
+
+Handle the drag event
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+    return unless ($self->{'drag_ori_id'});
+    $x = $canvas->canvasx($x);
+    $y = $canvas->canvasy($y);
+    my $dx = $x - $self->{'drag_last_x'};
+    my $dy = $y - $self->{'drag_last_y'};
+
+    if ($self->{'drag_obj'} eq 'map'){
+        $canvas->move( $self->{'ghost_map_id'}, $dx,0, );
+        $canvas->configure(-scrollregion =>[$canvas->bbox('all')]);
+    }
+    elsif ( $self->{'drag_obj'} eq 'background' ) {
+        $self->app_controller()->scroll_slot(
+            window_key   => $self->{'drag_window_key'},
+            panel_key    => $self->{'drag_panel_key'},
+            slot_key     => $self->{'drag_slot_key'},
+            scroll_value => $dx * -1,
+        );
+    }
+
+    $self->{drag_last_x} = $x;
+    $self->{drag_last_y} = $y;
+
+}
+
+# ----------------------------------------------------
+sub stop_drag {
+
+=pod
+
+=head2 stop_drag
+
+Handle the stopping drag event
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+
+    return unless ($self->{'drag_ori_id'});
+    # Move original object
+    $x = $canvas->canvasx($x);
+    my $dx = $x - $self->{'drag_ori_x'};
+    if ($self->{'drag_obj'} eq 'map'){
+    #    $canvas->move( $self->{'drag_ori_id'}, $dx,0, );
+        $canvas->delete($self->{'ghost_map_id'});
+        $self->{'ghost_map_id'} = undef;
+
+    }
+    $self->{'drag_ori_id'} = undef;
+    $self->{'drag_ori_x'} = undef;
+    $self->{'drag_ori_y'} = undef;
+    $self->{'drag_obj'} = undef;
+
+}    # end start_drag
+
+# ----------------------------------------------------
+sub mouse_wheel_event {
+
+=pod
+
+=head2 mouse_wheel_event
+
+Handle the mouse wheel events
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $value ) = @_;
+
+    if ( my @tags = grep /^background_/, $canvas->gettags("current") ) {
+        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        my $window_key = $1;
+        my $panel_key  = $2;
+        my $slot_key   = $3;
+        
+        $self->app_controller()->zoom_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+            zoom_value => $value,
+        );
+    }
+
+}
+
 
 
 
