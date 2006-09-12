@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.124 2006-09-01 19:33:00 mwz444 Exp $
+# $Id: Drawer.pm,v 1.125 2006-09-12 17:36:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -339,7 +339,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.124 $)[-1];
+$VERSION = (qw$Revision: 1.125 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1571,7 +1571,7 @@ Do the actual drawing.
     my $width     = $self->map_width;
     my $img_class = $self->image_class;
     my $img       = $img_class->new( $width, $height );
-    my %colors = (
+    my %colors    = (
         (   map {
                 $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
                 }
@@ -2450,11 +2450,40 @@ sub slots {
 =head2 slots
 
 Gets/sets what's in the "slots" (the maps in each position).
+And Checks the slot bounds
 
 =cut
 
     my $self = shift;
-    $self->{'slots'} = shift if @_;
+    if (@_) {
+        $self->{'slots'} = shift;
+        foreach my $slot_num ( keys %{ $self->{'slots'} || {} } ) {
+            foreach my $map_acc (
+                keys %{ $self->{'slots'}{$slot_num}{'maps'} || {} } )
+            {
+                if (    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
+                    and $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
+                    < $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
+                    {'ori_map_start'} )
+                {
+                    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
+                        = $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
+                        {'ori_map_start'};
+                }
+                if (    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
+                    and $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
+                    > $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
+                    {'ori_map_stop'} )
+                {
+                    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
+                        = $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
+                        {'ori_map_stop'};
+                }
+
+            }
+        }
+    }
+
     return $self->{'slots'};
 }
 
@@ -3280,10 +3309,10 @@ Message to be printed out on top of the image.
 
 =cut
 
-    my $self = shift;
-    my $rgb_array_ref  = shift or return;
+    my $self          = shift;
+    my $rgb_array_ref = shift or return;
 
-    my $color_key = join ('_', @{$rgb_array_ref ||[]}) or return;
+    my $color_key = join( '_', @{ $rgb_array_ref || [] } ) or return;
     $self->{'custom_colors'}{$color_key} = $rgb_array_ref;
 
     return $color_key;
