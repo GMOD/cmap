@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.15 2005-09-02 16:13:12 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.16 2006-09-18 15:03:08 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -19,11 +19,13 @@ sub handler {
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
     my $feature_acc = $apr->param('feature_acc')
-      || $apr->param('feature_aid')
-      || '';
+        || $apr->param('feature_aid')
+        || '';
     my $highlight_by = $apr->param('highlight_by') || '';
-    my $data         = $self->data_module;
-    my $url          = $apr->url;
+    my $start = $apr->param('start') || $apr->param('ref_map_start');
+    my $stop  = $apr->param('stop')  || $apr->param('ref_map_stop');
+    my $data  = $self->data_module;
+    my $url   = $apr->url;
 
     my ( $ms_acc, $map_acc, $feature_name ) =
       $data->view_feature_on_map($feature_acc);
@@ -37,6 +39,7 @@ sub handler {
     print $apr->redirect(
             "$url/viewer?ref_map_set_acc=$ms_acc&label_features=all"
           . qq[&ref_map_accs=$map_acc&highlight="$highlight"]
+          . "&ref_map_start=$start&ref_map_stop=$stop"
           . '&data_source='
           . $apr->param('data_source') );
 
