@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.275 2006-06-06 14:32:52 mwz444 Exp $
+# $Id: Data.pm,v 1.276 2006-09-21 17:13:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.275 $)[-1];
+$VERSION = (qw$Revision: 1.276 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4116,6 +4116,28 @@ original start and stop.
         slot_min_corrs              => $slot_min_corrs,
         )
         or return $self->error( $sql_object->error() );
+
+    # Check Map Bounds
+    foreach my $slot_id ( keys %{ $self->{'slot_info'} } ) {
+        foreach my $map_acc ( keys %{ $self->{'slot_info'}->{$slot_id} } ) {
+            if ( $self->{'slot_info'}->{$slot_id}{$map_acc}[0]
+                < $self->{'slot_info'}->{$slot_id}{$map_acc}[2] )
+            {
+                $self->{'slot_info'}->{$slot_id}{$map_acc}[0]
+                    = $self->{'slot_info'}->{$slot_id}{$map_acc}[2];
+                $slots->{$slot_id}{'maps'}{$map_acc}{'start'}
+                    = $self->{'slot_info'}->{$slot_id}{$map_acc}[2];
+            }
+            if ( $self->{'slot_info'}->{$slot_id}{$map_acc}[1]
+                > $self->{'slot_info'}->{$slot_id}{$map_acc}[3] )
+            {
+                $self->{'slot_info'}->{$slot_id}{$map_acc}[1]
+                    = $self->{'slot_info'}->{$slot_id}{$map_acc}[3];
+                $slots->{$slot_id}{'maps'}{$map_acc}{'stop'}
+                    = $self->{'slot_info'}->{$slot_id}{$map_acc}[3];
+            }
+        }
+    }
 
     return $self->{'slot_info'};
 }

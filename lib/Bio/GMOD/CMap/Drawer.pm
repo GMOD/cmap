@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.125 2006-09-12 17:36:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.126 2006-09-21 17:13:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -339,7 +339,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.125 $)[-1];
+$VERSION = (qw$Revision: 1.126 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2457,31 +2457,6 @@ And Checks the slot bounds
     my $self = shift;
     if (@_) {
         $self->{'slots'} = shift;
-        foreach my $slot_num ( keys %{ $self->{'slots'} || {} } ) {
-            foreach my $map_acc (
-                keys %{ $self->{'slots'}{$slot_num}{'maps'} || {} } )
-            {
-                if (    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
-                    and $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
-                    < $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
-                    {'ori_map_start'} )
-                {
-                    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'start'}
-                        = $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
-                        {'ori_map_start'};
-                }
-                if (    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
-                    and $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
-                    > $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
-                    {'ori_map_stop'} )
-                {
-                    $self->{'slots'}{$slot_num}{'maps'}{$map_acc}{'stop'}
-                        = $self->{'slots'}{$slot_num}{'maps'}{$map_acc}
-                        {'ori_map_stop'};
-                }
-
-            }
-        }
     }
 
     return $self->{'slots'};
