@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.11 2006-09-12 15:10:32 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.12 2006-09-25 21:32:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1918,6 +1918,11 @@ Handle starting drag
         $self->{'drag_panel_key'} = $2;
         $self->{'drag_slot_key'} = $3;
         $self->{'drag_obj'} = 'background';
+        $self->app_controller()->hide_corrs(
+            window_key   => $self->{'drag_window_key'},
+            panel_key    => $self->{'drag_panel_key'},
+            slot_key     => $self->{'drag_slot_key'},
+        );
     }
 
 }    # end start_drag
@@ -1983,10 +1988,23 @@ Handle the stopping drag event
         $self->{'ghost_map_id'} = undef;
 
     }
-    $self->{'drag_ori_id'} = undef;
-    $self->{'drag_ori_x'} = undef;
-    $self->{'drag_ori_y'} = undef;
-    $self->{'drag_obj'} = undef;
+    elsif ( $self->{'drag_obj'} eq 'background' ) {
+        $self->app_controller()->unhide_corrs(
+            window_key   => $self->{'drag_window_key'},
+            panel_key    => $self->{'drag_panel_key'},
+            slot_key     => $self->{'drag_slot_key'},
+        )
+    }
+    foreach (
+        qw{
+        drag_ori_id drag_ori_x      drag_ori_y
+        drag_obj    drag_window_key drag_panel_key
+        drag_slot_key
+        }
+        )
+    {
+        $self->{$_} = undef;
+    }
 
 }    # end start_drag
 

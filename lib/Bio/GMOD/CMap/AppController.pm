@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.9 2006-07-24 03:31:48 mwz444 Exp $
+# $Id: AppController.pm,v 1.10 2006-09-25 21:32:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -46,10 +46,13 @@ Initializes the object.
 
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ config_dir data_source ] );
-    $self->config();
+    $self->{'remote_url'} = $config->{'remote_url'};
+
+    # The app_data_module will have the remote config if it is needed
+    $self->config( $self->app_data_module()->config() );
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 0;
+    my $developement = 1;
     if ($developement) {
         $self->load_new_window(
             window_key               => $window_key,
@@ -122,6 +125,7 @@ Returns a handle to the data module.
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
             data_source => $self->data_source,
             config      => $self->config,
+            remote_url  => $self->{'remote_url'},
             )
             or $self->error( Bio::GMOD::CMap::Data::AppData->error );
     }
@@ -391,6 +395,50 @@ Handler for selecting a new slot.
         window_key => $window_key,
         panel_key  => $panel_key,
         slot_key   => $slot_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub hide_corrs {
+
+=pod
+
+=head2 hide_corrs
+
+Hide correspondences while moving.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    $self->app_display_data()->hide_corrs(
+        window_key => $args{'window_key'},
+        panel_key  => $args{'panel_key'},
+        slot_key   => $args{'slot_key'},
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub unhide_corrs {
+
+=pod
+
+=head2 unhide_corrs
+
+Hide correspondences while moving.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    $self->app_display_data()->unhide_corrs(
+        window_key => $args{'window_key'},
+        panel_key  => $args{'panel_key'},
+        slot_key   => $args{'slot_key'},
     );
 
     return;

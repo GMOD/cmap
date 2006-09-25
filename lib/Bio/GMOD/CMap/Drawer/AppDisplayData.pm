@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.12 2006-09-12 15:10:32 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.13 2006-09-25 21:32:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1508,6 +1508,95 @@ Clears a slot of map data and calls on the interface to remove the drawings.
             panel_key => $panel_key,
         );
         $self->initialize_map_layout($map_key);
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub hide_corrs {
+
+=pod
+
+=head2 hide_corrs
+
+Hide Corrs for moving
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key1  = $args{'slot_key'}   or return;
+
+    # Record the current corrs
+    foreach my $slot_key2 (
+        keys %{ $self->{'correspondences_on'}{$slot_key1} || {} } )
+    {
+        if ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} ) {
+            push @{ $self->{'correspondences_hidden'}{$slot_key1} },
+                $slot_key2;
+            $self->clear_slot_corrs(
+                panel_key => $panel_key,
+                slot_key1 => $slot_key1,
+                slot_key2 => $slot_key2,
+            );
+        }
+    }
+
+
+    foreach my $child_slot_key ( @{ $self->{'scaffold'}{$slot_key1}{'children'} || [] } ) {
+        if ($self->{'scaffold'}{$child_slot_key}{'attached_to_parent'}){
+            $self->hide_corrs(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $child_slot_key,
+            );
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub unhide_corrs {
+
+=pod
+
+=head2 hide_corrs
+
+Hide Corrs for moving
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key1  = $args{'slot_key'}   or return;
+
+    return unless($self->{'correspondences_hidden'});
+
+    foreach my $slot_key2 ( @{ $self->{'correspondences_hidden'}{$slot_key1} || {} } )
+    {
+        delete $self->{'correspondences_hidden'}{$slot_key1};
+        $self->add_slot_corrs(
+            window_key => $window_key,
+            panel_key => $panel_key,
+            slot_key1 => $slot_key1,
+            slot_key2 => $slot_key2,
+        );
+        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
+        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
+    }
+
+    foreach my $child_slot_key ( @{ $self->{'scaffold'}{$slot_key1}{'children'} || [] } ) {
+        if ($self->{'scaffold'}{$child_slot_key}{'attached_to_parent'}){
+            $self->unhide_corrs(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $child_slot_key,
+            );
+        }
     }
 
     return;
