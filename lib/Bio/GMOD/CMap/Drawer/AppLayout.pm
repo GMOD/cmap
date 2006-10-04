@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.12 2006-09-06 15:34:48 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.13 2006-10-04 16:26:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant MAP_Y_BUFFER  => 15;
@@ -1335,16 +1335,8 @@ Shows the selected region.
         + $overview_layout->{'map_buffer_y'};
     my $scale_factor_from_main
         = $overview_slot_layout->{'scale_factor_from_main'};
-    my $min_x =
-        (
-        $main_slot_layout->{'bounds'}[0] > $main_slot_layout->{'maps_min_x'} )
-        ? $main_slot_layout->{'bounds'}[0]
-        : $main_slot_layout->{'maps_min_x'};
-    my $max_x =
-        (
-        $main_slot_layout->{'bounds'}[2] < $main_slot_layout->{'maps_max_x'} )
-        ? $main_slot_layout->{'bounds'}[2]
-        : $main_slot_layout->{'maps_max_x'};
+    my $min_x = $main_slot_layout->{'bounds'}[0];
+    my $max_x = $main_slot_layout->{'bounds'}[2];
     $min_x -= $overview_layout->{'main_pixel_offset'};
     $max_x -= $overview_layout->{'main_pixel_offset'};
 
