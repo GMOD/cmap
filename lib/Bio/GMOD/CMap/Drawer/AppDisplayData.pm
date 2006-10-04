@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.13 2006-09-25 21:32:41 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.14 2006-10-04 14:51:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -84,7 +84,7 @@ Initializes the drawing object.
 
     my ( $self, $config ) = @_;
 
-    for my $param (qw[ data_source config app_interface app_data_module ]) {
+    for my $param (qw[ config data_source app_interface app_data_module ]) {
         $self->$param( $config->{$param} )
             or die "Failed to pass $param to AppDisplayData\n";
     }

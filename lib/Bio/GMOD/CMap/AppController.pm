@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.10 2006-09-25 21:32:41 mwz444 Exp $
+# $Id: AppController.pm,v 1.11 2006-10-04 14:51:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -123,8 +123,8 @@ Returns a handle to the data module.
 
     unless ( $self->{'app_data_module'} ) {
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
-            data_source => $self->data_source,
-            config      => $self->config,
+            data_source => $self->{'data_source'},
+            config      => $self->{'remote_url'}? undef : $self->config,
             remote_url  => $self->{'remote_url'},
             )
             or $self->error( Bio::GMOD::CMap::Data::AppData->error );
