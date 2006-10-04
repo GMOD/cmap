@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.34 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.35 2006-10-04 14:56:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -212,7 +212,13 @@ which is slow.  Setting to 0 is recommended.
                     cmap_object => $self,
                     feature_acc => $feature_acc,
                 );
-                push @feature_ids, $features->[0] if @$features;
+                if (@{$features||[]}){
+                    push @feature_ids, $features->[0];
+                }
+                else{
+                    print STDERR "$feature_acc is not a valid feature_acc\n";
+                    next LINE;
+                }
             }
             else {
                 if ( defined $feature_ids{$upper_name} ) {

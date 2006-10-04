@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.151 2006-09-01 19:33:00 mwz444 Exp $
+# $Id: Generic.pm,v 1.152 2006-10-04 14:56:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.151 $)[-1];
+$VERSION = (qw$Revision: 1.152 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7419,7 +7419,6 @@ Feature Correspondence id
             next
                 if $feature1->{'is_relational_map'}
                 && $feature2->{'is_relational_map'};
-            $self->{'insert_correspondences'} = [];
 
             $sth_fc->execute(
                 $corr_id,     $corr_acc, $feature_id1,
