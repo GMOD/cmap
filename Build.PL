@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.62 2006-07-11 15:19:15 mwz444 Exp $
+# $Id: Build.PL,v 1.63 2006-10-05 15:10:35 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -141,8 +141,14 @@ if ( !%OPTIONS ) {
 #
 my $prefix = $OPTIONS{'PREFIX'} || $ARGS{'PREFIX'}{'default'};
 
-for my $option (@OPTION_LIST) {
+# Backwards compatiple for if "cmap.conf" is specified at end of CONF
+if ($OPTIONS{'CONF'}){
+    $OPTIONS{'CONF'} =~ s{cmap.conf[/\\]?$}{};
+    $OPTIONS{'CONF'} = catdir( $OPTIONS{'CONF'}, 'cmap.conf' );
+}
 
+for my $option (@OPTION_LIST) {
+        
     if ( $option eq 'HTDOCS' ) {
         $OPTIONS{$option} ||= catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{$option}{'default'} );
     }

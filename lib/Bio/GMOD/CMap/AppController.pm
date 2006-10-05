@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.11 2006-10-04 14:51:52 mwz444 Exp $
+# $Id: AppController.pm,v 1.12 2006-10-05 15:10:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -52,7 +52,7 @@ Initializes the object.
     $self->config( $self->app_data_module()->config() );
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 1;
+    my $developement = 0;
     if ($developement) {
         $self->load_new_window(
             window_key               => $window_key,
@@ -124,7 +124,7 @@ Returns a handle to the data module.
     unless ( $self->{'app_data_module'} ) {
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
             data_source => $self->{'data_source'},
-            config      => $self->{'remote_url'}? undef : $self->config,
+            config      => $self->{'remote_url'} ? undef: $self->config,
             remote_url  => $self->{'remote_url'},
             )
             or $self->error( Bio::GMOD::CMap::Data::AppData->error );
@@ -293,6 +293,33 @@ Handler for zooming a slot.
         panel_key  => $panel_key,
         slot_key   => $slot_key,
         zoom_value => $zoom_value,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub overview_scroll_slot {
+
+=pod
+
+=head2 overview_scroll_slot
+
+Handler for overview scrolling a slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $panel_key    = $args{'panel_key'};
+    my $slot_key     = $args{'slot_key'};
+    my $scroll_value = $args{'scroll_value'} || 1;
+
+    $self->app_display_data()->overview_scroll_slot(
+        window_key   => $window_key,
+        panel_key    => $panel_key,
+        slot_key     => $slot_key,
+        scroll_value => $scroll_value,
     );
 
     return;

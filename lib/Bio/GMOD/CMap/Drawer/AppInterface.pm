@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.12 2006-09-25 21:32:41 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.13 2006-10-05 15:10:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -153,7 +153,8 @@ This method will create the slot controls for the panel.
             app_display_data => $app_display_data,
         );
     }
-    ${$self->{'selected_slot_key_scalar'}} = $app_display_data->{'slot_order'}{$panel_key}[0] || 0;
+    ${ $self->{'selected_slot_key_scalar'} }
+        = $app_display_data->{'slot_order'}{$panel_key}[0] || 0;
 
     return;
 }
@@ -172,12 +173,12 @@ This method will create the slot controls for one slot
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key  = $args{'slot_key'}  or return;
+    my $slot_key   = $args{'slot_key'}   or return;
     my $app_display_data = $args{'app_display_data'};
 
     $self->toggle_slot_pane(
-        panel_key => $panel_key,
-        slot_key  => $slot_key,
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
         app_display_data => $app_display_data,
     );
     $self->_add_slot_toggle_buttons(
@@ -412,11 +413,11 @@ Returns the panel_slot_controls_pane object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
+    my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'panel_slot_controls_pane'}{$panel_key} ) {
-        my $y_val  = $args{'y_val'};
-        my $height = $args{'height'};
+        my $y_val      = $args{'y_val'};
+        my $height     = $args{'height'};
         my $panel_pane = $self->{'panel_pane'}{$panel_key};
         if (1) {
             $self->{'panel_slot_controls_pane'}{$panel_key}
@@ -437,10 +438,11 @@ Returns the panel_slot_controls_pane object.
                 );
         }
         $self->_add_slot_control_buttons(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
+            window_key => $window_key,
+            panel_key  => $panel_key,
         );
-        $self->{'panel_slot_controls_pane'}{$panel_key}->pack( -side => 'bottom', -fill => 'x', );
+        $self->{'panel_slot_controls_pane'}{$panel_key}
+            ->pack( -side => 'bottom', -fill => 'x', );
     }
     return $self->{'panel_slot_controls_pane'}{$panel_key};
 }
@@ -490,7 +492,7 @@ Returns the toggle_slot_pane object.
             -x        => 5,
             -y        => $y_val,
             -relwidth => .89,
-            -height   => $height +10
+            -height   => $height + 10
         );
     }
     return $self->{'toggle_slot_pane'}{$slot_key};
@@ -511,31 +513,29 @@ Adds control buttons to the toggle_slot_pane.
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key   = $args{'slot_key'}   or return;
-    my $app_display_data   = $args{'app_display_data'};
+    my $app_display_data = $args{'app_display_data'};
     my $toggle_slot_pane = $self->{'toggle_slot_pane'}{$slot_key};
-    my $font               = [
+    my $font             = [
         -family => 'Times',
         -size   => 12,
     ];
 
     my $toggle_button = $toggle_slot_pane->Radiobutton(
-        -text    => "Select",
+        -text       => "Select",
         -background => "white",
-        -value   => $slot_key,
-        -command => sub {
+        -value      => $slot_key,
+        -command    => sub {
             $self->app_controller()->new_selected_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
             );
         },
-        -variable   => \${$self->{'selected_slot_key_scalar'}}
+        -variable => \${ $self->{'selected_slot_key_scalar'} }
     );
-    
+
     #    Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid(
-        $toggle_button, -sticky        => "ne",
-    );
+    Tk::grid( $toggle_button, -sticky => "ne", );
     return;
 }
 
@@ -553,8 +553,9 @@ Adds control buttons to the panel_slot_controls_pane.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
-    my $panel_slot_controls_pane = $self->{'panel_slot_controls_pane'}{$panel_key};
-    my $font               = [
+    my $panel_slot_controls_pane
+        = $self->{'panel_slot_controls_pane'}{$panel_key};
+    my $font = [
         -family => 'Times',
         -size   => 12,
     ];
@@ -570,7 +571,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->zoom_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
                 zoom_value => 2,
             );
         },
@@ -582,7 +583,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->zoom_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
                 zoom_value => .5,
             );
         },
@@ -594,7 +595,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->toggle_corrs_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
             );
         },
         -font => $font,
@@ -605,7 +606,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->expand_slot(
                 window_key => $window_key,
                 panel_key  => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
             );
         },
         -font => $font,
@@ -616,7 +617,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
                 scroll_value => -10,
             );
         },
@@ -628,7 +629,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
                 scroll_value => 10,
             );
         },
@@ -640,7 +641,7 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
                 scroll_value => -200,
             );
         },
@@ -652,28 +653,30 @@ Adds control buttons to the panel_slot_controls_pane.
             $self->app_controller()->scroll_slot(
                 window_key   => $window_key,
                 panel_key    => $panel_key,
-                slot_key   => ${$self->{'selected_slot_key_scalar'}},
+                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
                 scroll_value => 200,
             );
         },
         -font => $font,
     );
-#    my $test_button = $panel_slot_controls_pane->Button(
-#        -text    => "TEST",
-#        -command => sub {
-#            print STDERR ${$self->{'selected_slot_key_scalar'}} . "\n";
-#        },
-#        -font => $font,
-#    );
+
+    #    my $test_button = $panel_slot_controls_pane->Button(
+    #        -text    => "TEST",
+    #        -command => sub {
+    #            print STDERR ${$self->{'selected_slot_key_scalar'}} . "\n";
+    #        },
+    #        -font => $font,
+    #    );
 
     #    Tk::grid( $zoom_label1, -sticky => "nw", );
-#    Tk::grid(
-#        $test_button, -sticky        => "nw",
-#    );
+    #    Tk::grid(
+    #        $test_button, -sticky        => "nw",
+    #    );
     Tk::grid( $scroll_far_left_button, $scroll_left_button, 'x', 'x',
         $scroll_right_button, $scroll_far_right_button, -sticky => "nw", );
-    Tk::grid( 'x','x',$zoom_button1, $toggle_corrs_button, -sticky => "nw", );
-    Tk::grid( 'x','x',$zoom_button2, $expand_button,       -sticky => "nw", );
+    Tk::grid( 'x', 'x', $zoom_button1, $toggle_corrs_button, -sticky => "nw",
+    );
+    Tk::grid( 'x', 'x', $zoom_button2, $expand_button, -sticky => "nw", );
     return;
 }
 
@@ -716,6 +719,7 @@ Draws and re-draws on the canvas
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'}
         or die 'no panel key for draw';
+    my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
 
     my $canvas = $self->canvas( panel_key => $panel_key, );
@@ -760,9 +764,10 @@ Draws and re-draws on the canvas
 
     $canvas->configure(
         -scrollregion => $panel_layout->{'bounds'},
-       # -height       => 800,#$canvas_height, BF
-        -height       => $canvas_height, 
-        -width        => $canvas_width,
+
+        # -height       => 800,#$canvas_height, BF
+        -height => $canvas_height,
+        -width  => $canvas_width,
     );
     $canvas->pack( -side => 'top', -fill => 'both', );
 
@@ -773,11 +778,13 @@ Draws and re-draws on the canvas
 
     $self->draw_overview(
         panel_key        => $panel_key,
-        canvas           => $canvas,
+        window_key       => $window_key,
         app_display_data => $app_display_data,
     );
 
     $self->layer_tagged_items( canvas => $canvas, );
+    $self->layer_tagged_items(
+        canvas => $self->overview_canvas( panel_key => $panel_key, ) );
 
     return;
 }
@@ -796,6 +803,7 @@ Draws and re-draws on the overview canvas
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'}
         or die 'no panel key for draw_overview';
+    my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
 
     my $canvas = $self->overview_canvas( panel_key => $panel_key, );
@@ -827,6 +835,8 @@ Draws and re-draws on the overview canvas
             @{ $overview_layout->{'child_slot_order'} || [] } )
         {
             $self->draw_overview_slot(
+                window_key           => $window_key,
+                panel_key            => $panel_key,
                 slot_key             => $slot_key,
                 canvas               => $canvas,
                 app_display_data     => $app_display_data,
@@ -867,7 +877,9 @@ Draws and re-draws on the canvas
     my ( $self, %args ) = @_;
     my $slot_key = $args{'slot_key'}
         or die 'no slot key for draw';
-    my $canvas = $args{'canvas'}
+    my $panel_key  = $args{'panel_key'};
+    my $window_key = $args{'window_key'};
+    my $canvas     = $args{'canvas'}
         || $self->canvas( panel_key => $args{'panel_key'}, );
     my $app_display_data     = $args{'app_display_data'};
     my $overview_slot_layout = $args{'overview_slot_layout'};
@@ -876,7 +888,13 @@ Draws and re-draws on the canvas
         $self->draw_items(
             canvas => $canvas,
             items  => $overview_slot_layout->{'viewed_region'},
-            tags   => [ 'on_bottom', ],
+            tags   => [
+                'on_bottom',
+                'viewed_region_'
+                    . $window_key . '_'
+                    . $panel_key . '_'
+                    . $slot_key,
+            ],
         );
         $self->draw_items(
             canvas => $canvas,
@@ -972,7 +990,7 @@ Draws and re-draws on the canvas
                     canvas   => $canvas,
                     x_offset => $x_offset,
                     items    => $map_layout->{$drawing_section},
-                    tags     => [ 'middle_layer', 'display', 'map'],
+                    tags     => [ 'middle_layer', 'display', 'map' ],
                 );
             }
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
@@ -1033,8 +1051,7 @@ corr can be different.
     return unless ( $corr_layout->{'changed'} );
 
 MAP1:
-    foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {} } )
-    {
+    foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {} } ) {
     MAP2:
         foreach my $tmp_map_key2 (
             keys %{ $corr_layout->{'maps'}{$tmp_map_key1} || {} } )
@@ -1262,18 +1279,19 @@ Item structure:
 
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'};
-    my $canvas = $args{'canvas'}
+    my $canvas    = $args{'canvas'}
         || $self->canvas( panel_key => $args{'panel_key'}, );
     my $x = $args{'x'} || 0;
     my $y = $args{'y'} || 0;
-    my $items    = $args{'items'} or return;
+    my $items = $args{'items'} or return;
 
     for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
+
         # make sure item has been drawn
         next unless ( defined( $items->[$i][1] ) );
 
         my $item_id = $items->[$i][1];
-        $canvas->move($item_id, $x, $y);
+        $canvas->move( $item_id, $x, $y );
     }
 }
 
@@ -1388,23 +1406,24 @@ Returns the canvas object.
 
     unless ( $self->{'canvas'}{$panel_key} ) {
         my $canvas_frame = $self->{'panel_canvas_pane'}{$panel_key};
-#        $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
-#            'Canvas',
-#            (   '-width'       => 1100,
-#                '-height'      => 800,
-#                '-relief'      => 'sunken',
-#                '-borderwidth' => 2,
-#                '-background'  => 'white',
-#                '-scrollbars'  => 's',
-#            ),
-#        )->pack( -side => 'top', -fill => 'both', );
+
+        #        $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
+        #            'Canvas',
+        #            (   '-width'       => 1100,
+        #                '-height'      => 800,
+        #                '-relief'      => 'sunken',
+        #                '-borderwidth' => 2,
+        #                '-background'  => 'white',
+        #                '-scrollbars'  => 's',
+        #            ),
+        #        )->pack( -side => 'top', -fill => 'both', );
         $self->{'canvas'}{$panel_key} = $canvas_frame->Canvas(
-               '-width'       => 1100,
-                '-height'      => 800,
-                '-relief'      => 'sunken',
-                '-borderwidth' => 2,
-                '-background'  => 'white',
-           
+            '-width'       => 1100,
+            '-height'      => 800,
+            '-relief'      => 'sunken',
+            '-borderwidth' => 2,
+            '-background'  => 'white',
+
         )->pack( -side => 'top', -fill => 'both', );
         $self->bind_canvas( canvas => $self->{'canvas'}{$panel_key} );
     }
@@ -1429,42 +1448,79 @@ Bind events to a canvas
         '<1>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->start_drag( $canvas, $e->x, $e->y,);
+            $self->start_drag( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-ButtonRelease>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->stop_drag( $canvas, $e->x, $e->y,);
+            $self->stop_drag( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-Motion>' => sub {
-            $self->drag( shift, $Tk::event->x, $Tk::event->y,);
+            $self->drag( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
     if ( $^O eq 'MSWin32' ) {
         $canvas->CanvasBind(
             '<MouseWheel>' => sub {
-                $self->mouse_wheel_event( $canvas, ( Ev('D') < 0 ) ? 0.5 : 2 );
+                $self->mouse_wheel_event( $canvas,
+                    ( Ev('D') < 0 ) ? 0.5 : 2 );
             }
         );
     }
-    else{
+    else {
         $canvas->CanvasBind(
             '<4>' => sub {
-                $self->mouse_wheel_event($canvas, 0.5);
+                $self->mouse_wheel_event( $canvas, 0.5 );
             }
         );
         $canvas->CanvasBind(
             '<5>' => sub {
-                $self->mouse_wheel_event($canvas, 2);
+                $self->mouse_wheel_event( $canvas, 2 );
             }
         );
-        
+
     }
-    
+
+}
+
+# ----------------------------------------------------
+sub bind_overview_canvas {
+
+=pod
+
+=head2 bind_overview_canvas
+
+Bind events to the overview canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $canvas = $args{'canvas'} or return undef;
+
+    $canvas->CanvasBind(
+        '<1>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->start_drag( $canvas, $e->x, $e->y, );
+        }
+    );
+    $canvas->CanvasBind(
+        '<B1-ButtonRelease>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->stop_drag( $canvas, $e->x, $e->y, );
+        }
+    );
+    $canvas->CanvasBind(
+        '<B1-Motion>' => sub {
+            $self->drag( shift, $Tk::event->x, $Tk::event->y, );
+        }
+    );
+
 }
 
 # ----------------------------------------------------
@@ -1484,17 +1540,18 @@ Returns the overview_canvas object.
     unless ( $self->{'overview_canvas'}{$panel_key} ) {
         my $overview_canvas_frame
             = $self->{'panel_overview_pane'}{$panel_key};
-#        $self->{'overview_canvas'}{$panel_key}
-#            = $overview_canvas_frame->Scrolled(
-#            'Canvas',
-#            (   '-width'       => 1100,
-#                '-height'      => 300,
-#                '-relief'      => 'sunken',
-#                '-borderwidth' => 2,
-#                '-background'  => 'white',
-#                '-scrollbars'  => 's',
-#            ),
-#            )->pack( -side => 'top', -fill => 'both', );
+
+        #        $self->{'overview_canvas'}{$panel_key}
+        #            = $overview_canvas_frame->Scrolled(
+        #            'Canvas',
+        #            (   '-width'       => 1100,
+        #                '-height'      => 300,
+        #                '-relief'      => 'sunken',
+        #                '-borderwidth' => 2,
+        #                '-background'  => 'white',
+        #                '-scrollbars'  => 's',
+        #            ),
+        #            )->pack( -side => 'top', -fill => 'both', );
         $self->{'overview_canvas'}{$panel_key}
             = $overview_canvas_frame->Canvas(
             '-width'       => 1100,
@@ -1504,6 +1561,8 @@ Returns the overview_canvas object.
             '-background'  => 'white',
 
             )->pack( -side => 'top', -fill => 'both', );
+        $self->bind_overview_canvas(
+            canvas => $self->{'overview_canvas'}{$panel_key} );
     }
     return $self->{'overview_canvas'}{$panel_key};
 }
@@ -1847,12 +1906,13 @@ Handle the placement of tagged items in layers
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas      = $args{'canvas'};
+    my $canvas = $args{'canvas'};
+
     #my $real_canvas = $canvas->Subwidget("canvas");
     my $real_canvas = $canvas;
 
-    $real_canvas->raise( 'on_top', 'middle_layer' );
-    $real_canvas->lower( 'on_bottom', 'middle_layer' );
+    $real_canvas->raise( 'on_top', 'all' );
+    $real_canvas->lower( 'on_bottom', 'all' );
 
     return;
 }
@@ -1869,8 +1929,8 @@ Remove the interface buttons for a slot.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key      = $args{'panel_key'};
-    my $slot_key      = $args{'slot_key'};
+    my $panel_key = $args{'panel_key'};
+    my $slot_key  = $args{'slot_key'};
     $self->toggle_slot_pane(
         panel_key => $panel_key,
         slot_key  => $slot_key,
@@ -1899,29 +1959,42 @@ Handle starting drag
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
 
-    $self->{'drag_ori_x'} = $x;
-    $self->{'drag_ori_y'} = $y;
-    $self->{'drag_ori_id'} = $canvas->find('withtag','current');
+    $self->{'drag_ori_x'}  = $x;
+    $self->{'drag_ori_y'}  = $y;
+    $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
     $self->{'drag_last_x'} = $canvas->canvasx($x);
     $self->{'drag_last_y'} = $canvas->canvasy($y);
-    if (grep /^map/, $canvas->gettags("current")){
-        return unless ($self->{'drag_ori_id'});
-        $self->{'drag_obj'} = 'map';
+    my @tags;
+    if ( grep /^map/, $canvas->gettags("current") ) {
+        return unless ( $self->{'drag_ori_id'} );
+        $self->{'drag_obj'}     = 'map';
         $self->{'ghost_map_id'} = $canvas->createRectangle(
             ( $canvas->bbox('current') ),
             ( '-outline' => 'grey', ),
         );
     }
-    elsif (my @tags = grep /^background_/, $canvas->gettags("current")){
+    elsif ( @tags = grep /^background_/, $canvas->gettags("current") ) {
         $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
-        $self->{'drag_panel_key'} = $2;
-        $self->{'drag_slot_key'} = $3;
-        $self->{'drag_obj'} = 'background';
+        $self->{'drag_panel_key'}  = $2;
+        $self->{'drag_slot_key'}   = $3;
+        $self->{'drag_obj'}        = 'background';
         $self->app_controller()->hide_corrs(
-            window_key   => $self->{'drag_window_key'},
-            panel_key    => $self->{'drag_panel_key'},
-            slot_key     => $self->{'drag_slot_key'},
+            window_key => $self->{'drag_window_key'},
+            panel_key  => $self->{'drag_panel_key'},
+            slot_key   => $self->{'drag_slot_key'},
+        );
+    }
+    elsif ( @tags = grep /^viewed_region_/, $canvas->gettags("current") ) {
+        $tags[0] =~ /^viewed_region_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_panel_key'}  = $2;
+        $self->{'drag_slot_key'}   = $3;
+        $self->{'drag_obj'}        = 'viewed_region';
+        $self->app_controller()->hide_corrs(
+            window_key => $self->{'drag_window_key'},
+            panel_key  => $self->{'drag_panel_key'},
+            slot_key   => $self->{'drag_slot_key'},
         );
     }
 
@@ -1940,23 +2013,33 @@ Handle the drag event
 
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
-    return unless ($self->{'drag_ori_id'});
+    return unless ( $self->{'drag_ori_id'} );
     $x = $canvas->canvasx($x);
     $y = $canvas->canvasy($y);
     my $dx = $x - $self->{'drag_last_x'};
     my $dy = $y - $self->{'drag_last_y'};
 
-    if ($self->{'drag_obj'} eq 'map'){
-        $canvas->move( $self->{'ghost_map_id'}, $dx,0, );
-        $canvas->configure(-scrollregion =>[$canvas->bbox('all')]);
-    }
-    elsif ( $self->{'drag_obj'} eq 'background' ) {
-        $self->app_controller()->scroll_slot(
-            window_key   => $self->{'drag_window_key'},
-            panel_key    => $self->{'drag_panel_key'},
-            slot_key     => $self->{'drag_slot_key'},
-            scroll_value => $dx * -1,
-        );
+    if ( $self->{'drag_obj'} ) {
+        if ( $self->{'drag_obj'} eq 'map' ) {
+            $canvas->move( $self->{'ghost_map_id'}, $dx, 0, );
+            $canvas->configure( -scrollregion => [ $canvas->bbox('all') ] );
+        }
+        elsif ( $self->{'drag_obj'} eq 'background' ) {
+            $self->app_controller()->scroll_slot(
+                window_key   => $self->{'drag_window_key'},
+                panel_key    => $self->{'drag_panel_key'},
+                slot_key     => $self->{'drag_slot_key'},
+                scroll_value => $dx * -1,
+            );
+        }
+        elsif ( $self->{'drag_obj'} eq 'viewed_region' ) {
+            $self->app_controller()->overview_scroll_slot(
+                window_key   => $self->{'drag_window_key'},
+                panel_key    => $self->{'drag_panel_key'},
+                slot_key     => $self->{'drag_slot_key'},
+                scroll_value => $dx * 1,
+            );
+        }
     }
 
     $self->{drag_last_x} = $x;
@@ -1978,23 +2061,30 @@ Handle the stopping drag event
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
 
-    return unless ($self->{'drag_ori_id'});
+    return unless ( $self->{'drag_ori_id'} );
+
     # Move original object
     $x = $canvas->canvasx($x);
     my $dx = $x - $self->{'drag_ori_x'};
-    if ($self->{'drag_obj'} eq 'map'){
-    #    $canvas->move( $self->{'drag_ori_id'}, $dx,0, );
-        $canvas->delete($self->{'ghost_map_id'});
-        $self->{'ghost_map_id'} = undef;
+    if ( $self->{'drag_obj'} ) {
+        if ( $self->{'drag_obj'} eq 'map' ) {
 
+            #    $canvas->move( $self->{'drag_ori_id'}, $dx,0, );
+            $canvas->delete( $self->{'ghost_map_id'} );
+            $self->{'ghost_map_id'} = undef;
+
+        }
+        elsif ($self->{'drag_obj'} eq 'background'
+            or $self->{'drag_obj'} eq 'viewed_region' )
+        {
+            $self->app_controller()->unhide_corrs(
+                window_key => $self->{'drag_window_key'},
+                panel_key  => $self->{'drag_panel_key'},
+                slot_key   => $self->{'drag_slot_key'},
+            );
+        }
     }
-    elsif ( $self->{'drag_obj'} eq 'background' ) {
-        $self->app_controller()->unhide_corrs(
-            window_key   => $self->{'drag_window_key'},
-            panel_key    => $self->{'drag_panel_key'},
-            slot_key     => $self->{'drag_slot_key'},
-        )
-    }
+
     foreach (
         qw{
         drag_ori_id drag_ori_x      drag_ori_y
@@ -2003,7 +2093,7 @@ Handle the stopping drag event
         }
         )
     {
-        $self->{$_} = undef;
+        $self->{$_} = '';
     }
 
 }    # end start_drag
@@ -2027,7 +2117,7 @@ Handle the mouse wheel events
         my $window_key = $1;
         my $panel_key  = $2;
         my $slot_key   = $3;
-        
+
         $self->app_controller()->zoom_slot(
             window_key => $window_key,
             panel_key  => $panel_key,
@@ -2037,9 +2127,6 @@ Handle the mouse wheel events
     }
 
 }
-
-
-
 
 1;
 
