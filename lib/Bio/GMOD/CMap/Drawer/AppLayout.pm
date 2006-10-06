@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.14 2006-10-05 15:10:52 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.15 2006-10-06 18:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,9 +29,10 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
+use constant SLOT_Y_BUFFER         => 30;
 use constant MAP_Y_BUFFER          => 15;
 use constant MAP_X_BUFFER          => 15;
 use constant SMALL_BUFFER          => 2;
@@ -347,7 +348,6 @@ Lays out a brand new slot
         );
     }
 
-    $slot_layout->{'bounds'}[3] += MAP_Y_BUFFER;
     set_slot_bgcolor(
         panel_key        => $panel_key,
         slot_key         => $slot_key,
@@ -430,7 +430,7 @@ sub layout_reference_maps {
 
 =pod
 
-=head2 _layout_reference_maps
+=head2 layout_reference_maps
 
 Lays out reference maps in a new slot
 
@@ -442,6 +442,8 @@ Lays out reference maps in a new slot
     my $slot_key         = $args{'slot_key'};
     my $app_display_data = $args{'app_display_data'};
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
+
+    $slot_layout->{'bounds'}[3] = $slot_layout->{'bounds'}[1];
 
     #  Options that should be defined elsewhere
     my $stacked = 0;
@@ -576,7 +578,7 @@ Lays out reference maps in a new slot
         $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
     }
 
-    my $height_change = $row_max_y - $start_min_y + MAP_Y_BUFFER;
+    my $height_change = $row_max_y - $start_min_y + SLOT_Y_BUFFER;
     $app_display_data->modify_slot_bottom_bound(
         slot_key      => $slot_key,
         bounds_change => $height_change,
@@ -770,7 +772,9 @@ Lays out sub maps in a slot.
         $row_min_y = $row_max_y + MAP_Y_BUFFER;
     }
 
-    my $height_change = $row_max_y - $slot_layout->{'bounds'}[3];
+    my $height_change
+        = $row_max_y - $slot_layout->{'bounds'}[3] + SLOT_Y_BUFFER
+        - MAP_Y_BUFFER;
     if ( $height_change > 0 ) {
         $app_display_data->modify_slot_bottom_bound(
             slot_key      => $slot_key,

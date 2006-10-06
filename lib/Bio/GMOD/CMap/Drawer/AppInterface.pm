@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.13 2006-10-05 15:10:36 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.14 2006-10-06 18:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -526,8 +526,6 @@ Adds control buttons to the toggle_slot_pane.
         -value      => $slot_key,
         -command    => sub {
             $self->app_controller()->new_selected_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
                 slot_key   => $slot_key,
             );
         },
@@ -1996,6 +1994,13 @@ Handle starting drag
             panel_key  => $self->{'drag_panel_key'},
             slot_key   => $self->{'drag_slot_key'},
         );
+    }
+
+    if ($self->{'drag_slot_key'}){
+        $self->app_controller()->new_selected_slot(
+            slot_key   => $self->{'drag_slot_key'},
+        );
+        ${ $self->{'selected_slot_key_scalar'} } = $self->{'drag_slot_key'};
     }
 
 }    # end start_drag

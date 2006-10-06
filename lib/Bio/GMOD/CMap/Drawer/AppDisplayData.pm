@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.15 2006-10-05 15:10:36 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.16 2006-10-06 18:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -241,6 +241,11 @@ Adds the first slot
         app_display_data => $self,
     );
 
+    $self->change_selected_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $slot_key,
+    );
     $self->app_interface()->int_create_slot_controls(
         window_key       => $window_key,
         panel_key        => $panel_key,
@@ -537,6 +542,11 @@ Scroll slots based on the overview scrolling
     my $panel_key    = $args{'panel_key'};
     my $slot_key     = $args{'slot_key'};
     my $scroll_value = $args{'scroll_value'} or return;
+
+    # Don't let the overview break attachment to parent
+    if ( $self->{'scaffold'}{$slot_key}{'attached_to_parent'} ) {
+        $slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    }
 
     my $main_scroll_value = int( $scroll_value /
             $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
@@ -1056,12 +1066,15 @@ sub change_selected_slot {
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $slot_key   = $args{'slot_key'} or return;
+    my $panel_key  = $self->{'scaffold'}{$slot_key}{'panel_key'};
+    my $window_key = $self->{'scaffold'}{$slot_key}{'window_key'};
 
     my $old_selected_slot_key = $self->{'selected_slot_key'};
     $self->{'selected_slot_key'} = $slot_key;
+
+    return
+        if ( $old_selected_slot_key and $old_selected_slot_key == $slot_key );
 
     if (    $old_selected_slot_key
         and $self->{'scaffold'}{$old_selected_slot_key} )

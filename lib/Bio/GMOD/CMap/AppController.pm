@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.12 2006-10-05 15:10:36 mwz444 Exp $
+# $Id: AppController.pm,v 1.13 2006-10-06 18:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -414,13 +414,9 @@ Handler for selecting a new slot.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
     my $slot_key   = $args{'slot_key'};
 
     $self->app_display_data()->change_selected_slot(
-        window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $slot_key,
     );
 
