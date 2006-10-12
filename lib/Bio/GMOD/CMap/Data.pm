@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.276 2006-09-21 17:13:57 mwz444 Exp $
+# $Id: Data.pm,v 1.277 2006-10-12 15:33:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.276 $)[-1];
+$VERSION = (qw$Revision: 1.277 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3567,14 +3567,18 @@ test if the map is truncated
         and %{ $self->slot_info->{$slot_no} }
         and @{ $self->slot_info->{$slot_no}{$map_id} } )
     {
-        my $map_info = $self->slot_info->{$slot_no}{$map_id};
-        if ( defined( $map_info->[0] ) and defined( $map_info->[1] ) ) {
+        my $map_info          = $self->slot_info->{$slot_no}{$map_id};
+        my $map_top_truncated = ( defined( $map_info->[0] )
+                and $map_info->[0] != $map_info->[2] );
+        my $map_bottom_truncated = ( defined( $map_info->[1] )
+                and $map_info->[1] != $map_info->[3] );
+        if ( $map_top_truncated and $map_bottom_truncated ) {
             return 3;
         }
-        elsif ( defined( $map_info->[0] ) ) {
+        elsif ($map_top_truncated) {
             return 1;
         }
-        elsif ( defined( $map_info->[1] ) ) {
+        elsif ($map_bottom_truncated) {
             return 2;
         }
         return 0;
