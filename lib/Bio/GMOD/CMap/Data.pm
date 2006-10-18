@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.277 2006-10-12 15:33:49 mwz444 Exp $
+# $Id: Data.pm,v 1.278 2006-10-18 19:16:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.277 $)[-1];
+$VERSION = (qw$Revision: 1.278 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2450,7 +2450,8 @@ Returns the detail info for a map.
             [ ( @$feature_type_accs, @$corr_only_feature_type_accs ) ],
         map_start => $map_start,
         map_stop  => $map_stop,
-    ) if ( @$feature_type_accs || @$corr_only_feature_type_accs );
+        )
+        if ( @$feature_type_accs || @$corr_only_feature_type_accs );
 
     my $feature_count_by_type = $sql_object->get_feature_count(
         cmap_object           => $self,
@@ -2881,6 +2882,7 @@ sub count_correspondences {
         my $avg_position_sum2 = 0;
         my $max_position1     = 0;
         my $max_position2     = 0;
+        my $map_corrs         = [];
 
         for my $row (@$map_corrs_for_counting) {
             next unless $map_id_lookup{ $row->{'map_id1'} };
@@ -2898,6 +2900,7 @@ sub count_correspondences {
                         map_id1           => $current_map_id1,
                         map_id2           => $current_map_id2,
                         no_corr           => $corr_count,
+                        map_corrs         => $map_corrs,
                         min_position1     => $min_position1,
                         min_position2     => $min_position2,
                         max_position1     => $max_position1,
@@ -2919,8 +2922,10 @@ sub count_correspondences {
                 $avg_position_sum2         = 0;
                 $max_position1             = 0;
                 $max_position2             = 0;
+                $map_corrs                 = [];
             }
             $corr_count++;
+            push @$map_corrs, $row;
 
             my $map_start1     = $this_slot_info->{$current_map_id1}[0];
             my $map_start2     = $ref_slot_info->{$current_map_id2}[0];
@@ -2975,6 +2980,7 @@ sub count_correspondences {
                 map_id1           => $current_map_id1,
                 map_id2           => $current_map_id2,
                 no_corr           => $corr_count,
+                map_corrs         => $map_corrs,
                 min_position1     => $min_position1,
                 min_position2     => $min_position2,
                 max_position1     => $max_position1,
@@ -3110,19 +3116,18 @@ sub cmap_map_search_data {
             ### Work out the numbers per unit and reformat them.
             foreach my $map_id ( keys(%$map_info) ) {
                 ### Comp Map Count
-                # Divisor set to one if map length == 0 
+                # Divisor set to one if map length == 0
                 # Contributed by David Shibeci
-                my $divisor =
-                  ( $map_info->{$map_id}{'map_stop'} -
-                      $map_info->{$map_id}{'map_start'} )
-                  || 1;
+                my $divisor = ( $map_info->{$map_id}{'map_stop'}
+                        - $map_info->{$map_id}{'map_start'} )
+                    || 1;
                 my $raw_no = $map_info->{$map_id}{'cmap_count'} / $divisor;
                 $map_info->{$map_id}{'cmap_count_per'}
                     = presentable_number_per($raw_no);
                 $map_info->{$map_id}{'cmap_count_per_raw'} = $raw_no;
                 ### Correspondence Count
                 $raw_no = $map_info->{$map_id}{'corr_count'} / $divisor;
-                
+
                 $map_info->{$map_id}{'corr_count_per'}
                     = presentable_number_per($raw_no);
                 $map_info->{$map_id}{'corr_count_per_raw'} = $raw_no;

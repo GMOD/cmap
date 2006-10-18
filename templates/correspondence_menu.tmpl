@@ -60,6 +60,15 @@
           onKeyPress="return event.keyCode!=13"
        >
     <br>
+      Stack [%- slot_no -%]
+      <input 
+          type="checkbox" 
+          name="stack_slot_[%- slot_no -%]" 
+          id="stack_slot_[%- slot_no -%]" 
+          value=1
+          onKeyPress="return event.keyCode!=13"
+       >
+    <br>
     <input type=button onClick="ajaxManager('post_page','[% apr.url %]/corr_menu','corr_menu_[% side %]','reuse_step=1&use_menu=1&ignore_comp_maps=1&side=[% side %]&'+ stringify_form(this.form))" value="Refresh Menu">
     <input type="submit" value="Add Maps" name="sub">
     <br>

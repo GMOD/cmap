@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceMenu;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceMenu.pm,v 1.4 2006-06-05 21:21:36 mwz444 Exp $
+# $Id: CorrespondenceMenu.pm,v 1.5 2006-10-18 19:16:45 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -68,6 +68,14 @@ sub handler {
             )
             or return $self->error( $data->error );
     }
+    my @slot_nos = sort { $a <=> $b } keys %{ $url_options{'slots'} };
+    my $slot_no;
+    if ( $side eq 'left' ) {
+        $slot_no = $slot_nos[0] - 1;
+    }
+    else {
+        $slot_no = $slot_nos[-1] + 1;
+    }
 
     my $t = $self->template or return;
     $t->process(
@@ -75,6 +83,7 @@ sub handler {
         {   apr                 => $apr,
             form_data           => $form_data,
             side                => $side,
+            slot_no             => $slot_no,
             corr_menu_min_corrs => $corr_menu_min_corrs,
             menu_bgcolor_tint   => $self->config_data('menu_bgcolor_tint')
                 || DEFAULT->{'menu_bgcolor_tint'},

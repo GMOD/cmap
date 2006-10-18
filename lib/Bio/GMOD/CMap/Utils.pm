@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.74 2006-05-16 02:03:26 mwz444 Exp $
+# $Id: Utils.pm,v 1.75 2006-10-18 19:16:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -56,12 +56,12 @@ $VERSION = (qw$Revision: 1.74 $)[-1];
     action                   mapMenu
     featureMenu              corrMenu
     displayMenu              advancedMenu
-    general_min_corrs
+    general_min_corrs        slot_min_corrs
     included_feature_types   url_feature_default_display
     corr_only_feature_types  ignored_feature_types
     included_evidence_types  ignored_evidence_types
     less_evidence_types      greater_evidence_types
-    evidence_type_score
+    evidence_type_score      stack_slot
 ];
 
 # Not saving these because they should be stored in slots by now.
@@ -101,6 +101,7 @@ my @subs = qw[
     sort_selectall_arrayref
     parse_url
     create_session_step
+    longest_run
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -877,6 +878,82 @@ example: .001 becomes "1/K"
 }
 
 # ----------------------------------------------------
+sub longest_run {
+
+=pod
+
+=head2 longest_run 
+
+Written by Lincoln Stein
+
+Return score and longest run for a run of objects in an array ref.
+
+=cut
+
+    my ( $arrayref, $scoresub ) = @_;
+
+    my @score = [ 0, [] ];    # array ref containing [score,[subsequence]]
+    for ( my $i = 0; $i < @$arrayref; $i++ ) {
+        push @score, _longest_run_score( $arrayref, \@score, $i, $scoresub );
+    }
+    my ( $best_score, $subseq ) = @{ $score[-1] };
+    for ( my $i = 0; $i < @score - 1; $i++ ) {
+        if ( $score[$i][0] > $best_score ) {
+            $best_score = $score[$i][0];
+            $subseq     = $score[$i][1];
+        }
+    }
+    return ( $best_score, [ map { $arrayref->[$_] } @$subseq ] );
+}
+
+# ----------------------------------------------------
+sub _longest_run_score {
+
+=pod
+
+=head2 _longest_run_score
+
+Written by Lincoln Stein
+
+Used by longest_run
+
+=cut
+
+    my ( $arrayref, $scores, $position, $scoresub ) = @_;
+
+    # find longest subsequence that this position extends
+    my $max_score = 0;
+    my $max_subseq;
+    for my $subpart (@$scores) {
+        my $sub_score = $subpart->[0];
+        my $sub_seq   = $subpart->[1];
+
+        # boundary condition; empty $sub_seq;
+        unless (@$sub_seq) {
+            $max_score  = 0;
+            $max_subseq = $sub_seq;
+            next;
+        }
+
+        my $score = $scoresub->(
+            $arrayref->[ $sub_seq->[-1] ],
+            $arrayref->[$position]
+        );
+        if ($score) {
+            my $new_score = $sub_score + $score;
+            if ( $new_score > $max_score ) {
+                $max_score  = $new_score;
+                $max_subseq = $sub_seq;
+            }
+        }
+    }
+    return [
+        $max_score || 0,
+        [ defined $max_subseq ? @$max_subseq : (), $position ]
+    ];
+}
+
+# ----------------------------------------------------
 sub _parse_map_info {
 
     # parses the map info
@@ -1299,6 +1376,11 @@ sub _get_options_from_url {
             my $slot_no = $1;
             my $val     = $apr->param($param);
             $parsed_url_options{'slot_min_corrs'}->{$slot_no} = $val;
+        }
+        elsif ( $param =~ /^stack_slot_([-\d]+)/ ) {
+            my $slot_no = $1;
+            my $val     = $apr->param($param);
+            $parsed_url_options{'stack_slot'}->{$slot_no} = $val;
         }
         elsif ( $param =~ /^map_start_([-\d]+)_(\S+)/ ) {
             my $slot_no = $1;

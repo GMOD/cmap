@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.198 2006-09-01 19:33:00 mwz444 Exp $
+# $Id: Map.pm,v 1.199 2006-10-18 19:16:46 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198 $)[-1];
+$VERSION = (qw$Revision: 1.199 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -35,6 +35,7 @@ use Bio::GMOD::CMap::Utils qw[
     simple_column_distribution
     commify
     presentable_number
+    longest_run
 ];
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
@@ -57,7 +58,7 @@ BEGIN {
     #
     my @AUTO_FIELDS = qw[
         map_set_id map_set_acc map_type map_acc species_id
-        map_id species_common_name map_units map_name map_set_name 
+        map_id species_common_name map_units map_name map_set_name
         map_type_id is_relational_map begin end species_acc map_type_acc
         map_set_short_name
     ];
@@ -224,8 +225,9 @@ box.
         my $url  = $buttons->[0]{'url'};
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
-        my $eval_area_code = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        if ($eval_area_code){
+        my $eval_area_code
+            = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        if ($eval_area_code) {
             eval $eval_area_code;
         }
         push @{$map_area_data},
@@ -536,6 +538,85 @@ Draws the map as an "I-beam."  Return the bounds of the image.
             map_units     => $map_units,
             bounds        => \@coords,
         );
+    }
+
+    return ( \@coords, $map_coords );
+}
+
+# ----------------------------------------------------
+sub draw_stackable_box {
+
+=pod
+
+=head2 stackable_draw_box
+
+Draws the map as a "box" (a filled-in rectangle).  In such a way as to allow
+for this map to be stacked on others.  Return the bounds of the box.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data  = $args{'drawing_data'};
+    my $map_area_data = $args{'map_area_data'};
+    my $map_coords    = $args{'map_coords'};
+    my $drawer        = $args{'drawer'} || $self->drawer
+        or $self->error('No drawer');
+    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
+        or $self->error('No coordinates');
+    my $map_id              = $args{'map_id'};
+    my $map_acc             = $self->map_acc($map_id);
+    my $is_flipped          = $args{'is_flipped'};
+    my $slot_no             = $args{'slot_no'};
+    my $color1              = $self->map_color($map_id);
+    my $width               = $self->map_width($map_id);
+    my $x2                  = $x1 + $width;
+    my $x_mid               = $x1 + ( $width / 2 );
+    my @coords              = ( $x1, $y1, $x2, $y2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
+    $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
+    $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
+    my $color2 = 'black';
+
+    my $color;
+    if ( $self->{'oscillating_map_color_bool'} ) {
+        $self->{'oscillating_map_color_bool'} = 0;
+        $color = $color2;
+    }
+    else {
+        $color = $color1;
+        $self->{'oscillating_map_color_bool'} = 1;
+    }
+
+    push @$drawing_data, [ FILLED_RECT, @$map_coords, $color ];
+
+    #push @$drawing_data, [ RECTANGLE,   @$map_coords, 'black' ];
+    unless ($omit_all_area_boxes) {
+        my $map     = $self->map($map_id);
+        my $buttons = $self->create_buttons(
+            map_id     => $map_id,
+            drawer     => $drawer,
+            slot_no    => $slot_no,
+            is_flipped => $is_flipped,
+            buttons    => [ 'map_detail', ],
+        );
+        my $url  = $buttons->[0]{'url'};
+        my $alt  = $buttons->[0]{'alt'};
+        my $code = '';
+        my $eval_area_code
+            = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        if ($eval_area_code) {
+            eval $eval_area_code;
+        }
+        push @{$map_area_data},
+            {
+            coords => [
+                $map_coords->[0], $map_coords->[1],
+                $map_coords->[2], $map_coords->[3]
+            ],
+            url  => $url,
+            alt  => $alt,
+            code => $code,
+            };
     }
 
     return ( \@coords, $map_coords );
@@ -1150,6 +1231,7 @@ Variable Info:
 
     # if more than one map in slot, compress all
     my $is_compressed  = $self->is_compressed($slot_no);
+    my $stack_rel_maps = $self->is_stacked($slot_no);
     my $label_features = $drawer->label_features;
     my $config         = $self->config or return;
 
@@ -1201,14 +1283,15 @@ Variable Info:
           $is_compressed ? 0
         : $label_features eq 'none' ? 0
         : 1;
-    my $show_ticks        = 1;                        #Always show ticks
-    my $show_map_title    = $is_compressed ? 0 : 1;
-    my $show_map_units    = $is_compressed ? 0 : 1;
+    my $show_ticks     = !$stack_rel_maps;        # Show ticks unless stacking
+    my $show_map_title = $is_compressed ? 0 : 1;
+    my $show_map_units = $is_compressed ? 0 : 1;
     my $slot_title_buffer = 2;
 
     my $base_x = $self->base_x;
 
-    my $slot_type_title = $slot_no ? "Comparative": "Reference"; 
+    my $slot_type_title = $slot_no ? "Comparative" : "Reference";
+
     # Create the Slot Title Box
     # We do this first to make sure that the slot is wide enough
     my @lines = (
@@ -1255,11 +1338,31 @@ Variable Info:
     my %flipped_maps;
     my $last_map_id;
 
-MAP:
+    # If stacking maps,
+    my $stacking_units_per_pixel = 0;
+    my $stacked_max_y            = undef;
+    if ($stack_rel_maps) {
 
+        # Find the units to pixels ratio.
+        my $total_map_units = 0;
+        for my $map_id (@map_ids) {
+            $total_map_units += $self->map_length($map_id);
+        }
+        $stacking_units_per_pixel
+            = $total_map_units / $drawer->pixel_height();
+
+        # order map ids by placement
+        @map_ids = $self->order_map_ids_based_on_corrs(
+            drawer  => $drawer,
+            map_ids => \@map_ids,
+            slot_no => $slot_no,
+        );
+
+    }
+
+MAP:
     for my $map_id (@map_ids) {
-        my $map_width  = $self->map_width($map_id);
-        my $is_flipped = 0;
+        my $map_width = $self->map_width($map_id);
         my $max_x;
 
       # must create these arrays otherwise they don't get passed by reference.
@@ -1272,15 +1375,9 @@ MAP:
         #
         # Find out if it flipped
         #
-        for my $rec ( @{ $drawer->flip } ) {
-            if (    $rec->{'slot_no'} == $slot_no
-                and $rec->{'map_acc'} eq $self->map_acc($map_id) )
-            {
-                $is_flipped = 1;
-                $flipped_maps{$map_id} = 1;
-                last;
-            }
-        }
+        my $is_flipped
+            = $drawer->is_flipped( $slot_no, $self->map_acc($map_id) );
+        $flipped_maps{$map_id} = $is_flipped;
 
         my $features = $self->features($map_id);
 
@@ -1289,16 +1386,25 @@ MAP:
         #
 
         # Get the desired map height.
-        my $pixel_height = $self->get_map_height(
-            drawer        => $drawer,
-            slot_no       => $slot_no,
-            map_id        => $map_id,
-            is_compressed => $is_compressed,
-        );
+        my $pixel_height;
+        if ($stack_rel_maps) {
+            $pixel_height
+                = int( $map_length / $stacking_units_per_pixel ) + 1;
+        }
+        else {
+            $pixel_height = $self->get_map_height(
+                drawer        => $drawer,
+                slot_no       => $slot_no,
+                map_id        => $map_id,
+                is_compressed => $is_compressed,
+            );
+        }
 
         # Place the map vertically in the slot
         my ( $placed_y1, $placed_y2, $capped );
-        ( $placed_y1, $placed_y2, $pixel_height, $capped )
+        (   $placed_y1, $placed_y2,     $pixel_height,
+            $capped,    $stacked_max_y, $is_flipped,
+            )
             = $self->place_map_y(
             drawer             => $drawer,
             slot_no            => $slot_no,
@@ -1306,8 +1412,11 @@ MAP:
             is_compressed      => $is_compressed,
             pixel_height       => $pixel_height,
             is_flipped         => $is_flipped,
+            flipped_maps_ref   => \%flipped_maps,
             y_buffer           => $y_buffer,
             last_map_id        => $last_map_id,
+            stacked_max_y      => $stacked_max_y,
+            stack_rel_maps     => $stack_rel_maps,
             map_aggregate_corr => \%map_aggregate_corr,
             map_placement_data => \%map_placement_data,
             );
@@ -1326,11 +1435,13 @@ MAP:
             map_area_data      => \%map_area_data,
             map_placement_data => \%map_placement_data,
             is_flipped         => $is_flipped,
-        );
+            )
+            unless ($stack_rel_maps);
 
         # Draw the actual Map
         my $mid_x         = 0;
         my $draw_sub_name = $SHAPE{ $self->shape($map_id) };
+        $draw_sub_name = 'draw_stackable_box' if ($stack_rel_maps);
         my ( $bounds, $map_coords ) = $self->$draw_sub_name(
             map_id     => $map_id,
             slot_no    => $slot_no,
@@ -1537,6 +1648,7 @@ MAP:
                 drawing_data => $map_drawing_data{$map_id},
                 map_area_data      => $map_area_data{$map_id},
                 features_with_corr => \%features_with_corr,
+                stack_rel_maps     => $stack_rel_maps,
                 min_x        => $map_placement_data{$map_id}{'bounds'}[0],
                 top_y        => $map_placement_data{$map_id}{'bounds'}[1],
                 max_x        => $map_placement_data{$map_id}{'bounds'}[2],
@@ -1546,14 +1658,19 @@ MAP:
                 );
             $map_placement_data{$map_id}{'bounds'}[0] = $min_x
                 if ( $map_placement_data{$map_id}{'bounds'}[0] > $min_x );
-            $map_placement_data{$map_id}{'bounds'}[1] = $top_y
-                if ( $map_placement_data{$map_id}{'bounds'}[1] > $top_y );
-            $map_placement_data{$map_id}{'bounds'}[1] = $min_y
-                if ( $map_placement_data{$map_id}{'bounds'}[1] > $min_y );
             $map_placement_data{$map_id}{'bounds'}[2] = $max_x
                 if ( $map_placement_data{$map_id}{'bounds'}[2] < $max_x );
-            $map_placement_data{$map_id}{'bounds'}[3] = $bottom_y
-                if ( $map_placement_data{$map_id}{'bounds'}[3] < $bottom_y );
+
+            # If stacking maps, we don't care about the features hanging over
+            unless ($stack_rel_maps) {
+                $map_placement_data{$map_id}{'bounds'}[1] = $top_y
+                    if ( $map_placement_data{$map_id}{'bounds'}[1] > $top_y );
+                $map_placement_data{$map_id}{'bounds'}[1] = $min_y
+                    if ( $map_placement_data{$map_id}{'bounds'}[1] > $min_y );
+                $map_placement_data{$map_id}{'bounds'}[3] = $bottom_y
+                    if (
+                    $map_placement_data{$map_id}{'bounds'}[3] < $bottom_y );
+            }
 
             ##############################################
             $lanes{$lane}{'furthest'}
@@ -1570,11 +1687,17 @@ MAP:
         my ($min_x);
 
         $slot_min_y = $map_placement_data{$map_id}{'bounds'}[1]
-            if ( not defined $slot_max_y
-            or $map_placement_data{$map_id}{'bounds'}[1] < $slot_min_y );
+            if (
+            not $stack_rel_maps
+            and ( not defined $slot_max_y
+                or $map_placement_data{$map_id}{'bounds'}[1] < $slot_min_y )
+            );
         $slot_max_y = $map_placement_data{$map_id}{'bounds'}[3]
-            if ( not defined $slot_max_y
-            or $map_placement_data{$map_id}{'bounds'}[3] > $slot_max_y );
+            if (
+            not $stack_rel_maps
+            and ( not defined $slot_max_y
+                or $map_placement_data{$map_id}{'bounds'}[3] > $slot_max_y )
+            );
 
         $last_map_id = $map_id;
     }
@@ -1592,6 +1715,7 @@ MAP:
         } @map_ids
         )
     {
+
         # Decide which lane this map should be in
         if (    ( not $self->stack_maps() )
             and $ref_map_order_hash
@@ -1614,14 +1738,17 @@ MAP:
                 $map_lane{$map_id} = 0;
             }
         }
+
         # If it doesn't fit in any of the others, make new lane
         $map_lane{$map_id} = scalar @map_columns
             unless defined $map_lane{$map_id};
 
         # This map is now the lowest value in the lane
-        # change the map_columns value appropriately 
+        # change the map_columns value appropriately
         $map_columns[ $map_lane{$map_id} ]
-            = $map_placement_data{$map_id}{'bounds'}[3] + $y_buffer;
+            = $map_placement_data{$map_id}{'bounds'}[3];
+        $map_columns[ $map_lane{$map_id} ] += $y_buffer
+            unless ($stack_rel_maps);
 
         # Set the lane width if this map is wider than any previous
         if (not defined( $lane_width[ $map_lane{$map_id} ] )
@@ -2111,6 +2238,9 @@ sub place_map_y {
     my $map_aggregate_corr = $args{'map_aggregate_corr'};
     my $map_placement_data = $args{'map_placement_data'};
     my $is_flipped         = $args{'is_flipped'};
+    my $flipped_maps_ref   = $args{'flipped_maps_ref'};
+    my $stacked_max_y      = $args{'stacked_max_y'};
+    my $stack_rel_maps     = $args{'stack_rel_maps'};
     my $y_buffer           = $args{'y_buffer'};
     my $last_map_id        = $args{'last_map_id'};
 
@@ -2127,8 +2257,8 @@ sub place_map_y {
     my $top_boundary = $base_y - $top_boundary_offset;
     my $bottom_boundary_offset
         = ( ( $drawer->pixel_height() ) * $boundary_factor );
-    my $bottom_boundary = ( $drawer->pixel_height() ) + $base_y
-        + $bottom_boundary_offset;
+    my $bottom_boundary
+        = ( $drawer->pixel_height() ) + $base_y + $bottom_boundary_offset;
 
     #
     # If drawing compressed maps in the first slot, then draw them
@@ -2146,10 +2276,98 @@ sub place_map_y {
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
         my ( $min_ref_y, $max_ref_y );
         my $placed = 0;
-        for my $ref_map_id ( keys(%$ref_slot_info) ) {
+
+        if ($stack_rel_maps) {
+
+            # This places the map in based on the stacking order
+            my $map_unit_len = $self->map_length($map_id);
+            unless ( defined $stacked_max_y ) {
+
+                # make room for three lines
+                my $reg_font = $drawer->regular_font
+                    or return $self->error( $drawer->error );
+                my $font_height = $reg_font->height;
+                $stacked_max_y = $base_y + ( $font_height * 3 );
+            }
+            $min_ref_y       = $stacked_max_y;
+            $max_ref_y       = $min_ref_y + $pixel_height;
+            $top_boundary    = $min_ref_y;
+            $bottom_boundary = $max_ref_y;
+            $stacked_max_y   = $max_ref_y + 1;
+            $placed          = 1;
+        }
+        my $first_ref_map = 1;
+        for my $ref_map_id ( sort keys(%$ref_slot_info) ) {
 
             my $all_ref_corrs = $ref_corrs->{$ref_map_id};
             next unless defined($all_ref_corrs);
+
+            if ($first_ref_map) {
+                if ($stack_rel_maps) {
+
+                    my $ref_slot_data = $drawer->slot_data($ref_slot_no);
+                    my $ref_map_acc
+                        = $ref_slot_data->{$ref_map_id}{'map_acc'};
+
+                    # Flip the map if the corrs are reversed
+                    my @sorted_corrs = sort {
+                        (   (   $a->{'feature_start1'} + $a->{'feature_stop1'}
+                            ) / 2
+                            ) <=> (
+                            (   $b->{'feature_start1'} + $b->{'feature_stop1'}
+                            ) / 2
+                            )
+                    } @{ $all_ref_corrs->[0]{'map_corrs'} || [] };
+                    my $inc_stack_sub = sub {
+                        return (
+                            (   (   $_[0]->{'feature_start2'}
+                                        + $_[0]->{'feature_stop2'}
+                                ) / 2
+                            ) < (
+                                (   $_[1]->{'feature_start2'}
+                                        + $_[1]->{'feature_stop2'}
+                                ) / 2
+                            )
+                        );
+                    };
+                    my ( $inc_score, undef )
+                        = longest_run( \@sorted_corrs, $inc_stack_sub );
+                    my $dec_stack_sub = sub {
+                        return (
+                            (   (   $_[0]->{'feature_start2'}
+                                        + $_[0]->{'feature_stop2'}
+                                ) / 2
+                            ) > (
+                                (   $_[1]->{'feature_start2'}
+                                        + $_[1]->{'feature_stop2'}
+                                ) / 2
+                            )
+                        );
+                    };
+                    my ( $dec_score, undef )
+                        = longest_run( \@sorted_corrs, $dec_stack_sub );
+
+                    my $ref_is_flipped
+                        = $drawer->is_flipped( $ref_slot_no, $ref_map_acc );
+
+                    if (   ( $inc_score > $dec_score and !$ref_is_flipped )
+                        or ( $inc_score < $dec_score and $ref_is_flipped ) )
+                    {
+                        $drawer->set_map_flip( $slot_no,
+                            $self->map_acc($map_id), 0 );
+                        $flipped_maps_ref->{$map_id} = 0;
+                        $is_flipped = 0;
+                    }
+                    else {
+                        $drawer->set_map_flip( $slot_no,
+                            $self->map_acc($map_id), 1 );
+                        $flipped_maps_ref->{$map_id} = 1;
+                        $is_flipped = 1;
+                    }
+
+                }
+                $first_ref_map = 0;
+            }
 
             # help offset the lines when aggregating multiple evidence types
             my $drawing_offset = 0;
@@ -2210,13 +2428,11 @@ sub place_map_y {
                 my $ref_map_y2 =
                     $ref_pos->{'is_flipped'}
                     ? $ref_pos->{'y2'} + (
-                    (   $ref_corr->{'max_position2'}
-                            - $ref_pos->{'map_start'}
+                    (   $ref_corr->{'max_position2'} - $ref_pos->{'map_start'}
                     ) / $ref_map_unit_len
                     ) * $ref_map_pixel_len
                     : $ref_pos->{'y1'} + (
-                    (   $ref_corr->{'max_position2'}
-                            - $ref_pos->{'map_start'}
+                    (   $ref_corr->{'max_position2'} - $ref_pos->{'map_start'}
                     ) / $ref_map_unit_len
                     ) * $ref_map_pixel_len;
 
@@ -2253,13 +2469,13 @@ sub place_map_y {
                     # V showing span of corrs
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
-                        $ref_map_x,            $ref_map_y1,
+                        $ref_map_x,             $ref_map_y1,
                         $ref_corr->{'no_corr'}, $this_agg_y1,
                         $evidence_type_acc,
                         ];
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
-                        $ref_map_x,            $ref_map_y2,
+                        $ref_map_x,             $ref_map_y2,
                         $ref_corr->{'no_corr'}, $this_agg_y2,
                         $evidence_type_acc,
                         ];
@@ -2273,7 +2489,7 @@ sub place_map_y {
                   # This places the map in relation to the first reference map
                     my $map_unit_len = $self->map_length($map_id);
                     my $map_start    = $self->map_start($map_id);
-                    my $rstart = ( $avg_mid - $map_start ) / $map_unit_len ;
+                    my $rstart = ( $avg_mid - $map_start ) / $map_unit_len;
                     $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
                     $max_ref_y = $ref_map_mid_y
                         + ( $pixel_height * ( 1 - $rstart ) );
@@ -2346,7 +2562,10 @@ sub place_map_y {
         }
     }
 
-    return ( $return_y1, $return_y2, $pixel_height, $capped );
+    return (
+        $return_y1, $return_y2,     $pixel_height,
+        $capped,    $stacked_max_y, $is_flipped
+    );
 }
 
 # ----------------------------------------
@@ -2387,7 +2606,6 @@ sub add_topper {
     my $base_y        = $map_placement_data->{$map_id}{'bounds'}[1];
     my $current_min_y = $base_y;
     my $mid_x         = $base_x + ( $map_width / 2 );
-    my $topper_height = 0;
 
     # The idea is to start at the bottom of the topper
     # and work our way up.  This keeps the map from
@@ -2501,8 +2719,9 @@ sub add_topper {
             my $url  = $buttons->[0]{'url'};
             my $alt  = $buttons->[0]{'alt'};
             my $code = '';
-            my $eval_area_code = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-            if ($eval_area_code){
+            my $eval_area_code
+                = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+            if ($eval_area_code) {
                 eval $eval_area_code;
             }
             push @{ $map_area_data->{$map_id} },
@@ -2527,8 +2746,8 @@ sub add_topper {
     # because the reference maps can be moved about vertically.  This makes
     # sure that if they are stacked vertically, the topper doesn't cause an
     # overlap (and make the maps off set).
-    if ($slot_no == 0){
-        my $topper_offset = 1 + $base_y - $current_min_y ;
+    if ( $slot_no == 0 ) {
+        my $topper_offset = 1 + $base_y - $current_min_y;
         $drawer->offset_drawing_data(
             offset_y     => $topper_offset,
             drawing_data => $map_drawing_data->{$map_id},
@@ -2540,10 +2759,12 @@ sub add_topper {
         $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
         $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
     }
-    else{
+    else {
+
         # Other slots, just need their top reset
         $map_placement_data->{$map_id}{'bounds'}[1] = $current_min_y
-            if ( $map_placement_data->{$map_id}{'bounds'}[1] > $current_min_y );
+            if (
+            $map_placement_data->{$map_id}{'bounds'}[1] > $current_min_y );
     }
 }
 
@@ -2931,11 +3152,11 @@ sub add_feature_to_map {
     my $fstop = $shape_is_triangle ? undef: $feature->{'feature_stop'};
     $fstop = undef if $fstop < $fstart;
 
-    my $rstart = ($fstart - $map_start ) / $map_length;
+    my $rstart = ( $fstart - $map_start ) / $map_length;
     $rstart = $rstart > 1 ? 1 : $rstart < 0 ? 0 : $rstart;
     my $rstop =
         defined $fstop
-        ? ( $fstop - $map_start ) / $map_length 
+        ? ( $fstop - $map_start ) / $map_length
         : undef;
     if ( defined $rstop ) {
         $rstop = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
@@ -3036,8 +3257,8 @@ sub add_feature_to_map {
                     my $adjusted_low  = $y_pos1 - $map_base_y;
                     my $adjusted_high = $y_pos2 - $map_base_y;
                     $column_index = simple_column_distribution(
-                        low  => $adjusted_low,
-                        high => $adjusted_high,
+                        low        => $adjusted_low,
+                        high       => $adjusted_high,
                         columns    => $fcolumns,
                         map_height => $pixel_height,
                         buffer     => $buffer,
@@ -3078,7 +3299,7 @@ sub add_feature_to_map {
                         drawer       => $drawer,
                     )
                     };
-                if (!$omit_area_boxes and @coords) {
+                if ( !$omit_area_boxes and @coords ) {
                     my $code = '';
                     my $url
                         = $feature_details_url . $feature->{'feature_acc'};
@@ -3231,6 +3452,7 @@ sub add_labels_to_map {
     my $bottom_y           = $args{'bottom_y'};
     my $min_y              = $args{'min_y'};
     my $pixel_height       = $args{'pixel_height'};
+    my $stack_rel_maps     = $args{'stack_rel_maps'};
 
     my $omit_area_boxes = $drawer->omit_area_boxes();
     my $label_side      = $drawer->label_side($slot_no);
@@ -3248,8 +3470,10 @@ sub add_labels_to_map {
     my $buffer = 2;    # the space between things
 
     my $accepted_labels = even_label_distribution(
-        labels      => $even_labels,
-        map_height  => $pixel_height,
+        labels     => $even_labels,
+        map_height => $stack_rel_maps
+        ? $pixel_height - $font_height
+        : $pixel_height,
         font_height => $font_height,
         start_y     => $base_y,
     );
@@ -3599,6 +3823,7 @@ Returns the map's tick mark interval.
 
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length = $self->map_stop($map_id) - $self->map_start($map_id);
+
         # If map length == 0, set scale to 1
         # Contributed by David Shibeci
         if ($map_length) {
@@ -3732,7 +3957,7 @@ Button options:
             {
             label => '?',
             url   => $details_url,
-            alt   => 'Map Details',
+            alt   => 'Map Details: ' . $self->map_name($map_id),
             },
             ;
     }
@@ -3917,6 +4142,106 @@ Uses Data.pm to figure out if a map is compressed.
     my $drawer  = $self->drawer;
 
     return $drawer->data_module->compress_maps($slot_no);
+}
+
+# ----------------------------------------------------
+sub is_stacked {
+
+=pod
+
+=head2 is_stacked
+
+Uses Data.pm to figure out if a map is stacked.
+
+=cut
+
+    my $self    = shift;
+    my $slot_no = shift;
+    my $drawer  = $self->drawer;
+
+    my $stack_slot_hash = $drawer->stack_slot();
+    my @map_ids         = $self->map_ids;
+    return (    $slot_no
+            and %{ $stack_slot_hash || {} }
+            and $stack_slot_hash->{$slot_no}
+            and scalar(@map_ids) > 1 );
+
+}
+
+#-----------------------------------------------
+sub order_map_ids_based_on_corrs {
+
+=pod
+
+=head2 order_maps_based_on_corrs()
+
+=over 4
+
+=item * Description
+
+Return the map_ids in order
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawer      = $args{'drawer'};
+    my $map_ids     = $args{'map_ids'} or return ();
+    my $slot_no     = $args{'slot_no'} or return ();
+    my $ref_slot_no = $drawer->reference_slot_no($slot_no);
+
+    my %map_positions;
+MAP_ID:
+    foreach my $map_id ( @{ $map_ids || [] } ) {
+        my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
+    REF_MAP_ID:
+        for my $ref_map_id ( sort keys(%$ref_corrs) ) {
+            my $all_ref_corrs = $ref_corrs->{$ref_map_id};
+            my $position_sum  = 1;
+        REF_CORR:
+            foreach my $ref_corr (@$all_ref_corrs) {
+
+                #
+                # Get the information about the reference map.
+                #
+                my $ref_pos = $drawer->reference_map_coords( $ref_slot_no,
+                    $ref_corr->{'map_id2'} );
+
+                # If this is not a ref map, skip
+                next unless ($ref_pos);
+
+                # average of corr on ref map
+                my $ref_avg_mid = $ref_corr->{'avg_mid2'};
+
+                my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
+                my $ref_map_unit_len
+                    = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
+
+                # Set the avg location of the corr on the ref map
+                my $ref_map_mid_y =
+                    $ref_pos->{'is_flipped'}
+                    ? (
+                    $ref_pos->{'y2'} - (
+                        ( $ref_avg_mid - $ref_pos->{'map_start'} ) /
+                            $ref_map_unit_len
+                        ) * $ref_map_pixel_len
+                    )
+                    : (
+                    $ref_pos->{'y1'} + (
+                        ( $ref_avg_mid - $ref_pos->{'map_start'} ) /
+                            $ref_map_unit_len
+                        ) * $ref_map_pixel_len
+                    );
+                $map_positions{$map_id} = $ref_map_mid_y;
+                next MAP_ID;
+            }
+        }
+    }
+
+    return
+        sort { $map_positions{$a} <=> $map_positions{$b} }
+        @{ $map_ids || [] };
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.126 2006-09-21 17:13:58 mwz444 Exp $
+# $Id: Drawer.pm,v 1.127 2006-10-18 19:16:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,6 +46,7 @@ The base map drawing module.
         general_min_corrs => $general_min_corrs,
         menu_min_corrs => $menu_min_corrs,
         slot_min_corrs => $slot_min_corrs,
+        stack_slot => $stack_slot,
         collapse_features => $collapse_features,
         cache_dir => $cache_dir,
         map_view => $map_view,
@@ -233,6 +234,10 @@ The minimum number of correspondences for the menu
 
 The data structure that holds the  minimum number of correspondences for each slot
 
+=item * stack_slot
+
+The data structure that dicates if each slot is stacked
+
 =item * collapse_features
 
 Set to 1 to collaps overlapping features.
@@ -339,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.126 $)[-1];
+$VERSION = (qw$Revision: 1.127 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -359,7 +364,7 @@ my @INIT_PARAMS = qw[
     included_evidence_types ignored_evidence_types ignored_feature_types
     less_evidence_types greater_evidence_types evidence_type_score
     config data_source left_min_corrs right_min_corrs
-    general_min_corrs menu_min_corrs slot_min_corrs
+    general_min_corrs menu_min_corrs slot_min_corrs stack_slot
     collapse_features cache_dir map_view data_module
     aggregate show_intraslot_corr clean_view
     scale_maps stack_maps ref_map_order comp_menu_order
@@ -889,6 +894,75 @@ Gets/sets which maps to flip.
     }
 
     return $self->{'flip'} || [];
+}
+
+# ----------------------------------------------------
+sub is_flipped {
+
+=pod
+
+=head2 flip
+
+Boolean: is the map flipped
+
+=cut
+
+    my $self       = shift;
+    my $slot_no    = shift;
+    my $map_acc    = shift;
+    my $flip_array = $self->flip();
+
+    for ( my $i = 0; $i <= $#{$flip_array}; $i++ ) {
+        if (    $flip_array->[$i]{'slot_no'} == $slot_no
+            and $flip_array->[$i]{'map_acc'} eq $map_acc )
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+# ----------------------------------------------------
+sub set_map_flip {
+
+=pod
+
+=head2 set_map_flip
+
+Sets the flip value of a map
+
+=cut
+
+    my $self       = shift;
+    my $slot_no    = shift;
+    my $map_acc    = shift;
+    my $flip_value = shift;
+
+    my $was_flipped = 0;
+    my $flip_array  = $self->flip();
+
+    for ( my $i = 0; $i <= $#{$flip_array}; $i++ ) {
+        if (    $flip_array->[$i]{'slot_no'} == $slot_no
+            and $flip_array->[$i]{'map_acc'} eq $map_acc )
+        {
+            $was_flipped = 1;
+            unless ($flip_value) {
+
+                # remove from flip array
+                splice( @$flip_array, $i, 1 );
+                $i--;
+            }
+        }
+    }
+    if ( $flip_value and not $was_flipped ) {
+        push @{ $self->{'flip'} },
+            {
+            slot_no => $slot_no,
+            map_acc => $map_acc,
+            };
+    }
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -2324,6 +2398,24 @@ Default: undef
 }
 
 # ----------------------------------------------------
+sub stack_slot {
+
+=pod
+
+=head2 stack_slot
+
+Gets/sets the object that dicates if a slot is stacked.
+
+Default: undef
+
+=cut
+
+    my $self = shift;
+    $self->{'stack_slot'} = shift if @_;
+    return $self->{'stack_slot'};
+}
+
+# ----------------------------------------------------
 sub label_features {
 
 =pod
@@ -3027,6 +3119,8 @@ Creates default link parameters for CMap->create_viewer_link()
     my $right_min_corrs             = $args{'right_min_corrs'};
     my $general_min_corrs           = $args{'general_min_corrs'};
     my $menu_min_corrs              = $args{'menu_min_corrs'};
+    my $slot_min_corrs              = $args{'slot_min_corrs'};
+    my $stack_slot                  = $args{'stack_slot'};
     my $ref_map_accs                = $args{'ref_map_accs'};
     my $feature_type_accs           = $args{'feature_type_accs'};
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
@@ -3167,6 +3261,12 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($menu_min_corrs) ) {
         $menu_min_corrs = $self->menu_min_corrs();
     }
+    unless ( defined($slot_min_corrs) ) {
+        $slot_min_corrs = $self->slot_min_corrs();
+    }
+    unless ( defined($stack_slot) ) {
+        $stack_slot = $self->stack_slot();
+    }
     unless ( defined($feature_type_accs) ) {
         $feature_type_accs = $self->included_feature_types();
     }
@@ -3249,6 +3349,8 @@ Creates default link parameters for CMap->create_viewer_link()
         right_min_corrs             => $right_min_corrs,
         general_min_corrs           => $general_min_corrs,
         menu_min_corrs              => $menu_min_corrs,
+        slot_min_corrs              => $slot_min_corrs,
+        stack_slot                  => $stack_slot,
         ref_map_accs                => $ref_map_accs,
         feature_type_accs           => $feature_type_accs,
         corr_only_feature_type_accs => $corr_only_feature_type_accs,

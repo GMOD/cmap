@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.109 2006-07-07 18:20:45 mwz444 Exp $
+# $Id: CMap.pm,v 1.110 2006-10-18 19:16:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -1091,7 +1091,7 @@ Returns the correct SQL module driver for the RDBMS we're using.
         my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
 
         eval "require $sql_module"
-            or return $self->error(
+            or die $self->error(
             qq[Unable to require SQL module "$sql_module": $@]);
 
         # IF YOU ARE GETTING A BIZZARE WARNING:
@@ -1272,6 +1272,8 @@ Given information about the link, creates a url to cmap_viewer.
     my $right_min_corrs             = $args{'right_min_corrs'};
     my $general_min_corrs           = $args{'general_min_corrs'};
     my $menu_min_corrs              = $args{'menu_min_corrs'};
+    my $slot_min_corrs              = $args{'slot_min_corrs'};
+    my $stack_slot                  = $args{'stack_slot'};
     my $ref_map_accs                = $args{'ref_map_accs'};
     my $feature_type_accs           = $args{'feature_type_accs'};
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
@@ -1510,6 +1512,21 @@ Given information about the link, creates a url to cmap_viewer.
     }
     foreach my $acc ( keys(%$evidence_type_score) ) {
         $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
+    }
+
+    if ( %{$slot_min_corrs ||{}} ) {
+        foreach my $slot_no (keys %{$slot_min_corrs}) {
+            if ($slot_min_corrs->{$slot_no}){
+                $url .= "slot_min_corrs_" . $slot_no . "=1;";
+            }
+        }
+    }
+    if ( %{$stack_slot ||{}} ) {
+        foreach my $slot_no (keys %{$stack_slot}) {
+            if ($stack_slot->{$slot_no}){
+                $url .= "stack_slot_" . $slot_no . "=1;";
+            }
+        }
     }
 
     return $url;
