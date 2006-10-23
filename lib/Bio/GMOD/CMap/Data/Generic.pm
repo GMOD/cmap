@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.152 2006-10-04 14:56:23 mwz444 Exp $
+# $Id: Generic.pm,v 1.153 2006-10-23 07:45:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.152 $)[-1];
+$VERSION = (qw$Revision: 1.153 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3894,6 +3894,8 @@ get_features() provides and doesn't involve any table joins.
 
 =item - Feature Type Accession (feature_type_acc)
 
+=item - List of Feature Type Accessions (feature_type_accs)
+
 =item - List of Feature Type Accession to ignore (ignore_feature_type_accs)
 
 =back
@@ -3934,6 +3936,7 @@ Not using cache because this query is quicker.
         feature_acc              => 0,
         feature_name             => 0,
         feature_type_acc         => 0,
+        feature_type_accs        => 0,
         ignore_feature_type_accs => 0,
     );
     my %args = @_;
@@ -3947,6 +3950,7 @@ Not using cache because this query is quicker.
     my $max_feature_id           = $args{'max_feature_id'};
     my $feature_name             = $args{'feature_name'};
     my $feature_type_acc         = $args{'feature_type_acc'};
+    my $feature_type_accs        = $args{'feature_type_accs'} || [];
     my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
     my $db                       = $cmap_object->db;
     my $return_object;
@@ -3996,8 +4000,14 @@ Not using cache because this query is quicker.
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " feature_type_acc = '$feature_type_acc' ";
     }
+    elsif (@$feature_type_accs) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_type_acc in ('"
+            . join( "','", sort @$feature_type_accs ) . "') ";
+    }
     if (@$ignore_feature_type_accs) {
-        $where_sql .= " and feature_type_acc not in ('"
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_type_acc not in ('"
             . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
 
@@ -4562,24 +4572,22 @@ Array of Hashes:
 
         foreach my $row ( @{$return_object} ) {
             my $feature_type_acc = $row->{'feature_type_acc'};
-            $row->{$_}
-                = $feature_type_data->{ $feature_type_acc }{$_}
-                for qw[
+            $row->{$_} = $feature_type_data->{$feature_type_acc}{$_} for qw[
                 feature_type default_rank shape color
                 drawing_lane drawing_priority width
             ];
-            if ($feature_type_data->{ $feature_type_acc }{'get_attributes'}){
+            if ( $feature_type_data->{$feature_type_acc}{'get_attributes'} ) {
                 $row->{'attributes'} = $self->get_attributes(
                     cmap_object => $cmap_object,
-                    object_type  => 'feature',
-                    object_id  => $row->{'feature_id'},
+                    object_type => 'feature',
+                    object_id   => $row->{'feature_id'},
                 );
             }
-            if ($feature_type_data->{ $feature_type_acc }{'get_xrefs'}){
+            if ( $feature_type_data->{$feature_type_acc}{'get_xrefs'} ) {
                 $row->{'xrefs'} = $self->get_xrefs(
                     cmap_object => $cmap_object,
-                    object_type  => 'feature',
-                    object_id  => $row->{'feature_id'},
+                    object_type => 'feature',
+                    object_id   => $row->{'feature_id'},
                 );
             }
         }
@@ -5450,21 +5458,21 @@ Not using cache because this query is quicker.
 
     if ($map_id) {
         push @identifiers, $map_id;
-        $from_sql  .= ", cmap_map map ";
+        $from_sql    .= ", cmap_map map ";
         $where_extra .= " and map.map_id = f.map_id and map.map_id = ? ";
     }
     elsif ($map_acc) {
         push @identifiers, $map_acc;
-        $from_sql  .= ", cmap_map map ";
+        $from_sql    .= ", cmap_map map ";
         $where_extra .= " and map.map_id = f.map_id and map.map_acc = ? ";
     }
     elsif ($map_set_id) {
         push @identifiers, $map_set_id;
-        $from_sql  .= ", cmap_map map ";
+        $from_sql    .= ", cmap_map map ";
         $where_extra .= " and map.map_id = f.map_id and map.map_set_id = ? ";
     }
     elsif (@$map_set_ids) {
-        $from_sql  .= ", cmap_map map ";
+        $from_sql    .= ", cmap_map map ";
         $where_extra .= " and map.map_id = f.map_id "
             . " and map.map_set_id in ("
             . join( ",", sort @$map_set_ids ) . ") ";
@@ -8464,10 +8472,11 @@ Attribute id
     my $object_type     = $args{'object_type'};
     my $is_public       = $args{'is_public'} || 1;
     my $attribute_name  = $args{'attribute_name'} || q{};
-    my $attribute_value = defined( $args{'attribute_value'} )
+    my $attribute_value =
+        defined( $args{'attribute_value'} )
         ? $args{'attribute_value'}
         : q{};
-    my $object_id       = $args{'object_id'};
+    my $object_id   = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @insert_args = (
         $attribute_id, $table_name, $object_id, $attribute_value,
