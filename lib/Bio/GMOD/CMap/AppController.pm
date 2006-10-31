@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.13 2006-10-06 18:31:38 mwz444 Exp $
+# $Id: AppController.pm,v 1.14 2006-10-31 21:59:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -53,11 +53,18 @@ Initializes the object.
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
     my $developement = 0;
-    if ($developement) {
+    if ( $developement == 1 ) {
         $self->load_new_window(
             window_key               => $window_key,
             'selections'             => ['0'],
             'selectable_ref_map_ids' => ['1'],
+        );
+    }
+    elsif ( $developement == 2 ) {
+        $self->load_new_window(
+            window_key               => $window_key,
+            'selections'             => ['0'],
+            'selectable_ref_map_ids' => ['2'],
         );
     }
     else {
@@ -246,6 +253,42 @@ Load the first slot of a page.
 }
 
 # ----------------------------------------------------
+sub open_new_window {
+
+=pod
+
+=head2 open_new_window
+
+Create another window.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    my $selected_map_ids  = $args{'selected_map_ids'}  || [];
+    my $selected_map_keys = $args{'selected_map_keys'} || [];
+    unless (@$selected_map_ids) {
+        $selected_map_ids = $self->app_display_data()
+            ->get_map_ids( map_keys => $selected_map_keys ) || [];
+    }
+
+    return unless (@$selected_map_ids);
+
+    my $window_key = $self->create_window( title => "CMap Application", );
+    unless ($window_key) {
+        print STDERR "Failed to create window\n";
+        return;
+    }
+
+    $self->app_display_data()->dd_load_new_window(
+        window_key => $window_key,
+        map_ids    => $selected_map_ids,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub close_window {
 
 =pod
@@ -259,8 +302,12 @@ When window is closed, delete drawing data and if it is the last window, exit.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
+    $self->app_interface()->clear_interface_window(
+        window_key       => $window_key,
+        app_display_data => $self->app_display_data(),
+    );
     $self->app_interface()
-        ->clear_interface_window( window_key => $window_key, );
+        ->destroy_interface_window( window_key => $window_key, );
     my $remaining_windows_num = $self->app_display_data()
         ->remove_window_data( window_key => $window_key, );
 
@@ -414,11 +461,9 @@ Handler for selecting a new slot.
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key   = $args{'slot_key'};
+    my $slot_key = $args{'slot_key'};
 
-    $self->app_display_data()->change_selected_slot(
-        slot_key   => $slot_key,
-    );
+    $self->app_display_data()->change_selected_slot( slot_key => $slot_key, );
 
     return;
 }

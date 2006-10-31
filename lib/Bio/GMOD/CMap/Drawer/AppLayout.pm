@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.15 2006-10-06 18:31:38 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.16 2006-10-31 21:59:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -70,11 +70,12 @@ sub layout_new_panel {
     my $window_key       = $args{'window_key'};
     my $panel_key        = $args{'panel_key'};
     my $app_display_data = $args{'app_display_data'};
+    my $width            = $args{'width'} || 900;
     my $panel_layout     = $app_display_data->{'panel_layout'}{$panel_key};
 
     # Initialize bounds
     # But have a height of 0.
-    $panel_layout->{'bounds'} = [ 0, 0, 900, 0, ];
+    $panel_layout->{'bounds'} = [ 0, 0, $width, 0, ];
 
     my $panel_height_change = 0;
     my $slot_position       = 0;
@@ -120,6 +121,7 @@ sub layout_overview {
     my $window_key       = $args{'window_key'};
     my $panel_key        = $args{'panel_key'};
     my $app_display_data = $args{'app_display_data'};
+    my $width            = $args{'width'} || 1100;
 
     my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
     my $top_slot_key
@@ -130,7 +132,7 @@ sub layout_overview {
     my $slot_buffer_y = 15;
     my $slot_buffer_x = 15;
 
-    $overview_layout->{'bounds'} = [ 0, 0, 1100, 0 ];
+    $overview_layout->{'bounds'} = [ 0, 0, $width, 0 ];
     $overview_layout->{'maps_min_x'}
         = $overview_layout->{'bounds'}[0] + $slot_buffer_x;
     $overview_layout->{'maps_max_x'}
@@ -199,9 +201,12 @@ sub layout_overview {
                 { -fill => 'blue', }
             ]
             );
+        $overview_slot_layout->{'maps'}{$map_key}{'changed'} = 1;
     }
     $overview_slot_layout->{'bounds'}[3]
         = $slot_max_y + $overview_layout->{'map_buffer_y'};
+    $overview_slot_layout->{'changed'}     = 1;
+    $overview_slot_layout->{'sub_changed'} = 1;
     $slot_max_y += $map_height + $slot_buffer_y;
 
     # create selected region
@@ -267,10 +272,13 @@ sub layout_overview {
                     { -fill => 'lightgreen', }
                 ]
                 );
+            $overview_slot_layout->{'maps'}{$map_key}{'changed'} = 1;
         }
 
         $slot_max_y += $map_height;
-        $overview_slot_layout->{'bounds'}[3] = $slot_max_y;
+        $overview_slot_layout->{'bounds'}[3]   = $slot_max_y;
+        $overview_slot_layout->{'changed'}     = 1;
+        $overview_slot_layout->{'sub_changed'} = 1;
         $slot_max_y += $slot_buffer_y;
 
         # create selected region
@@ -674,20 +682,24 @@ Lays out sub maps in a slot.
         my $x2_on_map
             = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
-        my $x1        = $parent_x1 + $x1_on_map;
-        my $x2        = $parent_x1 + $x2_on_map;
-        my $row_index = simple_column_distribution(
-            low        => $x1_on_map,
-            high       => $x2_on_map,
-            columns    => \@row_distribution_aray,
-            map_height => ( $parent_x2 - $parent_x1 + 1 )
-                * $scale,    # really width
-            buffer => MAP_X_BUFFER,
-        );
+        my $x1 = $parent_x1 + $x1_on_map;
+        my $x2 = $parent_x1 + $x2_on_map;
+        my $row_index
+            = $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'};
+        unless ( defined($row_index) ) {
+            $row_index = simple_column_distribution(
+                low        => $x1_on_map,
+                high       => $x2_on_map,
+                columns    => \@row_distribution_aray,
+                map_height => ( $parent_x2 - $parent_x1 + 1 )
+                    * $scale,    # really width
+                buffer => MAP_X_BUFFER,
+            );
 
-        # Set the row index in case this slot needs to be split
-        $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'}
-            = $row_index;
+            # Set the row index in case this slot needs to be split
+            $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'}
+                = $row_index;
+        }
 
         push @{ $rows[$row_index] }, [ $sub_map_key, $x1, $x2 ];
     }

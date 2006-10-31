@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.16 2006-10-06 18:31:38 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.17 2006-10-31 21:59:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -257,6 +257,9 @@ Adds the first slot
         panel_key        => $panel_key,
         app_display_data => $self,
     );
+
+    #print STDERR "FINISHED???\n";
+    $self->{'initialization_finished'}{$window_key} = 1;
 
     return;
 }
@@ -960,6 +963,53 @@ expand slots
 }
 
 # ----------------------------------------------------
+sub change_width {
+
+=pod
+
+=head2 change_width
+
+When the width of the window changes, this method will change the size of the
+canvases.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $width      = $args{'width'}      or return;
+
+    #xxx
+    # Clear canvases
+    $self->wipe_window_canvases( window_key => $window_key );
+
+    # Set new width
+    $self->{'window_layout'}{$window_key}{'width'} = $width;
+
+    # Redraw everything
+    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
+        layout_new_panel(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+            width            => $width - 200,
+        );
+        layout_overview(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+            width            => $width - 10,
+        );
+        $self->app_interface()->draw_panel(
+            window_key       => $window_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub set_new_zoomed_offset {
 
 =pod
@@ -1275,7 +1325,7 @@ Initializes map_layout
         items       => [],
         changed     => 1,
         sub_changed => 1,
-        row_index   => 0,
+        row_index   => undef,
     };
 
     return;
@@ -1534,7 +1584,11 @@ Set the default window layout.
     my $window_key = $args{'window_key'};
     my $title      = $args{'title'} || 'CMap';
 
-    $self->{'window_layout'}{$window_key} = { title => $title, };
+    $self->{'window_layout'}{$window_key} = {
+        title  => $title,
+        height => 0,
+        width  => 0,
+    };
 
 }
 
@@ -1911,6 +1965,121 @@ Deletes the slot data and wipes them from the canvas
 }
 
 # ----------------------------------------------------
+sub wipe_window_canvases {
+
+=pod
+
+=head2 wipe_window_canvases
+
+Removes only the drawing data from a window and clears the window using
+AppInterface.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
+        foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
+        {
+            foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } )
+            {
+                foreach my $feature_acc (
+                    keys %{ $self->{'map_layout'}{$map_key}{'features'}
+                            || {} } )
+                {
+                    $self->destroy_items(
+                        items => $self->{'map_layout'}{$map_key}{'features'}
+                            {$feature_acc}{'items'},
+                        panel_key => $panel_key,
+                    );
+                    $self->{'map_layout'}{$map_key}{'features'}{$feature_acc}
+                        {'items'} = [];
+                }
+                $self->{'map_pixels_per_unit'}{$map_key} = undef;
+                $self->{'map_layout'}{$map_key}{'bounds'} = [ 0, 0, 0, 0 ];
+                $self->{'map_layout'}{$map_key}{'coords'} = [ 0, 0, 0, 0 ];
+                $self->destroy_items(
+                    items     => $self->{'map_layout'}{$map_key}{'items'},
+                    panel_key => $panel_key,
+                );
+                $self->{'map_layout'}{$map_key}{'items'} = [];
+                if ( $self->{'corr_layout'}{'maps'}{$map_key} ) {
+                    $self->destroy_items(
+                        items =>
+                            $self->{'corr_layout'}{'maps'}{$map_key}{'items'},
+                        panel_key => $panel_key,
+                    );
+                    $self->{'corr_layout'}{'maps'}{$map_key}{'items'} = [];
+                }
+            }
+            $self->{'slot_layout'}{$slot_key}{'bounds'}     = [ 0, 0, 0, 0 ];
+            $self->{'slot_layout'}{$slot_key}{'maps_min_x'} = undef;
+            $self->{'slot_layout'}{$slot_key}{'maps_max_x'} = undef;
+            foreach my $field (qw[ separator background ]) {
+                $self->destroy_items(
+                    items     => $self->{'slot_layout'}{$slot_key}{$field},
+                    panel_key => $panel_key,
+                );
+                $self->{'slot_layout'}{$slot_key}{$field} = [];
+            }
+        }
+        $self->{'panel_layout'}{$panel_key}{'bounds'} = [ 0, 0, 0, 0 ];
+        $self->destroy_items(
+            items     => $self->{'panel_layout'}{$panel_key}{'misc_items'},
+            panel_key => $panel_key,
+        );
+        $self->{'panel_layout'}{$panel_key}{'misc_items'} = [];
+
+        # Overview
+        $self->{'overview_layout'}{$panel_key}{'bounds'} = [ 0, 0, 0, 0 ];
+        $self->destroy_items(
+            items     => $self->{'overview_layout'}{$panel_key}{'misc_items'},
+            panel_key => $panel_key,
+            is_overview => 1,
+        );
+        $self->{'overview_layout'}{$panel_key}{'misc_items'} = [];
+        foreach my $slot_key (
+            keys %{ $self->{'overview_layout'}{$panel_key}{'slots'} || {} } )
+        {
+            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                {'bounds'} = [ 0, 0, 0, 0 ];
+            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                {'scale_factor_from_main'} = 0;
+            foreach my $field (qw[ viewed_region misc_items ]) {
+                $self->destroy_items(
+                    items => $self->{'overview_layout'}{$panel_key}{'slots'}
+                        {$slot_key}{$field},
+                    panel_key   => $panel_key,
+                    is_overview => 1,
+                );
+                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                    {$field} = [];
+            }
+
+            foreach my $map_key (
+                keys %{
+                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                        {'maps'} || {}
+                }
+                )
+            {
+                $self->destroy_items(
+                    items => $self->{'overview_layout'}{$panel_key}{'slots'}
+                        {$slot_key}{'maps'}{$map_key}{'items'},
+                    panel_key   => $panel_key,
+                    is_overview => 1,
+                );
+                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                    {'maps'}{$map_key}{'items'} = [];
+            }
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub remove_window_data {
 
 =pod
@@ -1952,6 +2121,31 @@ Returns the number of remaining windows.
     delete $self->{'sub_maps'}{$window_key};
 
     return scalar( keys %{ $self->{'scaffold'} || {} } );
+}
+
+# ----------------------------------------------------
+sub get_map_ids {
+
+=pod
+
+=head2 get_map_ids
+
+returns
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key  = $args{'map_key'};
+    my $map_keys = $args{'map_keys'} || [];
+
+    if ($map_key) {
+        return $self->{'map_key_to_id'}{$map_key};
+    }
+    elsif (@$map_keys) {
+        return [ map { $self->{'map_key_to_id'}{$_} } @$map_keys ];
+    }
+
+    return undef;
 }
 
 1;
@@ -2100,7 +2294,9 @@ to drawing.
 
     $self->{'window_layout'} = {
         $window_key => {
-            title => $title,
+            title  => $title,
+            height => $height,
+            width  => $width,
         }
     }
 
@@ -2141,7 +2337,7 @@ to drawing.
             items    => [],
             changed  => 1,
             sub_changed => 1,
-            row_index => 0,
+            row_index => undef,
             features => {
                 $feature_acc => {
                     changed => 1,
@@ -2162,17 +2358,19 @@ to drawing.
             sub_changed      => 1,
             child_slot_order => [ $child_slot_key, ],
             slots            => {
-                bounds                 => [ 0, 0, 0, 0 ],
-                misc_items             => [],
-                buttons                => [],
-                viewed_region          => [],
-                changed                => 1,
-                sub_changed            => 1,
-                scale_factor_from_main => 0,
-                maps                   => {
-                    $map_key => {
-                        items   => [],
-                        changed => 1,
+                $slot_key => {
+                    bounds                 => [ 0, 0, 0, 0 ],
+                    misc_items             => [],
+                    buttons                => [],
+                    viewed_region          => [],
+                    changed                => 1,
+                    sub_changed            => 1,
+                    scale_factor_from_main => 0,
+                    maps                   => {
+                        $map_key => {
+                            items   => [],
+                            changed => 1,
+                        }
                     }
                 }
             }

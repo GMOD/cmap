@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.14 2006-10-06 18:31:38 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.15 2006-10-31 21:59:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -76,6 +76,15 @@ This method will create the Application.
     $self->{'windows'}{$window_key}
         = $self->main_window()->Toplevel( -takefocus => 1 );
     $self->{'windows'}{$window_key}->title($title);
+    $self->{'windows'}{$window_key}->bind(
+        '<Configure>' => sub {
+            my $event = $self->{'windows'}{$window_key}->XEvent;
+            if ($event) {
+                $self->window_configure_event( $event, $window_key,
+                    $app_display_data, );
+            }
+        },
+    );
 
     $self->menu_bar( window_key => $window_key, );
     $self->populate_menu_bar(
@@ -525,9 +534,8 @@ Adds control buttons to the toggle_slot_pane.
         -background => "white",
         -value      => $slot_key,
         -command    => sub {
-            $self->app_controller()->new_selected_slot(
-                slot_key   => $slot_key,
-            );
+            $self->app_controller()
+                ->new_selected_slot( slot_key => $slot_key, );
         },
         -variable => \${ $self->{'selected_slot_key_scalar'} }
     );
@@ -983,7 +991,7 @@ Draws and re-draws on the canvas
             @{ $app_display_data->{'map_order'}{$slot_key} || {} } )
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
-            foreach my $drawing_section (qw[ buttons items ]) {
+            foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
                     canvas   => $canvas,
                     x_offset => $x_offset,
@@ -991,6 +999,10 @@ Draws and re-draws on the canvas
                     tags     => [ 'middle_layer', 'display', 'map' ],
                 );
             }
+            $self->record_map_key_drawn_id(
+                map_key => $map_key,
+                items   => $map_layout->{'items'},
+            );
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
                 $self->draw_button(
                     canvas   => $canvas,
@@ -1256,6 +1268,46 @@ Item structure:
         $items->[$i][0] = 0;
     }
 
+}
+
+# ----------------------------------------------------
+sub record_map_key_drawn_id {
+
+=pod
+
+=head2 record_map_key_drawn_id
+
+Create a hash lookup for ids to a map key
+
+Item structure:
+
+  [ changed, item_id, type, coord_array, options_hash ]
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key = $args{'map_key'};
+    my $items   = $args{'items'} || return;
+
+    for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
+        $self->{'drawn_id_to_map_key'}{ $items->[$i][1] } = $map_key;
+    }
+}
+
+# ----------------------------------------------------
+sub drawn_id_to_map_key {
+
+=pod
+
+=head2 drawn_id_to_map_key
+
+Accessor method to map_keys from drawn ids
+
+=cut
+
+    my ( $self, $drawn_id, ) = @_;
+
+    return $self->{'drawn_id_to_map_key'}{$drawn_id};
 }
 
 # ----------------------------------------------------
@@ -1563,6 +1615,51 @@ Returns the overview_canvas object.
             canvas => $self->{'overview_canvas'}{$panel_key} );
     }
     return $self->{'overview_canvas'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub popup_map_menu {
+
+=pod
+
+=head2 popup_map_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawn_id = $args{'drawn_id'};
+    my $map_key = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
+    my $controller = $self->app_controller();
+
+    my $map_menu_window = $self->main_window()->Toplevel( -takefocus => 1 );
+    if ($map_key) {
+        my $cancel_button = $map_menu_window->Button(
+            -text    => 'New Window',
+            -command => sub {
+                $controller->open_new_window( selected_map_keys => [$map_key],
+                );
+
+            },
+        )->pack( -side => 'top', -anchor => 'nw' );
+
+    }
+
+    my $cancel_button = $map_menu_window->Button(
+        -text    => 'Cancel',
+        -command => sub {
+            $map_menu_window->destroy();
+        },
+    )->pack( -side => 'bottom', -anchor => 'sw' );
+
+    $map_menu_window->bind(
+        '<FocusOut>',
+        sub {
+            $map_menu_window->destroy();
+        },
+    );
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -1893,6 +1990,25 @@ Deletes all widgets in the current window.
 }
 
 # ----------------------------------------------------
+sub destroy_interface_window {
+
+=pod
+
+=head2 clear_interface_window
+
+Deletes all widgets in the current window.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    $self->{'windows'}{$window_key}->destroy();
+
+    return;
+}
+
+# ----------------------------------------------------
 sub layer_tagged_items {
 
 =pod
@@ -1960,6 +2076,9 @@ Handle starting drag
     $self->{'drag_ori_x'}  = $x;
     $self->{'drag_ori_y'}  = $y;
     $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
+    if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
+        $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
+    }
     $self->{'drag_last_x'} = $canvas->canvasx($x);
     $self->{'drag_last_y'} = $canvas->canvasy($y);
     my @tags;
@@ -1996,10 +2115,9 @@ Handle starting drag
         );
     }
 
-    if ($self->{'drag_slot_key'}){
-        $self->app_controller()->new_selected_slot(
-            slot_key   => $self->{'drag_slot_key'},
-        );
+    if ( $self->{'drag_slot_key'} ) {
+        $self->app_controller()
+            ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
         ${ $self->{'selected_slot_key_scalar'} } = $self->{'drag_slot_key'};
     }
 
@@ -2073,6 +2191,7 @@ Handle the stopping drag event
     my $dx = $x - $self->{'drag_ori_x'};
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
+            $self->popup_map_menu( drawn_id => ( $self->{'drag_ori_id'} ), );
 
             #    $canvas->move( $self->{'drag_ori_id'}, $dx,0, );
             $canvas->delete( $self->{'ghost_map_id'} );
@@ -2131,6 +2250,37 @@ Handle the mouse wheel events
         );
     }
 
+}
+
+# ----------------------------------------------------
+sub window_configure_event {
+
+=pod
+
+=head2 window_configure_event
+
+Handle window resizing
+
+=cut
+
+    my $self = shift;
+    my ( $event, $window_key, $app_display_data, ) = @_;
+
+    my $who_sized
+        = $self->get_window( window_key => $window_key, )->sizefrom();
+    if (    $app_display_data->{'initialization_finished'}{$window_key}
+        and $event->w
+        != $app_display_data->{'window_layout'}{$window_key}{'width'}
+        and $who_sized
+        and $who_sized eq 'user' )
+    {
+
+        #print STDERR "WindowsConfigure $window_key\n";
+        $app_display_data->change_width(
+            window_key => $window_key,
+            width      => $event->w,
+        );
+    }
 }
 
 1;
