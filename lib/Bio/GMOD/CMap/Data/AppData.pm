@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.8 2006-09-25 21:32:41 mwz444 Exp $
+# $Id: AppData.pm,v 1.9 2006-10-31 21:48:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -294,9 +294,12 @@ sub sorted_feature_data {
             for my $feature ( @{$features} ) {
                 my $this_feature_type_data
                     = $feature_type_data->{ $feature->{'feature_type_acc'} };
-                push @{ $sorting_hash{ $this_feature_type_data->{
-                            'drawing_lane'} }
-                        ->{ $this_feature_type_data->{'drawing_priority'} } },
+                push @{
+                    $sorting_hash{ $this_feature_type_data->{'drawing_lane'}
+                            || 1 }->{
+                        $this_feature_type_data->{'drawing_priority'} || 1
+                        }
+                    },
                     $feature;
             }
             foreach my $lane ( sort { $a <=> $b } keys(%sorting_hash) ) {
