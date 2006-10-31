@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.35 2006-10-04 14:56:23 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.36 2006-10-31 21:54:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -141,6 +141,7 @@ which is slow.  Setting to 0 is recommended.
         data_source => $self->data_source,
     );
 
+    my %evidence_type_acc_exists;
     $self->Print("Importing feature correspondence data.\n");
 
     #
@@ -280,14 +281,19 @@ which is slow.  Setting to 0 is recommended.
                 $score             = undef;
             }
 
-            unless ( $self->evidence_type_data($evidence_type_acc) ) {
-                $self->Print( "Evidence type accession '"
-                      . $evidence_type_acc
-                      . "' doesn't exist.  "
-                      . "Please add it to your configuration file.[<enter> to continue] "
-                );
-                chomp( my $answer = <STDIN> );
-                return;
+            unless($evidence_type_acc_exists{$evidence_type_acc}){
+                if ( $self->evidence_type_data($evidence_type_acc) ) {
+                    $evidence_type_acc_exists{$evidence_type_acc}
+                }
+                else{
+                    $self->Print( "Evidence type accession '"
+                          . $evidence_type_acc
+                          . "' doesn't exist.  "
+                          . "Please add it to your configuration file.[<enter> to continue] "
+                    );
+                    chomp( my $answer = <STDIN> );
+                    return;
+                }
             }
 
             push @evidence_type_accs, [ $evidence_type_acc, $score ];
