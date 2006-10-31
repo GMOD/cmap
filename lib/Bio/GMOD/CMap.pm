@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.110 2006-10-18 19:16:44 mwz444 Exp $
+# $Id: CMap.pm,v 1.111 2006-10-31 21:50:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -42,7 +42,7 @@ use Cache::SizeAwareFileCache;
 use URI::Escape;
 use DBI;
 use File::Path;
-use Filesys::Df;
+use Filesys::DfPortable;
 use File::Spec::Functions qw( abs2rel );
 use Storable qw(freeze thaw);
 use Template;
@@ -1120,7 +1120,7 @@ max_img_dir_fullness in the conf dir.  If it is full, return 1.
     return 0 unless ( $self->config_data('max_img_dir_fullness') );
 
     my $cache_dir = $self->cache_dir or return;
-    my $ref = df($cache_dir);
+    my $ref = dfportable($cache_dir);
     if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
         return 1;
     }
