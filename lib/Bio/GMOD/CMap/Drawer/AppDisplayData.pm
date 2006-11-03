@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.17 2006-10-31 21:59:25 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.18 2006-11-03 20:54:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -213,7 +213,8 @@ Adds the first slot
         push @{ $self->{'map_order'}{$slot_key} },    $map_key;
         push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
         $self->{'map_id_to_key_by_slot'}{$slot_key}{$map_id} = $map_key;
-        $self->{'map_key_to_id'}{$map_key} = $map_id;
+        $self->{'map_key_to_id'}{$map_key}                   = $map_id;
+        $self->{'map_key_to_slot_key'}{$map_key}             = $slot_key;
         $self->initialize_map_layout($map_key);
     }
 
@@ -360,6 +361,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
         foreach my $map_key ( @{ $maps_by_set{$set_key} || [] } ) {
             push @{ $self->{'map_order'}{$child_slot_key} }, $map_key;
+            $self->{'map_key_to_slot_key'}{$map_key} = $child_slot_key;
             $self->{'map_id_to_key_by_slot'}{$child_slot_key}
                 { $self->{'map_key_to_id'}{$map_key} } = $map_key;
             $self->initialize_map_layout($map_key);
@@ -838,6 +840,7 @@ expand slots
         # Move slot_info to new slot
         # and add map_id_to_key_by_slot
         foreach my $map_key ( @{ $row_index_maps{$row_index} } ) {
+            $self->{'map_key_to_slot_key'}{$map_key} = $new_slot_key;
             $self->{'map_id_to_key_by_slot'}{$new_slot_key}
                 { $self->{'map_key_to_id'}{$map_key} } = $map_key;
             my $map_id = $self->{'map_key_to_id'}{$map_key};
@@ -978,7 +981,6 @@ canvases.
     my $window_key = $args{'window_key'} or return;
     my $width      = $args{'width'}      or return;
 
-    #xxx
     # Clear canvases
     $self->wipe_window_canvases( window_key => $window_key );
 
@@ -1102,6 +1104,56 @@ sub relayout_sub_map_slot {
         slot_key1  => $slot_key,
         slot_key2  => $parent_key,
     );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub create_slot_coverage_array {
+
+=pod
+
+=head2 create_slot_coverage_array
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_key = $args{'slot_key'} or return;
+
+    $self->{'slot_coverage'}{$slot_key} = [];
+    my @slot_coverage = ();
+
+    # Maps are ordered by start and then stop positions
+    # Once that's done, maps that overlap the end of the
+    #  previous map extend the coverage, otherwise its
+    #  a new coverage zone
+MAP_KEY:
+    foreach my $map_key (
+        sort {
+            $self->{'map_layout'}{$a}{'coords'}[0]
+                <=> $self->{'map_layout'}{$b}{'coords'}[0]
+                || $self->{'map_layout'}{$a}{'coords'}[2]
+                <=> $self->{'map_layout'}{$b}{'coords'}[2]
+        } @{ $self->{'map_order'}{$slot_key} || [] }
+        )
+    {
+        my $coords = $self->{'map_layout'}{$map_key}{'coords'};
+        unless (@slot_coverage) {
+            push @slot_coverage, [ $coords->[0], $coords->[2] ];
+            next MAP_KEY;
+        }
+
+        if (    $coords->[0] <= $slot_coverage[-1][1]
+            and $coords->[2] > $slot_coverage[-1][1] )
+        {
+            $slot_coverage[-1][1] = $coords->[2];
+        }
+        else {
+            push @slot_coverage, [ $coords->[0], $coords->[2] ];
+        }
+    }
+
+    $self->{'slot_coverage'}{$slot_key} = \@slot_coverage;
 
     return;
 }
@@ -1723,6 +1775,102 @@ Hide Corrs for moving
 }
 
 # ----------------------------------------------------
+sub move_ghost_map {
+
+=pod
+
+=head2 move_ghost
+
+Controls how the ghost map moves.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key         = $args{'map_key'};
+    my $mouse_x         = $args{'mouse_x'};
+    my $ghost_bounds    = $args{'ghost_bounds'};
+    my $mouse_to_edge_x = $args{'mouse_to_edge_x'};
+
+    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+
+    # If no parent, don't let it move.
+    unless ($parent_slot_key
+        and $self->{'scaffold'}{$slot_key}{'attached_to_parent'} )
+    {
+        return 0;
+    }
+
+    my $new_x1 = $mouse_x - $mouse_to_edge_x;
+    my $new_x2 = $new_x1 + ( $ghost_bounds->[2] - $ghost_bounds->[0] + 1 );
+    my $dx     = ( $mouse_x - $mouse_to_edge_x ) - $ghost_bounds->[0];
+    my $slot_coverage = $self->{'slot_coverage'}{$parent_slot_key};
+
+    my $ghost_is_before_index = 0;
+    my $ghost_is_after_index  = 0;
+    my $ghost_is_covered      = 0;
+    my $index                 = 0;
+COVERAGE_LOOP:
+    for ( my $i = 0; $i <= $#{$slot_coverage}; $i++ ) {
+        if ( $new_x1 < $slot_coverage->[$i][0] ) {
+            $ghost_is_before_index = 1;
+            $index                 = $i;
+            last COVERAGE_LOOP;
+        }
+        elsif ( $new_x2 < $slot_coverage->[$i][1] ) {
+
+            # Covered
+            $ghost_is_covered = 1;
+            last COVERAGE_LOOP;
+        }
+        elsif ( $new_x1 < $slot_coverage->[$i][1]
+            and $new_x2 > $slot_coverage->[$i][1] )
+        {
+            $ghost_is_after_index = 1;
+            $index                = $i;
+            last COVERAGE_LOOP;
+        }
+    }
+
+    # each case is handled separately since the behaviors may be different in
+    # the future and I don't want to have to figure out how to separate the
+    # cases then.
+
+    if ($ghost_is_covered) {
+
+        # Ghost is on a map
+        return $dx;
+    }
+    elsif ( $ghost_is_before_index and $index == 0 ) {
+
+        # Before begining of all maps
+        return $slot_coverage->[$index][0] - $ghost_bounds->[0];
+    }
+    elsif ($ghost_is_before_index) {
+
+        # Ghost is between maps
+        return $slot_coverage->[$index][0] - $ghost_bounds->[0];
+    }
+    elsif ( $ghost_is_after_index and $index == $#{$slot_coverage} ) {
+
+        # After end of all maps (but overlapping the last map)
+        return $slot_coverage->[$index][1] - $ghost_bounds->[2];
+    }
+    elsif ($ghost_is_after_index) {
+
+        # Ghost is between maps
+        return $slot_coverage->[$index][1] - $ghost_bounds->[2];
+    }
+    else {
+
+        # After end of all maps
+        return $slot_coverage->[-1][1] - $ghost_bounds->[2];
+    }
+
+    return $dx;
+}
+
+# ----------------------------------------------------
 sub clear_slot_corrs {
 
 =pod
@@ -2204,6 +2352,10 @@ This is a conversion factor to get from map units to pixels.
 
     $self->{'map_key_to_id'} = {
         $map_key => $map_id,
+    }
+
+    $self->{'map_key_to_slot_key'} = {
+        $map_key => $slot_key,
     }
     
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.14 2006-10-31 21:59:25 mwz444 Exp $
+# $Id: AppController.pm,v 1.15 2006-11-03 20:54:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -510,6 +510,23 @@ Hide correspondences while moving.
     );
 
     return;
+}
+
+# ----------------------------------------------------
+sub move_ghost_map {
+
+=pod
+
+=head2 move_ghost
+
+Controls how the ghost map moves.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    return $self->app_display_data()->move_ghost_map(%args);
+
 }
 
 =pod

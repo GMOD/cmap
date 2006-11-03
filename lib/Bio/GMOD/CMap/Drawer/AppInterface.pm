@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.15 2006-10-31 21:59:25 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.16 2006-11-03 20:54:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2073,24 +2073,30 @@ Handle starting drag
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
 
+    $x = $canvas->canvasx($x);
+    $y = $canvas->canvasy($y);
+
     $self->{'drag_ori_x'}  = $x;
     $self->{'drag_ori_y'}  = $y;
+    $self->{'drag_last_x'} = $x;
+    $self->{'drag_last_y'} = $y;
     $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
-    $self->{'drag_last_x'} = $canvas->canvasx($x);
-    $self->{'drag_last_y'} = $canvas->canvasy($y);
     my @tags;
-    if ( grep /^map/, $canvas->gettags("current") ) {
+    if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
-        $self->{'drag_obj'}     = 'map';
-        $self->{'ghost_map_id'} = $canvas->createRectangle(
-            ( $canvas->bbox('current') ),
-            ( '-outline' => 'grey', ),
-        );
+        $self->{'drag_obj'} = 'map';
+        my @coords = $canvas->coords( $self->{'drag_ori_id'} );
+        $self->{'drag_mouse_to_edge_x'} = $x - $coords[0];
+        $self->{'ghost_map_id'}
+            = $canvas->createRectangle( (@coords), ( '-outline' => 'red', ),
+            );
     }
-    elsif ( @tags = grep /^background_/, $canvas->gettags("current") ) {
+    elsif ( @tags = grep /^background_/,
+        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    {
         $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
         $self->{'drag_panel_key'}  = $2;
@@ -2102,7 +2108,9 @@ Handle starting drag
             slot_key   => $self->{'drag_slot_key'},
         );
     }
-    elsif ( @tags = grep /^viewed_region_/, $canvas->gettags("current") ) {
+    elsif ( @tags = grep /^viewed_region_/,
+        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    {
         $tags[0] =~ /^viewed_region_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
         $self->{'drag_panel_key'}  = $2;
@@ -2144,8 +2152,13 @@ Handle the drag event
 
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
-            $canvas->move( $self->{'ghost_map_id'}, $dx, 0, );
-            $canvas->configure( -scrollregion => [ $canvas->bbox('all') ] );
+            $self->drag_ghost(
+                canvas => $canvas,
+                x      => $x,
+                y      => $y,
+                dx     => $dx,
+                dy     => $dy,
+            );
         }
         elsif ( $self->{'drag_obj'} eq 'background' ) {
             $self->app_controller()->scroll_slot(
@@ -2221,6 +2234,35 @@ Handle the stopping drag event
     }
 
 }    # end start_drag
+
+# ----------------------------------------------------
+sub drag_ghost {
+
+=pod
+
+=head2 drag_ghost
+
+Handle the ghost map dragging
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $canvas = $args{'canvas'};
+    my $x      = $args{'x'};
+    my $dx     = $args{'dx'};
+    return unless ($dx);
+
+    my $new_dx = $self->app_controller()->move_ghost_map(
+        map_key      => $self->drawn_id_to_map_key( $self->{'drag_ori_id'} ),
+        mouse_x      => $x,
+        ghost_bounds => [ $canvas->coords( $self->{'ghost_map_id'} ) ],
+        mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
+    );
+
+    $canvas->move( $self->{'ghost_map_id'}, $new_dx, 0, );
+    $canvas->configure( -scrollregion => [ $canvas->bbox('all') ] );
+
+}    # end drag_ghost
 
 # ----------------------------------------------------
 sub mouse_wheel_event {

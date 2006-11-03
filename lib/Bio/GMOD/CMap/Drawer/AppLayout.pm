@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.16 2006-10-31 21:59:25 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.17 2006-11-03 20:54:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -593,6 +593,9 @@ Lays out reference maps in a new slot
     );
 
     $slot_layout->{'sub_changed'} = 1;
+
+    $app_display_data->create_slot_coverage_array( slot_key => $slot_key, );
+
     return;
 }
 
@@ -795,6 +798,9 @@ Lays out sub maps in a slot.
     }
 
     $slot_layout->{'sub_changed'} = 1;
+
+    $app_display_data->create_slot_coverage_array( slot_key => $slot_key, );
+
     return;
 }
 
@@ -908,6 +914,9 @@ Lays out maps in a slot where they are already placed horizontally.
     $new_slot_layout->{'sub_changed'} = 1;
     $new_slot_layout->{'changed'}     = 1;
     $new_slot_layout->{'bounds'}[3]   = $max_y + MAP_Y_BUFFER;
+
+    $app_display_data->create_slot_coverage_array( slot_key => $new_slot_key,
+    );
 
     return $max_y;
 }
