@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.1 2006-09-25 22:13:51 mwz444 Exp $
+# $Id: Remote.pm,v 1.2 2006-11-06 18:50:15 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(freeze thaw);
@@ -20,6 +20,15 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
+
+    my $data_access = $self->config_data('allow_remote_data_access');
+    my $data_manipulation
+        = $self->config_data('allow_remote_data_manipulation');
+
+    unless ($data_access){
+        print "Data Source Not Remotely Accessible\n";
+        return 1;
+    }
 
     print $apr->header( -type => 'text/plain', );
     if ( $apr->param('action') eq 'get_config' ) {
