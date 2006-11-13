@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.15 2006-11-03 20:54:07 mwz444 Exp $
+# $Id: AppController.pm,v 1.16 2006-11-13 19:04:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -527,6 +527,53 @@ Controls how the ghost map moves.
 
     return $self->app_display_data()->move_ghost_map(%args);
 
+}
+
+# ----------------------------------------------------
+sub export_map_moves {
+
+=pod
+
+=head2 export_map_moves
+
+Export the map moves to a file.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'}       or return;
+    my $export_file_name = $args{'export_file_name'} or return;
+    my $app_display_data = $self->app_display_data();
+
+    my $fh;
+    unless ( open $fh, ">" . $export_file_name ) {
+        print "WARNING: Unable to write to $export_file_name.\n";
+        return;
+    }
+
+    my $window_actions
+        = $app_display_data->window_actions( window_key => $window_key, );
+
+    for ( my $i = 0; $i <= $window_actions->{'last_action_index'}; $i++ ) {
+        my $action = $window_actions->{'actions'}[$i];
+
+        if ( $action->[0] eq 'move_map' ) {
+            my @print_array = (
+                $action->[0],
+                $app_display_data->{'map_key_to_id'}{ $action->[1] },
+                $app_display_data->{'map_key_to_id'}{ $action->[2] },
+                $action->[3],
+                $action->[4],
+                $app_display_data->{'map_key_to_id'}{ $action->[5] },
+                $action->[6],
+                $action->[7],
+            );
+            print $fh join( "\t", @print_array ) . "\n";
+        }
+    }
+
+    close $fh;
+    return;
 }
 
 =pod

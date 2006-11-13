@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.16 2006-11-03 20:54:07 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.17 2006-11-13 19:04:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -91,14 +91,42 @@ This method will create the Application.
         window_key      => $window_key,
         file_menu_items =>
             $self->file_menu_items( window_key => $window_key, ),
+        edit_menu_items =>
+            $self->edit_menu_items( window_key => $window_key, ),
     );
     $self->window_pane( window_key => $window_key, );
 
+    # Window Bindings
     $self->{'windows'}{$window_key}->protocol(
         'WM_DELETE_WINDOW',
         sub {
             $self->app_controller->close_window( window_key => $window_key, );
         }
+    );
+    $self->{'windows'}{$window_key}
+        ->bind( '<Control-Key-q>' => sub { exit; }, );
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-l>' => sub {
+            $self->app_controller()
+                ->new_reference_maps( window_key => $window_key, );
+        },
+    );
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-e>' => sub {
+            $self->export_map_moves( window_key => $window_key, );
+        },
+    );
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-z>' => sub {
+            $self->app_controller()
+                ->app_display_data->undo_action( window_key => $window_key, );
+        },
+    );
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-y>' => sub {
+            $self->app_controller()
+                ->app_display_data->redo_action( window_key => $window_key, );
+        },
     );
     return $window_key;
 }
@@ -289,6 +317,8 @@ Returns the window_pane object.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'window_pane'}{$window_key} ) {
+
+        #print STDERR "+++++++++++++++++++NEW WINDOW_PANE\n";
         my $window = $self->{'windows'}{$window_key};
         $self->{'window_pane'}{$window_key} = $window->Scrolled(
             "Pane",
@@ -700,12 +730,17 @@ Populates the menu_bar object.
     my ( $self, %args ) = @_;
     my $window_key      = $args{'window_key'} or return undef;
     my $file_menu_items = $args{'file_menu_items'};
+    my $edit_menu_items = $args{'edit_menu_items'};
 
     my $menu_bar = $self->menu_bar( window_key => $window_key, );
 
     $self->{'menu_buttons'}->{'file'} = $menu_bar->cascade(
         -label     => '~file',
         -menuitems => $file_menu_items,
+    );
+    $self->{'menu_buttons'}->{'edit'} = $menu_bar->cascade(
+        -label     => '~edit',
+        -menuitems => $edit_menu_items,
     );
 
     return;
@@ -1433,9 +1468,52 @@ Populates the file menu with menu_items
             },
         ],
         [   'command',
+            '~Export Map Moves',
+            -accelerator => 'Ctrl-e',
+            -command     => sub {
+                $self->export_map_moves( window_key => $window_key, );
+            },
+        ],
+        [   'command',
             '~Quit',
             -accelerator => 'Ctrl-q',
             -command     => sub {exit},
+        ],
+    ];
+}
+
+# ----------------------------------------------------
+sub edit_menu_items {
+
+=pod
+
+=head2 edit_menu_items
+
+Populates the edit menu with menu_items
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'}
+        or die 'no window key for edit_menu_items';
+    return [
+        [   'command',
+            '~Undo',
+            -accelerator => 'Ctrl-z',
+            -command     => sub {
+                $self->app_controller()
+                    ->app_display_data->undo_action(
+                    window_key => $window_key, );
+            },
+        ],
+        [   'command',
+            '~Redo',
+            -accelerator => 'Ctrl-y',
+            -command     => sub {
+                $self->app_controller()
+                    ->app_display_data->redo_action(
+                    window_key => $window_key, );
+            },
         ],
     ];
 }
@@ -1628,15 +1706,35 @@ sub popup_map_menu {
 =cut
 
     my ( $self, %args ) = @_;
-    my $drawn_id = $args{'drawn_id'};
+    my $drawn_id     = $args{'drawn_id'};
+    my $canvas       = $args{'canvas'};
+    my $dx           = $args{'dx'};
+    my $ghost_bounds = $args{'ghost_bounds'};
     my $map_key = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
     my $controller = $self->app_controller();
 
     my $map_menu_window = $self->main_window()->Toplevel( -takefocus => 1 );
     if ($map_key) {
-        my $cancel_button = $map_menu_window->Button(
+
+        # Moved
+        if ($dx) {
+
+            #print STDERR "DX: $dx\n";
+            my $move_button = $map_menu_window->Button(
+                -text    => 'Move Map',
+                -command => sub {
+                    $map_menu_window->destroy();
+                    $controller->app_display_data->move_map(
+                        map_key      => $map_key,
+                        ghost_bounds => $ghost_bounds,
+                    );
+                },
+            )->pack( -side => 'top', -anchor => 'nw' );
+        }
+        my $new_window_button = $map_menu_window->Button(
             -text    => 'New Window',
             -command => sub {
+                $map_menu_window->destroy();
                 $controller->open_new_window( selected_map_keys => [$map_key],
                 );
 
@@ -1657,6 +1755,55 @@ sub popup_map_menu {
         sub {
             $map_menu_window->destroy();
         },
+    );
+    $map_menu_window->bind(
+        '<Destroy>',
+        sub {
+            $canvas->delete( $self->{'ghost_map_id'} );
+            $self->{'ghost_map_id'} = undef;
+        },
+    );
+    $map_menu_window->bind(
+        '<Map>',
+        sub {
+            my $width  = $map_menu_window->reqwidth();
+            my $height = $map_menu_window->reqheight();
+            my $x      = $map_menu_window->pointerx();
+            my $y      = $map_menu_window->pointery();
+            my $new_geometry_string
+                = $width . "x" . $height . "+" . $x . "+" . $y;
+            $map_menu_window->geometry($new_geometry_string);
+
+        },
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub export_map_moves {
+
+=pod
+
+=head2 export_map_moves
+
+Popup a getSaveFile dialog and pass the file info to the controller for
+exporting the map moves.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $export_file_name = $self->main_window()->getSaveFile(
+        -title       => 'Export Map Moves',
+        -initialfile => 'cmap_map_moves.dat'
+    );
+    return unless ($export_file_name);
+
+    $self->app_controller()->export_map_moves(
+        window_key       => $window_key,
+        export_file_name => $export_file_name,
     );
 
     return;
@@ -2200,16 +2347,18 @@ Handle the stopping drag event
     return unless ( $self->{'drag_ori_id'} );
 
     # Move original object
-    $x = $canvas->canvasx($x);
-    my $dx = $x - $self->{'drag_ori_x'};
+    my $canvas_x = $canvas->canvasx($x);
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
-            $self->popup_map_menu( drawn_id => ( $self->{'drag_ori_id'} ), );
-
-            #    $canvas->move( $self->{'drag_ori_id'}, $dx,0, );
-            $canvas->delete( $self->{'ghost_map_id'} );
-            $self->{'ghost_map_id'} = undef;
-
+            my $dx = int( $canvas->coords( $self->{'ghost_map_id'} )->[0]
+                    - $canvas->coords( $self->{'drag_ori_id'} )->[0] );
+            $self->popup_map_menu(
+                canvas       => $canvas,
+                dx           => $dx,
+                drawn_id     => ( $self->{'drag_ori_id'} ),
+                ghost_bounds =>
+                    [ $canvas->coords( $self->{'ghost_map_id'} ) ],
+            );
         }
         elsif ($self->{'drag_obj'} eq 'background'
             or $self->{'drag_obj'} eq 'viewed_region' )
@@ -2308,13 +2457,15 @@ Handle window resizing
     my $self = shift;
     my ( $event, $window_key, $app_display_data, ) = @_;
 
-    my $who_sized
-        = $self->get_window( window_key => $window_key, )->sizefrom();
-    if (    $app_display_data->{'initialization_finished'}{$window_key}
-        and $event->w
+    #my $who_sized
+    #    = $self->get_window( window_key => $window_key, )->sizefrom();
+    if (    #$app_display_data->{'initialization_finished'}{$window_key} and
+        $event->w
         != $app_display_data->{'window_layout'}{$window_key}{'width'}
-        and $who_sized
-        and $who_sized eq 'user' )
+
+        #   and $who_sized
+        #   and $who_sized eq 'user'
+        )
     {
 
         #print STDERR "WindowsConfigure $window_key\n";

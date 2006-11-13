@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.18 2006-11-03 20:54:07 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.19 2006-11-13 19:04:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -303,6 +303,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
                 parent_map_key => $map_key,
                 feature_start  => $sub_map->{'feature_start'},
                 feature_stop   => $sub_map->{'feature_stop'},
+                feature_id     => $sub_map->{'feature_id'},
             };
             push @sub_map_keys, $sub_map_key;
 
@@ -1775,6 +1776,307 @@ Hide Corrs for moving
 }
 
 # ----------------------------------------------------
+sub move_map {
+
+=pod
+
+=head2 move_map
+
+Move a map from one place on a parent to another
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key         = $args{'map_key'};
+    my $ghost_bounds    = $args{'ghost_bounds'};
+    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
+    my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
+    my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
+
+    # Get Parent
+    my $new_parent_map_key;
+    my $parent_coords;
+    foreach my $potential_parent_map_key (
+        @{ $self->{'map_order'}{$parent_slot_key} || [] } )
+    {
+        my $coords
+            = $self->{'map_layout'}{$potential_parent_map_key}{'coords'};
+        if (    $coords->[0] < $ghost_bounds->[0]
+            and $coords->[2] > $ghost_bounds->[2] )
+        {
+            $new_parent_map_key = $potential_parent_map_key;
+            $parent_coords      = $coords;
+            last;
+        }
+    }
+
+    # Get location on parent
+    # Use start location as basis for locating
+    my $relative_pixel_start = $ghost_bounds->[0] - $parent_coords->[0];
+
+    #print STDERR Dumper(
+    #    $self->{'map_pixels_per_unit'}{$new_parent_map_key},
+    #    $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'}
+    #    )
+    #    . "\n";
+    my $relative_unit_start = $relative_pixel_start /
+        (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
+            || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
+    my $parent_map_data = $self->app_data_module()
+        ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+    my $new_feature_start
+        = $relative_unit_start + $parent_map_data->{'map_start'};
+    my $new_feature_stop
+        = $new_feature_start - $self->{'sub_maps'}{$map_key}{'feature_start'}
+        + $self->{'sub_maps'}{$map_key}{'feature_stop'};
+
+    my @action_data = (
+        'move_map',
+        $map_key,
+        $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+        $self->{'sub_maps'}{$map_key}{'feature_start'},
+        $self->{'sub_maps'}{$map_key}{'feature_stop'},
+        $new_parent_map_key,
+        $new_feature_start,
+        $new_feature_stop,
+    );
+
+    $self->add_action(
+        window_key  => $window_key,
+        action_data => \@action_data,
+    );
+
+    $self->move_sub_map_on_parents_in_memory(
+        sub_map_key    => $map_key,
+        parent_map_key => $new_parent_map_key,
+        feature_start  => $new_feature_start,
+        feature_stop   => $new_feature_stop,
+    );
+
+    return;
+
+}
+
+# ----------------------------------------------------
+sub move_sub_map_on_parents_in_memory {
+
+=pod
+
+=head2 move_sub_map_on_parents_in_memory
+
+Do the actual in memory part of moving a map from one place on a parent to
+another (and possibly on a different parrent.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $sub_map_key    = $args{'sub_map_key'};
+    my $parent_map_key = $args{'parent_map_key'};
+    my $feature_start  = $args{'feature_start'};
+    my $feature_stop   = $args{'feature_stop'};
+
+    my $sub_slot_key    = $self->{'map_key_to_slot_key'}{$sub_map_key};
+    my $window_key      = $self->{'scaffold'}{$sub_slot_key}{'window_key'};
+    my $panel_key       = $self->{'scaffold'}{$sub_slot_key}{'panel_key'};
+    my $parent_slot_key = $self->{'scaffold'}{$sub_slot_key}{'parent'};
+
+    # Modify Parent
+    $self->{'sub_maps'}{$sub_map_key}{'parent_map_key'} = $parent_map_key;
+    $self->{'sub_maps'}{$sub_map_key}{'feature_start'}  = $feature_start;
+    $self->{'sub_maps'}{$sub_map_key}{'feature_stop'}   = $feature_stop;
+
+    # relayout the sub map
+    $self->relayout_sub_map_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $sub_slot_key,
+        parent_key => $parent_slot_key
+    );
+    $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+    $self->app_interface()->draw_panel(
+        panel_key        => $panel_key,
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub add_action {
+
+=pod
+
+=head2 add_action
+
+Add an action to the action list for this window.  Remove any actions that may
+be after this action (because of undoing).
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key  = $args{'window_key'};
+    my $action_data = $args{'action_data'};
+
+    if ( @{ $self->{'window_actions'}{$window_key}{'actions'} || [] } ) {
+        $self->{'window_actions'}{$window_key}{'last_action_index'}++;
+        my $last_action_index
+            = $self->{'window_actions'}{$window_key}{'last_action_index'};
+        $self->{'window_actions'}{$window_key}{'actions'}[$last_action_index]
+            = $action_data;
+
+        # Remove any actions following this one
+        if ( $self->{'window_actions'}{$window_key}{'actions'}
+            [ $last_action_index + 1 ] )
+        {
+            splice @{ $self->{'window_actions'}{$window_key}{'actions'}
+                    || [] }, ( $last_action_index + 1 );
+        }
+    }
+    else {
+        $self->{'window_actions'}{$window_key}{'last_action_index'} = 0;
+        $self->{'window_actions'}{$window_key}{'actions'} = [ $action_data, ];
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub undo_action {
+
+=pod
+
+=head2 undo_action
+
+Undo the action that was just performed.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $window_actions = $self->{'window_actions'}{$window_key};
+
+    unless ( @{ $self->{'window_actions'}{$window_key}{'actions'} || [] } ) {
+        return;
+    }
+
+    my $last_action_index
+        = $self->{'window_actions'}{$window_key}{'last_action_index'};
+    my $last_action = $window_actions->{'actions'}[$last_action_index];
+
+    # Handle each action type
+    if ( $last_action->[0] eq 'move_map' ) {
+        $self->move_sub_map_on_parents_in_memory(
+            sub_map_key    => $last_action->[1],
+            parent_map_key => $last_action->[2],
+            feature_start  => $last_action->[3],
+            feature_stop   => $last_action->[4],
+        );
+    }
+
+    $self->{'window_actions'}{$window_key}{'last_action_index'}--;
+
+    return;
+}
+
+# ----------------------------------------------------
+sub redo_action {
+
+=pod
+
+=head2 redo_action
+
+Redo the action that was last undone.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $window_actions = $self->{'window_actions'}{$window_key};
+
+    my $next_action_index
+        = $self->{'window_actions'}{$window_key}{'last_action_index'} + 1;
+    my $next_action = $window_actions->{'actions'}[$next_action_index];
+    unless ( @{ $next_action || [] } ) {
+        return;
+    }
+
+    # Handle each action type
+    if ( $next_action->[0] eq 'move_map' ) {
+        $self->move_sub_map_on_parents_in_memory(
+            sub_map_key    => $next_action->[1],
+            parent_map_key => $next_action->[5],
+            feature_start  => $next_action->[6],
+            feature_stop   => $next_action->[7],
+        );
+    }
+
+    $self->{'window_actions'}{$window_key}{'last_action_index'}++;
+
+    return;
+}
+
+# ----------------------------------------------------
+sub window_actions {
+
+=pod
+
+=head2 window_actions
+
+Accessor method for window actions;
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    if ($window_key) {
+        return $self->{'window_actions'}{$window_key};
+    }
+    else {
+        return $self->{'window_actions'};
+    }
+
+    return;
+}
+
+## ----------------------------------------------------
+#sub move_drawing_items {
+#
+#=pod
+#
+#=head2 move_drawing_items
+#
+#moves drawing items by x and y
+#
+#Item structure:
+#
+#  [ changed, item_id, type, coord_array, options_hash ]
+#
+#
+#=cut
+#
+#    my ( $self, %args ) = @_;
+#    my $items         = $args{'items'};
+#    my $dx         = $args{'dx'} || 0;
+#    my $dy         = $args{'dy'} || 0;
+#
+#    foreach my $item ( @{ $items || [] } ) {
+#        $item->[0] = 1;
+#        $item->[3][0] += $dx;
+#        $item->[3][2] += $dx;
+#        $item->[3][1] += $dy;
+#        $item->[3][3] += $dy;
+#    }
+#
+#    return;
+#}
+
+# ----------------------------------------------------
 sub move_ghost_map {
 
 =pod
@@ -2544,6 +2846,30 @@ to drawing.
             }
         }
     }
+
+=head2 Keeping Track of actions
+
+=head3 window_actions
+
+    $self->{'window_actions'} = {
+        $window_key => {
+            last_action_index => -1,
+            actions => [[ @action_specific_data ],],
+        }
+    }
+
+=head4 move_map
+
+    @action_specific_data = [
+        'move_map',         
+        $sub_map_key, 
+        $ori_parent_map_key,
+        $ori_feature_start, 
+        $ori_feature_stop,
+        $new_parent_map_key,
+        $new_feature_start, 
+        $new_feature_stop,
+    ];
 
 =head2 Other Values
 
