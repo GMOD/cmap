@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.17 2006-11-13 19:04:58 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.18 2006-11-14 19:22:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2457,15 +2457,8 @@ Handle window resizing
     my $self = shift;
     my ( $event, $window_key, $app_display_data, ) = @_;
 
-    #my $who_sized
-    #    = $self->get_window( window_key => $window_key, )->sizefrom();
-    if (    #$app_display_data->{'initialization_finished'}{$window_key} and
-        $event->w
-        != $app_display_data->{'window_layout'}{$window_key}{'width'}
-
-        #   and $who_sized
-        #   and $who_sized eq 'user'
-        )
+    if ( $event->w
+        != $app_display_data->{'window_layout'}{$window_key}{'width'} )
     {
 
         #print STDERR "WindowsConfigure $window_key\n";

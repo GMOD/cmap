@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.17 2006-11-03 20:54:07 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.18 2006-11-14 19:22:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -645,12 +645,15 @@ Lays out sub maps in a slot.
     my $map_set_id = $first_map_data->{'map_set_id'};
     $app_display_data->{'scaffold'}{$slot_key}{'map_set_id'} = $map_set_id;
 
-    my @row_distribution_aray;
+    my @row_distribution_array;
     my @rows;
 
     my $current_parent_map_key = '-1';
     my ( $parent_x1, $parent_x2, $parent_data, $parent_start, $parent_stop,
         $parent_id, $parent_pixels_per_unit, );
+
+    my $slot_pixel_width
+        = $slot_layout->{'bounds'}[2] - $slot_layout->{'bounds'}[0] + 1;
 
     foreach my $sub_map_key (@sub_map_keys) {
         my $parent_map_key
@@ -691,12 +694,11 @@ Lays out sub maps in a slot.
             = $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'};
         unless ( defined($row_index) ) {
             $row_index = simple_column_distribution(
-                low        => $x1_on_map,
-                high       => $x2_on_map,
-                columns    => \@row_distribution_aray,
-                map_height => ( $parent_x2 - $parent_x1 + 1 )
-                    * $scale,    # really width
-                buffer => MAP_X_BUFFER,
+                low        => $x1,
+                high       => $x2,
+                columns    => \@row_distribution_array,
+                map_height => $slot_pixel_width,
+                buffer     => MAP_X_BUFFER,
             );
 
             # Set the row index in case this slot needs to be split
@@ -722,6 +724,11 @@ Lays out sub maps in a slot.
                 ->map_data( map_id => $sub_map_id, );
             my $parent_map_key = $app_display_data->{'sub_maps'}{$sub_map_key}
                 {'parent_map_key'};
+
+            # Set map_pixels_per_unit
+            $app_display_data->{'map_pixels_per_unit'}{$sub_map_key}
+                = ( $x2 - $x1 + 1 ) / (
+                $sub_map_data->{'map_stop'} - $sub_map_data->{'map_start'} );
 
             # Set bounds so overview can access it later even if it
             # isn't on the screen.

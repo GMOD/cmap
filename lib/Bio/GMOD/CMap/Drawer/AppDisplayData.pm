@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.19 2006-11-13 19:04:57 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.20 2006-11-14 19:22:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -259,9 +259,6 @@ Adds the first slot
         app_display_data => $self,
     );
 
-    #print STDERR "FINISHED???\n";
-    $self->{'initialization_finished'}{$window_key} = 1;
-
     return;
 }
 
@@ -407,7 +404,6 @@ Zoom slots
                 window_key => $window_key,
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
-                parent_key => $slot_scaffold->{'parent'},
             );
         }
         else {
@@ -426,7 +422,6 @@ Zoom slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
-                    parent_key => $slot_scaffold->{'parent'},
                 );
             }
             else {
@@ -435,8 +430,7 @@ Zoom slots
                 $self->reset_slot_corrs(
                     window_key => $window_key,
                     panel_key  => $panel_key,
-                    slot_key1  => $slot_key,
-                    slot_key2  => $slot_scaffold->{'parent'},
+                    slot_key   => $slot_key,
                 );
             }
         }
@@ -489,7 +483,6 @@ Zoom slots
             window_key => $window_key,
             panel_key  => $panel_key,
             slot_key   => $slot_key,
-            parent_key => $slot_scaffold->{'parent'},
         );
     }
 
@@ -603,7 +596,6 @@ Scroll slots
                 window_key => $window_key,
                 panel_key  => $panel_key,
                 slot_key   => $slot_key,
-                parent_key => $slot_scaffold->{'parent'},
             );
         }
         else {
@@ -622,7 +614,6 @@ Scroll slots
                     window_key => $window_key,
                     panel_key  => $panel_key,
                     slot_key   => $slot_key,
-                    parent_key => $slot_scaffold->{'parent'},
                 );
             }
             else {
@@ -631,8 +622,7 @@ Scroll slots
                 $self->reset_slot_corrs(
                     window_key => $window_key,
                     panel_key  => $panel_key,
-                    slot_key1  => $slot_key,
-                    slot_key2  => $slot_scaffold->{'parent'},
+                    slot_key   => $slot_key,
                 );
             }
         }
@@ -667,7 +657,6 @@ Scroll slots
             window_key => $window_key,
             panel_key  => $panel_key,
             slot_key   => $slot_key,
-            parent_key => $slot_scaffold->{'parent'},
         );
     }
 
@@ -1083,7 +1072,6 @@ sub relayout_sub_map_slot {
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key   = $args{'slot_key'}   or return;
-    my $parent_key = $args{'parent_key'} or return;
 
     $self->clear_slot_maps(
         panel_key => $panel_key,
@@ -1102,8 +1090,7 @@ sub relayout_sub_map_slot {
     $self->reset_slot_corrs(
         window_key => $window_key,
         panel_key  => $panel_key,
-        slot_key1  => $slot_key,
-        slot_key2  => $parent_key,
+        slot_key   => $slot_key,
     );
 
     return;
@@ -1803,8 +1790,8 @@ Move a map from one place on a parent to another
     {
         my $coords
             = $self->{'map_layout'}{$potential_parent_map_key}{'coords'};
-        if (    $coords->[0] < $ghost_bounds->[0]
-            and $coords->[2] > $ghost_bounds->[2] )
+        if (    $coords->[0] <= $ghost_bounds->[0]
+            and $coords->[2] >= $ghost_bounds->[2] )
         {
             $new_parent_map_key = $potential_parent_map_key;
             $parent_coords      = $coords;
@@ -1816,11 +1803,6 @@ Move a map from one place on a parent to another
     # Use start location as basis for locating
     my $relative_pixel_start = $ghost_bounds->[0] - $parent_coords->[0];
 
-    #print STDERR Dumper(
-    #    $self->{'map_pixels_per_unit'}{$new_parent_map_key},
-    #    $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'}
-    #    )
-    #    . "\n";
     my $relative_unit_start = $relative_pixel_start /
         (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
             || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
@@ -1887,19 +1869,62 @@ another (and possibly on a different parrent.
     $self->{'sub_maps'}{$sub_map_key}{'feature_start'}  = $feature_start;
     $self->{'sub_maps'}{$sub_map_key}{'feature_stop'}   = $feature_stop;
 
+    $self->cascade_relayout_sub_map_slot(
+        window_key => $window_key,
+        panel_key  => $panel_key,
+        slot_key   => $sub_slot_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub cascade_relayout_sub_map_slot {
+
+=pod
+
+=head2 relayout_sub_map_slot
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key   = $args{'slot_key'}   or return;
+    my $cascading = $args{'cascading'} || 0;
+
     # relayout the sub map
     $self->relayout_sub_map_slot(
         window_key => $window_key,
         panel_key  => $panel_key,
-        slot_key   => $sub_slot_key,
-        parent_key => $parent_slot_key
+        slot_key   => $slot_key,
     );
-    $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_panel(
-        panel_key        => $panel_key,
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
+
+    # cascade to attached children
+    foreach my $child_slot_key (
+        @{ $self->{'scaffold'}{$slot_key}{'children'} || [] } )
+    {
+        next
+            unless (
+            $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} );
+
+        $self->cascade_relayout_sub_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $child_slot_key,
+            cascading  => 1,
+        );
+    }
+
+    # Finish by drawing the panel
+    unless ($cascading) {
+        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_panel(
+            panel_key        => $panel_key,
+            window_key       => $window_key,
+            app_display_data => $self,
+        );
+    }
 
     return;
 }
@@ -2269,22 +2294,25 @@ reset  a slot of correspondences
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
     my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key1  = $args{'slot_key1'}  or return;
-    my $slot_key2  = $args{'slot_key2'}  or return;
+    my $slot_key1  = $args{'slot_key'}   or return;
 
-    return unless ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} );
+    foreach my $slot_key2 (
+        keys %{ $self->{'correspondences_on'}{$slot_key1} || {} } )
+    {
+        next unless ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} );
 
-    $self->clear_slot_corrs(
-        panel_key => $panel_key,
-        slot_key1 => $slot_key1,
-        slot_key2 => $slot_key2,
-    );
-    $self->add_slot_corrs(
-        window_key => $window_key,
-        panel_key  => $panel_key,
-        slot_key1  => $slot_key1,
-        slot_key2  => $slot_key2,
-    );
+        $self->clear_slot_corrs(
+            panel_key => $panel_key,
+            slot_key1 => $slot_key1,
+            slot_key2 => $slot_key2,
+        );
+        $self->add_slot_corrs(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key1  => $slot_key1,
+            slot_key2  => $slot_key2,
+        );
+    }
 
     return;
 }
