@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.20 2006-11-14 19:22:08 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.21 2006-11-15 06:28:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2043,6 +2043,48 @@ Redo the action that was last undone.
     $self->{'window_actions'}{$window_key}{'last_action_index'}++;
 
     return;
+}
+
+# ----------------------------------------------------
+sub condenced_window_actions {
+
+=pod
+
+=head2 condenced_window_actions
+
+Condence redundant window actions for commits and exporting.  
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return undef;
+
+    my %moves;
+    my @return_array;
+    my $window_actions = $self->{'window_actions'}{$window_key};
+    for ( my $i = 0; $i <= $window_actions->{'last_action_index'}; $i++ ) {
+        my $action = $window_actions->{'actions'}[$i];
+        if ( $action->[0] eq 'move_map' ) {
+            my $map_key = $action->[1];
+            if ( $moves{$map_key} ) {
+
+                # leave the original loc alone but change the end
+                $moves{$map_key}->[5] = $action->[5];
+                $moves{$map_key}->[6] = $action->[6];
+                $moves{$map_key}->[7] = $action->[7];
+            }
+            else {
+                $moves{$map_key} = $action;
+            }
+        }
+    }
+
+    # Add Moves to the return array
+    foreach my $map_key ( keys %moves ) {
+        push @return_array, $moves{$map_key};
+    }
+
+    return \@return_array;
 }
 
 # ----------------------------------------------------

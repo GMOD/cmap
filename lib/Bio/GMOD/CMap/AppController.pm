@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.16 2006-11-13 19:04:54 mwz444 Exp $
+# $Id: AppController.pm,v 1.17 2006-11-15 06:28:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -551,12 +551,10 @@ Export the map moves to a file.
         return;
     }
 
-    my $window_actions
-        = $app_display_data->window_actions( window_key => $window_key, );
+    my $condenced_actions = $app_display_data->condenced_window_actions(
+        window_key => $window_key, );
 
-    for ( my $i = 0; $i <= $window_actions->{'last_action_index'}; $i++ ) {
-        my $action = $window_actions->{'actions'}[$i];
-
+    foreach my $action ( @{ $condenced_actions || [] } ) {
         if ( $action->[0] eq 'move_map' ) {
             my @print_array = (
                 $action->[0],
