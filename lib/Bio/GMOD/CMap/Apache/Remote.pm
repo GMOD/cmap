@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.3 2006-11-16 05:51:39 mwz444 Exp $
+# $Id: Remote.pm,v 1.4 2006-11-16 18:35:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(freeze thaw);
@@ -134,7 +134,7 @@ sub handler {
             my $feature_id = $feature_data{'feature_id'}
                 || $feature_data{'id'}
                 or next;
-            my $map_id = $map_data{'map_id'} || undef;
+            my $map_id = $feature_data{'map_id'} || undef;
             my $feature_acc = $feature_data{'feature_acc'}
                 || $feature_data{'acc'}
                 || undef;
