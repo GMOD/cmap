@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.45 2006-07-24 03:31:48 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.46 2006-11-16 15:58:47 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -315,7 +315,7 @@ use constant DEFAULT => {
     #
     # URL for evidence type info
     #
-    evidence_type_details_url => 'evidence_type_info?evidence_type=',
+    evidence_type_details_url => 'evidence_type_info?evidence_type_acc=',
 
     #
     # Color of a feature if not defined
