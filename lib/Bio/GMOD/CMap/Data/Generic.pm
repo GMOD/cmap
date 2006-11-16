@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.153 2006-10-23 07:45:51 mwz444 Exp $
+# $Id: Generic.pm,v 1.154 2006-11-16 05:48:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.153 $)[-1];
+$VERSION = (qw$Revision: 1.154 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -5158,17 +5158,17 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_landmark = ? ";
     }
-    if ($feature_start) {
+    if ( defined($feature_start) ) {
         push @update_args, $feature_start;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " feature_start = ? ";
     }
-    if ($feature_stop) {
+    if ( defined($feature_stop) ) {
         push @update_args, $feature_stop;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " feature_stop = ? ";
     }
-    if ($default_rank) {
+    if ( defined($default_rank) ) {
         push @update_args, $default_rank;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " default_rank = ? ";
