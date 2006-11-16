@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.19 2006-11-16 05:51:40 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.20 2006-11-16 18:38:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -35,6 +35,7 @@ use base 'Bio::GMOD::CMap::AppController';
 use Tk;
 use Tk::Pane;
 use Tk::Dialog;
+use Tk::LabEntry;
 
 # ----------------------------------------------------
 sub init {
@@ -48,8 +49,6 @@ Initializes the drawing object.
 =cut
 
     my ( $self, $config ) = @_;
-    $self->app_data_module( $config->{'app_data_module'} )
-        or die "Failed to pass app_data_module to AppInterface\n";
     $self->app_controller( $config->{'app_controller'} )
         or die "Failed to pass app_controller to AppInterface\n";
 
@@ -281,6 +280,30 @@ Returns a handle to the data module.
     $self->{'app_controller'} = shift if @_;
 
     return $self->{'app_controller'};
+}
+
+# ----------------------------------------------------
+sub app_data_module {
+
+=pod
+
+=head3 app_data_module
+
+Returns a handle to the data module.
+
+Gets the data module from the controller.  It is done here rather than during
+init so avoid infinite loops.
+
+=cut
+
+    my $self = shift;
+
+    unless ( $self->{'app_data_module'} ) {
+        $self->{'app_data_module'}
+            = $self->app_controller()->app_data_module();
+    }
+
+    return $self->{'app_data_module'};
 }
 
 # ----------------------------------------------------
@@ -1842,6 +1865,50 @@ sub commit_map_moves {
     }
 
     return;
+}
+
+# ----------------------------------------------------
+sub password_box {
+
+=pod
+
+=head2 commit_map_moves
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $user;
+    my $password;
+    my $password_box = $self->main_window()->Dialog(
+        -title          => 'Login',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+    );
+    $password_box->add(
+        'LabEntry',
+        -textvariable => \$user,
+        -width        => 20,
+        -label        => 'User Name',
+        -labelPack    => [ -side => 'left' ],
+    )->pack();
+    $password_box->add(
+        'LabEntry',
+        -textvariable => \$password,
+        -width        => 20,
+        -label        => 'Password',
+        -labelPack    => [ -side => 'left' ],
+        -show         => '*',
+    )->pack();
+    my $answer = $password_box->Show();
+
+    if ( $answer eq 'OK' ) {
+        return ( $user, $password, );
+    }
+
+    return ( undef, undef );
 }
 
 # ----------------------------------------------------

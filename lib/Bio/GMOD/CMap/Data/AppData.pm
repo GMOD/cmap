@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.11 2006-11-16 05:51:39 mwz444 Exp $
+# $Id: AppData.pm,v 1.12 2006-11-16 18:38:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -37,6 +37,7 @@ use base 'Bio::GMOD::CMap::Data';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
+    $self->{'app_controller'} = $config->{'app_controller'};
     $self->{'remote_url'} = $config->{'remote_url'} || q{};
     if ( $self->{'remote_url'} ) {
         $self->config( $self->get_remote_config() );
@@ -67,7 +68,11 @@ sub get_remote_config {
     my $config = undef;
     if ( my $url = $self->{'remote_url'} ) {
         $url .= ';action=get_config';
-        $config = $self->request_remote_data( $url, 'want_hash' );
+        $config = $self->request_remote_data(
+            url       => $url,
+            want_hash => 'want_hash',
+            thaw      => 1,
+        );
     }
 
     return $config;
@@ -432,9 +437,95 @@ sub user_agent {
     unless ( $self->{'user_agent'} ) {
         $self->{'user_agent'} = LWP::UserAgent->new;
         $self->{'user_agent'}->agent("CMap_Editor/0.1 ");
+        unless ( $self->authenticate_user_agent() ) {
+            print STDERR "Failed to give a correct login.  Exiting...\n";
+            exit;
+        }
     }
     return $self->{'user_agent'};
 
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 authenticate_user_agent
+
+=cut
+
+sub authenticate_user_agent {
+
+    my ( $self, %args ) = @_;
+    if ( $self->{'user_agent'} ) {
+        my $req = HTTP::Request->new( GET => $self->{'remote_url'} );
+        $req->content_type('application/x-www-form-urlencoded');
+        $req->content('query=libwww-perl&mode=dist');
+
+        # Pass request to the user agent and get a response back
+        my $res = $self->{'user_agent'}->request($req);
+
+        # Check the outcome of the response
+        if ( $res->is_success ) {
+            return 1;
+        }
+        elsif ( $res->status_line() =~ /401/ ) {
+            my $res_header = $res->header('WWW-Authenticate');
+            my ( $user, $password )
+                = $self->{'app_controller'}->app_interface()->password_box();
+            unless ( defined $user ) {
+                return 0;
+            }
+            $self->give_user_agent_credentials(
+                user       => $user,
+                password   => $password,
+                res_header => $res_header,
+            );
+            return $self->authenticate_user_agent();
+        }
+        else {
+        }
+    }
+    return undef;
+
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 give_user_agent_credentials
+
+=cut
+
+sub give_user_agent_credentials {
+
+    my ( $self, %args ) = @_;
+    if ( $self->{'user_agent'} ) {
+        my $user       = $args{'user'};
+        my $password   = $args{'password'};
+        my $res_header = $args{'res_header'};
+        my $url        = $self->{'remote_url'};
+
+        my ( $service, $port_num, );
+        if ( $url =~ m{\w+://([^/:]+):?(\d+)?} ) {
+            $service = $1;
+            $port_num = $2 || 80;
+        }
+        else {
+            die "URL $url did not parse correctly\n";
+        }
+
+        my $realm = '';
+        if ( $res_header =~ /realm="([^"]+)"/ ) {
+            $realm = $1;
+        }
+
+        $self->{'user_agent'}->credentials( $service . ":" . $port_num,
+            $realm, $user => $password, );
+
+    }
+    return;
 }
 
 # ----------------------------------------------------
@@ -449,7 +540,10 @@ Does the actual call for the data
 
 sub request_remote_data {
 
-    my ( $self, $url, $want_hash ) = @_;
+    my ( $self, %args ) = @_;
+    my $url       = $args{'url'};
+    my $want_hash = $args{'want_hash'} || 0;
+    my $thaw      = $args{'thaw'};
 
     # Create a request
     my $req = HTTP::Request->new( GET => $url );
@@ -462,15 +556,19 @@ sub request_remote_data {
     # Check the outcome of the response
     if ( $res->is_success ) {
         if ( my $content = $res->content ) {
-            return thaw($content);
+            return $thaw ? thaw($content) : $content;
         }
         else {
-            return $want_hash ? {} : [];
+            return $want_hash ? {}
+                : $thaw       ? []
+                : '';
         }
     }
     else {
         print STDERR $res->status_line, "\n";
-        return $want_hash ? {} : [];
+        return $want_hash ? {}
+            : $thaw       ? []
+            : '';
     }
 }
 
@@ -534,7 +632,7 @@ sub sql_get_maps {
             $url .= ";map_id=$_" foreach @{$map_ids};
         }
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_maps(
@@ -577,7 +675,7 @@ sub sql_get_features_sub_maps_version {
             $url .= ";get_sub_maps=$get_sub_maps";
         }
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_features_sub_maps_version(
@@ -618,7 +716,7 @@ sub sql_get_feature_correspondence_for_counting {
             param_name => 'slot_info2',
         );
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_feature_correspondence_for_counting(
@@ -657,7 +755,7 @@ sub sql_get_species {
             $url .= ";is_enabled=$is_enabled";
         }
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_species(
@@ -700,7 +798,7 @@ sub sql_get_map_sets {
             $url .= ";is_enabled=$is_enabled";
         }
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_map_sets(
@@ -736,7 +834,7 @@ sub sql_get_maps_from_map_set {
             $url .= ";map_set_id=$map_set_id";
         }
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         return $self->sql()->get_maps_from_map_set(
@@ -781,6 +879,7 @@ sub sql_update_features {
     my $features = $args{'features'} or return;
 
     my %component_shorthand = (
+        feature_id       => 'id',
         map_id           => 'map_id',
         feature_acc      => 'acc',
         feature_type_acc => 'type_acc',
@@ -831,7 +930,7 @@ sub sql_update_features {
 
         $url .= ';feature_str=' . $feature_str;
 
-        return $self->request_remote_data($url);
+        return $self->request_remote_data( url => $url, thaw => 0, );
     }
     else {
         foreach my $feature ( @{$features} ) {

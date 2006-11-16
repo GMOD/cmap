@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.18 2006-11-16 05:51:39 mwz444 Exp $
+# $Id: AppController.pm,v 1.19 2006-11-16 18:38:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -52,7 +52,7 @@ Initializes the object.
     $self->config( $self->app_data_module()->config() );
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 0;
+    my $developement = 1;
     if ( $developement == 1 ) {
         $self->load_new_window(
             window_key               => $window_key,
@@ -130,9 +130,10 @@ Returns a handle to the data module.
 
     unless ( $self->{'app_data_module'} ) {
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
-            data_source => $self->{'data_source'},
-            config      => $self->{'remote_url'} ? undef: $self->config,
-            remote_url  => $self->{'remote_url'},
+            app_controller => $self,
+            data_source    => $self->{'data_source'},
+            config         => $self->{'remote_url'} ? undef: $self->config,
+            remote_url     => $self->{'remote_url'},
             )
             or $self->error( Bio::GMOD::CMap::Data::AppData->error );
     }
@@ -157,9 +158,7 @@ Returns a handle to the data module.
 
     unless ( $self->{'app_interface'} ) {
         $self->{'app_interface'} = Bio::GMOD::CMap::Drawer::AppInterface->new(
-            app_data_module => $self->app_data_module(),
-            app_controller  => $self,
-            )
+            app_controller => $self, )
             or die "Couldn't initialize AppInterface\n";
     }
 
@@ -586,9 +585,8 @@ Export the map moves to a file.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'}       or return;
+    my $window_key       = $args{'window_key'} or return;
     my $app_display_data = $self->app_display_data();
-
 
     my $condenced_actions = $app_display_data->condenced_window_actions(
         window_key => $window_key, );
@@ -596,19 +594,24 @@ Export the map moves to a file.
     my @moved_features;
     foreach my $action ( @{ $condenced_actions || [] } ) {
         if ( $action->[0] eq 'move_map' ) {
-            my $map_key = $action->[1]; 
-            push @moved_features, {
-                feature_id             => $app_display_data->{'sub_maps'}{$map_key}{'feature_id'},
-                sub_map_id             => $app_display_data->{'map_key_to_id'}{ $map_key },
-                original_parent_map_id => $app_display_data->{'map_key_to_id'}{ $action->[2] },
-                map_id                 => $app_display_data->{'map_key_to_id'}{ $action->[5] },
-                feature_start          => $action->[6],
-                feature_stop           => $action->[7],
-            };
+            my $map_key = $action->[1];
+            push @moved_features,
+                {
+                feature_id =>
+                    $app_display_data->{'sub_maps'}{$map_key}{'feature_id'},
+                sub_map_id => $app_display_data->{'map_key_to_id'}{$map_key},
+                original_parent_map_id =>
+                    $app_display_data->{'map_key_to_id'}{ $action->[2] },
+                map_id =>
+                    $app_display_data->{'map_key_to_id'}{ $action->[5] },
+                feature_start => $action->[6],
+                feature_stop  => $action->[7],
+                };
         }
     }
 
-    $self->app_data_module->commit_sub_map_moves( features=> \@moved_features,);
+    $self->app_data_module->commit_sub_map_moves(
+        features => \@moved_features, );
 
     return;
 }
