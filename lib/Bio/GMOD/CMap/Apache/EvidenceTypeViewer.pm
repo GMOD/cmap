@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::EvidenceTypeViewer;
 
 # vim: set ft=perl:
 
-# $Id: EvidenceTypeViewer.pm,v 1.9 2006-06-05 21:21:36 mwz444 Exp $
+# $Id: EvidenceTypeViewer.pm,v 1.10 2006-11-16 16:01:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -26,8 +26,10 @@ sub handler {
 
     my $page_no = $apr->param('page_no') || 1;
     my @ets =
-      split( /,/,
-        $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid') );
+        split( /,/,
+               $apr->param('evidence_type_acc')
+            || $apr->param('evidence_type_aid')
+            || $apr->param('evidence_type') );
     my $data_module = $self->data_module;
     my $data = $data_module->evidence_type_info_data( evidence_types => \@ets, )
       or return $self->error( $data_module->error );
