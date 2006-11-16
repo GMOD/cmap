@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.10 2006-11-14 14:37:09 mwz444 Exp $
+# $Id: AppData.pm,v 1.11 2006-11-16 05:51:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -650,10 +650,10 @@ sub sql_get_species {
     if ( my $url = $self->{'remote_url'} ) {
         $url .= ';action=get_species';
 
-        if (defined $is_relational_map) {
+        if ( defined $is_relational_map ) {
             $url .= ";is_relational_map=$is_relational_map";
         }
-        if (defined $is_enabled) {
+        if ( defined $is_enabled ) {
             $url .= ";is_enabled=$is_enabled";
         }
 
@@ -693,10 +693,10 @@ sub sql_get_map_sets {
         if ($species_id) {
             $url .= ";species_id=$species_id";
         }
-        if (defined $is_relational_map) {
+        if ( defined $is_relational_map ) {
             $url .= ";is_relational_map=$is_relational_map";
         }
-        if (defined $is_enabled) {
+        if ( defined $is_enabled ) {
             $url .= ";is_enabled=$is_enabled";
         }
 
@@ -752,28 +752,142 @@ sub sql_get_maps_from_map_set {
 
 =pod
 
-=head2 move_sub_map_in_memory
+=head2 sql_update_features
 
-Given a map id, return the information required to draw the
-sub-maps.  These do NOT include the regular features;
+Update the features table in the db.
+
+Data Structures:
+
+  $features = [{
+    feature_id       => $sub_map_feature_id,
+    map_id           => $opt_new_parent_map_id,
+    feature_start    => $opt_new_feature_start, 
+    feature_stop     => $opt_new_feature_stop, 
+    feature_acc      => $opt_new_feature_acc,
+    feature_type_acc => $opt_new_feature_type_acc,
+    feature_name     => $opt_new_feature_name,
+    is_landmark      => $opt_new_is_landmark,
+    feature_start    => $opt_new_feature_start,
+    feature_stop     => $opt_new_feature_stop,
+    default_rank     => $opt_new_default_rank,
+    direction        => $opt_new_direction,
+  },];
 
 =cut
 
-sub move_sub_maps_in_memory {
+sub sql_update_features {
 
     my ( $self, %args ) = @_;
-    my $map_id = $args{'map_id'} or return undef;
+    my $features = $args{'features'} or return;
 
-    if ( $self->{'sub_map_data'}{$map_id} ) {
-#
-#            $self->{'sub_map_data'}{$map_id} = $features;
-#        }
-#        else {
-#            return undef;
-#        }
+    my %component_shorthand = (
+        map_id           => 'map_id',
+        feature_acc      => 'acc',
+        feature_type_acc => 'type_acc',
+        feature_name     => 'name',
+        is_landmark      => 'is_landmark',
+        feature_start    => 'start',
+        feature_stop     => 'stop',
+        default_rank     => 'rank',
+        direction        => 'dir',
+    );
+
+    if ( my $url = $self->{'remote_url'} ) {
+        $url .= ';action=update_features';
+
+        my @feature_str_array;
+        foreach my $feature ( @{$features} ) {
+            my @components;
+            unless ( $feature->{'feature_id'} ) {
+                next;
+            }
+            push @components, $component_shorthand{'feature_id'} . ','
+                . $feature->{'feature_id'};
+            foreach my $component_name (
+                qw[
+                map_id
+                feature_acc
+                feature_type_acc
+                feature_name
+                is_landmark
+                feature_start
+                feature_stop
+                default_rank
+                direction
+                ]
+                )
+            {
+
+                if ( defined $feature->{$component_name} ) {
+                    push @components,
+                        $component_shorthand{$component_name} . ','
+                        . $feature->{$component_name};
+                }
+            }
+            push @feature_str_array, join( ',', @components );
+        }
+        my $feature_str = join( ':', @feature_str_array, );
+        return unless ($feature_str);
+
+        $url .= ';feature_str=' . $feature_str;
+
+        return $self->request_remote_data($url);
+    }
+    else {
+        foreach my $feature ( @{$features} ) {
+            unless ( $feature->{'feature_id'} ) {
+                next;
+            }
+            $self->sql()->update_feature(
+                cmap_object      => $self,
+                feature_id       => $feature->{'feature_id'},
+                map_id           => $feature->{'map_id'},
+                feature_acc      => $feature->{'feature_acc'},
+                feature_type_acc => $feature->{'feature_type_acc'},
+                feature_name     => $feature->{'feature_name'},
+                is_landmark      => $feature->{'is_landmark'},
+                feature_start    => $feature->{'feature_start'},
+                feature_stop     => $feature->{'feature_stop'},
+                default_rank     => $feature->{'default_rank'},
+                direction        => $feature->{'direction'},
+            );
+        }
     }
 
-    return $self->{'sub_map_data'}{$map_id};
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 commit_sub_map_moves
+
+Data Structure
+
+  $features = [{
+    feature_id             => $sub_map_feature_id,
+    sub_map_id             => $sub_map_id,
+    original_parent_map_id => $original_parent_map_id,
+    map_id                 => $new_parent_map_id,
+    feature_start          => $new_feature_start, 
+    feature_stop           => $new_feature_stop, 
+  },];
+
+=cut
+
+sub commit_sub_map_moves {
+
+    my ( $self, %args ) = @_;
+    my $features = $args{'features'} or return;
+
+    foreach my $feature (@$features) {
+        $self->{'sub_map_data'}{ $feature->{'map_id'} } = undef;
+        $self->{'sub_map_data'}{ $feature->{'original_parent_map_id'} }
+            = undef;
+    }
+    $self->sql_update_features( features => $features, );
+
+    return;
 }
 
 1;

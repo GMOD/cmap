@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.2 2006-11-06 18:50:15 mwz444 Exp $
+# $Id: Remote.pm,v 1.3 2006-11-16 05:51:39 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(freeze thaw);
@@ -20,21 +20,29 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
+    my $action = $apr->param('action');
 
     my $data_access = $self->config_data('allow_remote_data_access');
     my $data_manipulation
         = $self->config_data('allow_remote_data_manipulation');
 
-    unless ($data_access){
+    unless ($data_access) {
+        print STDERR "Remote Access Attempted\n";
         print "Data Source Not Remotely Accessible\n";
         return 1;
     }
 
+    if ( $action =~ /^update/ and not $data_manipulation ) {
+        print STDERR "Remote Commit Attempted\n";
+        print "Data Source Not Remotely Modifyable\n";
+        return 1;
+    }
+
     print $apr->header( -type => 'text/plain', );
-    if ( $apr->param('action') eq 'get_config' ) {
+    if ( $action eq 'get_config' ) {
         print freeze( $self->config() );
     }
-    elsif ( $apr->param('action') eq 'get_maps' ) {
+    elsif ( $action eq 'get_maps' ) {
         my $map_id  = $apr->param('map_id');
         my @map_ids = $apr->param('map_ids');
         my $data    = $self->sql()->get_maps(
@@ -47,7 +55,7 @@ sub handler {
         }
         print freeze($data);
     }
-    elsif ( $apr->param('action') eq 'get_species' ) {
+    elsif ( $action eq 'get_species' ) {
         my $is_relational_map = $apr->param('is_relational_map');
         my $is_enabled        = $apr->param('is_enabled');
         my $data              = $self->sql()->get_species(
@@ -60,7 +68,7 @@ sub handler {
         }
         print freeze($data);
     }
-    elsif ( $apr->param('action') eq 'get_map_sets' ) {
+    elsif ( $action eq 'get_map_sets' ) {
         my $is_relational_map = $apr->param('is_relational_map');
         my $is_enabled        = $apr->param('is_enabled');
         my $species_id        = $apr->param('species_id');
@@ -75,7 +83,7 @@ sub handler {
         }
         print freeze($data);
     }
-    elsif ( $apr->param('action') eq 'get_maps_from_map_set' ) {
+    elsif ( $action eq 'get_maps_from_map_set' ) {
         my $map_set_id = $apr->param('map_set_id');
         my $data       = $self->sql()->get_maps_from_map_set(
             cmap_object => $self,
@@ -86,7 +94,7 @@ sub handler {
         }
         print freeze($data);
     }
-    elsif ( $apr->param('action') eq 'get_features_sub_maps_version' ) {
+    elsif ( $action eq 'get_features_sub_maps_version' ) {
         my $map_id       = $apr->param('map_id');
         my $no_sub_maps  = $apr->param('no_sub_maps');
         my $get_sub_maps = $apr->param('get_sub_maps');
@@ -101,9 +109,7 @@ sub handler {
         }
         print freeze($data);
     }
-    elsif (
-        $apr->param('action') eq 'get_feature_correspondence_for_counting' )
-    {
+    elsif ( $action eq 'get_feature_correspondence_for_counting' ) {
         my $slot_info = $self->unstringify_slot_info(
             slot_info_str => $apr->param('slot_info'), );
         my $slot_info2 = $self->unstringify_slot_info(
@@ -117,6 +123,62 @@ sub handler {
             $data = undef;
         }
         print freeze($data);
+    }
+    elsif ( $action eq 'update_features' ) {
+
+        for my $feature_data_str ( split( /:/, $apr->param('feature_str') ) )
+        {
+
+            # Parse the feature data and allow for shorter alternatives
+            my %feature_data = split( /,/, $feature_data_str );
+            my $feature_id = $feature_data{'feature_id'}
+                || $feature_data{'id'}
+                or next;
+            my $map_id = $map_data{'map_id'} || undef;
+            my $feature_acc = $feature_data{'feature_acc'}
+                || $feature_data{'acc'}
+                || undef;
+            my $feature_type_acc = $feature_data{'feature_type_acc'}
+                || $feature_data{'type_acc'}
+                || undef;
+            my $feature_name = $feature_data{'feature_name'}
+                || $feature_data{'name'}
+                || undef;
+            my $direction = $feature_data{'direction'}
+                || $feature_data{'dir'}
+                || undef;
+
+            # These options can be defined as false.
+            my $is_landmark   = $feature_data{'is_landmark'};
+            my $feature_start =
+                defined( $feature_data{'feature_start'} )
+                ? $feature_data{'feature_start'}
+                : $feature_data{'start'};
+            my $feature_stop =
+                defined( $feature_data{'feature_stop'} )
+                ? $feature_data{'feature_stop'}
+                : $feature_data{'stop'};
+            my $default_rank =
+                defined( $feature_data{'default_rank'} )
+                ? $feature_data{'default_rank'}
+                : $feature_data{'rank'};
+
+            $self->sql()->update_feature(
+                cmap_object      => $self,
+                feature_id       => $feature_id,
+                map_id           => $map_id,
+                feature_acc      => $feature_acc,
+                feature_type_acc => $feature_type_acc,
+                feature_name     => $feature_name,
+                is_landmark      => $is_landmark,
+                feature_start    => $feature_start,
+                feature_stop     => $feature_stop,
+                default_rank     => $default_rank,
+                direction        => $direction,
+
+            );
+        }
+        print 1;
     }
 
     return 1;

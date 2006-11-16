@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.17 2006-11-15 06:28:57 mwz444 Exp $
+# $Id: AppController.pm,v 1.18 2006-11-16 05:51:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -571,6 +571,45 @@ Export the map moves to a file.
     }
 
     close $fh;
+    return;
+}
+
+# ----------------------------------------------------
+sub commit_map_moves {
+
+=pod
+
+=head2 commit_map_moves
+
+Export the map moves to a file.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'}       or return;
+    my $app_display_data = $self->app_display_data();
+
+
+    my $condenced_actions = $app_display_data->condenced_window_actions(
+        window_key => $window_key, );
+
+    my @moved_features;
+    foreach my $action ( @{ $condenced_actions || [] } ) {
+        if ( $action->[0] eq 'move_map' ) {
+            my $map_key = $action->[1]; 
+            push @moved_features, {
+                feature_id             => $app_display_data->{'sub_maps'}{$map_key}{'feature_id'},
+                sub_map_id             => $app_display_data->{'map_key_to_id'}{ $map_key },
+                original_parent_map_id => $app_display_data->{'map_key_to_id'}{ $action->[2] },
+                map_id                 => $app_display_data->{'map_key_to_id'}{ $action->[5] },
+                feature_start          => $action->[6],
+                feature_stop           => $action->[7],
+            };
+        }
+    }
+
+    $self->app_data_module->commit_sub_map_moves( features=> \@moved_features,);
+
     return;
 }
 

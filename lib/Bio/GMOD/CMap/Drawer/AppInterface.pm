@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.18 2006-11-14 19:22:08 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.19 2006-11-16 05:51:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,13 +27,14 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap::AppController';
 use Tk;
 use Tk::Pane;
+use Tk::Dialog;
 
 # ----------------------------------------------------
 sub init {
@@ -1475,6 +1476,12 @@ Populates the file menu with menu_items
             },
         ],
         [   'command',
+            '~Commit Map Moves',
+            -command => sub {
+                $self->commit_map_moves( window_key => $window_key, );
+            },
+        ],
+        [   'command',
             '~Quit',
             -accelerator => 'Ctrl-q',
             -command     => sub {exit},
@@ -1805,6 +1812,34 @@ exporting the map moves.
         window_key       => $window_key,
         export_file_name => $export_file_name,
     );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub commit_map_moves {
+
+=pod
+
+=head2 commit_map_moves
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $answer = $self->main_window()->Dialog(
+        -title => 'Commit Map Moves?',
+        -text  => 'Would you like to commit the Map moves to the database?',
+        -default_button => 'Cancel',
+        -buttons        => [ 'OK', 'Cancel', ],
+    )->Show();
+
+    if ( $answer eq 'OK' ) {
+        $self->app_controller()
+            ->commit_map_moves( window_key => $window_key, );
+    }
 
     return;
 }
