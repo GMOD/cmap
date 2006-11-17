@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap-fix-map-display-order.pl,v 1.3 2005-06-03 22:19:46 mwz444 Exp $
+# $Id: cmap-fix-map-display-order.pl,v 1.4 2006-11-17 16:07:58 kycl4rk Exp $
 
 =head1 NAME
 
@@ -41,7 +41,7 @@ use Pod::Usage;
 use File::Basename;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $ms_accs );
 GetOptions(
@@ -111,11 +111,17 @@ for my $map_set_acc ( @map_set_accs ) {
 
     for my $map ( @$maps ) {
         my $do = $map->{'map_name'};
-        if ( $do =~ /\d/ ) {
+        if ( $do =~ /(\d+)$/ ) {
+            $do = $1;
+        }
+        elsif ( $do =~ /\d/ ) {
             $do =~ s/[^\d]//g;
         }
         elsif ( $do =~ /^[A-Za-z]$/ ) {
             $do = $h{ lc $do };
+        }
+        elsif ( $do eq 'UNKNOWN' ) {
+            $do = scalar @$maps;
         }
 
         unless ( $do =~ /^\d+$/ ) {
