@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.18 2006-11-14 19:22:08 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.19 2006-11-21 16:36:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -645,7 +645,7 @@ Lays out sub maps in a slot.
     my $map_set_id = $first_map_data->{'map_set_id'};
     $app_display_data->{'scaffold'}{$slot_key}{'map_set_id'} = $map_set_id;
 
-    my @row_distribution_array;
+    my @row_distribution_array = ();
     my @rows;
 
     my $current_parent_map_key = '-1';
@@ -680,6 +680,7 @@ Lays out sub maps in a slot.
                 = $app_display_data->{'map_pixels_per_unit'}{$parent_map_key}
                 || $app_display_data->{'scaffold'}{$parent_map_key}
                 {'pixels_per_unit'};
+            @row_distribution_array = ();
         }
 
         my $x1_on_map
@@ -694,11 +695,12 @@ Lays out sub maps in a slot.
             = $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'};
         unless ( defined($row_index) ) {
             $row_index = simple_column_distribution(
-                low        => $x1,
-                high       => $x2,
+                low        => $x1_on_map,
+                high       => $x2_on_map,
                 columns    => \@row_distribution_array,
-                map_height => $slot_pixel_width,
-                buffer     => MAP_X_BUFFER,
+                map_height => ( $parent_x2 - $parent_x1 + 1 )
+                    * $scale,    # actually width
+                buffer => MAP_X_BUFFER,
             );
 
             # Set the row index in case this slot needs to be split

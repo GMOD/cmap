@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.20 2006-11-16 18:38:20 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.21 2006-11-21 16:36:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -671,6 +671,17 @@ Adds control buttons to the panel_slot_controls_pane.
         },
         -font => $font,
     );
+    my $reattach_button = $panel_slot_controls_pane->Button(
+        -text    => "Reattach Slot to Parent",
+        -command => sub {
+            $self->app_controller()->app_display_data()->reattach_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+            );
+        },
+        -font => $font,
+    );
     my $scroll_left_button = $panel_slot_controls_pane->Button(
         -text    => "<",
         -command => sub {
@@ -732,8 +743,9 @@ Adds control buttons to the panel_slot_controls_pane.
     #    Tk::grid(
     #        $test_button, -sticky        => "nw",
     #    );
-    Tk::grid( $scroll_far_left_button, $scroll_left_button, 'x', 'x',
-        $scroll_right_button, $scroll_far_right_button, -sticky => "nw", );
+    Tk::grid( $scroll_far_left_button, $scroll_left_button, $reattach_button,
+        '-', $scroll_right_button, $scroll_far_right_button, -sticky => "nw",
+    );
     Tk::grid( 'x', 'x', $zoom_button1, $toggle_corrs_button, -sticky => "nw",
     );
     Tk::grid( 'x', 'x', $zoom_button2, $expand_button, -sticky => "nw", );

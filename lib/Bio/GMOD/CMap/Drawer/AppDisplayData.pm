@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.21 2006-11-15 06:28:57 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.22 2006-11-21 16:36:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -952,6 +952,147 @@ expand slots
         app_display_data => $self,
     );
 
+    return;
+}
+
+# ----------------------------------------------------
+sub reattach_slot {
+
+=pod
+
+=head2 reattach_slot
+
+Reattach a map and recursively handle the children
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key                  = $args{'window_key'};
+    my $panel_key                   = $args{'panel_key'};
+    my $slot_key                    = $args{'slot_key'};
+    my $cascading                   = $args{'cascading'} || 0;
+    my $unattached_child_zoom_value = $args{'unattached_child_zoom_value'}
+        || 0;
+    my $scroll_value = $args{'scroll_value'} || 0;
+
+    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+    my $overview_slot_layout
+        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+
+    if ($cascading) {
+        if ( $slot_scaffold->{'attached_to_parent'} ) {
+            if ($overview_slot_layout) {
+                $overview_slot_layout->{'scale_factor_from_main'}
+                    /= $unattached_child_zoom_value;
+            }
+
+            # Get Offset from parent
+            $slot_scaffold->{'x_offset'}
+                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                {'x_offset'};
+
+            $self->relayout_sub_map_slot(
+                window_key => $window_key,
+                panel_key  => $panel_key,
+                slot_key   => $slot_key,
+            );
+        }
+        else {
+            if ($unattached_child_zoom_value) {
+                $slot_scaffold->{'scale'} /= $unattached_child_zoom_value;
+            }
+            if ($slot_scaffold->{'scale'} == 1
+                and ( $slot_scaffold->{'x_offset'} + $scroll_value
+                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                    {'x_offset'} )
+                )
+            {
+                $self->attach_slot_to_parent(
+                    slot_key  => $slot_key,
+                    panel_key => $panel_key,
+                );
+                $self->relayout_sub_map_slot(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key   => $slot_key,
+                );
+            }
+            else {
+
+                # Reset correspondences
+                $self->reset_slot_corrs(
+                    window_key => $window_key,
+                    panel_key  => $panel_key,
+                    slot_key   => $slot_key,
+                );
+            }
+        }
+    }
+    elsif ( $slot_scaffold->{'is_top'} ) {
+        return;
+    }
+    else {
+
+        # Get Zoom level from parent
+        $unattached_child_zoom_value = 1 / $slot_scaffold->{'scale'};
+        $slot_scaffold->{'scale'} = 1;
+
+        # Get Offset from parent
+        $slot_scaffold->{'x_offset'}
+            = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }{'x_offset'};
+
+        $overview_slot_layout->{'scale_factor_from_main'}
+            /= $unattached_child_zoom_value
+            if ($overview_slot_layout);
+
+        $self->attach_slot_to_parent(
+            slot_key  => $slot_key,
+            panel_key => $panel_key,
+        );
+
+        $self->relayout_sub_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+        );
+    }
+
+    # handle overview highlighting
+    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
+        $self->destroy_items(
+            items =>
+                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                {'viewed_region'},
+            panel_key   => $panel_key,
+            is_overview => 1,
+        );
+        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+            {'viewed_region'} = [];
+        overview_selected_area(
+            slot_key         => $slot_key,
+            panel_key        => $panel_key,
+            app_display_data => $self,
+        );
+    }
+
+    foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
+        $self->reattach_slot(
+            window_key                  => $window_key,
+            panel_key                   => $panel_key,
+            slot_key                    => $child_slot_key,
+            unattached_child_zoom_value => $unattached_child_zoom_value,
+            cascading                   => 1,
+        );
+    }
+
+    unless ($cascading) {
+        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_panel(
+            panel_key        => $panel_key,
+            window_key       => $window_key,
+            app_display_data => $self,
+        );
+    }
     return;
 }
 
