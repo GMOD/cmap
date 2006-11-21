@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.19 2006-11-16 18:38:20 mwz444 Exp $
+# $Id: AppController.pm,v 1.20 2006-11-21 16:37:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -52,7 +52,7 @@ Initializes the object.
     $self->config( $self->app_data_module()->config() );
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
-    my $developement = 1;
+    my $developement = 0;
     if ( $developement == 1 ) {
         $self->load_new_window(
             window_key               => $window_key,
