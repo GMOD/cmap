@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.130 2006-06-05 21:21:39 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.131 2006-11-21 15:59:07 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.130 $)[-1];
+$VERSION = (qw$Revision: 1.131 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -113,6 +113,12 @@ sub handler {
             = %{ $cached_data->{'included_corr_only_features_hash'} || {} };
         %ignored_feature_types
             = %{ $cached_data->{'ignored_feature_types_hash'} || {} };
+
+        # Replace session_id
+        if ( $html =~ /session_id=(\S+?);/ ) {
+            my $old_session_id = $1;
+            $html =~ s/$old_session_id/SESSION_ID_PLACEHOLDER/g;
+        }
     }
     else {
         %included_corr_only_features =
