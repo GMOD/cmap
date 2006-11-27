@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.22 2006-11-21 16:36:06 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.23 2006-11-27 20:05:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1904,7 +1904,115 @@ Hide Corrs for moving
 }
 
 # ----------------------------------------------------
+sub get_move_map_data {
+
+=pod
+
+=head2 get_move_map_data
+
+Move a map from one place on a parent to another
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key         = $args{'map_key'};
+    my $ghost_bounds    = $args{'ghost_bounds'};
+    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
+    my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
+    my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
+
+    # Get Parent
+    my $new_parent_map_key;
+    my $parent_coords;
+    foreach my $potential_parent_map_key (
+        @{ $self->{'map_order'}{$parent_slot_key} || [] } )
+    {
+        my $coords
+            = $self->{'map_layout'}{$potential_parent_map_key}{'coords'};
+        if (    $coords->[0] <= $ghost_bounds->[0]
+            and $coords->[2] >= $ghost_bounds->[2] )
+        {
+            $new_parent_map_key = $potential_parent_map_key;
+            $parent_coords      = $coords;
+            last;
+        }
+    }
+
+    # Get location on parent
+    # Use start location as basis for locating
+    my $relative_pixel_start = $ghost_bounds->[0] - $parent_coords->[0];
+
+    my $relative_unit_start = $relative_pixel_start /
+        (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
+            || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
+    my $parent_map_data = $self->app_data_module()
+        ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+    my $new_feature_start
+        = $relative_unit_start + $parent_map_data->{'map_start'};
+    my $new_feature_stop
+        = $new_feature_start - $self->{'sub_maps'}{$map_key}{'feature_start'}
+        + $self->{'sub_maps'}{$map_key}{'feature_stop'};
+
+    my %return_hash = (
+        map_key            => $map_key,
+        new_parent_map_key => $new_parent_map_key,
+        new_feature_start  => $new_feature_start,
+        new_feature_stop   => $new_feature_stop,
+    );
+
+    return \%return_hash;
+}
+
+# ----------------------------------------------------
 sub move_map {
+
+=pod
+
+=head2 move_map
+
+Move a map from one place on a parent to another
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key            = $args{'map_key'};
+    my $new_parent_map_key = $args{'new_parent_map_key'};
+    my $new_feature_start  = $args{'new_feature_start'};
+    my $new_feature_stop   = $args{'new_feature_stop'};
+    my $slot_key           = $self->{'map_key_to_slot_key'}{$map_key};
+    my $window_key         = $self->{'scaffold'}{$slot_key}{'window_key'};
+
+    my @action_data = (
+        'move_map',
+        $map_key,
+        $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+        $self->{'sub_maps'}{$map_key}{'feature_start'},
+        $self->{'sub_maps'}{$map_key}{'feature_stop'},
+        $new_parent_map_key,
+        $new_feature_start,
+        $new_feature_stop,
+    );
+
+    $self->add_action(
+        window_key  => $window_key,
+        action_data => \@action_data,
+    );
+
+    $self->move_sub_map_on_parents_in_memory(
+        sub_map_key    => $map_key,
+        parent_map_key => $new_parent_map_key,
+        feature_start  => $new_feature_start,
+        feature_stop   => $new_feature_stop,
+    );
+
+    return;
+
+}
+
+# ----------------------------------------------------
+sub move_map_old {
 
 =pod
 

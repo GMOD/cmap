@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.21 2006-11-21 16:36:06 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.22 2006-11-27 20:05:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -152,11 +152,11 @@ This method will create the Application.
         panel_key  => $panel_key,
     );
     $self->panel_overview_pane( panel_key => $panel_key, );
-    $self->panel_slot_toggle_pane( panel_key => $panel_key, );
-    $self->panel_slot_controls_pane(
+    $self->bottom_pane(
         panel_key  => $panel_key,
         window_key => $window_key,
     );
+    $self->panel_slot_toggle_pane( panel_key => $panel_key, );
     $self->panel_canvas_pane( panel_key => $panel_key, );
     $self->overview_canvas( panel_key => $panel_key, );
     $self->canvas( panel_key => $panel_key, );
@@ -218,12 +218,26 @@ This method will create the slot controls for one slot
         slot_key         => $slot_key,
         app_display_data => $app_display_data,
     );
-    $self->_add_slot_toggle_buttons(
+
+    #    my $toggle_button = $self->_get_slot_toggle_buttons(
+    #        window_key       => $window_key,
+    #        panel_key        => $panel_key,
+    #        slot_key         => $slot_key,
+    #        app_display_data => $app_display_data,
+    #    );
+
+    my $slot_label = $self->_get_slot_label(
         window_key       => $window_key,
         panel_key        => $panel_key,
         slot_key         => $slot_key,
         app_display_data => $app_display_data,
     );
+
+    #    Tk::grid( $zoom_label1, -sticky => "nw", );
+    Tk::grid( $slot_label, -sticky => "ne", );
+
+    #    Tk::grid( $toggle_button, -sticky => "ne", );
+    return;
 
     return;
 }
@@ -430,10 +444,10 @@ Returns the panel_slot_toggle_pane object.
             -border     => 0,
             -height     => 500,
             -width      => 200,
-            -background => "white",
+            -background => "grey",
         );
         $self->{'panel_slot_toggle_pane'}{$panel_key}
-            ->pack( -side => 'left', -fill => 'both', );
+            ->pack( -side => 'left', -fill => 'none', );
     }
     return $self->{'panel_slot_toggle_pane'}{$panel_key};
 }
@@ -456,12 +470,81 @@ Returns the panel_canvas_pane object.
         $self->{'panel_canvas_pane'}{$panel_key} = $panel_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
-            -background => "white",
+            -background => "blue",
         );
         $self->{'panel_canvas_pane'}{$panel_key}
             ->pack( -side => 'top', -fill => 'x', );
     }
     return $self->{'panel_canvas_pane'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub bottom_pane {
+
+=pod
+
+=head2 bottom_pane
+
+Returns the bottom_pane object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key  = $args{'panel_key'}  or return undef;
+    my $window_key = $args{'window_key'} or return undef;
+    unless ( $self->{'bottom_pane'}{$panel_key} ) {
+        my $y_val      = $args{'y_val'};
+        my $height     = $args{'height'};
+        my $panel_pane = $self->{'panel_pane'}{$panel_key};
+        $self->{'bottom_pane'}{$panel_key} = $panel_pane->Frame(
+            -borderwidth => 0,
+            -relief      => 'groove',
+            -background  => "white",
+        );
+        $self->info_pane(
+            panel_key  => $panel_key,
+            window_key => $window_key,
+        );
+        $self->panel_slot_controls_pane(
+            panel_key  => $panel_key,
+            window_key => $window_key,
+        );
+        $self->{'bottom_pane'}{$panel_key}
+            ->pack( -side => 'bottom', -fill => 'both', );
+    }
+    return $self->{'bottom_pane'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub info_pane {
+
+=pod
+
+=head2 info_pane
+
+Returns the info_pane object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key  = $args{'panel_key'}  or return undef;
+    my $window_key = $args{'window_key'} or return undef;
+    unless ( $self->{'panel_info_pane'}{$panel_key} ) {
+        my $y_val       = $args{'y_val'};
+        my $height      = $args{'height'};
+        my $bottom_pane = $self->{'bottom_pane'}{$panel_key};
+        $self->{'panel_info_pane'}{$panel_key} = $bottom_pane->Frame(
+            -borderwidth => 0,
+            -relief      => 'groove',
+            -background  => "white",
+        );
+        $self->_add_info_widgets(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+        );
+        $self->{'panel_info_pane'}{$panel_key}->pack( -side => 'left', );
+    }
+    return $self->{'panel_info_pane'}{$panel_key};
 }
 
 # ----------------------------------------------------
@@ -479,12 +562,12 @@ Returns the panel_slot_controls_pane object.
     my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'panel_slot_controls_pane'}{$panel_key} ) {
-        my $y_val      = $args{'y_val'};
-        my $height     = $args{'height'};
-        my $panel_pane = $self->{'panel_pane'}{$panel_key};
+        my $y_val       = $args{'y_val'};
+        my $height      = $args{'height'};
+        my $bottom_pane = $self->{'bottom_pane'}{$panel_key};
         if (1) {
             $self->{'panel_slot_controls_pane'}{$panel_key}
-                = $panel_pane->Frame(
+                = $bottom_pane->Frame(
                 -borderwidth => 0,
                 -relief      => 'groove',
                 -background  => "white",
@@ -492,7 +575,7 @@ Returns the panel_slot_controls_pane object.
         }
         else {
             $self->{'panel_slot_controls_pane'}{$panel_key}
-                = $panel_pane->Scrolled(
+                = $bottom_pane->Scrolled(
                 "Pane",
 
                 #-scrollbars => "oe",
@@ -500,12 +583,12 @@ Returns the panel_slot_controls_pane object.
                 -background => "blue",
                 );
         }
-        $self->_add_slot_control_buttons(
+        $self->_add_slot_control_widgets(
             window_key => $window_key,
             panel_key  => $panel_key,
         );
         $self->{'panel_slot_controls_pane'}{$panel_key}
-            ->pack( -side => 'bottom', -fill => 'x', );
+            ->pack( -side => 'left', -fill => 'both', );
     }
     return $self->{'panel_slot_controls_pane'}{$panel_key};
 }
@@ -562,11 +645,11 @@ Returns the toggle_slot_pane object.
 }
 
 # ----------------------------------------------------
-sub _add_slot_toggle_buttons {
+sub _get_slot_toggle_buttons {
 
 =pod
 
-=head2 _add_slot_toggle_buttons
+=head2 _get_slot_toggle_buttons
 
 Adds control buttons to the toggle_slot_pane.
 
@@ -583,7 +666,7 @@ Adds control buttons to the toggle_slot_pane.
         -size   => 12,
     ];
 
-    my $toggle_button = $toggle_slot_pane->Radiobutton(
+    return $toggle_slot_pane->Radiobutton(
         -text       => "Select",
         -background => "white",
         -value      => $slot_key,
@@ -594,17 +677,80 @@ Adds control buttons to the toggle_slot_pane.
         -variable => \${ $self->{'selected_slot_key_scalar'} }
     );
 
-    #    Tk::grid( $zoom_label1, -sticky => "nw", );
-    Tk::grid( $toggle_button, -sticky => "ne", );
+}
+
+# ----------------------------------------------------
+sub _get_slot_label {
+
+=pod
+
+=head2 _get_slot_label
+
+Gets Map set label 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $slot_key   = $args{'slot_key'}   or return;
+    my $app_display_data = $args{'app_display_data'};
+    my $toggle_slot_pane = $self->{'toggle_slot_pane'}{$slot_key};
+    my $font             = [
+        -family => 'Times',
+        -size   => 12,
+    ];
+    my $controller = $self->app_controller();
+    my $map_set_id = $controller->app_display_data->{'scaffold'}{$slot_key}
+        {'map_set_id'};
+    my $map_set_data = $self->app_data_module()
+        ->get_map_set_data( map_set_id => $map_set_id, );
+
+    return $toggle_slot_pane->Label(
+        -text => $map_set_data->{'species_common_name'} . " "
+            . $map_set_data->{'map_set_short_name'},
+        -background => "white",
+    );
+
+}
+
+# ----------------------------------------------------
+sub _add_info_widgets {
+
+=pod
+
+=head2 _add_info_widgets
+
+Adds information widgets to the info pane 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $panel_key  = $args{'panel_key'}  or return;
+    my $panel_info_pane = $self->{'panel_info_pane'}{$panel_key};
+    my $font            = [ 'Times', 24, ];
+
+    $self->{'information_text'} = $panel_info_pane->Text(
+        -font       => $font,
+        -background => "white",
+        -width      => 40,
+        -height     => 5,
+    );
+    $self->{'information_text'}
+        ->insert( 'end', "Click on a map to display information." );
+    $self->{'information_text'}->configure( -state => 'disabled', );
+
+    Tk::grid( $self->{'information_text'}, -sticky => "nw", );
     return;
 }
 
 # ----------------------------------------------------
-sub _add_slot_control_buttons {
+sub _add_slot_control_widgets {
 
 =pod
 
-=head2 _add_slot_control_buttons
+=head2 _add_slot_control_widgets
 
 Adds control buttons to the panel_slot_controls_pane.
 
@@ -694,7 +840,7 @@ Adds control buttons to the panel_slot_controls_pane.
         },
         -font => $font,
     );
-    my $scroll_right_button = $panel_slot_controls_pane->Button(
+    my $scroll_type_1 = $panel_slot_controls_pane->Button(
         -text    => ">",
         -command => sub {
             $self->app_controller()->scroll_slot(
@@ -718,7 +864,7 @@ Adds control buttons to the panel_slot_controls_pane.
         },
         -font => $font,
     );
-    my $scroll_far_right_button = $panel_slot_controls_pane->Button(
+    my $scroll_far_type_1 = $panel_slot_controls_pane->Button(
         -text    => ">>",
         -command => sub {
             $self->app_controller()->scroll_slot(
@@ -731,21 +877,8 @@ Adds control buttons to the panel_slot_controls_pane.
         -font => $font,
     );
 
-    #    my $test_button = $panel_slot_controls_pane->Button(
-    #        -text    => "TEST",
-    #        -command => sub {
-    #            print STDERR ${$self->{'selected_slot_key_scalar'}} . "\n";
-    #        },
-    #        -font => $font,
-    #    );
-
-    #    Tk::grid( $zoom_label1, -sticky => "nw", );
-    #    Tk::grid(
-    #        $test_button, -sticky        => "nw",
-    #    );
     Tk::grid( $scroll_far_left_button, $scroll_left_button, $reattach_button,
-        '-', $scroll_right_button, $scroll_far_right_button, -sticky => "nw",
-    );
+        '-', $scroll_type_1, $scroll_far_type_1, -sticky => "nw", );
     Tk::grid( 'x', 'x', $zoom_button1, $toggle_corrs_button, -sticky => "nw",
     );
     Tk::grid( 'x', 'x', $zoom_button2, $expand_button, -sticky => "nw", );
@@ -1618,19 +1751,38 @@ Bind events to a canvas
         '<1>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->start_drag( $canvas, $e->x, $e->y, );
+            $self->start_drag_type_1( $canvas, $e->x, $e->y, );
+        }
+    );
+    $canvas->CanvasBind(
+        '<3>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->start_drag_type_2( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-ButtonRelease>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->stop_drag( $canvas, $e->x, $e->y, );
+            $self->stop_drag_type_1( $canvas, $e->x, $e->y, );
+        }
+    );
+    $canvas->CanvasBind(
+        '<B3-ButtonRelease>' => sub {
+            my ($canvas) = @_;
+            my $e = $canvas->XEvent;
+            $self->stop_drag_type_2( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-Motion>' => sub {
-            $self->drag( shift, $Tk::event->x, $Tk::event->y, );
+            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
+        }
+    );
+    $canvas->CanvasBind(
+        '<B3-Motion>' => sub {
+            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
     if ( $^O eq 'MSWin32' ) {
@@ -1675,19 +1827,19 @@ Bind events to the overview canvas
         '<1>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->start_drag( $canvas, $e->x, $e->y, );
+            $self->start_drag_type_2( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-ButtonRelease>' => sub {
             my ($canvas) = @_;
             my $e = $canvas->XEvent;
-            $self->stop_drag( $canvas, $e->x, $e->y, );
+            $self->stop_drag_type_2( $canvas, $e->x, $e->y, );
         }
     );
     $canvas->CanvasBind(
         '<B1-Motion>' => sub {
-            $self->drag( shift, $Tk::event->x, $Tk::event->y, );
+            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
 
@@ -1766,7 +1918,7 @@ sub popup_map_menu {
                 -text    => 'Move Map',
                 -command => sub {
                     $map_menu_window->destroy();
-                    $controller->app_display_data->move_map(
+                    $self->move_map_popup(
                         map_key      => $map_key,
                         ghost_bounds => $ghost_bounds,
                     );
@@ -1818,6 +1970,42 @@ sub popup_map_menu {
 
         },
     );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub fill_map_info_box {
+
+=pod
+
+=head2 fill_map_info_box
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawn_id = $args{'drawn_id'};
+    my $map_key = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id)
+        or return;
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+    my $slot_key  = $app_display_data->{'map_key_to_slot_key'}{$map_key};
+    my $panel_key = $app_display_data->{'scaffold'}{$slot_key}{'panel_key'};
+
+    my $text_box = $self->{'information_text'};
+    $text_box->configure( -state => 'normal', );
+
+    # Wipe old info
+    $text_box->delete( "1.0", 'end' );
+
+    my $new_text = $controller->get_map_info_text(
+        map_key   => $map_key,
+        panel_key => $panel_key,
+    );
+
+    $text_box->insert( 'end', $new_text );
+    $text_box->configure( -state => 'disabled', );
 
     return;
 }
@@ -1880,6 +2068,61 @@ sub commit_map_moves {
 }
 
 # ----------------------------------------------------
+sub move_map_popup {
+
+=pod
+
+=head2 move_map_popup
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key      = $args{'map_key'};
+    my $ghost_bounds = $args{'ghost_bounds'};
+    my $controller   = $self->app_controller();
+
+    my $move_map_data = $controller->app_display_data->get_move_map_data(
+        map_key      => $map_key,
+        ghost_bounds => $ghost_bounds,
+    );
+
+    my $new_parent_map_key = $move_map_data->{'new_parent_map_key'};
+    my $new_feature_start  = $move_map_data->{'new_feature_start'};
+    my $new_feature_stop   = $move_map_data->{'new_feature_stop'};
+    my $popup              = $self->main_window()->Dialog(
+        -title          => 'Move Map',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+    );
+    $popup->add(
+        'LabEntry',
+        -textvariable => \$new_feature_start,
+        -width        => 10,
+        -label        => 'Start',
+        -labelPack    => [ -side => 'left' ],
+    )->pack();
+    $popup->add(
+        'LabEntry',
+        -textvariable => \$new_feature_stop,
+        -width        => 10,
+        -label        => 'Stop',
+        -labelPack    => [ -side => 'left' ],
+    )->pack();
+    my $answer = $popup->Show();
+
+    if ( $answer eq 'OK' ) {
+        $controller->app_display_data->move_map(
+            map_key            => $map_key,
+            new_parent_map_key => $new_parent_map_key,
+            new_feature_start  => $new_feature_start,
+            new_feature_stop   => $new_feature_stop,
+        );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub password_box {
 
 =pod
@@ -1894,19 +2137,19 @@ sub password_box {
 
     my $user;
     my $password;
-    my $password_box = $self->main_window()->Dialog(
+    my $popup = $self->main_window()->Dialog(
         -title          => 'Login',
         -default_button => 'OK',
         -buttons        => [ 'OK', 'Cancel', ],
     );
-    $password_box->add(
+    $popup->add(
         'LabEntry',
         -textvariable => \$user,
         -width        => 20,
         -label        => 'User Name',
         -labelPack    => [ -side => 'left' ],
     )->pack();
-    $password_box->add(
+    $popup->add(
         'LabEntry',
         -textvariable => \$password,
         -width        => 20,
@@ -1914,7 +2157,7 @@ sub password_box {
         -labelPack    => [ -side => 'left' ],
         -show         => '*',
     )->pack();
-    my $answer = $password_box->Show();
+    my $answer = $popup->Show();
 
     if ( $answer eq 'OK' ) {
         return ( $user, $password, );
@@ -2318,14 +2561,103 @@ Remove the interface buttons for a slot.
 
 =head1 Drag and Drop Methods
 
+head2 Type 1
+
+=over 4 
+
+=item Highlight map
+
+=item Eventually draw select box
+
+=back
+
+head2 Type 2
+
+=over 4 
+
+=item Drag around window
+
+=item Move maps
+
+=item Bring up map menu
+
+=back
+
 =cut
 
 # ----------------------------------------------------
-sub start_drag {
+sub start_drag_type_1 {
 
 =pod
 
-=head2 start_drag
+=head2 start_drag_type_1
+
+Handle starting drag
+
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+
+    $x = $canvas->canvasx($x);
+    $y = $canvas->canvasy($y);
+
+    $self->{'drag_ori_x'}  = $x;
+    $self->{'drag_ori_y'}  = $y;
+    $self->{'drag_last_x'} = $x;
+    $self->{'drag_last_y'} = $y;
+    $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
+    if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
+        $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
+    }
+    my @tags;
+    if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
+        return unless ( $self->{'drag_ori_id'} );
+
+        # Remove previous highlighting
+        if ( $self->{'ghost_map_id'} ) {
+            $canvas->delete( $self->{'ghost_map_id'} );
+        }
+
+        my @coords = $canvas->coords( $self->{'drag_ori_id'} );
+        $self->{'ghost_map_id'}
+            = $canvas->createRectangle( (@coords), ( '-outline' => 'red', ),
+            );
+
+        $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
+    }
+    elsif ( @tags = grep /^background_/,
+        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    {
+        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_panel_key'}  = $2;
+        $self->{'drag_slot_key'}   = $3;
+    }
+    elsif ( @tags = grep /^viewed_region_/,
+        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    {
+        $tags[0] =~ /^viewed_region_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_panel_key'}  = $2;
+        $self->{'drag_slot_key'}   = $3;
+    }
+
+    if ( $self->{'drag_slot_key'} ) {
+        $self->app_controller()
+            ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
+        ${ $self->{'selected_slot_key_scalar'} } = $self->{'drag_slot_key'};
+    }
+
+}    # end start_drag
+
+# ----------------------------------------------------
+sub start_drag_type_2 {
+
+=pod
+
+=head2 start_drag_type_2
 
 Handle starting drag
 
@@ -2349,6 +2681,12 @@ Handle starting drag
     if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
         $self->{'drag_obj'} = 'map';
+
+        # Remove previous highlighting
+        if ( $self->{'ghost_map_id'} ) {
+            $canvas->delete( $self->{'ghost_map_id'} );
+        }
+
         my @coords = $canvas->coords( $self->{'drag_ori_id'} );
         $self->{'drag_mouse_to_edge_x'} = $x - $coords[0];
         $self->{'ghost_map_id'}
@@ -2393,11 +2731,40 @@ Handle starting drag
 }    # end start_drag
 
 # ----------------------------------------------------
-sub drag {
+sub drag_type_1 {
 
 =pod
 
-=head2 drag
+=head2 drag_type_1
+
+Handle the drag event
+
+Stubbed out, not currently used.
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+    return unless ( $self->{'drag_ori_id'} );
+    $x = $canvas->canvasx($x);
+    $y = $canvas->canvasy($y);
+    my $dx = $x - $self->{'drag_last_x'};
+    my $dy = $y - $self->{'drag_last_y'};
+
+    if ( $self->{'drag_obj'} ) {
+    }
+
+    $self->{drag_last_x} = $x;
+    $self->{drag_last_y} = $y;
+
+}
+
+# ----------------------------------------------------
+sub drag_type_2 {
+
+=pod
+
+=head2 drag_type_1
 
 Handle the drag event
 
@@ -2445,11 +2812,47 @@ Handle the drag event
 }
 
 # ----------------------------------------------------
-sub stop_drag {
+sub stop_drag_type_1 {
 
 =pod
 
-=head2 stop_drag
+=head2 stop_drag_type_1
+
+Handle the stopping drag event
+
+Stubbed out, Not currently used.
+
+=cut
+
+    my $self = shift;
+    my ( $canvas, $x, $y, ) = @_;
+
+    return unless ( $self->{'drag_ori_id'} );
+
+    # Move original object
+    my $canvas_x = $canvas->canvasx($x);
+    if ( $self->{'drag_obj'} ) {
+    }
+
+    foreach (
+        qw{
+        drag_ori_id drag_ori_x      drag_ori_y
+        drag_obj    drag_window_key drag_panel_key
+        drag_slot_key
+        }
+        )
+    {
+        $self->{$_} = '';
+    }
+
+}    # end start_drag
+
+# ----------------------------------------------------
+sub stop_drag_type_2 {
+
+=pod
+
+=head2 stop_drag_type_2
 
 Handle the stopping drag event
 

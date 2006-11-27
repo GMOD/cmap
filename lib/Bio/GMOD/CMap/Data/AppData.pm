@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.12 2006-11-16 18:38:20 mwz444 Exp $
+# $Id: AppData.pm,v 1.13 2006-11-27 20:05:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -51,6 +51,7 @@ sub init {
 }
 
 # ----------------------------------------------------
+sub get_remote_config {
 
 =pod
 
@@ -60,8 +61,6 @@ Given a map accessions, return the information required to draw the
 map.
 
 =cut
-
-sub get_remote_config {
 
     my ( $self, %args ) = @_;
 
@@ -80,6 +79,7 @@ sub get_remote_config {
 }
 
 # ----------------------------------------------------
+sub map_data {
 
 =pod
 
@@ -89,8 +89,6 @@ Given a map accessions, return the information required to draw the
 map.
 
 =cut
-
-sub map_data {
 
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return undef;
@@ -111,6 +109,7 @@ sub map_data {
 }
 
 # ----------------------------------------------------
+sub map_data_array {
 
 =pod
 
@@ -120,8 +119,6 @@ Given a list of map accessions, return the information required to draw the
 map as an array.
 
 =cut
-
-sub map_data_array {
 
     my ( $self, %args ) = @_;
     my $map_ids = $args{'map_ids'} || [];
@@ -157,6 +154,7 @@ sub map_data_array {
 }
 
 # ----------------------------------------------------
+sub map_data_hash {
 
 =pod
 
@@ -166,8 +164,6 @@ Given a list of map accessions, return the information required to draw the
 map as a hash.
 
 =cut
-
-sub map_data_hash {
 
     my ( $self, %args ) = @_;
     my $map_ids = $args{'map_ids'} || [];
@@ -199,6 +195,7 @@ sub map_data_hash {
 }
 
 # ----------------------------------------------------
+sub feature_data {
 
 =pod
 
@@ -208,8 +205,6 @@ Given a map accessions, return the information required to draw the
 features.  These do NOT include the sub-maps.
 
 =cut
-
-sub feature_data {
 
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return undef;
@@ -234,6 +229,7 @@ sub feature_data {
 }
 
 # ----------------------------------------------------
+sub sub_maps {
 
 =pod
 
@@ -243,8 +239,6 @@ Given a map id, return the information required to draw the
 sub-maps.  These do NOT include the regular features;
 
 =cut
-
-sub sub_maps {
 
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return undef;
@@ -269,6 +263,7 @@ sub sub_maps {
 }
 
 # ----------------------------------------------------
+sub sorted_feature_data {
 
 =pod
 
@@ -278,8 +273,6 @@ Given a map accessions, return the information required to draw the
 features.  These do NOT include the sub-maps.
 
 =cut
-
-sub sorted_feature_data {
 
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return undef;
@@ -327,6 +320,7 @@ sub sorted_feature_data {
 }
 
 # ----------------------------------------------------
+sub slot_correspondences {
 
 =pod
 
@@ -345,8 +339,6 @@ Takes two slot_infos which are defined as:
 Requires slot_key1 to be less than slot_key2.
 
 =cut
-
-sub slot_correspondences {
 
     my ( $self, %args ) = @_;
     my $slot_key1  = $args{'slot_key1'}  or return undef;
@@ -378,6 +370,34 @@ sub slot_correspondences {
 }
 
 # ----------------------------------------------------
+sub get_map_set_data {
+
+=pod
+
+=head2 get_map_set_data
+
+Returns information about map set
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_set_id = $args{'map_set_id'};
+
+    unless ( $self->{'map_set_data'}{$map_set_id} ) {
+
+        my $map_set_data_array = $self->sql_get_map_sets(
+            cmap_object => $self,
+            map_set_id  => $map_set_id,
+            )
+            || [];
+        $self->{'map_set_data'}{$map_set_id} = $map_set_data_array->[0];
+
+    }
+    return $self->{'map_set_data'}{$map_set_id};
+}
+
+# ----------------------------------------------------
+sub get_reference_maps_by_species {
 
 =pod
 
@@ -386,8 +406,6 @@ sub slot_correspondences {
 Returns information about all possible reference maps.
 
 =cut
-
-sub get_reference_maps_by_species {
 
     my ( $self, %args ) = @_;
 
@@ -410,6 +428,8 @@ sub get_reference_maps_by_species {
                 is_enabled        => 1,
             );
             foreach my $map_set ( @{ $species->{'map_sets'} || [] } ) {
+                $self->{'map_set_data'}{ $map_set->{'map_set_id'} }
+                    = $map_set;
                 $map_set->{'maps'} = $self->sql_get_maps_from_map_set(
                     cmap_object => $self,
                     map_set_id  => $map_set->{'map_set_id'},
@@ -422,6 +442,7 @@ sub get_reference_maps_by_species {
 }
 
 # ----------------------------------------------------
+sub user_agent {
 
 =pod
 
@@ -430,8 +451,6 @@ sub get_reference_maps_by_species {
 get or create a LWP user agent
 
 =cut
-
-sub user_agent {
 
     my ( $self, %args ) = @_;
     unless ( $self->{'user_agent'} ) {
@@ -447,14 +466,13 @@ sub user_agent {
 }
 
 # ----------------------------------------------------
+sub authenticate_user_agent {
 
 =pod
 
 =head2 authenticate_user_agent
 
 =cut
-
-sub authenticate_user_agent {
 
     my ( $self, %args ) = @_;
     if ( $self->{'user_agent'} ) {
@@ -491,14 +509,13 @@ sub authenticate_user_agent {
 }
 
 # ----------------------------------------------------
+sub give_user_agent_credentials {
 
 =pod
 
 =head2 give_user_agent_credentials
 
 =cut
-
-sub give_user_agent_credentials {
 
     my ( $self, %args ) = @_;
     if ( $self->{'user_agent'} ) {
@@ -529,6 +546,7 @@ sub give_user_agent_credentials {
 }
 
 # ----------------------------------------------------
+sub request_remote_data {
 
 =pod
 
@@ -537,8 +555,6 @@ sub give_user_agent_credentials {
 Does the actual call for the data
 
 =cut
-
-sub request_remote_data {
 
     my ( $self, %args ) = @_;
     my $url       = $args{'url'};
@@ -573,6 +589,7 @@ sub request_remote_data {
 }
 
 # ----------------------------------------------------
+sub stringify_slot_info {
 
 =pod
 
@@ -590,8 +607,6 @@ Turn a slot_info object into a url string
 
 =cut
 
-sub stringify_slot_info {
-
     my ( $self, %args ) = @_;
     my $slot_info  = $args{'slot_info'};
     my $param_name = $args{'param_name'};
@@ -607,6 +622,7 @@ sub stringify_slot_info {
 }
 
 # ----------------------------------------------------
+sub sql_get_maps {
 
 =pod
 
@@ -615,8 +631,6 @@ sub stringify_slot_info {
 Calls get_maps either locally or remotely
 
 =cut
-
-sub sql_get_maps {
 
     my ( $self, %args ) = @_;
     my $map_id  = $args{'map_id'};
@@ -646,6 +660,7 @@ sub sql_get_maps {
 }
 
 # ----------------------------------------------------
+sub sql_get_features_sub_maps_version {
 
 =pod
 
@@ -654,8 +669,6 @@ sub sql_get_maps {
 Calls get_features_sub_maps_version either locally or remotely
 
 =cut
-
-sub sql_get_features_sub_maps_version {
 
     my ( $self, %args ) = @_;
     my $map_id       = $args{'map_id'};
@@ -690,6 +703,7 @@ sub sql_get_features_sub_maps_version {
 }
 
 # ----------------------------------------------------
+sub sql_get_feature_correspondence_for_counting {
 
 =pod
 
@@ -698,8 +712,6 @@ sub sql_get_features_sub_maps_version {
 Calls get_feature_correspondence_for_counting either locally or remotely
 
 =cut
-
-sub sql_get_feature_correspondence_for_counting {
 
     my ( $self, %args ) = @_;
     my $slot_info  = $args{'slot_info'};
@@ -730,6 +742,7 @@ sub sql_get_feature_correspondence_for_counting {
 }
 
 # ----------------------------------------------------
+sub sql_get_species {
 
 =pod
 
@@ -738,8 +751,6 @@ sub sql_get_feature_correspondence_for_counting {
 Calls get_species either locally or remotely
 
 =cut
-
-sub sql_get_species {
 
     my ( $self, %args ) = @_;
     my $is_relational_map = $args{'is_relational_map'};
@@ -769,6 +780,7 @@ sub sql_get_species {
 }
 
 # ----------------------------------------------------
+sub sql_get_map_sets {
 
 =pod
 
@@ -778,10 +790,9 @@ Calls get_map_sets either locally or remotely
 
 =cut
 
-sub sql_get_map_sets {
-
     my ( $self, %args ) = @_;
     my $species_id        = $args{'species_id'};
+    my $map_set_id        = $args{'map_set_id'};
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
 
@@ -790,6 +801,9 @@ sub sql_get_map_sets {
 
         if ($species_id) {
             $url .= ";species_id=$species_id";
+        }
+        if ($map_set_id) {
+            $url .= ";map_set_id=$map_set_id";
         }
         if ( defined $is_relational_map ) {
             $url .= ";is_relational_map=$is_relational_map";
@@ -804,6 +818,7 @@ sub sql_get_map_sets {
         return $self->sql()->get_map_sets(
             cmap_object       => $self,
             species_id        => $species_id,
+            map_set_id        => $map_set_id,
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
             )
@@ -813,6 +828,7 @@ sub sql_get_map_sets {
 }
 
 # ----------------------------------------------------
+sub sql_get_maps_from_map_set {
 
 =pod
 
@@ -821,8 +837,6 @@ sub sql_get_map_sets {
 Calls get_maps_from_map_set either locally or remotely
 
 =cut
-
-sub sql_get_maps_from_map_set {
 
     my ( $self, %args ) = @_;
     my $map_set_id = $args{'map_set_id'};
@@ -847,6 +861,7 @@ sub sql_get_maps_from_map_set {
 }
 
 # ----------------------------------------------------
+sub sql_update_features {
 
 =pod
 
@@ -872,8 +887,6 @@ Data Structures:
   },];
 
 =cut
-
-sub sql_update_features {
 
     my ( $self, %args ) = @_;
     my $features = $args{'features'} or return;
@@ -956,6 +969,7 @@ sub sql_update_features {
 }
 
 # ----------------------------------------------------
+sub commit_sub_map_moves {
 
 =pod
 
@@ -973,8 +987,6 @@ Data Structure
   },];
 
 =cut
-
-sub commit_sub_map_moves {
 
     my ( $self, %args ) = @_;
     my $features = $args{'features'} or return;

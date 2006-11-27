@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.20 2006-11-21 16:37:37 mwz444 Exp $
+# $Id: AppController.pm,v 1.21 2006-11-27 20:05:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -446,6 +446,43 @@ Handler for toggling correspondences for a slot.
     );
 
     return;
+}
+
+# ----------------------------------------------------
+sub get_map_info_text {
+
+=pod
+
+=head2 get_map_info_text
+
+Create the text to go into the info box when a map is clicked.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key        = $args{'panel_key'};
+    my $map_key          = $args{'map_key'};
+    my $app_display_data = $self->app_display_data();
+    my $map_id           = $app_display_data->{'map_key_to_id'}{$map_key};
+
+    my $map_data = $self->app_data_module()->map_data( map_id => $map_id, );
+
+    my $map_info_str = "Map Name: "
+        . $map_data->{'map_name'} . "\n"
+        . "Map Start: "
+        . $map_data->{'map_start'} . "\n"
+        . "Map Stop: "
+        . $map_data->{'map_stop'} . "\n";
+
+    my $sub_map_data = $app_display_data->{'sub_maps'}{$map_key};
+    if ($sub_map_data) {
+        $map_info_str .= "Start on Parent: "
+            . $sub_map_data->{'feature_start'} . "\n"
+            . "Stop on Parent: "
+            . $sub_map_data->{'feature_stop'} . "\n";
+    }
+
+    return $map_info_str;
 }
 
 # ----------------------------------------------------
