@@ -23,6 +23,9 @@ Options:
     -f|--feature_type_acc|--stack_feature_type_acc 
         The feature type for the features that denote the original relational
         maps. (Required)
+    -c|--correspondence_cutoff 
+        The minimum number of correspondences a map needs to be placed 
+        (default 0).
 
 Creates new data by stacking relational maps into large contigs based off of a
 reference map set.  It uses data already in the CMap database.
@@ -82,7 +85,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 my ( $help, $datasource, $stack_map_set_acc, $ref_map_set_acc,
-    $new_map_set_acc, $stack_feature_type_acc, );
+    $new_map_set_acc, $stack_feature_type_acc, $corr_cutoff, );
 GetOptions(
     'help|h|?'                                    => \$help,
     'd:s'                                         => \$datasource,
@@ -90,10 +93,13 @@ GetOptions(
     'reference_map_set|ref_map_set_acc|r:s'       => \$ref_map_set_acc,
     'new_map_set|new_map_set_acc|n:s'             => \$new_map_set_acc,
     'feature_type_acc|stack_feature_type_acc|f:s' => \$stack_feature_type_acc,
+    'correspondence_cutoff|c:s'                   => \$corr_cutoff,
     )
     or pod2usage;
 
 pod2usage(0) if $help;
+
+$corr_cutoff ||= 0;
 
 my $cmap_admin = Bio::GMOD::CMap::Admin->new( data_source => $datasource, );
 my $sql_object = $cmap_admin->sql();
@@ -202,6 +208,7 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
             $best_corr_num   = scalar @{ $corr_locs_to_map{$ref_map_id} };
         }
     }
+    next unless ($best_corr_num >= $corr_cutoff);
     my @sorted_by_ref_locs = sort { $a->[1] <=> $b->[1] }
         @{ $corr_locs_to_map{$best_ref_map_id} };
     my $locs_num = ( scalar @sorted_by_ref_locs );
