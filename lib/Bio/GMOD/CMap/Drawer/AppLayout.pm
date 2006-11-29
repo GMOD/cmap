@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.19 2006-11-21 16:36:06 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.20 2006-11-29 05:18:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -617,6 +617,8 @@ Lays out sub maps in a slot.
     my $app_display_data = $args{'app_display_data'};
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
 
+    my $parent_slot_key
+        = $app_display_data->{'scaffold'}{$slot_key}{'parent'};
     my $scale = $app_display_data->{'scaffold'}{$slot_key}{'scale'} || 1;
     my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'}
         || 0;
@@ -678,7 +680,7 @@ Lays out sub maps in a slot.
             $parent_stop  = $parent_data->{'map_stop'};
             $parent_pixels_per_unit
                 = $app_display_data->{'map_pixels_per_unit'}{$parent_map_key}
-                || $app_display_data->{'scaffold'}{$parent_map_key}
+                || $app_display_data->{'scaffold'}{$parent_slot_key}
                 {'pixels_per_unit'};
             @row_distribution_array = ();
         }
