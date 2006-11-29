@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.199 2006-10-18 19:16:46 mwz444 Exp $
+# $Id: Map.pm,v 1.200 2006-11-29 20:57:37 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.199 $)[-1];
+$VERSION = (qw$Revision: 1.200 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3073,7 +3073,7 @@ sub add_tick_marks {
                     $clip_arrow_x2, $clip_arrow_y3_down
                 ],
                 url  => $crop_down_url,
-                alt  => 'Crop from here down',
+                alt  => 'Show only from here down',
                 code => $down_code,
                 }
                 unless ($omit_all_area_boxes);
@@ -3084,7 +3084,7 @@ sub add_tick_marks {
                     $clip_arrow_x2, $clip_arrow_y1_up
                 ],
                 url  => $crop_up_url,
-                alt  => 'Crop from here up',
+                alt  => 'Show only from here up',
                 code => $up_code,
                 }
                 unless ($omit_all_area_boxes);
