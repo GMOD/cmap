@@ -26,6 +26,9 @@ Options:
     -c|--correspondence_cutoff 
         The minimum number of correspondences a map needs to be placed 
         (default 0).
+    -a|--alignment_file
+        If the order of maps is already known, supply a file and it will be 
+        used.  Any maps not in the file will be removed. 
 
 Creates new data by stacking relational maps into large contigs based off of a
 reference map set.  It uses data already in the CMap database.
@@ -69,6 +72,18 @@ Create a new feature_type in the config file.  Supply this accession as
 "feature_type_acc".  This will be the feature type that denotes the boundaries
 of the original maps in the stacked maps.
 
+=item * Alignment File (optional)
+
+If the location and order of stacking maps on a reference map is already known,
+a file can be supplied with this information.
+
+This file is tab-delimited and contains 2 columns, reference map accession and
+stack map accession.  The order that these are listed is the order that the
+maps will appear.  The orientation of the maps will still be determined by the
+correspondences.
+
+If this file is imported, any stack maps that aren't in it, will be ignored.
+
 =back
 
 =head1 AFTER RUNNING
@@ -85,7 +100,8 @@ use Getopt::Long;
 use Pod::Usage;
 
 my ( $help, $datasource, $stack_map_set_acc, $ref_map_set_acc,
-    $new_map_set_acc, $stack_feature_type_acc, $corr_cutoff, );
+    $new_map_set_acc, $stack_feature_type_acc, $corr_cutoff, 
+    $alignment_file, );
 GetOptions(
     'help|h|?'                                    => \$help,
     'd:s'                                         => \$datasource,
@@ -94,6 +110,7 @@ GetOptions(
     'new_map_set|new_map_set_acc|n:s'             => \$new_map_set_acc,
     'feature_type_acc|stack_feature_type_acc|f:s' => \$stack_feature_type_acc,
     'correspondence_cutoff|c:s'                   => \$corr_cutoff,
+    'alignment_file|a:s'                          => \$alignment_file,
     )
     or pod2usage;
 
@@ -148,8 +165,8 @@ my ( $ref_map_set, ) = @{
 my $ref_maps = $sql_object->get_maps_simple(
     cmap_object => $cmap_admin,
     map_set_id  => $ref_map_set_id,
-    )
-    or die "No maps in $stack_map_set_acc.\n";
+    );
+die "No maps in $ref_map_set_acc.\n" unless @{$ref_maps||[]};
 my %ref_map_lookup = map { $_->{'map_id'} => $_ } @$ref_maps;
 
 my $new_map_set_id = $sql_object->acc_id_to_internal_id(
@@ -157,6 +174,40 @@ my $new_map_set_id = $sql_object->acc_id_to_internal_id(
     acc_id      => $new_map_set_acc,
     object_type => 'map_set'
 );
+
+# Handle an alignment file
+my %best_ref_map_id;
+my %stacked_map_order_on_ref_map;
+my %ref_map_id_lookup;
+if ($alignment_file){
+    my $fh;
+    my $line;
+    my @la;
+    open $fh, $alignment_file or die "couldn't open alignment file: $alignment_file\n";
+    while (<$fh>){
+        my $line = $_;
+        chomp($line);
+        @la = split "\t",$line;
+        next unless ($la[0] and $la[1]);
+        my $ref_map_id;
+        unless ($ref_map_id = $ref_map_id_lookup{$la[0]}){
+            $ref_map_id = $sql_object->acc_id_to_internal_id(
+                cmap_object => $cmap_admin,
+                acc_id      => $la[0],
+                object_type => 'map'
+            );
+            $ref_map_id_lookup{$la[0]}=$ref_map_id;
+        }
+        my $stack_map_id = $sql_object->acc_id_to_internal_id(
+            cmap_object => $cmap_admin,
+            acc_id      => $la[1],
+            object_type => 'map'
+        );
+        $best_ref_map_id{$stack_map_id} = $ref_map_id;
+        push @{$stacked_map_order_on_ref_map{$ref_map_id}}, $stack_map_id;
+    }
+    close $fh;
+}
 
 my %stack_maps_on_ref_map;
 my %stack_median_loc;
@@ -171,20 +222,25 @@ my $report_count = 100;
 
 my %corrs_to_refs_for_map;
 
+STACK_MAP: 
 foreach my $stack_map ( @{ $stack_maps || [] } ) {
     my $stack_map_id = $stack_map->{'map_id'};
     $stack_start{$stack_map_id}    = $stack_map->{'map_start'};
     $stack_stop{$stack_map_id}     = $stack_map->{'map_stop'};
     $stack_map_name{$stack_map_id} = $stack_map->{'map_name'};
     $stack_map_acc{$stack_map_id}  = $stack_map->{'map_acc'};
+    if ($alignment_file and not $best_ref_map_id{$stack_map_id}){
+        next STACK_MAP;
+    }
     my $corrs = $sql_object->get_feature_correspondence_for_counting(
         cmap_object => $cmap_admin,
         slot_info   => { $stack_map_id => [], },
         slot_info2  => { map { $_->{'map_id'} => [], } @$ref_maps },
     );
-    next unless ( @{ $corrs || [] } );
 
     # Skips maps w/ no corrs
+    next STACK_MAP unless ( @{ $corrs || [] } );
+
     my %corr_locs_to_map;
     foreach my $corr ( @{$corrs} ) {
         my $corr_stack_loc
@@ -197,20 +253,30 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
 
     # The best reference map is determined by total number of corrs.
     my $best_ref_map_id;
-    my $best_corr_num = 0;
 
-    # the keys are sorted so that results will be reproducible.
-    foreach my $ref_map_id ( sort { $a <=> $b } keys %corr_locs_to_map ) {
-        $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
-            = scalar @{ $corr_locs_to_map{$ref_map_id} };
-        if ( scalar @{ $corr_locs_to_map{$ref_map_id} } > $best_corr_num ) {
-            $best_ref_map_id = $ref_map_id;
-            $best_corr_num   = scalar @{ $corr_locs_to_map{$ref_map_id} };
+    if ($alignment_file) {
+        next STACK_MAP unless ( $best_ref_map_id = $best_ref_map_id{$stack_map_id} );
+        foreach my $ref_map_id ( keys %corr_locs_to_map ) {
+            $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
+                = scalar @{ $corr_locs_to_map{$ref_map_id} };
         }
     }
-    next unless ($best_corr_num >= $corr_cutoff);
+    else{
+        my $best_corr_num = 0;
+
+        # the keys are sorted so that results will be reproducible.
+        foreach my $ref_map_id ( sort { $a <=> $b } keys %corr_locs_to_map ) {
+            $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
+                = scalar @{ $corr_locs_to_map{$ref_map_id} };
+            if ( scalar @{ $corr_locs_to_map{$ref_map_id} } > $best_corr_num ) {
+                $best_ref_map_id = $ref_map_id;
+                $best_corr_num   = scalar @{ $corr_locs_to_map{$ref_map_id} };
+            }
+        }
+        next STACK_MAP unless ($best_corr_num >= $corr_cutoff);
+    }
     my @sorted_by_ref_locs = sort { $a->[1] <=> $b->[1] }
-        @{ $corr_locs_to_map{$best_ref_map_id} };
+        @{ $corr_locs_to_map{$best_ref_map_id} ||[]};
     my $locs_num = ( scalar @sorted_by_ref_locs );
     my $ref_median_loc;
     if ( $locs_num % 2 ) {
@@ -255,12 +321,19 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
     print "Reference Map: "
         . $ref_map_lookup{$ref_map_id}->{'map_name'}
         . " ($ref_map_id)\n";
-    my @stack_map_ids = @{ $stack_maps_on_ref_map{$ref_map_id} };
-    @stack_map_ids = sort {
-               ( $stack_median_loc{$a} <=> $stack_median_loc{$b} )
-            || ( $stack_mean_loc{$a} <=> $stack_mean_loc{$b} )
-            || ( $a <=> $b )
-    } @stack_map_ids;
+    my @stack_map_ids;
+    if ($alignment_file) {
+        @stack_map_ids = @{$stacked_map_order_on_ref_map{$ref_map_id}||[]};
+    }
+    else {
+        @stack_map_ids = @{ $stack_maps_on_ref_map{$ref_map_id} };
+        @stack_map_ids = sort {
+                   ( $stack_median_loc{$a} <=> $stack_median_loc{$b} )
+                || ( $stack_mean_loc{$a} <=> $stack_mean_loc{$b} )
+                || ( $a <=> $b )
+        } @stack_map_ids;
+    }
+    next unless (@stack_map_ids);
 
     # Create map but fill in start and stop later.
     my $new_map_id = $sql_object->insert_map(
