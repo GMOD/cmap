@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.8 2006-06-05 21:21:40 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.9 2006-12-05 22:48:46 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -240,6 +240,7 @@ sub saved_link_update {
     my ( $self, %args ) = @_;
     my $apr              = $self->apr;
     my $url_to_return_to = $apr->param('url_to_return_to');
+    my $save_and_return  = $apr->param('save_and_return') || 0;
 
     my $saved_link_id = $apr->param('saved_link_id')
         or die 'No feature saved_link id';
@@ -253,11 +254,13 @@ sub saved_link_update {
         hidden        => $apr->param('hidden') || 0,
     );
 
-    return $self->saved_link_edit();
-
-#    return $apr->redirect( SAVED_LINK_URI
-#            . "?action=saved_link_edit;saved_link_id=$saved_link_id;url_to_return_to=$url_to_return_to"
-#    );
+    if ($save_and_return) {
+        print $apr->redirect( $url_to_return_to, );
+        return;
+    }
+    else {
+        return $self->saved_link_edit();
+    }
 }
 
 1;

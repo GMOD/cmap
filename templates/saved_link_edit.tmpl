@@ -87,17 +87,16 @@
 
     <tr>
         <td align="center" colspan="2">
-            <input type=hidden name="url_to_return_to" value="[%- url_to_return_to -%]">
-            <input type="hidden" name="action"     value="saved_link_update">
+            <input type=hidden name="url_to_return_to"  value="[%- url_to_return_to -%]">
+            <input type="hidden" name="action"          value="saved_link_update">
+            <input type="hidden" name="save_and_return" value="">
             <input type="reset"  value="Reset">
             <input type="submit" value="Save Changes">
+            <input type="submit" value="Save and Return" onClick="save_and_return.value=1">
+            <input type=button value="Return Without Saving" onClick="location.href='[% url_to_return_to %]'"><br>
         </td>
     </tr>
 </table>
 </form>
-
-<center>
-    <a href="[%- url_to_return_to -%]">Return</a>
-</center>
 
 [%- INCLUDE admin_footer.tmpl -%]
