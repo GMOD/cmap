@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.278 2006-10-18 19:16:44 mwz444 Exp $
+# $Id: Data.pm,v 1.279 2006-12-05 21:08:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.278 $)[-1];
+$VERSION = (qw$Revision: 1.279 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -261,6 +261,7 @@ sub cmap_data {
     my ( $self, %args ) = @_;
     my $slots                      = $args{'slots'};
     my $slot_min_corrs             = $args{'slot_min_corrs'} || {};
+    my $stack_slot                 = $args{'stack_slot'} || {};
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
@@ -300,7 +301,7 @@ sub cmap_data {
         $slot_min_corrs,
         )
         or return;
-    $self->update_slots( $slots, $slot_min_corrs, );
+    $self->update_slots( $slots, $slot_min_corrs, $stack_slot );
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -1752,7 +1753,8 @@ sub fill_out_slots {
         }
         $filled_slot->{'description'} = join( ";",
             map { $desc_by_species{$_} } keys(%desc_by_species) );
-        $filled_slot->{'min_corrs'} = $slots->{$slot_no}->{'min_corrs'};
+        $filled_slot->{'min_corrs'}  = $slots->{$slot_no}->{'min_corrs'};
+        $filled_slot->{'stack_slot'} = $slots->{$slot_no}->{'stack_slot'};
 
         if ( $slot_no == 0 ) {
             $filled_slot->{'is_reference_slot'} = 1;
@@ -4033,6 +4035,7 @@ Data Structures:
 
   slots = {
     slot_no => {
+        stack_slot  => $stack_slot,
         map_set_acc => $map_set_acc,
         map_sets    => { $map_set_acc => () },
         maps        => { $map_acc => {
@@ -4049,6 +4052,7 @@ Data Structures:
     my $self           = shift;
     my $slots          = shift;
     my $slot_min_corrs = shift;
+    my $stack_slot     = shift;
     my $slot_info      = $self->slot_info;
 
     my %used_slot_nos;
@@ -4067,12 +4071,14 @@ Data Structures:
         }
     }
 
-    # Remove any spare slots and update the min_corrs value
+    # Remove any spare slots and update the stack and min_corrs value
     foreach my $slot_no ( keys(%$slots) ) {
         unless ( $used_slot_nos{$slot_no} ) {
             delete( $slots->{$slot_no} );
             next;
         }
+        $slots->{$slot_no}->{'stack_slot'} = $stack_slot->{$slot_no}
+            if defined( $stack_slot->{$slot_no} );
         $slots->{$slot_no}->{'min_corrs'} = $slot_min_corrs->{$slot_no}
             if defined( $slot_min_corrs->{$slot_no} );
     }

@@ -563,7 +563,7 @@ function stringify_form(form) {
                   <td [% bgcolor %] colspan=[% IF display_maps; slot.maps.keys.size; ELSE; '1'; END; %] valign=top>
                     [% IF NOT slot.is_reference_slot %]   
                       [%- SET stack_label = 'stack_slot_' _ slot.slot_no -%]
-                      <input type="checkbox" name="[% stack_label %]" value="1"[%- IF apr.param(stack_label)==1; ' checked'; END -%]>
+                      <input type="checkbox" name="[% stack_label %]" value="1"[%- IF slot.stack_slot==1; ' checked'; END -%]>
                     [% END -%]
                   </td>
                 [%- END -%]

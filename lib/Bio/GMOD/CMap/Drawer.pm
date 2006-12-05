@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.127 2006-10-18 19:16:45 mwz444 Exp $
+# $Id: Drawer.pm,v 1.128 2006-12-05 21:08:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1710,6 +1710,7 @@ necessary data for drawing.
         ( $self->{'data'}, $self->{'slots'} ) = $data->cmap_data(
             slots                       => $self->{'slots'},
             slot_min_corrs              => $self->slot_min_corrs,
+            stack_slot                  => $self->stack_slot,
             included_feature_type_accs  => $self->included_feature_types,
             corr_only_feature_type_accs => $self->corr_only_feature_types,
             ignored_feature_type_accs   => $self->ignored_feature_types,
