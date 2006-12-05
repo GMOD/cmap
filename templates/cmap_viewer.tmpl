@@ -471,7 +471,7 @@ function stringify_form(form) {
                     </center>
                   </div>
                 </td>
-                <td rowspan=8 bgcolor='grey'></td>
+                <td rowspan=9 bgcolor='grey'></td>
                 [%- FOREACH slot=form_data.slot_info -%]
                   [% SET bgcolor = '' %]
                   [% IF slot.is_reference_slot %]
@@ -493,7 +493,7 @@ function stringify_form(form) {
                       >
                     [% END -%]
                   </td>
-                  <td rowspan=8 bgcolor='grey'></td>
+                  <td rowspan=9 bgcolor='grey'></td>
                 [%- END -%]
                 <td>
                 <div id="corr_menu_right_button">
@@ -525,9 +525,9 @@ function stringify_form(form) {
                 [%- END -%]
                 <td></td>
                 </tr>
-                <!-- Slot Stacked -->
+                <!-- Reference Slot Vertically aligned -->
                 <tr>
-                <th>Stack Vertically</th>
+                <th>Align Vertically</th>
                 <td></td>
                 [%- FOREACH slot=form_data.slot_info -%]
                   [% SET bgcolor = '' %]
@@ -542,7 +542,26 @@ function stringify_form(form) {
                     [% IF slot.is_reference_slot %]   
                       [%- IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END -%]
                       <input type="checkbox" name="stack_maps" value="1"[%- IF stack_maps==1; ' checked'; END -%]>
-                    [% ELSE -%]
+                    [% END -%]
+                  </td>
+                [%- END -%]
+                <td></td>
+                </tr>
+                <!-- Slot Stacked -->
+                <tr>
+                <th>Stack</th>
+                <td></td>
+                [%- FOREACH slot=form_data.slot_info -%]
+                  [% SET bgcolor = '' %]
+                  [% IF slot.is_reference_slot %]
+                    [% SET bgcolor = 'bgcolor=' _ menu_ref_bgcolor %]
+                  [%- END -%]
+                  [%- SET display_maps = 1 -%]
+                  [%- IF slot.maps.keys.size > max_maps_to_display %]
+                    [%- SET display_maps = 0 -%]
+                  [%- END -%]
+                  <td [% bgcolor %] colspan=[% IF display_maps; slot.maps.keys.size; ELSE; '1'; END; %] valign=top>
+                    [% IF NOT slot.is_reference_slot %]   
                       [%- SET stack_label = 'stack_slot_' _ slot.slot_no -%]
                       <input type="checkbox" name="[% stack_label %]" value="1"[%- IF apr.param(stack_label)==1; ' checked'; END -%]>
                     [% END -%]
