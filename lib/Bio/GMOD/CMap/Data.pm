@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.279 2006-12-05 21:08:30 mwz444 Exp $
+# $Id: Data.pm,v 1.280 2006-12-06 21:52:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.279 $)[-1];
+$VERSION = (qw$Revision: 1.280 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -279,6 +279,7 @@ sub cmap_data {
     my $pid                 = $$;
 
     $self->fill_type_arrays(
+        ref_map_set_acc             => $slots->{0}{'map_set_acc'},
         included_feature_type_accs  => $included_feature_type_accs,
         corr_only_feature_type_accs => $corr_only_feature_type_accs,
         ignored_feature_type_accs   => $ignored_feature_type_accs,
@@ -1456,8 +1457,8 @@ sub correspondence_form_data {
     my $slot_min_corrs              = $args{'slot_min_corrs'}          || {};
     my $side                        = $args{'side'}                    || q{};
 
-    my @ref_maps = ();
     $self->fill_type_arrays(
+        ref_map_set_acc             => $slots->{0}{'map_set_acc'},
         included_feature_type_accs  => $included_feature_type_accs,
         corr_only_feature_type_accs => $corr_only_feature_type_accs,
         ignored_feature_type_accs   => $ignored_feature_type_accs,
@@ -3724,19 +3725,38 @@ sub feature_default_display {
     my $self                        = shift;
     my $url_feature_default_display = shift;
     my $feature_type_acc            = shift;
+    my $map_type_acc                = shift;
 
-    # Try to get the default for a specific feature type first.
-    if ($feature_type_acc
-        and (
-            my $return_val = $self->feature_type_data(
-                $feature_type_acc, 'feature_default_display'
-            )
-        )
-        and not( defined($url_feature_default_display)
-            and $url_feature_default_display =~ /^\d$/ )
-        )
+    # Try to get the default for a specific feature from the map_type first
+    unless ( defined($url_feature_default_display)
+        and $url_feature_default_display =~ /^\d$/ )
     {
-        return $return_val;
+
+        if (    $map_type_acc
+            and $feature_type_acc
+            and (
+                my $defaults = $self->map_type_data(
+                    $map_type_acc, 'feature_default_display'
+                )
+            )
+            )
+        {
+            if ( my $return_val = $defaults->{$feature_type_acc} ) {
+                return $return_val;
+            }
+        }
+
+        # Try to get the default for a specific feature type.
+        if ($feature_type_acc
+            and (
+                my $return_val = $self->feature_type_data(
+                    $feature_type_acc, 'feature_default_display'
+                )
+            )
+            )
+        {
+            return $return_val;
+        }
     }
 
     # If needed use url value
@@ -3900,6 +3920,8 @@ Organizes the data for drawing comparative maps.
 sub fill_type_arrays {
 
     my ( $self, %args ) = @_;
+    my $ref_map_set_acc = $args{'ref_map_set_acc'}
+        or return;
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
@@ -3913,6 +3935,12 @@ sub fill_type_arrays {
     my $less_evidence_type_accs = $args{'less_evidence_type_accs'} || [];
     my $greater_evidence_type_accs = $args{'greater_evidence_type_accs'}
         || [];
+
+    my $map_sets = $self->sql()->get_map_sets_simple(
+        cmap_object => $self,
+        map_set_acc => $ref_map_set_acc,
+    );
+    my $ref_map_type_acc = $map_sets->[0]{'map_type_acc'} if $map_sets;
 
     # Fill the default array with any feature types not accounted for.
     my %found_feature_type;
@@ -3928,7 +3956,7 @@ sub fill_type_arrays {
         my $acc = $feature_type_data->{$key}{'feature_type_acc'};
         unless ( $found_feature_type{$acc} ) {
             my $feature_default_display = $self->feature_default_display(
-                $url_feature_default_display, $acc );
+                $url_feature_default_display, $acc, $ref_map_type_acc );
 
             if ( $feature_default_display eq 'corr_only' ) {
                 push @$corr_only_feature_type_accs, $acc;

@@ -297,6 +297,11 @@ my %config_defs = (
             },
             width => { %generic_scalar_def, option_type => 'integer', },
             gbrowse_ftype => { %generic_scalar_def, },
+            feature_default_display => {
+                validation_method        => \&validate_hash,
+                print_valididated_method => \&print_validated_hash,
+                print_corrections_method => \&print_corrected_hash,
+            },
         },
     },
     evidence_type => {

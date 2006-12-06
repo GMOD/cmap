@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.131 2006-11-21 15:59:07 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.132 2006-12-06 21:52:44 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -186,6 +186,7 @@ sub handler {
 
             # Fill the feature/evidence types with the defaults
             $data->fill_type_arrays(
+                ref_map_set_acc => $parsed_url_options{'ref_map_set_acc'},
                 included_feature_type_accs =>
                     $parsed_url_options{'included_feature_types'},
                 corr_only_feature_type_accs =>
@@ -243,7 +244,9 @@ sub handler {
 
         my $feature_default_display = $data->feature_default_display;
 
-        if (!$drawer->{'image_name'} and $parsed_url_options{'ref_map_set_acc'}){
+        if ( !$drawer->{'image_name'}
+            and $parsed_url_options{'ref_map_set_acc'} )
+        {
             my $ref_map_set_id = $self->sql()->acc_id_to_internal_id(
                 cmap_object => $self,
                 object_type => 'map_set',
@@ -260,9 +263,9 @@ sub handler {
                     }
             ];
         }
-        else{
-            $form_data->{'feature_types'}
-                = [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+        else {
+            $form_data->{'feature_types'} = [
+                sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
                     @{ $self->data_module->get_all_feature_types } ];
         }
 

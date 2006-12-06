@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.31 $
+$Revision: 1.32 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -520,6 +520,8 @@ sooner the feature will be drawn in the lane.
 =item * Feature Default Display (feature_default_display)
 
 This allows you to choose default display options for individual feature types.
+This default overrides the global default but is overridden by the
+feature_default_display defined in the reference map set's map_type.
 
  Values:
     display:   Display all features of this type
@@ -608,6 +610,24 @@ I-beam will be rendered only in the map's color (no trim).
 
 How wide a map will be drawn.
 
+=item * Feature Default Display (<feature_default_display>)
+
+This allows you to choose default display options for individual feature types
+when this maps of this map_type are used as reference maps.  This default
+overrides the both the global default and the default set in the feature_type.
+
+The values are defined as name, value pairs, where the name is the feature_type accession and the value is the default value for that feature_type.  They must be defined in <feature_default_display> tags.  Here is an example entry:
+
+  <feature_default_display>
+    marker display
+    read corr_only
+  </feature_default_display>
+
+ Values:
+   display:   Display all features of this type
+   corr_only: Display only features of this type with displayed correspondences
+   ignore:    Completely ignore features of this type.  
+
 =back
 
 =head3 Menu Defaults
@@ -666,8 +686,9 @@ Collapse features glyphs into one glyph if they overlap
 
 =item * feature_default_display [ default: display ]
 
-Dictates the default choice of the feature type display menu that aren't
-defined in the individual feature_type.
+Dictates the default choice of the feature type display menu.  This is
+overridden by defaults in the map_type (of the reference map set) or the
+feature_type definitions.
 
  Values:
     display:   Display all features of this type
