@@ -196,6 +196,7 @@ if ($alignment_file){
                 acc_id      => $la[0],
                 object_type => 'map'
             );
+            next unless ($ref_map_id);
             $ref_map_id_lookup{$la[0]}=$ref_map_id;
         }
         my $stack_map_id = $sql_object->acc_id_to_internal_id(
