@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.128 2006-12-05 21:08:30 mwz444 Exp $
+# $Id: Drawer.pm,v 1.129 2006-12-07 20:47:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1361,7 +1361,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Add the legend for the feature types.
     #
-    if ( my @feature_types = $self->feature_types_seen ) {
+    if ( my @feature_types = $self->feature_types_seen_first ) {
         my $string = 'Feature Types:';
         $self->add_drawing( STRING, $font, $x, $max_y, $string, 'black' );
         $max_y += $font->height + 10;
@@ -1384,37 +1384,85 @@ Lays out the image and writes it to the file system, set the "image_name."
         }
 
         for my $ft (@feature_types) {
-            my $color = $ft->{'color'} || $self->config_data('feature_color');
+            my $color = $ft->{'seen'}
+                ? ( $ft->{'color'} || $self->config_data('feature_color') )
+                : 'grey';
             my $label     = $ft->{'feature_type'} or next;
             my $feature_x = $x;
             my $feature_y = $max_y;
             my $label_x   = $feature_x + 15;
             my $label_y;
 
-            if ( $ft->{'shape'} eq 'line' ) {
-                $self->add_drawing( LINE, $feature_x, $feature_y,
-                    $feature_x + 10,
-                    $feature_y, $color );
+            if ( $ft->{'seen'} or $ft->{'correspondence_color'} ) {
+
+                # Displayed Features
+                if ( $ft->{'shape'} eq 'line' ) {
+                    $self->add_drawing( LINE, $feature_x, $feature_y,
+                        $feature_x + 10,
+                        $feature_y, $color );
+                    $label_y = $feature_y;
+                }
+                else {
+                    my @temp_drawing_data;
+                    my $glyph         = Bio::GMOD::CMap::Drawer::Glyph->new();
+                    my $feature_glyph = $ft->{'shape'};
+                    $feature_glyph =~ s/-/_/g;
+                    if ( $glyph->can($feature_glyph) ) {
+                        $glyph->$feature_glyph(
+                            drawing_data => \@temp_drawing_data,
+                            x_pos2       => $feature_x + 7,
+                            x_pos1       => $feature_x + 3,
+                            y_pos1       => $feature_y,
+                            y_pos2       => $feature_y + 8,
+                            color        => $color,
+                            label_side   => RIGHT,
+                        );
+                        $self->add_drawing(@temp_drawing_data);
+                    }
+                    $label_y = $feature_y + 5;
+                }
+            }
+            elsif ( !$omit_all_area_boxes ) {
+
+                # Features that aren't being displayed
+                my $box_x1   = $feature_x + 5;
+                my $box_x2   = $feature_x + 11;
+                my $box_midx = $feature_x + 8;
+                my $box_midy = $feature_y - 1;
+                my $box_y1   = $box_midy - 3;
+                my $box_y2   = $box_midy + 3;
+
+                # Cross Bars
+                $self->add_drawing( LINE, $box_x1, $box_midy, $box_x2,
+                    $box_midy, $color, );
+                $self->add_drawing( LINE, $box_midx, $box_y1, $box_midx,
+                    $box_y2, $color, );
+
+                # Surrounding Box
+                $self->add_drawing( LINE, $box_x1, $box_y1, $box_x2, $box_y1,
+                    $color, );
+                $self->add_drawing( LINE, $box_x1, $box_y1, $box_x1, $box_y2,
+                    $color, );
+                $self->add_drawing( LINE, $box_x2, $box_y1, $box_x2, $box_y2,
+                    $color, );
+                $self->add_drawing( LINE, $box_x1, $box_y2, $box_x2, $box_y2,
+                    $color, );
+
+                my $display_ft_url = $self->create_viewer_link(
+                    $self->create_minimal_link_params(),
+                    session_mod => "ft=" . $ft->{'feature_type_acc'} . "=2",
+                );
+
+                $self->add_map_area(
+                    coords => [ $box_x1, $box_y1, $box_x2, $box_y2, ],
+                    url    => $display_ft_url,
+                    alt => "Display $label on the maps",
+                );
+
                 $label_y = $feature_y;
             }
             else {
-                my @temp_drawing_data;
-                my $glyph         = Bio::GMOD::CMap::Drawer::Glyph->new();
-                my $feature_glyph = $ft->{'shape'};
-                $feature_glyph =~ s/-/_/g;
-                if ( $glyph->can($feature_glyph) ) {
-                    $glyph->$feature_glyph(
-                        drawing_data => \@temp_drawing_data,
-                        x_pos2       => $feature_x + 7,
-                        x_pos1       => $feature_x + 3,
-                        y_pos1       => $feature_y,
-                        y_pos2       => $feature_y + 8,
-                        color        => $color,
-                        label_side   => RIGHT,
-                    );
-                    $self->add_drawing(@temp_drawing_data);
-                }
-                $label_y = $feature_y + 5;
+                $label_y = $feature_y;
             }
 
             my $ft_y = $label_y - $font->height / 2;
@@ -1810,13 +1858,13 @@ Given two feature ids, returns supporting evidence.
 }
 
 # ----------------------------------------------------
-sub feature_types_seen {
+sub feature_types_seen_first {
 
 =pod
 
-=head2 feature_types_seen
+=head2 feature_types_seen_first
 
-Returns all the feature types seen on the maps.
+Returns all the feature types on maps with the ones seen listed first
 
 =cut
 
@@ -1826,8 +1874,13 @@ Returns all the feature types seen on the maps.
             = [ values %{ $self->{'data'}{'feature_types'} || {} } ];
     }
 
-    return sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-        map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
+    return sort {
+        $b->{'seen'} cmp $a->{'seen'}
+            || lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
+    } @{ $self->{'feature_types'} || [] };
+
+    #return sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+    #    map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
 }
 
 # ----------------------------------------------------

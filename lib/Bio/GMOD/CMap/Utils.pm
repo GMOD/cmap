@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.75 2006-10-18 19:16:45 mwz444 Exp $
+# $Id: Utils.pm,v 1.76 2006-12-07 20:47:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -998,14 +998,15 @@ sub _parse_map_info {
 }
 
 # ----------------------------------------------------
-sub _modify_slots {
+sub _modify_params {
 
     # Modify the slots object using a data from the url
-    my $slots             = shift;
-    my $mod_str           = shift;
-    my $map_menu_data_ref = shift;
+    my $slots                  = shift;
+    my $parsed_url_options_ref = shift;
+    my $mod_str                = shift;
+    my $map_menu_data_ref      = shift;
 
-    _modify_slots_using_mod_str( $slots, $mod_str );
+    _modify_params_using_mod_str( $slots, $parsed_url_options_ref, $mod_str );
     _modify_slots_using_map_menu_data( $slots, $map_menu_data_ref );
 
 }
@@ -1036,12 +1037,13 @@ sub _modify_slots_using_map_menu_data {
 }
 
 # ----------------------------------------------------
-sub _modify_slots_using_mod_str {
+sub _modify_params_using_mod_str {
 
     # Modify the slots object using a modification string
-    my $slots    = shift;
-    my $mod_str  = shift;
-    my @mod_cmds = split( /:/, $mod_str );
+    my $slots                  = shift;
+    my $parsed_url_options_ref = shift;
+    my $mod_str                = shift;
+    my @mod_cmds               = split( /:/, $mod_str );
 
     foreach my $mod_cmd (@mod_cmds) {
         my @mod_array = split( /=/, $mod_cmd );
@@ -1118,7 +1120,6 @@ sub _modify_slots_using_mod_str {
             next unless ( scalar(@mod_array) == 3 );
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
-            my $mag     = $mod_array[3];
             if (    $slots->{$slot_no}
                 and $slots->{$slot_no}{'maps'}{$map_acc} )
             {
@@ -1130,6 +1131,44 @@ sub _modify_slots_using_mod_str {
                 }
             }
         }
+        elsif ( $mod_array[0] eq 'ft' ) {
+            next unless ( scalar(@mod_array) == 3 );
+            my $feature_type_acc = $mod_array[1];
+            my $value            = $mod_array[2];
+
+            # Remove this value from all lists
+            #  Then add it back to the correct one
+            # Clone these values so they don't clobber the session
+
+            @{ $parsed_url_options_ref->{'corr_only_feature_types'} }
+                = grep { $_ ne $feature_type_acc }
+                @{ clone(
+                    $parsed_url_options_ref->{'corr_only_feature_types'} ) };
+            @{ $parsed_url_options_ref->{'included_feature_types'} }
+                = grep { $_ ne $feature_type_acc }
+                @{ clone(
+                    $parsed_url_options_ref->{'included_feature_types'} ) };
+            @{ $parsed_url_options_ref->{'ignored_feature_types'} }
+                = grep { $_ ne $feature_type_acc }
+                @{ clone( $parsed_url_options_ref->{'ignored_feature_types'} )
+                };
+
+            if ( $value == 0 ) {
+                push @{ $parsed_url_options_ref->{'ignored_feature_types'} },
+                    $feature_type_acc;
+            }
+            elsif ( $value == 1 ) {
+                push
+                    @{ $parsed_url_options_ref->{'corr_only_feature_types'} },
+                    $feature_type_acc;
+            }
+            elsif ( $value == 2 ) {
+                push @{ $parsed_url_options_ref->{'included_feature_types'} },
+                    $feature_type_acc;
+            }
+
+        }
+
     }
 
     # If ever a slot has no maps, remove the slot.
@@ -1190,8 +1229,8 @@ sub _parse_session_step {
     %{$slots_ref} = %{ clone( $session_step->{'slots'} ) };
 
     # Apply Session Modifications to slots_ref
-    _modify_slots(
-        $slots_ref,
+    _modify_params(
+        $slots_ref, $parsed_url_options_ref,
         $parsed_url_options_ref->{'session_mod'},
         $parsed_url_options_ref->{'map_menu_data'}
         )
@@ -1586,7 +1625,8 @@ sub parse_url {
         {
             $step_hash = $parsed_url_options{'session_data_object'}
                 ->[ $parsed_url_options{'step'} ];
-            $parsed_url_options{'reusing_step'} = 1;
+
+            #$parsed_url_options{'reusing_step'} = 1;
         }
         else {
             $step_hash
