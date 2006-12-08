@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.155 2006-11-28 19:10:08 mwz444 Exp $
+# $Id: Generic.pm,v 1.156 2006-12-08 17:13:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.155 $)[-1];
+$VERSION = (qw$Revision: 1.156 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -9987,6 +9987,14 @@ Again if you don't want CMap to mess with your db, make this a dummy method.
 
 =back
 
+=item * Optional Input
+
+=over 4
+
+=item - Map Set ID (map_set_id)
+
+=back
+
 =item * Output
 
 Array of Hashes:
@@ -10000,24 +10008,47 @@ Array of Hashes:
 =cut
 
     my $self              = shift;
-    my %validation_params = ( cmap_object => 1, no_validation => 0, );
-    my %args              = @_;
+    my %validation_params = (
+        cmap_object   => 1,
+        map_set_id    => 0,
+        no_validation => 0,
+    );
+    my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
+    my $map_set_id = $args{'map_set_id'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
 
-    my $dup_sql = q[
+    my $select_sql = q[
         select min(b.feature_correspondence_id) as original_id,
                a.feature_correspondence_id as duplicate_id
+    ];
+    my $from_sql = q[
         from  cmap_correspondence_lookup a,
               cmap_correspondence_lookup b
+    ];
+    my $where_sql = q[
         where a.feature_id1<a.feature_id2
           and a.feature_id1=b.feature_id1
           and a.feature_id2=b.feature_id2
           and a.feature_correspondence_id > b.feature_correspondence_id
+    ];
+    my $group_by_sql = q[
         group by a.feature_correspondence_id
         ];
+
+    if ($map_set_id) {
+        $from_sql .= q[,
+            cmap_map map
+        ];
+        $where_sql .= q[ and map.map_set_id = ] . $map_set_id . q[ and (
+            a.map_id1 = map.map_id
+            or a.map_id2 = map.map_id ) 
+        ];
+    }
+
+    my $dup_sql = $select_sql . $from_sql . $where_sql . $group_by_sql;
 
     return $db->selectall_arrayref( $dup_sql, { Columns => {} } );
 
@@ -10048,6 +10079,14 @@ Again if you don't want CMap to mess with your db, make this a dummy method.
 
 =back
 
+=item * Optional Input
+
+=over 4
+
+=item - Map Set ID (map_set_id)
+
+=back
+
 =item * Output
 
 
@@ -10056,34 +10095,47 @@ Again if you don't want CMap to mess with your db, make this a dummy method.
 =cut
 
     my $self              = shift;
-    my %validation_params = ( cmap_object => 1, no_validation => 0, );
-    my %args              = @_;
+    my %validation_params = (
+        cmap_object   => 1,
+        map_set_id    => 0,
+        no_validation => 0,
+    );
+    my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
+    my $map_set_id = $args{'map_set_id'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
 
-    my $dup_sql = q[
-        select  feature_id1,
-                feature_id2,
-                feature_correspondence_id
-        from  cmap_feature_correspondence
+    my $select_sql = q[
+        select  cl.feature_id1,
+                cl.feature_id2,
+                cl.feature_correspondence_id
+    ];
+    my $from_sql = q[
+        from  cmap_correspondence_lookup cl
+    ];
+    my $where_sql = q[ where cl.feature_id1 < cl.feature_id2 ];
+
+    if ($map_set_id) {
+        $from_sql .= q[,
+            cmap_map map
         ];
+        $where_sql .= q[ and map.map_set_id = ] . $map_set_id . q[ and (
+            cl.map_id1 = map.map_id
+            or cl.map_id2 = map.map_id ) 
+        ];
+    }
+
+    my $dup_sql = $select_sql . $from_sql . $where_sql;
 
     my $corrs = $db->selectall_arrayref( $dup_sql, { Columns => {} } );
 
     my $corr_hash = {};
     foreach my $corr ( @{ $corrs || [] } ) {
-        if ( $corr->{'feature_id1'} < $corr->{'feature_id2'} ) {
-            push @{ $corr_hash->{ $corr->{'feature_id1'} }
-                    { $corr->{'feature_id2'} } },
-                $corr->{'feature_correspondence_id'},;
-        }
-        else {
-            push @{ $corr_hash->{ $corr->{'feature_id2'} }
-                    { $corr->{'feature_id1'} } },
-                $corr->{'feature_correspondence_id'},;
-        }
+        push @{ $corr_hash->{ $corr->{'feature_id1'} }
+                { $corr->{'feature_id2'} } },
+            $corr->{'feature_correspondence_id'},;
     }
 
     return $corr_hash;

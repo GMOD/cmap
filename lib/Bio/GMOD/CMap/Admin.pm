@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.95 2006-07-20 13:45:40 mwz444 Exp $
+# $Id: Admin.pm,v 1.96 2006-12-08 17:13:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -656,6 +656,9 @@ is moved to the remaining correspondence.
 
     $admin->delete_duplicate_correspondences();
 
+Optionally, a map_set_id can be included to limit the ammount of data being
+looked at.
+
 =item * Returns
 
 Nothing
@@ -666,11 +669,14 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $sql_object = $self->sql or return;
+    my $map_set_id = $args{'map_set_id'};
 
     print "Deleting Duplicate Correspondences\n";
     print "Retrieving list of correspondences\n";
     my $corr_hash = $sql_object->get_duplicate_correspondences_hash(
-        cmap_object => $self );
+        cmap_object => $self,
+        map_set_id  => $map_set_id,
+    );
     print "Retrieved list of correspondences\n\n";
     print
         "Examining correspondences.\n (A '.' will appear for each deleted correspondence)\n";
@@ -838,8 +844,8 @@ Nothing
 
     $self->attribute_delete( 'feature_correspondence',
         $feature_correspondence_id, );
-    $self->xref_delete( 'feature_correspondence',
-        $feature_correspondence_id, );
+    $self->xref_delete( 'feature_correspondence', $feature_correspondence_id,
+    );
 
     return 1;
 }
@@ -1652,12 +1658,13 @@ The name of the object being reference.
             && $attr_value ne '';
 
         unless ($attr_id) {
+
             # Check for duplicate attribute
             my $attribute = $sql_object->get_attributes(
-                cmap_object    => $self,
-                object_id      => $object_id,
-                object_type    => $object_type,
-                attribute_name => $attr_name,
+                cmap_object     => $self,
+                object_id       => $object_id,
+                object_type     => $object_type,
+                attribute_name  => $attr_name,
                 attribute_value => $attr_value,
             );
             if ( @{ $attribute || [] } ) {
@@ -1775,6 +1782,7 @@ The name of the object being reference.
             && $xref_url ne '';
 
         unless ($xref_id) {
+
             # Check for duplicate xref
             my $xref = $sql_object->get_xrefs(
                 cmap_object => $self,
@@ -2183,7 +2191,7 @@ The primary key of the map.
         cmap_object => $self,
         map_id      => $map_id,
     );
-    my ( $map_start, $map_stop );
+    my ( $map_start,     $map_stop );
     my ( $ori_map_start, $ori_map_stop );
     if (@$map_array) {
         $ori_map_start = $map_start = $map_array->[0]{'map_start'};

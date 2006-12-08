@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.136 2006-10-23 07:45:51 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.137 2006-12-08 17:13:10 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 #
 # Get command-line options
@@ -230,7 +230,7 @@ while ($continue) {
 
 # ./bin/cmap_admin.pl -d WashU -a reload_correspondence_matrix
 
-# ./bin/cmap_admin.pl -d WashU -a delete_duplicate_correspondences
+# ./bin/cmap_admin.pl -d WashU -a delete_duplicate_correspondences --map_set_acc 'blah'
 
 # ./bin/cmap_admin.pl -d WashU -a import_correspondences --map_set_accs 'Blah 13' data/tabtest.corr
 
@@ -2891,14 +2891,63 @@ sub delete_duplicate_correspondences {
     #
     # deletes all duplicate correspondences.
     #
-    my $self = shift;
+    my $self        = shift;
+    my %args        = @_;
+    my $map_set_acc = $args{'map_set_acc'};
 
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source,
     );
+    my $map_set_id;
+    if ($command_line) {
+        my $sql_object = $self->sql;
+        my @missing    = ();
+        if ( defined($map_set_acc) ) {
+            my $map_sets = $sql_object->get_map_sets(
+                cmap_object => $self,
+                map_set_acc => $map_set_acc,
+            );
+            if ( @{ $map_sets || [] } ) {
+                $map_set_id = $map_sets->[0]{'map_set_id'};
+            }
+            else {
+                print STDERR
+                    "Map set Accession, '$map_set_acc' is/are not valid.\n";
+                push @missing, 'valid map_set_acc';
+            }
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
+        my $delete_what = $self->show_menu(
+            title   => 'Delete Duplicates',
+            prompt  => 'Limit duplicate deletion?',
+            display => 'display',
+            return  => 'value',
+            data    => [
+                {   value   => 'entire',
+                    display => 'Delete all duplicates from the database'
+                },
+                {   value   => 'one',
+                    display => 'Delete duplicates associated with one map set'
+                }
+            ],
+        );
 
-    $admin->delete_duplicate_correspondences();
+        if ( $delete_what eq 'one' ) {
+            my $map_sets
+                = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+            my $map_set = $map_sets->[0];
+            $map_set_id = $map_set->{'map_set_id'};
+        }
+    }
+
+    $admin->delete_duplicate_correspondences( map_set_id => $map_set_id, );
 
     $self->purge_query_cache( cache_level => 4 );
 }
@@ -4121,7 +4170,12 @@ cmap_admin.pl [-d data_source] --action purge_query_cache [--cache_level level]
 
 =head2 delete_duplicate_correspondences
 
-cmap_admin.pl [-d data_source] --action delete_duplicate_correspondences
+cmap_admin.pl [-d data_source] --action delete_duplicate_correspondences [--map_set_acc map_set_acc]
+
+  Optional:
+    --map_set_acc : Limit the search for duplicates to correspondences 
+        related to one map set.  Any correspondences that the map set 
+        has will be examined.
 
 =head1 DESCRIPTION
 
