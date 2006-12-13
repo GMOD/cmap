@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.137 2006-12-08 17:13:10 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.138 2006-12-13 16:14:01 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 #
 # Get command-line options
@@ -245,6 +245,8 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a delete_maps --map_accs "28 26"
 
 # ./bin/cmap_admin.pl -d WashU -a delete_maps --map_set_acc 13
+
+# ./bin/cmap_admin.pl -d WashU -a delete_maps --map_set_acc 13 --map_accs "all"
 
 # ./bin/cmap_admin.pl -d WashU -a delete_features --map_accs "28 26" --feature_type_accs "blast marker"
 
@@ -984,24 +986,44 @@ sub delete_maps {
             push @missing, 'map_set_acc or map_accs';
         }
         if ( defined($map_accs_str) ) {
-            my @map_accs = split /[,\s]+/, $map_accs_str;
-            my $valid = 1;
-            foreach my $acc (@map_accs) {
-                my $map_id = $sql_object->acc_id_to_internal_id(
-                    cmap_object => $self,
-                    acc_id      => $acc,
-                    object_type => 'map'
-                );
-                if ($map_id) {
-                    push @map_ids, $map_id;
+            if ($map_accs_str =~ /^all$/i){
+                if (defined($map_set_acc)){
+                    my $maps = $sql_object->get_maps_from_map_set(
+                        cmap_object => $self,
+                        map_set_acc      => $map_set_acc,
+                    );
+                    if (@{$maps||[]}) {
+                        @map_ids = map {$_->{'map_id'}} @$maps;
+                    }
+                    else {
+                        print STDERR "The map_set_acc, '$map_set_acc' does not have any maps.\n";
+                    }
                 }
-                else {
-                    print STDERR "The map_accs, '$acc' is not valid.\n";
-                    $valid = 0;
+                else{
+                    push @missing, 'map_set_acc';
                 }
+
             }
-            unless ($valid) {
-                push @missing, 'valid map_accs';
+            else{
+                my @map_accs = split /[,\s]+/, $map_accs_str;
+                my $valid = 1;
+                foreach my $acc (@map_accs) {
+                    my $map_id = $sql_object->acc_id_to_internal_id(
+                        cmap_object => $self,
+                        acc_id      => $acc,
+                        object_type => 'map'
+                    );
+                    if ($map_id) {
+                        push @map_ids, $map_id;
+                    }
+                    else {
+                        print STDERR "The map_accs, '$acc' is not valid.\n";
+                        $valid = 0;
+                    }
+                }
+                unless ($valid) {
+                    push @missing, 'valid map_accs';
+                }
             }
         }
         elsif ( defined($map_set_acc) ) {
@@ -4046,12 +4068,14 @@ cmap_admin.pl [-d data_source] --action delete_correspondences (--map_set_accs "
 
 =head2 delete_maps
 
-cmap_admin.pl [-d data_source] --action delete_maps (--map_set_acc accession OR --map_accs "accession [, acc2...]")
+cmap_admin.pl [-d data_source] --action delete_maps (--map_set_acc accession [ --map_accs all ] OR --map_accs "accession [, acc2...]")
 
   Required:
     --map_set_acc : Accession Id of a map set to be deleted
     or
     --map_accs :  A comma (or space) separated list of map accessions to be deleted
+
+To delete all the maps from a map set, supply the --map_set_acc and use "--map_accs all".
 
 =head2 export_as_text
 
