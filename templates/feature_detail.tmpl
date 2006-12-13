@@ -48,7 +48,7 @@
     <tr>
         <th align="right">Map:</th>
         <td>
-            [% feature.species_common_name %]-[% feature.map_set_name %]-[% feature.map_name %]
+            Species: [% feature.species_common_name %]<br>Map Set: [% feature.map_set_name %]<br>Map Name: [% feature.map_name %]
         </td>
         <td align="center">
              <b>[</b>&nbsp;<a href="map_details?ref_map_set_acc=[% feature.map_set_acc %];ref_map_accs=[% feature.map_acc %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View&nbsp;Map&nbsp;Details</a>&nbsp;<b>]</b>
@@ -111,6 +111,7 @@
     <table width="100%">
         <tr>
             <th>Feature</th>
+            <th>Accession</th>
             <th>Map</th>
             <th>Map&nbsp;Type</th>
             <th>Aliases</th>
@@ -123,6 +124,9 @@
             <tr class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
                 <td>
                     <a href="feature?feature_acc=[% fc.feature_acc2 %]">[% fc.feature_name2 %]</a>
+                </td>
+                <td>
+                    <a href="feature?feature_acc=[% fc.feature_acc2 %]">[% fc.feature_acc2 %]</a>
                 </td>
                 <td>[% fc.species_common_name2 %]-[% fc.map_set_short_name2 %]-[% fc.map_name2 %]</td>
                 <td>[% fc.map_type2 %]</td>
