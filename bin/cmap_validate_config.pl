@@ -302,6 +302,11 @@ my %config_defs = (
                 print_valididated_method => \&print_validated_hash,
                 print_corrections_method => \&print_corrected_hash,
             },
+            unit_granularity         => {
+                no_validation_hash => 1,
+                required           => 1,
+                %generic_scalar_def,
+            },
         },
     },
     evidence_type => {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.76 2006-12-07 20:47:40 mwz444 Exp $
+# $Id: Utils.pm,v 1.77 2006-12-13 19:57:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -102,6 +102,7 @@ my @subs = qw[
     parse_url
     create_session_step
     longest_run
+    round_to_granularity
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -875,6 +876,43 @@ example: .001 becomes "1/K"
         ? $printable_num . "/" . $unit
         : $printable_num . "/unit";
     return $num_str;
+}
+
+# ----------------------------------------------------
+sub round_to_granularity {
+
+=pod
+                                                                                
+=head2 round_to_granularity 
+
+Rounds a number to the unit granularity.
+
+The unit granularity defines the granularity of map units.  It is the smallest
+value that a unit value can be different from the next value.  For example, the
+granularity of a base pair is 1.  Some data will have a certain number of
+signifigant digits for example data in cenitMorgans might have granularity of
+0.01.
+
+example: 12.345 with a granularity of 0.1 becomes 12.3 
+
+example: 12.375 with a granularity of 0.1 becomes 12.4 
+
+=cut
+
+    my $num         = shift;
+    my $granularity = shift || DEFAULT->{'unit_granularity'};
+
+    unless ( $granularity =~ /^0*\.?0*10*$/ ) {
+        print STDERR "Granularity, $granularity is not right.\n";
+        return $num;
+    }
+
+    my $multiplication_factor = 1 / $granularity;
+
+    my $return_val = int( ( $num * $multiplication_factor ) + .5 ) /
+        $multiplication_factor;
+
+    return $return_val;
 }
 
 # ----------------------------------------------------

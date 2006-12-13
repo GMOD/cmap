@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.23 2006-11-27 20:05:09 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.24 2006-12-13 19:57:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -68,6 +68,10 @@ use Bio::GMOD::CMap::Drawer::AppLayout qw[
     move_slot
     set_slot_bgcolor
 ];
+use Bio::GMOD::CMap::Utils qw[
+    round_to_granularity
+];
+
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
@@ -1949,6 +1953,15 @@ Move a map from one place on a parent to another
             || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
     my $parent_map_data = $self->app_data_module()
         ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+
+    # Modify the relative unit start to round to the unit granularity
+    my $parent_unit_granularity
+        = $self->map_type_data( $parent_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || DEFAULT->{'unit_granularity'};
+    $relative_unit_start = round_to_granularity( $relative_unit_start,
+        $parent_unit_granularity );
+
     my $new_feature_start
         = $relative_unit_start + $parent_map_data->{'map_start'};
     my $new_feature_stop

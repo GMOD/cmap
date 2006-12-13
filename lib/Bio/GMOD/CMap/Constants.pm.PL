@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.46 2006-11-16 15:58:47 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.47 2006-12-13 19:57:47 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -532,6 +532,16 @@ use constant DEFAULT => {
     # What to name the cookie containing user preferences.
     #
     link_group => 'Unknown Group', 
+
+    #
+    # The unit granularity defines the granularity of map units.  It is the
+    # smallest value that a unit value can be different from the next value.
+    # For example, the granularity of a base pair is 1.  Some data will have a
+    # certain number of signifigant digits for example data in cenitMorgans
+    # might have granularity of 0.01.
+    # Default: 0.001
+    #
+    unit_granularity => 0.001,
 
     #
     # What to name the cookie containing user preferences.

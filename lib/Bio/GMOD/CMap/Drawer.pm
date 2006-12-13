@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.129 2006-12-07 20:47:40 mwz444 Exp $
+# $Id: Drawer.pm,v 1.130 2006-12-13 19:57:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.129 $)[-1];
+$VERSION = (qw$Revision: 1.130 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1390,7 +1390,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             my $label     = $ft->{'feature_type'} or next;
             my $feature_x = $x;
             my $feature_y = $max_y;
-            my $label_x   = $feature_x + 15;
+            my $label_x   = $feature_x;
             my $label_y;
 
             if ( $ft->{'seen'} or $ft->{'correspondence_color'} ) {
@@ -1421,22 +1421,23 @@ Lays out the image and writes it to the file system, set the "image_name."
                     }
                     $label_y = $feature_y + 5;
                 }
+                $label_x += 15;
             }
             elsif ( !$omit_all_area_boxes ) {
 
                 # Features that aren't being displayed
-                my $box_x1   = $feature_x + 5;
-                my $box_x2   = $feature_x + 11;
-                my $box_midx = $feature_x + 8;
+                my $box_x1   = $feature_x;
+                my $box_x2   = $feature_x + $font->height -1;
+                my $box_midx = $feature_x + int($font->height/2);
                 my $box_midy = $feature_y - 1;
-                my $box_y1   = $box_midy - 3;
-                my $box_y2   = $box_midy + 3;
+                my $box_y1   = $box_midy - int($font->height/2) + 1;
+                my $box_y2   = $box_midy + int($font->height/2) - 1;
 
                 # Cross Bars
-                $self->add_drawing( LINE, $box_x1, $box_midy, $box_x2,
+                $self->add_drawing( LINE, $box_x1+2, $box_midy, $box_x2-2,
                     $box_midy, $color, );
-                $self->add_drawing( LINE, $box_midx, $box_y1, $box_midx,
-                    $box_y2, $color, );
+                $self->add_drawing( LINE, $box_midx, $box_y1+2, $box_midx,
+                    $box_y2-2, $color, );
 
                 # Surrounding Box
                 $self->add_drawing( LINE, $box_x1, $box_y1, $box_x2, $box_y1,
@@ -1460,8 +1461,10 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
 
                 $label_y = $feature_y;
+                $label_x += $font->height +3;
             }
             else {
+                $label_x += 15;
                 $label_y = $feature_y;
             }
 
