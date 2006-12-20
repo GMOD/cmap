@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.32 $
+$Revision: 1.33 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -481,11 +481,73 @@ filled-in rectangle (trimmed in black).
 A spanning feature where consecutive banding features alternate in 
 color between black and the chosen color.
 
+There is one banding specific option that can be defined
+
+=over 4
+
+=item * color2 (default: black)
+
+This is the second color that this glyph will oscillate between.  This is used
+in conjunction with the "color" option.
+
+=back
+
+Also, a feature type with this glyph must have it's own drawing lane.
+
 =item - read-depth: 
 
 A spanning feature where the name of the feature dictates how far 
 from the base position a line is drawn.  The name MUST be a number.
 This will create a line graph type of glyph.  
+
+Also, a feature type with this glyph must have it's own drawing lane.
+
+=item - heatmap
+
+A heatmap glyph is a density glyph where density is shown by color.  Each color is made by an individual feature and the feature name is the number that this section represents.  
+
+For example, two items are collapsed below.  
+
+       ----
+  ------------
+       |
+       V
+  -----OOOO---
+
+This would be represented by three features and written in the import file like this:
+
+  feature_name    feature_start   feature_stop    feature_type_acc
+  1               1               5               something_density
+  2               6               9               something_density
+  1               10              12              something_density
+
+There are heatmap specific options that should be defined in order for this to be most useful.
+
+=over 4
+
+=item * min_value (default: 0)
+
+The minimum value that a feature can be named.  If it is lower than this, the color will be the minimum color.
+
+=item * max_value (default: 100)
+
+The maximum value that a feature can be named.  If it is higher than this, the color will be the maximum color. 
+
+=item * min_color_value (default: '255,0,0')
+
+This is the color that the minimum value will have.  It is the bottom color of
+the gradient.  It is represented as a string, writen in rgb format
+('red,green,blue').  
+
+=item * max_color_value (default: '0,255,0')
+
+This is the color that the maximum value will have.  It is the top color of the
+gradient.  It is represented as a string, writen in rgb format
+('red,green,blue').  
+
+=back
+
+Also, a feature type with this glyph must have it's own drawing lane.
 
 =back
 

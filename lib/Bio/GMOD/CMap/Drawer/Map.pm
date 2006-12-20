@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.200 2006-11-29 20:57:37 mwz444 Exp $
+# $Id: Map.pm,v 1.201 2006-12-20 22:04:33 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.200 $)[-1];
+$VERSION = (qw$Revision: 1.201 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3284,19 +3284,20 @@ sub add_feature_to_map {
 
                 @coords = @{
                     $glyph->$feature_glyph(
-                        drawing_data => \@temp_drawing_data,
-                        x_pos2       => $vert_line_x2,
-                        x_pos1       => $vert_line_x1,
-                        y_pos1       => $y_pos1,
-                        y_pos2       => $y_pos2,
-                        color        => $color,
-                        is_flipped   => $is_flipped,
-                        direction    => $feature->{'direction'},
-                        name         => $feature->{'feature_name'},
-                        label_side   => $label_side,
-                        calling_obj  => $self,
-                        feature      => $feature,
-                        drawer       => $drawer,
+                        drawing_data     => \@temp_drawing_data,
+                        x_pos2           => $vert_line_x2,
+                        x_pos1           => $vert_line_x1,
+                        y_pos1           => $y_pos1,
+                        y_pos2           => $y_pos2,
+                        color            => $color,
+                        is_flipped       => $is_flipped,
+                        direction        => $feature->{'direction'},
+                        name             => $feature->{'feature_name'},
+                        label_side       => $label_side,
+                        calling_obj      => $self,
+                        feature          => $feature,
+                        drawer           => $drawer,
+                        feature_type_acc => $feature->{'feature_type_acc'},
                     )
                     };
                 if ( !$omit_area_boxes and @coords ) {
