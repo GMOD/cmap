@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.201 2006-12-20 22:04:33 mwz444 Exp $
+# $Id: Map.pm,v 1.202 2006-12-21 21:34:49 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.201 $)[-1];
+$VERSION = (qw$Revision: 1.202 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2900,10 +2900,13 @@ sub add_tick_marks {
 
     my $array_ref = $self->tick_mark_interval( $map_id, $pixel_height );
     my ( $interval, $map_scale ) = @$array_ref;
-    my $no_intervals  = int( $actual_map_length / $interval );
+    my $no_intervals = int( $actual_map_length / $interval );
+    my $interval_start = int( $map_start / ( 10**( $map_scale - 1 ) ) )
+        * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = $clean_view ? 8 : 15;
-    my @intervals     =
-        map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
+    my @intervals =
+        map { int( $interval_start + ( $_ * $interval ) ) }
+        1 .. $no_intervals;
     my $min_tick_distance = $self->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;
 
@@ -2911,12 +2914,10 @@ sub add_tick_marks {
         my $rel_position = ( $tick_pos - $map_start ) / $map_length;
 
         # If there isn't enough space, skip this one.
-        if (( ( $rel_position * $pixel_height ) < $min_tick_distance )
-            or (defined($last_tick_rel_pos)
-                and ( ( $rel_position * $pixel_height )
-                    - ( $last_tick_rel_pos * $pixel_height )
-                    < $min_tick_distance )
-            )
+        if (defined($last_tick_rel_pos)
+            and ( ( $rel_position * $pixel_height )
+                - ( $last_tick_rel_pos * $pixel_height )
+                < $min_tick_distance )
             )
         {
             next;
