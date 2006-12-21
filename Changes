@@ -1,5 +1,11 @@
                       Revision history for CMap
 
+0.17
+
+- Fixed a flaw in the tick mark logic.  Rather than rounding the location
+  string of the tick mark, it now places the tick marks at reasonably rounded
+  locations.
+
 0.16 
 
 -   Updated menus to be more intuitive
