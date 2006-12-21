@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.131 2006-12-20 22:04:32 mwz444 Exp $
+# $Id: Drawer.pm,v 1.132 2006-12-21 04:59:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1883,12 +1883,10 @@ Returns all the feature types on maps with the ones seen listed first
     }
 
     return sort {
-        $b->{'seen'} cmp $a->{'seen'}
+               $b->{'seen'} cmp $a->{'seen'}
+            || ( $a->{'drawing_lane'} || 0 ) <=> ( $b->{'drawing_lane'} || 0 )
             || lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
     } @{ $self->{'feature_types'} || [] };
-
-    #return sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-    #    map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
 }
 
 # ----------------------------------------------------
