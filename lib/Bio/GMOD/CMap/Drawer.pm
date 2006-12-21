@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.132 2006-12-21 04:59:52 mwz444 Exp $
+# $Id: Drawer.pm,v 1.133 2006-12-21 05:14:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.132 $)[-1];
+$VERSION = (qw$Revision: 1.133 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1375,6 +1375,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types,
                 {
+                seen         => 1,
                 shape        => '',
                 color        => $corr_color,
                 feature_type =>
@@ -1394,7 +1395,11 @@ Lays out the image and writes it to the file system, set the "image_name."
             my $label_x   = $feature_x;
             my $label_y;
 
-            if ( $ft->{'seen'} or $ft->{'correspondence_color'} ) {
+            if ( $self->clean_view() and not $ft->{'seen'} ) {
+                next;
+            }
+
+            if ( $ft->{'seen'} ) {
 
                 # Displayed Features
                 if ( $ft->{'shape'} eq 'line' ) {
@@ -1609,7 +1614,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         [ 'UF' => 'Unflip Map' ],
         [ 'N'  => 'New Map View' ],
     );
-    {
+    unless ( $self->clean_view() ) {
         $self->add_drawing( STRING, $font, $x, $max_y, 'Menu Symbols:',
             'black' );
         $max_y += $font->height + 10;
