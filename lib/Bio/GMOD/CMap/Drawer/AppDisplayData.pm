@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.24 2006-12-13 19:57:47 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.25 2006-12-27 19:34:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2927,6 +2927,46 @@ returns
         return [ map { $self->{'map_key_to_id'}{$_} } @$map_keys ];
     }
 
+    return undef;
+}
+
+# ----------------------------------------------------
+sub map_truncated {
+
+=pod
+
+=head2 map_truncated
+
+Test if the map is truncated (taken from Bio::GMOD::CMAP::Data ).
+
+=cut
+
+    my $self     = shift;
+    my $slot_key = shift;
+    my $map_id   = shift;
+    return undef
+        unless ( defined($slot_key) and defined($map_id) );
+
+    if (    $self->{'slot_info'}->{$slot_key}
+        and %{ $self->{'slot_info'}->{$slot_key} }
+        and @{ $self->{'slot_info'}->{$slot_key}{$map_id} } )
+    {
+        my $map_info          = $self->{'slot_info'}->{$slot_key}{$map_id};
+        my $map_top_truncated = ( defined( $map_info->[0] )
+                and $map_info->[0] != $map_info->[2] );
+        my $map_bottom_truncated = ( defined( $map_info->[1] )
+                and $map_info->[1] != $map_info->[3] );
+        if ( $map_top_truncated and $map_bottom_truncated ) {
+            return 3;
+        }
+        elsif ($map_top_truncated) {
+            return 1;
+        }
+        elsif ($map_bottom_truncated) {
+            return 2;
+        }
+        return 0;
+    }
     return undef;
 }
 

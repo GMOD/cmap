@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.22 2006-11-27 20:05:09 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.23 2006-12-27 19:34:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1454,8 +1454,9 @@ Item structure:
         my @coords  = @{ $items->[$i][3] };    # creates duplicate array
         my $options = $items->[$i][4];
 
-        $coords[0] -= $x_offset;
-        $coords[2] -= $x_offset if ( defined $coords[2] );
+        for ( my $i = 0; $i <= $#coords; $i += 2 ) {
+            $coords[$i] -= $x_offset;
+        }
 
         if ( defined($item_id) ) {
             $canvas->coords( $item_id, @coords );

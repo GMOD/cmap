@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.20 2006-11-29 05:18:33 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.21 2006-12-27 19:34:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,11 +25,12 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[
     simple_column_distribution
+    presentable_number
 ];
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -56,6 +57,17 @@ my @subs = qw[
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
+
+my %SHAPE = (
+    'default'  => \&_draw_box,
+    'box'      => \&_draw_box,
+    'dumbbell' => \&_draw_dumbbell,
+    'I-beam'   => \&_draw_i_beam,
+    'i-beam'   => \&_draw_i_beam,
+    'I_beam'   => \&_draw_i_beam,
+    'i_beam'   => \&_draw_i_beam,
+);
+
 
 # ----------------------------------------------------
 sub layout_new_panel {
@@ -954,6 +966,8 @@ Lays out a maps in a contained area.
     my $max_x            = $args{'max_x'};
     my $min_y            = $args{'min_y'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
+    my $font_height = 15;
+
 
     my $max_y;
 
@@ -969,19 +983,36 @@ Lays out a maps in a contained area.
             }
         ]
         );
+    $min_y += $font_height * 2;
 
-    $min_y += 15;
-    $max_y = $min_y + 5;
-    push @{ $map_layout->{'items'} },
-        (
-        [   1, undef, 'rectangle',
-            [ $min_x, $min_y, $max_x, $max_y ],
-            { -fill => 'blue', }
-        ]
-        );
-    $map_layout->{'coords'} = [ $min_x, $min_y, $max_x, $max_y ];
+    # Draw map shape
+    my $draw_sub_ref = $SHAPE{ $map->{'shape'} }
+        || $SHAPE{ $map->{'default_shape'} }
+        || $SHAPE{'default'};
+    my ( $bounds, $map_coords ) = &$draw_sub_ref(
+        map              => $map,
+        map_layout       => $map_layout,
+        app_display_data => $app_display_data,
+        min_x            => $min_x,
+        min_y            => $min_y,
+        max_x            => $max_x,
+        slot_key       => $slot_key,
+    );
 
-    $min_y = $max_y;
+    $map_layout->{'coords'} = $map_coords;
+
+    # Unit tick marks
+    my $tick_overhang = 8;
+    _add_tick_marks(
+        map              => $map,
+        map_layout       => $map_layout,
+        slot_key         => $slot_key,
+        map_coords       => $map_coords,
+        label_y          => $min_y - $font_height - $tick_overhang,
+        label_x          => $min_x,
+        app_display_data => $app_display_data,
+    );
+    $min_y = $max_y = $map_coords->[3];
 
     if ( $app_display_data->{'scaffold'}{$slot_key}{'expanded'} ) {
         $max_y = _layout_features(
@@ -1574,6 +1605,664 @@ Move drawing_items
         x         => $x,
     );
 }
+
+# ----------------------------------------------------
+sub _tick_mark_interval {
+
+=pod
+
+=head2 _tick_mark_interval
+
+This method was copied out of Bio::GMOD::CMap::Drawer::Map but it has diverged
+slightly.
+
+Returns the map's tick mark interval.
+
+=cut
+
+    my $visible_map_units = shift;
+
+    # If map length == 0, set scale to 1
+    # Contributed by David Shibeci
+    if ($visible_map_units) {
+        my $map_scale = int( log( abs($visible_map_units) ) / log(10) );
+        return ( 10**( $map_scale - 1 ), $map_scale );
+    }
+    else {
+
+        # default tick_mark_interval for maps of length 0
+        return ( 1, 1 );
+    }
+
+}
+
+# ----------------------------------------------------
+sub _add_tick_marks {
+
+=pod
+
+=head2 _add_tick_marks
+
+Adds tick marks to a map.
+
+=cut
+
+    my %args             = @_;
+    my $map              = $args{'map'};
+    my $map_layout       = $args{'map_layout'};
+    my $slot_key         = $args{'slot_key'};
+    my $label_x          = $args{'label_x'};
+    my $label_y          = $args{'label_y'};
+    my $map_coords       = $args{'map_coords'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $map_key = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key}
+        { $map->{'map_id'} };
+    my $pixels_per_unit
+        = $app_display_data->{'map_pixels_per_unit'}{$map_key}
+        || $app_display_data->{'scaffold'}{$slot_key}{'pixels_per_unit'};
+
+    my $visible_map_start
+        = $app_display_data->{'slot_info'}{$slot_key}{ $map->{'map_id'} }[0];
+    unless ( defined $visible_map_start ) {
+        $visible_map_start
+            = $app_display_data->{'slot_info'}{$slot_key}{ $map->{'map_id'} }
+            [2];
+    }
+
+    my $visible_pixel_start = $map_coords->[0] + (
+        (   $visible_map_start - $app_display_data->{'slot_info'}{$slot_key}
+                { $map->{'map_id'} }[2]
+        ) * $pixels_per_unit
+    );
+
+    my $visible_map_stop
+        = $app_display_data->{'slot_info'}{$slot_key}{ $map->{'map_id'} }[1];
+    unless ( defined $visible_map_stop ) {
+        $visible_map_stop
+            = $app_display_data->{'slot_info'}{$slot_key}{ $map->{'map_id'} }
+            [3];
+    }
+    my $visible_pixel_stop = $map_coords->[2] - (
+        (   $app_display_data->{'slot_info'}{$slot_key}{ $map->{'map_id'} }[3]
+                - $visible_map_stop
+        ) * $pixels_per_unit
+    );
+
+    my $visible_map_units = $visible_map_stop - $visible_map_start;
+    my ( $interval, $map_scale ) = _tick_mark_interval( $visible_map_units, );
+
+    my $no_intervals  = int( $visible_map_units / $interval );
+    my $interval_start = int($visible_map_start/(10**($map_scale-1))) * (10**($map_scale-1));
+    my $tick_overhang = 8;
+    my @intervals     =
+        map { int( $interval_start + ( $_ * $interval ) ) }
+        1 .. $no_intervals;
+    my $min_tick_distance
+        = $app_display_data->config_data('min_tick_distance') || 40;
+    my $last_tick_rel_pos = undef;
+
+    my $visible_pixel_width = $visible_pixel_stop - $visible_pixel_start + 1;
+    my $tick_start  = $map_coords->[1] - $tick_overhang;
+    my $tick_stop   = $map_coords->[3];
+    for my $tick_pos (@intervals) {
+        my $rel_position
+            = ( $tick_pos - $visible_map_start ) / $visible_map_units;
+
+        # If there isn't enough space, skip this one.
+        if (( ( $rel_position * $visible_pixel_width ) < $min_tick_distance )
+            or (defined($last_tick_rel_pos)
+                and ( ( $rel_position * $visible_pixel_width )
+                    - ( $last_tick_rel_pos * $visible_pixel_width )
+                    < $min_tick_distance )
+            )
+            )
+        {
+            next;
+        }
+
+        $last_tick_rel_pos = $rel_position;
+
+        my $x_pos = $visible_pixel_start + ( $visible_pixel_width * $rel_position );
+
+        push @{ $map_layout->{'items'} },
+            (
+            [   1, undef, 'line',
+                [ $x_pos, $tick_start, $x_pos, $tick_stop, ],
+                { -fill => 'black', }
+            ]
+            );
+
+        #
+        # Figure out how many signifigant figures the number needs by
+        # going down to the $interval size.
+        #
+        my $sig_figs = $tick_pos
+            ? int( '' . ( log( abs($tick_pos) ) / log(10) ) ) -
+            int( '' . ( log( abs($interval) ) / log(10) ) ) + 1
+            : 1;
+        my $tick_pos_str = presentable_number( $tick_pos, $sig_figs );
+        my $label_x = $x_pos;  #+ ( $font_width * length($tick_pos_str) ) / 2;
+
+        push @{ $map_layout->{'items'} },
+            (
+            [   1, undef, 'text',
+                [ $label_x, $label_y ],
+                {   -text   => $tick_pos_str,
+                    -anchor => 'nw',
+                    -fill   => 'black',
+                }
+            ]
+            );
+    }
+}
+
+# ----------------------------------------------------
+sub _draw_box {
+
+=pod
+
+=head2 _draw_box
+
+Draws the map as a "box" (a filled-in rectangle).  Return the bounds of the
+box.
+
+=cut
+
+    my %args             = @_;
+    my $map              = $args{'map'};
+    my $map_layout       = $args{'map_layout'};
+    my $min_x            = $args{'min_x'};
+    my $min_y            = $args{'min_y'};
+    my $max_x            = $args{'max_x'};
+    my $slot_key            = $args{'slot_key'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $color = $map->{'color'}
+        || $map->{'default_color'}
+        || $app_display_data->config_data('map_color');
+
+    my $thickness = $map->{'width'}
+        || $map->{'default_width'}
+        || $app_display_data->config_data('map_width');
+    my $max_y  = $min_y + $thickness;
+    my $mid_y = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my @bounds = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords = ( $min_x, $min_y, $max_x, $max_y );
+    my $truncation_arrow_width =20;
+    my $is_flipped=0;
+
+    my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )
+        = ( $min_x, $min_y, $max_x, $max_y, );
+#    my $truncated = $app_display_data->map_truncated( $slot_key, $map->{'map_id'} );
+#    # Right Truncation Arrow
+#    if (   $truncated == 3
+#        or ( $truncated >= 2 and $is_flipped )
+#        or ( $truncated == 1 and not $is_flipped ) )
+#    {
+#        push @{ $map_layout->{'items'} },
+#            (
+#            [   1, undef,
+#                'polygon',
+#                [   $min_x,                           $mid_y,
+#                    $min_x + $truncation_arrow_width, $max_y+3,
+#                    $min_x + $truncation_arrow_width, $min_y-3,
+#                ],
+#                #{ -fill => $color, -outline => 'black' }
+#                { -fill => 'green', -outline => 'black' }
+#            ]
+#            );
+#        $main_line_x1 += $truncation_arrow_width;
+#    }
+#
+#    # Left Truncation Arrow
+#    if (   $truncated == 3
+#        or ( $truncated >= 2 and not $is_flipped )
+#        or ( $truncated == 1 and $is_flipped ) )
+#    {
+#        push @{ $map_layout->{'items'} },
+#            (
+#            [   1, undef, 'polygon',
+#                [   $max_x,                           $mid_y,
+#                    $max_x - $truncation_arrow_width, $max_y +3,
+#                    $max_x - $truncation_arrow_width, $min_y -3,
+#                ],
+#                #{ -fill => $color, -outline => 'black' }
+#                { -fill => 'red', -outline => 'black' }
+#            ]
+#            );
+#        $main_line_x2 -= $truncation_arrow_width;
+#    }
+
+
+    # Draw the map
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'rectangle',
+            [ $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2 ],
+            { -fill => $color, -outline => 'black' }
+        ]
+        );
+
+    return (\@bounds,\@coords);
+}
+
+# ----------------------------------------------------
+sub _draw_dumbbell {
+
+=pod
+
+=head2 _draw_dumbbell
+
+Draws the map as a "dumbbell" (a filled-in rectangle with balls at the end).
+Return the bounds of the map.
+
+=cut
+
+    my %args             = @_;
+    my $map              = $args{'map'};
+    my $map_layout       = $args{'map_layout'};
+    my $min_x            = $args{'min_x'};
+    my $min_y            = $args{'min_y'};
+    my $max_x            = $args{'max_x'};
+    my $slot_key         = $args{'slot_key'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $color = $map->{'color'}
+        || $map->{'default_color'}
+        || $app_display_data->config_data('map_color');
+
+    my $thickness = $map->{'width'}
+        || $map->{'default_width'}
+        || $app_display_data->config_data('map_width');
+    my $circle_diameter = $thickness;
+    my $max_y           = $min_y + $thickness;
+    my $mid_y           = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my @bounds          = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords          = ( $min_x, $min_y, $max_x, $max_y );
+
+    my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )
+        = ( $min_x, $min_y, $max_x, $max_y, );
+
+    # Draw Left Circle
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'oval',
+            [   $min_x,
+                $min_y,
+                $min_x + $circle_diameter,
+                $max_y,
+            ],
+            { -fill => $color, -outline => $color }
+        ]
+        );
+
+    # Draw Right Circle
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'oval',
+            [   $max_x - $circle_diameter,
+                $min_y,
+                $max_x,
+                $max_y,
+            ],
+            { -fill => $color, -outline => $color }
+        ]
+        );
+
+    $main_line_y1 += int( $thickness / 3 );
+    $main_line_y2 -= int( $thickness / 3 );
+
+    # Draw the map
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'rectangle',
+            [ $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2 ],
+            { -fill => $color, -outline => $color }
+        ]
+        );
+
+    return ( \@bounds, \@coords );
+}
+
+# ----------------------------------------------------
+sub _draw_i_beam {
+
+=pod
+
+=head2 _draw_i_beam
+
+Draws the map as an "i_beam" (a line with cross lines on the end).  Return the
+bounds of the map.
+
+=cut
+
+    my %args             = @_;
+    my $map              = $args{'map'};
+    my $map_layout       = $args{'map_layout'};
+    my $min_x            = $args{'min_x'};
+    my $min_y            = $args{'min_y'};
+    my $max_x            = $args{'max_x'};
+    my $slot_key         = $args{'slot_key'};
+    my $app_display_data = $args{'app_display_data'};
+
+    my $color = $map->{'color'}
+        || $map->{'default_color'}
+        || $app_display_data->config_data('map_color');
+
+    my $thickness = $map->{'width'}
+        || $map->{'default_width'}
+        || $app_display_data->config_data('map_width');
+    my $max_y           = $min_y + $thickness;
+    my $mid_y           = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my @bounds          = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords          = ( $min_x, $min_y, $max_x, $max_y );
+
+    my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )
+        = ( $min_x, $mid_y, $max_x, $mid_y, );
+
+    # Draw Left Bar
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'line',
+            [   $min_x,
+                $min_y,
+                $min_x,
+                $max_y,
+            ],
+            { -fill => $color, }
+        ]
+        );
+
+    # Draw Right Circle
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'line',
+            [   $max_x,
+                $min_y,
+                $max_x,
+                $max_y,
+            ],
+            { -fill => $color, }
+        ]
+        );
+
+    # Draw the map
+    push @{ $map_layout->{'items'} },
+        (
+        [   1, undef, 'line',
+            [ $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2 ],
+            { -fill => $color, }
+        ]
+        );
+
+    return ( \@bounds, \@coords );
+}
+
+
+## ----------------------------------------------------
+#sub draw_dumbbell {
+#
+#=pod
+#
+#=head2 draw_dumbbell
+#
+#
+#=cut
+#
+#    my ( $self, %args ) = @_;
+#    my $drawing_data  = $args{'drawing_data'};
+#    my $map_area_data = $args{'map_area_data'};
+#    my $map_coords    = $args{'map_coords'};
+#    my $drawer        = $args{'drawer'} || $self->drawer
+#        or $self->error('No drawer');
+#    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
+#        or $self->error('No coordinates');
+#    my $map_id              = $args{'map_id'};
+#    my $is_flipped          = $args{'is_flipped'};
+#    my $slot_no             = $args{'slot_no'};
+#    my $map_acc             = $self->map_acc($map_id);
+#    my $color               = $self->map_color($map_id);
+#    my $width               = $self->map_width($map_id);
+#    my $x2                  = $x1 + $width;
+#    my $mid_x               = $x1 + $width / 2;
+#    my $arc_width           = $width + 6;
+#    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
+#
+#    my $drew_bells = 0;
+#    my @coords = ( $x1, $y1, $x2, $y2 );
+#    $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
+#    $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
+#    my $truncated = $drawer->data_module->truncatedMap( $slot_no, $map_id );
+#    if (   ( $truncated >= 2 and $is_flipped )
+#        or ( ( $truncated == 1 or $truncated == 3 ) and not $is_flipped ) )
+#    {
+#        $self->draw_truncation_arrows(
+#            is_up         => 1,
+#            map_coords    => $map_coords,
+#            coords        => \@coords,
+#            drawer        => $drawer,
+#            map_area_data => $map_area_data,
+#            drawing_data  => $drawing_data,
+#            is_flipped    => $is_flipped,
+#            map_id        => $map_id,
+#            map_acc       => $map_acc,
+#            slot_no       => $slot_no,
+#        );
+#    }
+#    else {
+#        push @$drawing_data,
+#            [
+#            ARC,        $mid_x, $map_coords->[1], $arc_width,
+#            $arc_width, 0,      360,              $color
+#            ];
+#        push @$drawing_data,
+#            [ FILL_TO_BORDER, $mid_x, $map_coords->[1], $color, $color ];
+#        $drew_bells = 1;
+#    }
+#    if (   ( $truncated >= 2 and not $is_flipped )
+#        or ( ( $truncated == 1 or $truncated == 3 ) and $is_flipped ) )
+#    {
+#        $self->draw_truncation_arrows(
+#            is_up         => 0,
+#            map_coords    => $map_coords,
+#            coords        => \@coords,
+#            drawer        => $drawer,
+#            map_area_data => $map_area_data,
+#            drawing_data  => $drawing_data,
+#            is_flipped    => $is_flipped,
+#            map_id        => $map_id,
+#            map_acc       => $map_acc,
+#            slot_no       => $slot_no,
+#        );
+#    }
+#    else {
+#        push @$drawing_data,
+#            [
+#            ARC,        $mid_x, $map_coords->[3], $arc_width,
+#            $arc_width, 0,      360,              $color
+#            ];
+#        push @$drawing_data,
+#            [ FILL_TO_BORDER, $mid_x, $map_coords->[3], $color, $color ];
+#        $drew_bells = 1;
+#    }
+#    push @$drawing_data,
+#        [
+#        FILLED_RECT,      $map_coords->[0], $map_coords->[1],
+#        $map_coords->[2], $map_coords->[3], $color
+#        ];
+#
+#    unless ($omit_all_area_boxes) {
+#        my $map     = $self->map($map_id);
+#        my $buttons = $self->create_buttons(
+#            map_id     => $map_id,
+#            drawer     => $drawer,
+#            slot_no    => $slot_no,
+#            is_flipped => $is_flipped,
+#            buttons    => [ 'map_detail', ],
+#        );
+#        my $url  = $buttons->[0]{'url'};
+#        my $alt  = $buttons->[0]{'alt'};
+#        my $code = '';
+#        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+#        push @{$map_area_data},
+#            {
+#            coords => [
+#                $map_coords->[0], $map_coords->[1],
+#                $map_coords->[2], $map_coords->[3]
+#            ],
+#            url  => $url,
+#            alt  => $alt,
+#            code => $code,
+#            };
+#    }
+#
+#    if ( my $map_units = $args{'map_units'} ) {
+#        $self->draw_map_bottom(
+#            map_id        => $map_id,
+#            slot_no       => $slot_no,
+#            map_x1        => $map_coords->[0],
+#            map_x2        => $map_coords->[2],
+#            map_y2        => $map_coords->[3],
+#            drawer        => $drawer,
+#            drawing_data  => $drawing_data,
+#            map_area_data => $map_area_data,
+#            map_units     => $map_units,
+#            bounds        => \@coords,
+#        );
+#    }
+#    if ($drew_bells) {
+#        $coords[0] = $mid_x - $arc_width / 2
+#            if ( $coords[0] > $mid_x - $arc_width / 2 );
+#        $coords[1] = $map_coords->[1] - $arc_width / 2
+#            if ( $coords[1] > $map_coords->[1] - $arc_width / 2 );
+#        $coords[2] = $mid_x + $arc_width / 2
+#            if ( $coords[2] < $mid_x + $arc_width / 2 );
+#        $coords[3] = $map_coords->[3] + $arc_width / 2
+#            if ( $coords[3] < $map_coords->[3] + $arc_width / 2 );
+#    }
+#    return ( \@coords, $map_coords );
+#}
+#
+## ----------------------------------------------------
+#sub draw_i_beam {
+#
+#=pod
+#
+#=head2 draw_i_beam
+#
+#Draws the map as an "I-beam."  Return the bounds of the image.
+#
+#=cut
+#
+#    my ( $self, %args ) = @_;
+#    my $drawing_data  = $args{'drawing_data'};
+#    my $map_area_data = $args{'map_area_data'};
+#    my $map_coords    = $args{'map_coords'};
+#    my $drawer        = $args{'drawer'} || $self->drawer
+#        or $self->error('No drawer');
+#    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
+#        or $self->error('No coordinates');
+#    my $map_id              = $args{'map_id'};
+#    my $is_flipped          = $args{'is_flipped'};
+#    my $slot_no             = $args{'slot_no'};
+#    my $map_acc             = $self->map_acc($map_id);
+#    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
+#    my $color               = $self->map_color($map_id);
+#    my $width               = $self->map_width($map_id);
+#    my $x2                  = $x1 + $width;
+#    my $x                   = $x1 + $width / 2;
+#
+#    my @coords = ( $x1, $y1, $x2, $y2 );
+#    $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
+#    $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
+#    my $truncated = $drawer->data_module->truncatedMap( $slot_no, $map_id );
+#    if (   ( $truncated >= 2 and $is_flipped )
+#        or ( ( $truncated == 1 or $truncated == 3 ) and not $is_flipped ) )
+#    {
+#        $self->draw_truncation_arrows(
+#            is_up         => 1,
+#            map_coords    => $map_coords,
+#            coords        => \@coords,
+#            drawer        => $drawer,
+#            map_area_data => $map_area_data,
+#            drawing_data  => $drawing_data,
+#            is_flipped    => $is_flipped,
+#            map_id        => $map_id,
+#            map_acc       => $map_acc,
+#            slot_no       => $slot_no,
+#        );
+#    }
+#    else {
+#        push @$drawing_data,
+#            [
+#            LINE,             $map_coords->[0], $map_coords->[1],
+#            $map_coords->[2], $map_coords->[1], $color
+#            ];
+#    }
+#    if (   ( $truncated >= 2 and not $is_flipped )
+#        or ( ( $truncated == 1 or $truncated == 3 ) and $is_flipped ) )
+#    {
+#        $self->draw_truncation_arrows(
+#            is_up         => 0,
+#            map_coords    => $map_coords,
+#            coords        => \@coords,
+#            drawer        => $drawer,
+#            map_area_data => $map_area_data,
+#            drawing_data  => $drawing_data,
+#            is_flipped    => $is_flipped,
+#            map_id        => $map_id,
+#            map_acc       => $map_acc,
+#            slot_no       => $slot_no,
+#        );
+#    }
+#    else {
+#        push @$drawing_data,
+#            [
+#            LINE,             $map_coords->[0], $map_coords->[3],
+#            $map_coords->[2], $map_coords->[3], $color
+#            ];
+#    }
+#    push @$drawing_data,
+#        [ LINE, $x, $map_coords->[1], $x, $map_coords->[3], $color ];
+#    unless ($omit_all_area_boxes) {
+#        my $map     = $self->map($map_id);
+#        my $buttons = $self->create_buttons(
+#            map_id     => $map_id,
+#            drawer     => $drawer,
+#            slot_no    => $slot_no,
+#            is_flipped => $is_flipped,
+#            buttons    => [ 'map_detail', ],
+#        );
+#        my $url  = $buttons->[0]{'url'};
+#        my $alt  = $buttons->[0]{'alt'};
+#        my $code = '';
+#        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+#        push @{$map_area_data},
+#            {
+#            coords => [ $x, $map_coords->[1], $x, $map_coords->[3] ],
+#            url    => $url,
+#            alt    => $alt,
+#            code   => $code,
+#            };
+#    }
+#    if ( my $map_units = $args{'map_units'} ) {
+#        $self->draw_map_bottom(
+#            map_id        => $map_id,
+#            slot_no       => $slot_no,
+#            map_x1        => $map_coords->[0],
+#            map_x2        => $map_coords->[2],
+#            map_y2        => $map_coords->[3],
+#            drawer        => $drawer,
+#            drawing_data  => $drawing_data,
+#            map_area_data => $map_area_data,
+#            map_units     => $map_units,
+#            bounds        => \@coords,
+#        );
+#    }
+#
+#    return ( \@coords, $map_coords );
+#}
 
 1;
 
