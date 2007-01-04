@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use base 'Class::Base';
 
@@ -708,6 +708,7 @@ sub heatmap {
     my $feature          = $args{'feature'};
     my $calling_obj      = $args{'calling_obj'};
     my $label_side       = $args{'label_side'} || RIGHT;
+    my $drawer           = $args{'drawer'};
     my $feature_type_acc = $args{'feature_type_acc'};
     my @coords;
 
@@ -782,7 +783,7 @@ sub heatmap {
         + $bot_color_array->[2];
 
     my $color
-        = $calling_obj->define_color( [ $r_color, $g_color, $b_color ] );
+        = $drawer->define_color( [ $r_color, $g_color, $b_color ] );
 
     my $width = $feature->{'width'} || 3;
     push @$drawing_data,

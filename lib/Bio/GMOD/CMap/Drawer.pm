@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.133 2006-12-21 05:14:24 mwz444 Exp $
+# $Id: Drawer.pm,v 1.134 2007-01-04 20:53:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.133 $)[-1];
+$VERSION = (qw$Revision: 1.134 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1423,6 +1423,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                             color            => $color,
                             label_side       => RIGHT,
                             calling_obj      => $self,
+                            drawer           => $self,
                             feature_type_acc => $ft->{'feature_type_acc'},
                         );
                         $self->add_drawing(@temp_drawing_data);
