@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.21 2006-12-27 19:34:50 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.22 2007-01-05 19:36:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,6 +23,7 @@ This module contains methods to layout the drawing surface
 use strict;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Drawer::AppGlyph;
 use Bio::GMOD::CMap::Utils qw[
     simple_column_distribution
     presentable_number
@@ -30,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -67,7 +68,6 @@ my %SHAPE = (
     'I_beam'   => \&_draw_i_beam,
     'i_beam'   => \&_draw_i_beam,
 );
-
 
 # ----------------------------------------------------
 sub layout_new_panel {
@@ -966,8 +966,7 @@ Lays out a maps in a contained area.
     my $max_x            = $args{'max_x'};
     my $min_y            = $args{'min_y'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
-    my $font_height = 15;
-
+    my $font_height      = 15;
 
     my $max_y;
 
@@ -996,7 +995,7 @@ Lays out a maps in a contained area.
         min_x            => $min_x,
         min_y            => $min_y,
         max_x            => $max_x,
-        slot_key       => $slot_key,
+        slot_key         => $slot_key,
     );
 
     $map_layout->{'coords'} = $map_coords;
@@ -1056,12 +1055,17 @@ Lays out feautures
 
     my $max_y = $min_y;
 
+    my $feature_height = 10;
+    my $feature_buffer = 2;
+
     my $sorted_feature_data = $app_display_data->app_data_module()
         ->sorted_feature_data( map_id => $map->{'map_id'} );
 
     unless ( %{ $sorted_feature_data || {} } ) {
         return $min_y;
     }
+
+    my $glyph = Bio::GMOD::CMap::Drawer::AppGlyph->new();
 
     my $map_start = $map->{'map_start'};
 
@@ -1071,67 +1075,107 @@ Lays out feautures
         my @fcolumns;
 
         foreach my $feature ( @{ $lane_features || [] } ) {
-            my $feature_acc   = $feature->{'feature_acc'};
-            my $feature_start = $feature->{'feature_start'};
-            my $feature_stop  = $feature->{'feature_stop'};
-            unless ( $app_display_data->{'map_layout'}{$map_key}{'features'}
-                {$feature_acc} )
-            {
-                $app_display_data->{'map_layout'}{$map_key}{'features'}
-                    {$feature_acc} = {};
-            }
-            my $feature_layout
-                = $app_display_data->{'map_layout'}{$map_key}{'features'}
-                {$feature_acc};
+            my $feature_acc      = $feature->{'feature_acc'};
+            my $feature_start    = $feature->{'feature_start'};
+            my $feature_stop     = $feature->{'feature_stop'};
+            my $feature_type_acc = $feature->{'feature_type_acc'};
+            my $feature_shape
+                = $app_display_data->feature_type_data( $feature_type_acc,
+                'shape' )
+                || 'line';
+            my $feature_glyph = $feature_shape;
+            $feature_glyph =~ s/-/_/g;
+            if ( $glyph->can($feature_glyph) ) {
 
-            my $x1 = $min_x
-                + ( ( $feature_start - $map_start ) * $pixels_per_unit );
-            my $x2 = $min_x
-                + ( ( $feature_stop - $map_start ) * $pixels_per_unit );
+                unless (
+                    $app_display_data->{'map_layout'}{$map_key}{'features'}
+                    {$feature_acc} )
+                {
+                    $app_display_data->{'map_layout'}{$map_key}{'features'}
+                        {$feature_acc} = {};
+                }
+                my $column_index;
+                my $feature_layout
+                    = $app_display_data->{'map_layout'}{$map_key}{'features'}
+                    {$feature_acc};
 
-            my $adjusted_left  = $x1 - $min_x;
-            my $adjusted_right = $x2 - $min_x;
-            my $column_index   = simple_column_distribution(
-                low        => $adjusted_left,
-                high       => $adjusted_right,
-                columns    => \@fcolumns,
-                map_height => $max_x - $min_x + 1,
-                buffer     => SMALL_BUFFER,
-            );
+                my $x1 = $min_x
+                    + ( ( $feature_start - $map_start ) * $pixels_per_unit );
+                my $x2 = $min_x
+                    + ( ( $feature_stop - $map_start ) * $pixels_per_unit );
 
-            my $label_features = 0;
+                if ( not $glyph->allow_glyph_overlap($feature_glyph) ) {
+                    my $adjusted_left  = $x1 - $min_x;
+                    my $adjusted_right = $x2 - $min_x;
+                    $column_index = simple_column_distribution(
+                        low        => $adjusted_left,
+                        high       => $adjusted_right,
+                        columns    => \@fcolumns,
+                        map_height => $max_x - $min_x + 1,
+                        buffer     => SMALL_BUFFER,
+                    );
+                }
+                else {
+                    $column_index = 0;
+                }
 
-            my $offset =
-                $label_features
-                ? ($column_index) * 18
-                : ($column_index) * 5;
-            my $y1 = $lane_min_y + $offset;
+                my $label_features = 0;
 
-            if ($label_features) {
-                push @{ $feature_layout->{'items'} },
-                    (
-                    [   1, undef, 'text',
-                        [ $x1, $y1 ],
-                        {   -text   => $feature->{'feature_name'},
-                            -anchor => 'nw',
-                            -fill   => 'black',
-                        }
-                    ]
+                my $offset =
+                    $label_features
+                    ? ($column_index)
+                    * ( $feature_height + $feature_buffer + 15 )
+                    : ($column_index) * ( $feature_height + $feature_buffer );
+                my $y1 = $lane_min_y + $offset;
+
+                if ($label_features) {
+                    push @{ $feature_layout->{'items'} },
+                        (
+                        [   1, undef, 'text',
+                            [ $x1, $y1 ],
+                            {   -text   => $feature->{'feature_name'},
+                                -anchor => 'nw',
+                                -fill   => 'black',
+                            }
+                        ]
+                        );
+
+                    $y1 += 15;
+                }
+                my $y2 = $y1 + $feature_height;
+
+                my $color
+                    = $app_display_data->feature_type_data( $feature_type_acc,
+                    'color' )
+                    || 'black';
+                my $coords;
+                ( $coords, $feature_layout->{'items'} )
+                    = $glyph->$feature_glyph(
+                    items            => $feature_layout->{'items'},
+                    x_pos2           => $x2,
+                    x_pos1           => $x1,
+                    y_pos1           => $y1,
+                    y_pos2           => $y2,
+                    color            => $color,
+                    is_flipped       => 0,
+                    direction        => $feature->{'direction'},
+                    name             => $feature->{'feature_name'},
+                    app_display_data => $app_display_data,
+                    feature          => $feature,
+                    feature_type_acc => $feature_type_acc,
                     );
 
-                $y1 += 15;
-            }
-            my $y2 = $y1 + 2;
-            push @{ $feature_layout->{'items'} },
-                (
-                [   1, undef,
-                    'rectangle', [ $x1, $y1, $x2, $y2 ],
-                    { -fill => 'red', }
-                ]
-                );
-            $feature_layout->{'changed'} = 1;
-            if ( $y2 > $max_y ) {
-                $max_y = $y2;
+                #push @{ $feature_layout->{'items'} },
+                #(
+                #[   1, undef,
+                #'rectangle', [ $x1, $y1, $x2, $y2 ],
+                #{ -fill => 'red', }
+                #]
+                #);
+                $feature_layout->{'changed'} = 1;
+                if ( $y2 > $max_y ) {
+                    $max_y = $y2;
+                }
             }
         }
     }
@@ -1658,8 +1702,7 @@ Adds tick marks to a map.
 
     my $map_key = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key}
         { $map->{'map_id'} };
-    my $pixels_per_unit
-        = $app_display_data->{'map_pixels_per_unit'}{$map_key}
+    my $pixels_per_unit = $app_display_data->{'map_pixels_per_unit'}{$map_key}
         || $app_display_data->{'scaffold'}{$slot_key}{'pixels_per_unit'};
 
     my $visible_map_start
@@ -1692,8 +1735,10 @@ Adds tick marks to a map.
     my $visible_map_units = $visible_map_stop - $visible_map_start;
     my ( $interval, $map_scale ) = _tick_mark_interval( $visible_map_units, );
 
-    my $no_intervals  = int( $visible_map_units / $interval );
-    my $interval_start = int($visible_map_start/(10**($map_scale-1))) * (10**($map_scale-1));
+    my $no_intervals = int( $visible_map_units / $interval );
+    my $interval_start
+        = int( $visible_map_start / ( 10**( $map_scale - 1 ) ) )
+        * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = 8;
     my @intervals     =
         map { int( $interval_start + ( $_ * $interval ) ) }
@@ -1703,8 +1748,8 @@ Adds tick marks to a map.
     my $last_tick_rel_pos = undef;
 
     my $visible_pixel_width = $visible_pixel_stop - $visible_pixel_start + 1;
-    my $tick_start  = $map_coords->[1] - $tick_overhang;
-    my $tick_stop   = $map_coords->[3];
+    my $tick_start          = $map_coords->[1] - $tick_overhang;
+    my $tick_stop           = $map_coords->[3];
     for my $tick_pos (@intervals) {
         my $rel_position
             = ( $tick_pos - $visible_map_start ) / $visible_map_units;
@@ -1723,7 +1768,8 @@ Adds tick marks to a map.
 
         $last_tick_rel_pos = $rel_position;
 
-        my $x_pos = $visible_pixel_start + ( $visible_pixel_width * $rel_position );
+        my $x_pos
+            = $visible_pixel_start + ( $visible_pixel_width * $rel_position );
 
         push @{ $map_layout->{'items'} },
             (
@@ -1775,7 +1821,7 @@ box.
     my $min_x            = $args{'min_x'};
     my $min_y            = $args{'min_y'};
     my $max_x            = $args{'max_x'};
-    my $slot_key            = $args{'slot_key'};
+    my $slot_key         = $args{'slot_key'};
     my $app_display_data = $args{'app_display_data'};
 
     my $color = $map->{'color'}
@@ -1785,15 +1831,16 @@ box.
     my $thickness = $map->{'width'}
         || $map->{'default_width'}
         || $app_display_data->config_data('map_width');
-    my $max_y  = $min_y + $thickness;
-    my $mid_y = int( 0.5 + ( $min_y + $max_y ) / 2 );
-    my @bounds = ( $min_x, $min_y, $max_x, $max_y );
-    my @coords = ( $min_x, $min_y, $max_x, $max_y );
-    my $truncation_arrow_width =20;
-    my $is_flipped=0;
+    my $max_y                  = $min_y + $thickness;
+    my $mid_y                  = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my @bounds                 = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords                 = ( $min_x, $min_y, $max_x, $max_y );
+    my $truncation_arrow_width = 20;
+    my $is_flipped             = 0;
 
     my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )
         = ( $min_x, $min_y, $max_x, $max_y, );
+
 #    my $truncated = $app_display_data->map_truncated( $slot_key, $map->{'map_id'} );
 #    # Right Truncation Arrow
 #    if (   $truncated == 3
@@ -1834,17 +1881,18 @@ box.
 #        $main_line_x2 -= $truncation_arrow_width;
 #    }
 
-
     # Draw the map
     push @{ $map_layout->{'items'} },
         (
-        [   1, undef, 'rectangle',
+        [   1,
+            undef,
+            'rectangle',
             [ $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2 ],
             { -fill => $color, -outline => 'black' }
         ]
         );
 
-    return (\@bounds,\@coords);
+    return ( \@bounds, \@coords );
 }
 
 # ----------------------------------------------------
@@ -1888,11 +1936,7 @@ Return the bounds of the map.
     push @{ $map_layout->{'items'} },
         (
         [   1, undef, 'oval',
-            [   $min_x,
-                $min_y,
-                $min_x + $circle_diameter,
-                $max_y,
-            ],
+            [ $min_x, $min_y, $min_x + $circle_diameter, $max_y, ],
             { -fill => $color, -outline => $color }
         ]
         );
@@ -1901,11 +1945,7 @@ Return the bounds of the map.
     push @{ $map_layout->{'items'} },
         (
         [   1, undef, 'oval',
-            [   $max_x - $circle_diameter,
-                $min_y,
-                $max_x,
-                $max_y,
-            ],
+            [ $max_x - $circle_diameter, $min_y, $max_x, $max_y, ],
             { -fill => $color, -outline => $color }
         ]
         );
@@ -1953,10 +1993,10 @@ bounds of the map.
     my $thickness = $map->{'width'}
         || $map->{'default_width'}
         || $app_display_data->config_data('map_width');
-    my $max_y           = $min_y + $thickness;
-    my $mid_y           = int( 0.5 + ( $min_y + $max_y ) / 2 );
-    my @bounds          = ( $min_x, $min_y, $max_x, $max_y );
-    my @coords          = ( $min_x, $min_y, $max_x, $max_y );
+    my $max_y  = $min_y + $thickness;
+    my $mid_y  = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my @bounds = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords = ( $min_x, $min_y, $max_x, $max_y );
 
     my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )
         = ( $min_x, $mid_y, $max_x, $mid_y, );
@@ -1965,11 +2005,7 @@ bounds of the map.
     push @{ $map_layout->{'items'} },
         (
         [   1, undef, 'line',
-            [   $min_x,
-                $min_y,
-                $min_x,
-                $max_y,
-            ],
+            [ $min_x, $min_y, $min_x, $max_y, ],
             { -fill => $color, }
         ]
         );
@@ -1978,11 +2014,7 @@ bounds of the map.
     push @{ $map_layout->{'items'} },
         (
         [   1, undef, 'line',
-            [   $max_x,
-                $min_y,
-                $max_x,
-                $max_y,
-            ],
+            [ $max_x, $min_y, $max_x, $max_y, ],
             { -fill => $color, }
         ]
         );
@@ -1998,7 +2030,6 @@ bounds of the map.
 
     return ( \@bounds, \@coords );
 }
-
 
 ## ----------------------------------------------------
 #sub draw_dumbbell {
