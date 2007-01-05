@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.77 2006-12-13 19:57:47 mwz444 Exp $
+# $Id: Utils.pm,v 1.78 2007-01-05 19:21:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1372,10 +1372,12 @@ sub _get_options_from_url {
             =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
-    (   $parsed_url_options{'comparative_map_field'},
-        $parsed_url_options{'comparative_map_field_acc'}
-        )
-        = split( /=/, $apr->param('comparative_map') );
+    if ( $apr->param('comparative_map') ) {
+        (   $parsed_url_options{'comparative_map_field'},
+            $parsed_url_options{'comparative_map_field_acc'}
+            )
+            = split( /=/, $apr->param('comparative_map') );
+    }
 
     # Get feature type and evidence type info
     $parsed_url_options{'included_feature_types'}      = undef;    # array
@@ -1765,7 +1767,7 @@ sub parse_url {
         my %ref_maps;
         my %ref_map_sets = ();
         foreach my $ref_map_acc (@ref_map_accs) {
-            next if $ref_map_acc == -1;
+            next if $ref_map_acc eq '-1';
             my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
             (   $ref_map_acc, $start, $stop, $magnification,
                 $parsed_url_options{'highlight'}
@@ -1959,6 +1961,13 @@ sub parse_url {
         $parsed_url_options{'comparative_map_right'} = [];
         $parsed_url_options{'comparative_map_left'}  = [];
     }
+    if ($parsed_url_options{'ref_map_start'} eq ''){
+        $parsed_url_options{'ref_map_start'} = undef;
+    }
+    if ($parsed_url_options{'ref_map_stop'} eq ''){
+        $parsed_url_options{'ref_map_stop'} = undef;
+    }
+
 
     # If ref_map_start/stop are defined and there is only one ref map
     # use those values and then wipe them from the params.

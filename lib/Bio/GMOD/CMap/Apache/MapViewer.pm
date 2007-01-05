@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.132 2006-12-06 21:52:44 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.133 2007-01-05 19:21:57 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.132 $)[-1];
+$VERSION = (qw$Revision: 1.133 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -284,7 +284,8 @@ sub handler {
             )
         );
         my @pixel_heights;
-        my $pixel_height            = $apr->param('pixel_height');
+        my $pixel_height = $apr->param('pixel_height')
+            || VALID->{'image_size'}{ DEFAULT->{'image_size'} };
         my $use_custom_pixel_height = 1;
         foreach my $image_size (
             sort { VALID->{'image_size'}{$a} <=> VALID->{'image_size'}{$b} }
