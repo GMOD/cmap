@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.22 2007-01-05 19:36:13 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.23 2007-01-09 22:50:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -1055,7 +1055,7 @@ Lays out feautures
 
     my $max_y = $min_y;
 
-    my $feature_height = 10;
+    my $feature_height = 6;
     my $feature_buffer = 2;
 
     my $sorted_feature_data = $app_display_data->app_data_module()

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.21 2006-11-27 20:05:07 mwz444 Exp $
+# $Id: AppController.pm,v 1.22 2007-01-09 22:50:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -483,6 +483,36 @@ Create the text to go into the info box when a map is clicked.
     }
 
     return $map_info_str;
+}
+
+# ----------------------------------------------------
+sub get_feature_info_text {
+
+=pod
+
+=head2 get_feature_info_text
+
+Create the text to go into the info box when a feature is clicked.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_acc      = $args{'feature_acc'};
+    my $app_display_data = $self->app_display_data();
+
+    my $feature_data = $self->app_data_module()
+        ->feature_data( feature_acc => $feature_acc, );
+
+    my $feature_info_str = "Feature Name: "
+        . $feature_data->{'feature_name'} . "\n"
+        . "Feature Start: "
+        . $feature_data->{'feature_start'} . "\n"
+        . "Feature Stop: "
+        . $feature_data->{'feature_stop'} . "\n"
+        . "Feature Type Accession: "
+        . $feature_data->{'feature_type_acc'} . "\n";
+
+    return $feature_info_str;
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.23 2006-12-27 19:34:50 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.24 2007-01-09 22:50:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -356,7 +356,6 @@ Returns the window_pane object.
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'window_pane'}{$window_key} ) {
 
-        #print STDERR "+++++++++++++++++++NEW WINDOW_PANE\n";
         my $window = $self->{'windows'}{$window_key};
         $self->{'window_pane'}{$window_key} = $window->Scrolled(
             "Pane",
@@ -1222,14 +1221,16 @@ Draws and re-draws on the canvas
                 {
                     my $feature_layout
                         = $map_layout->{'features'}{$feature_acc};
-                    foreach my $drawing_section (qw[ items ]) {
-                        $self->draw_items(
-                            canvas   => $canvas,
-                            x_offset => $x_offset,
-                            items    => $feature_layout->{$drawing_section},
-                            tags     => [ 'display', ],
-                        );
-                    }
+                    $self->draw_items(
+                        canvas   => $canvas,
+                        x_offset => $x_offset,
+                        items    => $feature_layout->{'items'},
+                        tags     => [ 'feature', 'display', ],
+                    );
+                    $self->record_feature_acc_drawn_id(
+                        feature_acc => $feature_acc,
+                        items       => $feature_layout->{'items'},
+                    );
                 }
                 $map_layout->{'sub_changed'} = 0;
             }
@@ -1494,9 +1495,13 @@ Item structure:
     my $map_key = $args{'map_key'};
     my $items   = $args{'items'} || return;
 
+    $self->{'map_key_to_drawn_ids'}{$map_key} = [];
     for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
         $self->{'drawn_id_to_map_key'}{ $items->[$i][1] } = $map_key;
+        push @{ $self->{'map_key_to_drawn_ids'}{$map_key} }, $items->[$i][1];
     }
+    @{ $self->{'map_key_to_drawn_ids'}{$map_key} }
+        = sort { $b <=> $a } @{ $self->{'map_key_to_drawn_ids'}{$map_key} };
 }
 
 # ----------------------------------------------------
@@ -1513,6 +1518,83 @@ Accessor method to map_keys from drawn ids
     my ( $self, $drawn_id, ) = @_;
 
     return $self->{'drawn_id_to_map_key'}{$drawn_id};
+}
+
+# ----------------------------------------------------
+sub map_key_to_drawn_ids {
+
+=pod
+
+=head2 map_key_to_drawn_ids
+
+Accessor method to drawn ids from a map_key
+
+=cut
+
+    my ( $self, $map_key, ) = @_;
+
+    return @{ $self->{'map_key_to_drawn_ids'}{$map_key} || [] };
+}
+
+# ----------------------------------------------------
+sub record_feature_acc_drawn_id {
+
+=pod
+
+=head2 record_feature_acc_drawn_id
+
+Create a hash lookup for ids to a feature key
+
+Item structure:
+
+  [ changed, item_id, type, coord_array, options_hash ]
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_acc = $args{'feature_acc'};
+    my $items = $args{'items'} || return;
+    $self->{'feature_acc_to_drawn_ids'}{$feature_acc} = [];
+    for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
+        $self->{'drawn_id_to_feature_acc'}{ $items->[$i][1] } = $feature_acc;
+        push @{ $self->{'feature_acc_to_drawn_ids'}{$feature_acc} },
+            $items->[$i][1];
+    }
+    @{ $self->{'feature_acc_to_drawn_ids'}{$feature_acc} }
+        = sort { $a <=> $b }
+        @{ $self->{'feature_acc_to_drawn_ids'}{$feature_acc} };
+}
+
+# ----------------------------------------------------
+sub drawn_id_to_feature_acc {
+
+=pod
+
+=head2 drawn_id_to_feature_acc
+
+Accessor method to feature_accs from drawn ids
+
+=cut
+
+    my ( $self, $drawn_id, ) = @_;
+
+    return $self->{'drawn_id_to_feature_acc'}{$drawn_id};
+}
+
+# ----------------------------------------------------
+sub feature_acc_to_drawn_ids {
+
+=pod
+
+=head2 feature_acc_to_drawn_ids
+
+Accessor method to drawn ids from a feature_acc
+
+=cut
+
+    my ( $self, $feature_acc, ) = @_;
+
+    return @{ $self->{'feature_acc_to_drawn_ids'}{$feature_acc} || [] };
 }
 
 # ----------------------------------------------------
@@ -1901,11 +1983,10 @@ sub popup_map_menu {
 =cut
 
     my ( $self, %args ) = @_;
-    my $drawn_id     = $args{'drawn_id'};
-    my $canvas       = $args{'canvas'};
-    my $dx           = $args{'dx'};
-    my $ghost_bounds = $args{'ghost_bounds'};
-    my $map_key = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
+    my $drawn_id = $args{'drawn_id'};
+    my $canvas   = $args{'canvas'};
+    my $dx       = $args{'dx'};
+    my $map_key  = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
     my $controller = $self->app_controller();
 
     my $map_menu_window = $self->main_window()->Toplevel( -takefocus => 1 );
@@ -1914,15 +1995,11 @@ sub popup_map_menu {
         # Moved
         if ($dx) {
 
-            #print STDERR "DX: $dx\n";
             my $move_button = $map_menu_window->Button(
                 -text    => 'Move Map',
                 -command => sub {
                     $map_menu_window->destroy();
-                    $self->move_map_popup(
-                        map_key      => $map_key,
-                        ghost_bounds => $ghost_bounds,
-                    );
+                    $self->move_map_popup( map_key => $map_key, );
                 },
             )->pack( -side => 'top', -anchor => 'nw' );
         }
@@ -1954,8 +2031,11 @@ sub popup_map_menu {
     $map_menu_window->bind(
         '<Destroy>',
         sub {
-            $canvas->delete( $self->{'ghost_map_id'} );
-            $self->{'ghost_map_id'} = undef;
+            foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+                $canvas->delete($ghost_id);
+            }
+            $self->{'initial_ghost_id'} = undef;
+            $self->{'ghost_ids'}        = undef;
         },
     );
     $map_menu_window->bind(
@@ -2004,6 +2084,39 @@ sub fill_map_info_box {
         map_key   => $map_key,
         panel_key => $panel_key,
     );
+
+    $text_box->insert( 'end', $new_text );
+    $text_box->configure( -state => 'disabled', );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub fill_feature_info_box {
+
+=pod
+
+=head2 fill_feature_info_box
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawn_id    = $args{'drawn_id'};
+    my $feature_acc = $args{'feature_acc'}
+        || $self->drawn_id_to_feature_acc($drawn_id)
+        or return;
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my $text_box = $self->{'information_text'};
+    $text_box->configure( -state => 'normal', );
+
+    # Wipe old info
+    $text_box->delete( "1.0", 'end' );
+
+    my $new_text
+        = $controller->get_feature_info_text( feature_acc => $feature_acc, );
 
     $text_box->insert( 'end', $new_text );
     $text_box->configure( -state => 'disabled', );
@@ -2078,13 +2191,12 @@ sub move_map_popup {
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key      = $args{'map_key'};
-    my $ghost_bounds = $args{'ghost_bounds'};
-    my $controller   = $self->app_controller();
+    my $map_key    = $args{'map_key'};
+    my $controller = $self->app_controller();
 
     my $move_map_data = $controller->app_display_data->get_move_map_data(
         map_key      => $map_key,
-        ghost_bounds => $ghost_bounds,
+        ghost_bounds => $self->{'ghost_bounds'},
     );
 
     my $new_parent_map_key = $move_map_data->{'new_parent_map_key'};
@@ -2616,17 +2728,54 @@ Handle starting drag
     if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
 
+        my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
+
         # Remove previous highlighting
-        if ( $self->{'ghost_map_id'} ) {
-            $canvas->delete( $self->{'ghost_map_id'} );
+        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+            $canvas->delete($ghost_id);
         }
 
-        my @coords = $canvas->coords( $self->{'drag_ori_id'} );
-        $self->{'ghost_map_id'}
-            = $canvas->createRectangle( (@coords), ( '-outline' => 'red', ),
-            );
+        # Create a ghost item for each item in the original feature glyph
+        $self->{ghost_bounds} = [ $canvas->coords( $self->{'drag_ori_id'} ) ];
+        foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
+            my @coords = $canvas->coords($ori_id);
+            my $type   = $canvas->type($ori_id);
+            next if ( $type eq 'text' );
+            my $create_method = 'create' . ucfirst lc $type;
+            push @{ $self->{'ghost_ids'} },
+                $canvas->$create_method( @coords, -fill => 'red' );
+
+            # set the initial_ghost_id for calculating the move distance
+            if ( $ori_id == $self->{'drag_ori_id'} ) {
+                $self->{'initial_ghost_id'} = $self->{'ghost_ids'}->[-1];
+            }
+
+            $self->expand_bounds( $self->{ghost_bounds}, \@coords );
+        }
 
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
+    }
+    elsif ( grep /^feature/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
+        return unless ( $self->{'drag_ori_id'} );
+
+        my $feature_acc
+            = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} );
+
+        # Remove previous highlighting
+        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+            $canvas->delete($ghost_id);
+        }
+
+        # Create a ghost item for each item in the original feature glyph
+        foreach my $ori_id ( $self->feature_acc_to_drawn_ids($feature_acc) ) {
+            my @coords        = $canvas->coords($ori_id);
+            my $type          = $canvas->type($ori_id);
+            my $create_method = 'create' . ucfirst lc $type;
+            push @{ $self->{'ghost_ids'} },
+                $canvas->$create_method( @coords, -fill => 'red' );
+        }
+
+        $self->fill_feature_info_box( drawn_id => $self->{'drag_ori_id'}, );
     }
     elsif ( @tags = grep /^background_/,
         $canvas->gettags( $self->{'drag_ori_id'} ) )
@@ -2683,16 +2832,33 @@ Handle starting drag
         return unless ( $self->{'drag_ori_id'} );
         $self->{'drag_obj'} = 'map';
 
+        my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
+
         # Remove previous highlighting
-        if ( $self->{'ghost_map_id'} ) {
-            $canvas->delete( $self->{'ghost_map_id'} );
+        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+            $canvas->delete($ghost_id);
         }
 
-        my @coords = $canvas->coords( $self->{'drag_ori_id'} );
-        $self->{'drag_mouse_to_edge_x'} = $x - $coords[0];
-        $self->{'ghost_map_id'}
-            = $canvas->createRectangle( (@coords), ( '-outline' => 'red', ),
-            );
+        # Create a ghost item for each item in the original feature glyph
+        $self->{ghost_bounds} = [ $canvas->coords( $self->{'drag_ori_id'} ) ];
+        foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
+            my @coords = $canvas->coords($ori_id);
+            my $type   = $canvas->type($ori_id);
+            next if ( $type eq 'text' );
+
+            my $create_method = 'create' . ucfirst lc $type;
+            push @{ $self->{'ghost_ids'} },
+                $canvas->$create_method( @coords, -fill => 'red' );
+
+            # set the initial_ghost_id for calculating the move distance
+            if ( $ori_id == $self->{'drag_ori_id'} ) {
+                $self->{'initial_ghost_id'} = $self->{'ghost_ids'}->[-1];
+            }
+
+            $self->expand_bounds( $self->{ghost_bounds}, \@coords );
+        }
+        $self->{'drag_mouse_to_edge_x'} = $x - $self->{'ghost_bounds'}[0];
+
     }
     elsif ( @tags = grep /^background_/,
         $canvas->gettags( $self->{'drag_ori_id'} ) )
@@ -2868,14 +3034,12 @@ Handle the stopping drag event
     my $canvas_x = $canvas->canvasx($x);
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
-            my $dx = int( $canvas->coords( $self->{'ghost_map_id'} )->[0]
+            my $dx = int( $canvas->coords( $self->{'initial_ghost_id'} )->[0]
                     - $canvas->coords( $self->{'drag_ori_id'} )->[0] );
             $self->popup_map_menu(
-                canvas       => $canvas,
-                dx           => $dx,
-                drawn_id     => ( $self->{'drag_ori_id'} ),
-                ghost_bounds =>
-                    [ $canvas->coords( $self->{'ghost_map_id'} ) ],
+                canvas   => $canvas,
+                dx       => $dx,
+                drawn_id => ( $self->{'drag_ori_id'} ),
             );
         }
         elsif ($self->{'drag_obj'} eq 'background'
@@ -2922,11 +3086,18 @@ Handle the ghost map dragging
     my $new_dx = $self->app_controller()->move_ghost_map(
         map_key      => $self->drawn_id_to_map_key( $self->{'drag_ori_id'} ),
         mouse_x      => $x,
-        ghost_bounds => [ $canvas->coords( $self->{'ghost_map_id'} ) ],
+        ghost_bounds => $self->{'ghost_bounds'},
         mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
     );
 
-    $canvas->move( $self->{'ghost_map_id'}, $new_dx, 0, );
+    # Move the ghost
+    foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+        $canvas->move( $ghost_id, $new_dx, 0, );
+    }
+
+    #Move the ghost bounds
+    $self->{'ghost_bounds'}[0] += $new_dx;
+    $self->{'ghost_bounds'}[2] += $new_dx;
     $canvas->configure( -scrollregion => [ $canvas->bbox('all') ] );
 
 }    # end drag_ghost
@@ -2978,12 +3149,38 @@ Handle window resizing
     if ( $event->w
         != $app_display_data->{'window_layout'}{$window_key}{'width'} )
     {
-
-        #print STDERR "WindowsConfigure $window_key\n";
         $app_display_data->change_width(
             window_key => $window_key,
             width      => $event->w,
         );
+    }
+}
+
+sub expand_bounds {
+
+=pod
+
+=head2 expand_bounds
+
+Take two arrays of coordinates and expand the first by any of the values in the
+second;
+
+=cut
+
+    my $self = shift;
+    my ( $bounds, $new_coords, ) = @_;
+
+    if ( $bounds->[0] > $new_coords->[0] ) {
+        $bounds->[0] = $new_coords->[0];
+    }
+    if ( $bounds->[1] > $new_coords->[1] ) {
+        $bounds->[1] = $new_coords->[1];
+    }
+    if ( $bounds->[2] < $new_coords->[2] ) {
+        $bounds->[2] = $new_coords->[2];
+    }
+    if ( $bounds->[3] < $new_coords->[3] ) {
+        $bounds->[3] = $new_coords->[3];
     }
 }
 

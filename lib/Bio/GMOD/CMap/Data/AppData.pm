@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.13 2006-11-27 20:05:09 mwz444 Exp $
+# $Id: AppData.pm,v 1.14 2007-01-09 22:50:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -195,7 +195,7 @@ map as a hash.
 }
 
 # ----------------------------------------------------
-sub feature_data {
+sub feature_data_by_map {
 
 =pod
 
@@ -209,7 +209,7 @@ features.  These do NOT include the sub-maps.
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return undef;
 
-    unless ( $self->{'feature_data'}{$map_id} ) {
+    unless ( $self->{'feature_data_by_map'}{$map_id} ) {
 
         my $features = $self->sql_get_features_sub_maps_version(
             cmap_object => $self,
@@ -217,15 +217,57 @@ features.  These do NOT include the sub-maps.
             no_sub_maps => 1,
             )
             || [];
-        if (@$features) {
-            $self->{'feature_data'}{$map_id} = $features;
+        if ( @{ $features || [] } ) {
+            $self->{'feature_data_by_map'}{$map_id} = $features;
+            foreach my $feature (@$features) {
+                $self->{'feature_data_by_acc'}{ $feature->{'feature_acc'} }
+                    = $feature;
+            }
         }
         else {
             return undef;
         }
     }
 
-    return $self->{'feature_data'}{$map_id};
+    return $self->{'feature_data_by_map'}{$map_id};
+}
+
+# ----------------------------------------------------
+sub feature_data {
+
+=pod
+
+=head2 feature_data
+
+Given a map accessions, return the information required to draw the
+features.  These do NOT include the sub-maps.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_acc = $args{'feature_acc'} or return undef;
+
+    unless ( $self->{'feature_data_by_acc'}{$feature_acc} ) {
+        return undef;
+
+        #my $features = $self->sql_get_features_sub_maps_version(
+        #cmap_object => $self,
+        #map_id      => $map_id,
+        #no_sub_maps => 1,
+        #)
+        #|| [];
+        #if (@{$features||[]}) {
+        #$self->{'feature_data_by_map'}{$map_id} = $features;
+        #foreach my $feature (@$features){
+        #$self->{'feature_data_by_map'}{$feature->{'feature_acc'}} = $feature;
+        #}
+        #}
+        #else {
+        #return undef;
+        #}
+    }
+
+    return $self->{'feature_data_by_acc'}{$feature_acc};
 }
 
 # ----------------------------------------------------
@@ -279,7 +321,7 @@ features.  These do NOT include the sub-maps.
 
     unless ( $self->{'sorted_feature_data'}{$map_id} ) {
 
-        my $features = $self->feature_data( map_id => $map_id, )
+        my $features = $self->feature_data_by_map( map_id => $map_id, )
             || [];
         if (@$features) {
 
