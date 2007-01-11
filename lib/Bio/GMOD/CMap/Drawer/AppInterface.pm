@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.24 2007-01-09 22:50:42 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.25 2007-01-11 00:56:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -94,7 +94,6 @@ This method will create the Application.
         edit_menu_items =>
             $self->edit_menu_items( window_key => $window_key, ),
     );
-    $self->window_pane( window_key => $window_key, );
 
     # Window Bindings
     $self->{'windows'}{$window_key}->protocol(
@@ -147,19 +146,23 @@ This method will create the Application.
     my $panel_key  = $args{'panel_key'}  or return;
     my $app_display_data = $args{'app_display_data'};
 
-    $self->panel_pane(
-        window_key => $window_key,
+    #   $self->panel_pane(
+    #       window_key => $window_key,
+    #       panel_key  => $panel_key,
+    #   );
+    $self->panel_overview_pane(
         panel_key  => $panel_key,
+        window_key => $window_key,
     );
-    $self->panel_overview_pane( panel_key => $panel_key, );
     $self->bottom_pane(
         panel_key  => $panel_key,
         window_key => $window_key,
     );
-    $self->panel_slot_toggle_pane( panel_key => $panel_key, );
-    $self->panel_canvas_pane( panel_key => $panel_key, );
-    $self->overview_canvas( panel_key => $panel_key, );
-    $self->canvas( panel_key => $panel_key, );
+    $self->middle_pane(
+        panel_key  => $panel_key,
+        window_key => $window_key,
+    );
+    $self->pack_panes( $window_key, $app_display_data, );
 
     return;
 }
@@ -342,35 +345,6 @@ Returns the menu_bar object.
 }
 
 # ----------------------------------------------------
-sub window_pane {
-
-=pod
-
-=head2 window_pane
-
-Returns the window_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'window_pane'}{$window_key} ) {
-
-        my $window = $self->{'windows'}{$window_key};
-        $self->{'window_pane'}{$window_key} = $window->Scrolled(
-            "Pane",
-            -scrollbars => "oe",
-            -background => "grey",
-            -height     => $window->screenheight(),
-            -width      => $window->screenwidth(),
-        );
-        $self->{'window_pane'}{$window_key}
-            ->pack( -side => 'top', -fill => 'both', );
-    }
-    return $self->{'window_pane'}{$window_key};
-}
-
-# ----------------------------------------------------
 sub panel_pane {
 
 =pod
@@ -385,14 +359,14 @@ Returns the panel_pane object.
     my $window_key = $args{'window_key'} or return undef;
     my $panel_key  = $args{'panel_key'}  or return undef;
     unless ( $self->{'panel_pane'}{$panel_key} ) {
-        my $window_pane = $self->{'window_pane'}{$window_key};
-        $self->{'panel_pane'}{$panel_key} = $window_pane->Frame(
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'panel_pane'}{$panel_key} = $window->Frame(
             -relief     => 'groove',
             -border     => 0,
             -background => "white"
         );
-        $self->{'panel_pane'}{$panel_key}
-            ->pack( -side => 'left', -fill => 'none', );
+
+        # Pack later in pack_panes()
     }
     return $self->{'panel_pane'}{$panel_key};
 }
@@ -411,14 +385,16 @@ Returns the panel_overview_pane object.
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
     unless ( $self->{'panel_overview_pane'}{$panel_key} ) {
-        my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'panel_overview_pane'}{$panel_key} = $panel_pane->Frame(
+        my $window_key = $args{'window_key'} or return undef;
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'panel_overview_pane'}{$panel_key} = $window->Frame(
             -relief     => 'groove',
             -border     => 1,
             -background => "white",
         );
-        $self->{'panel_overview_pane'}{$panel_key}
-            ->pack( -side => 'top', -fill => 'x', );
+
+        # Pack later in pack_panes()
+        $self->overview_canvas( panel_key => $panel_key, );
     }
     return $self->{'panel_overview_pane'}{$panel_key};
 }
@@ -437,16 +413,18 @@ Returns the panel_slot_toggle_pane object.
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
     unless ( $self->{'panel_slot_toggle_pane'}{$panel_key} ) {
-        my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'panel_slot_toggle_pane'}{$panel_key} = $panel_pane->Frame(
+
+        #xxx
+        my $middle_pane = $self->{'middle_pane'}{$panel_key};
+        $self->{'panel_slot_toggle_pane'}{$panel_key} = $middle_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
-            -height     => 500,
+            -height     => 700,
             -width      => 200,
-            -background => "grey",
+            -background => "pink",
         );
-        $self->{'panel_slot_toggle_pane'}{$panel_key}
-            ->pack( -side => 'left', -fill => 'none', );
+
+        # Pack later in pack_panes()
     }
     return $self->{'panel_slot_toggle_pane'}{$panel_key};
 }
@@ -465,16 +443,50 @@ Returns the panel_canvas_pane object.
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
     unless ( $self->{'panel_canvas_pane'}{$panel_key} ) {
-        my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'panel_canvas_pane'}{$panel_key} = $panel_pane->Frame(
+        my $middle_pane = $self->{'middle_pane'}{$panel_key};
+        $self->{'panel_canvas_pane'}{$panel_key} = $middle_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
             -background => "blue",
         );
-        $self->{'panel_canvas_pane'}{$panel_key}
-            ->pack( -side => 'top', -fill => 'x', );
+        $self->canvas( panel_key => $panel_key, );
+
+        # Pack later in pack_panes()
     }
     return $self->{'panel_canvas_pane'}{$panel_key};
+}
+
+# ----------------------------------------------------
+sub middle_pane {
+
+=pod
+
+=head2 middle_pane
+
+Returns the middle_pane object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $panel_key  = $args{'panel_key'}  or return undef;
+    my $window_key = $args{'window_key'} or return undef;
+
+    unless ( $self->{'middle_pane'}{$panel_key} ) {
+        my $y_val  = $args{'y_val'};
+        my $height = $args{'height'};
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'middle_pane'}{$panel_key} = $window->Scrolled(
+            "Pane",
+            -scrollbars => "oe",
+            -background => "purple",
+            -height     => $window->screenheight(),
+        );
+        $self->panel_slot_toggle_pane( panel_key => $panel_key, );
+        $self->panel_canvas_pane( panel_key => $panel_key, );
+
+        # Pack later in pack_panes()
+    }
+    return $self->{'middle_pane'}{$panel_key};
 }
 
 # ----------------------------------------------------
@@ -492,10 +504,10 @@ Returns the bottom_pane object.
     my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'bottom_pane'}{$panel_key} ) {
-        my $y_val      = $args{'y_val'};
-        my $height     = $args{'height'};
-        my $panel_pane = $self->{'panel_pane'}{$panel_key};
-        $self->{'bottom_pane'}{$panel_key} = $panel_pane->Frame(
+        my $y_val  = $args{'y_val'};
+        my $height = $args{'height'};
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'bottom_pane'}{$panel_key} = $window->Frame(
             -borderwidth => 0,
             -relief      => 'groove',
             -background  => "white",
@@ -508,8 +520,8 @@ Returns the bottom_pane object.
             panel_key  => $panel_key,
             window_key => $window_key,
         );
-        $self->{'bottom_pane'}{$panel_key}
-            ->pack( -side => 'bottom', -fill => 'both', );
+
+        # Pack later in pack_panes()
     }
     return $self->{'bottom_pane'}{$panel_key};
 }
@@ -541,7 +553,8 @@ Returns the info_pane object.
             window_key => $window_key,
             panel_key  => $panel_key,
         );
-        $self->{'panel_info_pane'}{$panel_key}->pack( -side => 'left', );
+
+        # Pack later in pack_panes()
     }
     return $self->{'panel_info_pane'}{$panel_key};
 }
@@ -586,8 +599,8 @@ Returns the panel_slot_controls_pane object.
             window_key => $window_key,
             panel_key  => $panel_key,
         );
-        $self->{'panel_slot_controls_pane'}{$panel_key}
-            ->pack( -side => 'left', -fill => 'both', );
+
+        # Pack later in pack_panes()
     }
     return $self->{'panel_slot_controls_pane'}{$panel_key};
 }
@@ -618,7 +631,7 @@ Returns the toggle_slot_pane object.
         if (1) {
             $self->{'toggle_slot_pane'}{$slot_key}
                 = $panel_slot_toggle_pane->Frame(
-                -borderwidth => 1,
+                -borderwidth => 3,
                 -relief      => 'groove',
                 -background  => "white",
                 );
@@ -634,9 +647,9 @@ Returns the toggle_slot_pane object.
                 );
         }
         $self->{'toggle_slot_pane'}{$slot_key}->place(
-            -x        => 5,
+            -x        => 0,
             -y        => $y_val,
-            -relwidth => .89,
+            -relwidth => 1,
             -height   => $height + 10
         );
     }
@@ -978,7 +991,8 @@ Draws and re-draws on the canvas
         -height => $canvas_height,
         -width  => $canvas_width,
     );
-    $canvas->pack( -side => 'top', -fill => 'both', );
+
+    # Pack later in pack_panes()
 
     $self->draw_corrs(
         canvas           => $canvas,
@@ -1810,7 +1824,9 @@ Returns the canvas object.
             '-borderwidth' => 2,
             '-background'  => 'white',
 
-        )->pack( -side => 'top', -fill => 'both', );
+        );
+
+        # Pack later in pack_panes()
         $self->bind_canvas( canvas => $self->{'canvas'}{$panel_key} );
     }
     return $self->{'canvas'}{$panel_key};
@@ -1965,7 +1981,9 @@ Returns the overview_canvas object.
             '-borderwidth' => 2,
             '-background'  => 'white',
 
-            )->pack( -side => 'top', -fill => 'both', );
+            );
+
+        # Pack later in pack_panes()
         $self->bind_overview_canvas(
             canvas => $self->{'overview_canvas'}{$panel_key} );
     }
@@ -2598,7 +2616,9 @@ Deletes all widgets in the current window.
     foreach
         my $panel_key ( @{ $app_display_data->{'panel_order'}{$window_key} } )
     {
-        $self->{'panel_pane'}{$panel_key}->destroy();
+        $self->{'panel_overview_pane'}{$panel_key}->destroy();
+        $self->{'bottom_pane'}{$panel_key}->destroy();
+        $self->{'middle_pane'}{$panel_key}->destroy();
     }
 
     # Maybe clear bindings if they aren't destroyed with delete.
@@ -3153,6 +3173,71 @@ Handle window resizing
             window_key => $window_key,
             width      => $event->w,
         );
+        $self->pack_panes( $window_key, $app_display_data, );
+    }
+}
+
+# ----------------------------------------------------
+sub pack_panes {
+
+=pod
+
+=head2 pack_panes
+
+Pack the frames
+
+=cut
+
+    my $self = shift;
+    my ( $window_key, $app_display_data, ) = @_;
+    foreach my $panel_key (
+        @{ $app_display_data->{'panel_order'}{$window_key} || [] } )
+    {
+
+        # Top Panel
+        $self->{'overview_canvas'}{$panel_key}->pack(
+            -side => 'top',
+            -fill => 'both',
+        );
+        $self->{'panel_overview_pane'}{$panel_key}->pack(
+            -side   => 'top',
+            -fill   => 'x',
+            -anchor => 'n',
+            -expand => 1,
+        );
+
+        # Bottom Panel
+        $self->{'panel_info_pane'}{$panel_key}->pack( -side => 'left', );
+        $self->{'panel_slot_controls_pane'}{$panel_key}->pack(
+            -side => 'left',
+            -fill => 'both',
+        );
+        $self->{'bottom_pane'}{$panel_key}->pack(
+            -side => 'bottom',
+            -fill => 'both',
+        );
+
+        # Middle Panel
+        $self->{'panel_slot_toggle_pane'}{$panel_key}->pack(
+            -side   => 'left',
+            -fill   => 'none',
+            -anchor => 'n',
+        );
+        $self->{'canvas'}{$panel_key}->pack(
+            -side => 'top',
+            -fill => 'both',
+        );
+
+        $self->{'panel_canvas_pane'}{$panel_key}->pack(
+            -side   => 'left',
+            -fill   => 'x',
+            -anchor => 'n',
+        );
+        $self->{'middle_pane'}{$panel_key}->pack(
+            -side => 'top',
+            -fill => 'both',
+        );
+
     }
 }
 
