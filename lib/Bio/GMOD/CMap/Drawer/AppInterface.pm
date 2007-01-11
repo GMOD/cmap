@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.25 2007-01-11 00:56:09 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.26 2007-01-11 06:16:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -413,13 +413,10 @@ Returns the panel_slot_toggle_pane object.
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'} or return undef;
     unless ( $self->{'panel_slot_toggle_pane'}{$panel_key} ) {
-
-        #xxx
         my $middle_pane = $self->{'middle_pane'}{$panel_key};
         $self->{'panel_slot_toggle_pane'}{$panel_key} = $middle_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
-            -height     => 700,
             -width      => 200,
             -background => "pink",
         );
@@ -3220,7 +3217,7 @@ Pack the frames
         # Middle Panel
         $self->{'panel_slot_toggle_pane'}{$panel_key}->pack(
             -side   => 'left',
-            -fill   => 'none',
+            -fill   => 'y',
             -anchor => 'n',
         );
         $self->{'canvas'}{$panel_key}->pack(
