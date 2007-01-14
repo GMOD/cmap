@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.23 2007-01-09 22:50:42 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.24 2007-01-14 17:15:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use constant SLOT_SEPARATOR_HEIGHT => 3;
 use constant SLOT_Y_BUFFER         => 30;
@@ -39,6 +39,7 @@ use constant MAP_Y_BUFFER          => 15;
 use constant MAP_X_BUFFER          => 15;
 use constant SMALL_BUFFER          => 2;
 use constant MIN_MAP_WIDTH         => 40;
+use constant BETWEEN_SLOT_BUFFER   => 5;
 
 use base 'Exporter';
 
@@ -368,14 +369,7 @@ Lays out a brand new slot
         );
     }
 
-    set_slot_bgcolor(
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
-        app_display_data => $app_display_data,
-    );
-
     $panel_layout->{'sub_changed'} = 1;
-    $slot_layout->{'changed'}      = 1;
 
     return;
 }
@@ -403,8 +397,13 @@ sub set_slot_bgcolor {
         ? "black"
         : $bgcolor;
 
+    my $background_id = defined(
+        $app_display_data->{'slot_layout'}{$slot_key}{'background'} )
+        ? $app_display_data->{'slot_layout'}{$slot_key}{'background'}[0][1]
+        : undef;
     $app_display_data->{'slot_layout'}{$slot_key}{'background'} = [
-        [   1, undef,
+        [   1,
+            $background_id,
             'rectangle',
             [ @{ $app_display_data->{'slot_layout'}{$slot_key}{'bounds'} } ],
             { -fill => $bgcolor, -outline => $border_color, -width => 3 }
@@ -463,7 +462,7 @@ Lays out reference maps in a new slot
     my $app_display_data = $args{'app_display_data'};
     my $slot_layout      = $app_display_data->{'slot_layout'}{$slot_key};
 
-    $slot_layout->{'bounds'}[3] = $slot_layout->{'bounds'}[1];
+    #$slot_layout->{'bounds'}[3] = $slot_layout->{'bounds'}[1];
 
     #  Options that should be defined elsewhere
     my $stacked = 0;
@@ -502,9 +501,8 @@ Lays out reference maps in a new slot
     $app_display_data->{'scaffold'}{$slot_key}{'pixels_per_unit'}
         = $pixels_per_unit;
 
-    my $map_min_x   = $left_bound;
-    my $row_min_y   = $slot_layout->{'bounds'}[1];
-    my $start_min_y = $row_min_y;
+    my $map_min_x = $left_bound;
+    my $row_min_y = $slot_layout->{'bounds'}[1];
     $row_min_y += MAP_Y_BUFFER;
     my $row_max_y = $row_min_y;
     my $row_index = 0;
@@ -598,13 +596,16 @@ Lays out reference maps in a new slot
         $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
     }
 
-    my $height_change = $row_max_y - $start_min_y + SLOT_Y_BUFFER;
+    my $height_change
+        = $row_max_y + SLOT_Y_BUFFER - $slot_layout->{'bounds'}[3];
     $app_display_data->modify_slot_bottom_bound(
+        panel_key     => $panel_key,
         slot_key      => $slot_key,
         bounds_change => $height_change,
     );
 
     $slot_layout->{'sub_changed'} = 1;
+    $slot_layout->{'changed'}     = 1;
 
     $app_display_data->create_slot_coverage_array( slot_key => $slot_key, );
 
@@ -634,10 +635,8 @@ Lays out sub maps in a slot.
     my $scale = $app_display_data->{'scaffold'}{$slot_key}{'scale'} || 1;
     my $x_offset = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'}
         || 0;
-
-    #  Options that should be defined elsewhere
-
-    my $start_min_y = $slot_layout->{'bounds'}[1];
+    my $row_min_y = $slot_layout->{'bounds'}[1];
+    my $row_max_y = $row_min_y;
 
     # Sort maps for easier layout
     my @sub_map_keys = sort {
@@ -725,8 +724,6 @@ Lays out sub maps in a slot.
         push @{ $rows[$row_index] }, [ $sub_map_key, $x1, $x2 ];
     }
 
-    my $row_min_y = $start_min_y;
-    my $row_max_y = $row_min_y;
     my $map_pixels_per_unit;
 
     foreach my $row (@rows) {
@@ -811,16 +808,16 @@ Lays out sub maps in a slot.
     }
 
     my $height_change
-        = $row_max_y - $slot_layout->{'bounds'}[3] + SLOT_Y_BUFFER
+        = $row_max_y + SLOT_Y_BUFFER - $slot_layout->{'bounds'}[3]
         - MAP_Y_BUFFER;
-    if ( $height_change > 0 ) {
-        $app_display_data->modify_slot_bottom_bound(
-            slot_key      => $slot_key,
-            bounds_change => $height_change,
-        );
-    }
+    $app_display_data->modify_slot_bottom_bound(
+        panel_key     => $panel_key,
+        slot_key      => $slot_key,
+        bounds_change => $height_change,
+    );
 
     $slot_layout->{'sub_changed'} = 1;
+    $slot_layout->{'changed'}     = 1;
 
     $app_display_data->create_slot_coverage_array( slot_key => $slot_key, );
 
@@ -880,8 +877,6 @@ Lays out maps in a slot where they are already placed horizontally.
 
     # Move Maps
 
-    #  Options that should be defined elsewhere
-
     my $new_min_y = $new_slot_layout->{'bounds'}[3] + MAP_Y_BUFFER;
 
     # Look at first map and work out vertical offset.
@@ -926,12 +921,8 @@ Lays out maps in a slot where they are already placed horizontally.
     my $height_change = $max_y - $start_min_y + MAP_Y_BUFFER;
     $app_display_data->modify_slot_bottom_bound(
         slot_key      => $new_slot_key,
+        panel_key     => $panel_key,
         bounds_change => $height_change,
-    );
-    set_slot_bgcolor(
-        panel_key        => $panel_key,
-        slot_key         => $new_slot_key,
-        app_display_data => $app_display_data,
     );
     $panel_layout->{'sub_changed'}    = 1;
     $new_slot_layout->{'sub_changed'} = 1;
@@ -1013,7 +1004,7 @@ Lays out a maps in a contained area.
     );
     $min_y = $max_y = $map_coords->[3];
 
-    if ( $app_display_data->{'scaffold'}{$slot_key}{'expanded'} ) {
+    if ( $app_display_data->{'scaffold'}{$slot_key}{'show_features'} ) {
         $max_y = _layout_features(
             app_display_data => $app_display_data,
             slot_key         => $slot_key,
@@ -1555,6 +1546,7 @@ Move a slot
     my $app_interface    = $args{'app_interface'};
     my $x                = $args{'x'} || 0;
     my $y                = $args{'y'} || 0;
+    my $window_key = $app_display_data->{'scaffold'}{$slot_key}{'window_key'};
 
     my $slot_layout = $app_display_data->{'slot_layout'}{$slot_key};
 
@@ -1566,12 +1558,38 @@ Move a slot
     foreach my $drawing_item_name (qw[ separator background ]) {
         move_drawing_items(
             panel_key     => $panel_key,
-            item          => $slot_layout->{$drawing_item_name},
+            items         => $slot_layout->{$drawing_item_name},
             app_interface => $app_interface,
             y             => $y,
             x             => $x,
         );
     }
+    foreach
+        my $map_key ( @{ $app_display_data->{'map_order'}{$slot_key} || [] } )
+    {
+        move_map(
+            app_display_data => $app_display_data,
+            app_interface    => $app_interface,
+            map_key          => $map_key,
+            panel_key        => $panel_key,
+            y                => $y,
+        );
+    }
+
+    # slot_controls need to be renamed
+    $app_interface->destroy_slot_controls(
+        panel_key => $panel_key,
+        slot_key  => $slot_key,
+    );
+    $app_interface->add_slot_controls(
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
+        window_key       => $window_key,
+        app_display_data => $app_display_data,
+    );
+
+    $slot_layout->{'changed'}     = 1;
+    $slot_layout->{'sub_changed'} = 1;
 }
 
 # ----------------------------------------------------
@@ -1614,8 +1632,16 @@ Move a map
         x             => $x,
     );
 
-    #MOVE FEATURES BF
-
+    # Move features
+    foreach my $feature_acc ( keys %{ $map_layout->{'features'} || {} } ) {
+        move_drawing_items(
+            panel_key     => $panel_key,
+            items         => $map_layout->{'features'}{$feature_acc}{'items'},
+            app_interface => $app_interface,
+            y             => $y,
+            x             => $x,
+        );
+    }
 }
 
 # ----------------------------------------------------
@@ -1632,7 +1658,7 @@ Move drawing_items
     my %args          = @_;
     my $panel_key     = $args{'panel_key'};
     my $app_interface = $args{'app_interface'};
-    my $items         = $args{'items'};
+    my $items         = $args{'items'} or return;
     my $x             = $args{'x'} || 0;
     my $y             = $args{'y'} || 0;
 
@@ -2030,270 +2056,6 @@ bounds of the map.
 
     return ( \@bounds, \@coords );
 }
-
-## ----------------------------------------------------
-#sub draw_dumbbell {
-#
-#=pod
-#
-#=head2 draw_dumbbell
-#
-#
-#=cut
-#
-#    my ( $self, %args ) = @_;
-#    my $drawing_data  = $args{'drawing_data'};
-#    my $map_area_data = $args{'map_area_data'};
-#    my $map_coords    = $args{'map_coords'};
-#    my $drawer        = $args{'drawer'} || $self->drawer
-#        or $self->error('No drawer');
-#    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
-#        or $self->error('No coordinates');
-#    my $map_id              = $args{'map_id'};
-#    my $is_flipped          = $args{'is_flipped'};
-#    my $slot_no             = $args{'slot_no'};
-#    my $map_acc             = $self->map_acc($map_id);
-#    my $color               = $self->map_color($map_id);
-#    my $width               = $self->map_width($map_id);
-#    my $x2                  = $x1 + $width;
-#    my $mid_x               = $x1 + $width / 2;
-#    my $arc_width           = $width + 6;
-#    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
-#
-#    my $drew_bells = 0;
-#    my @coords = ( $x1, $y1, $x2, $y2 );
-#    $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
-#    $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
-#    my $truncated = $drawer->data_module->truncatedMap( $slot_no, $map_id );
-#    if (   ( $truncated >= 2 and $is_flipped )
-#        or ( ( $truncated == 1 or $truncated == 3 ) and not $is_flipped ) )
-#    {
-#        $self->draw_truncation_arrows(
-#            is_up         => 1,
-#            map_coords    => $map_coords,
-#            coords        => \@coords,
-#            drawer        => $drawer,
-#            map_area_data => $map_area_data,
-#            drawing_data  => $drawing_data,
-#            is_flipped    => $is_flipped,
-#            map_id        => $map_id,
-#            map_acc       => $map_acc,
-#            slot_no       => $slot_no,
-#        );
-#    }
-#    else {
-#        push @$drawing_data,
-#            [
-#            ARC,        $mid_x, $map_coords->[1], $arc_width,
-#            $arc_width, 0,      360,              $color
-#            ];
-#        push @$drawing_data,
-#            [ FILL_TO_BORDER, $mid_x, $map_coords->[1], $color, $color ];
-#        $drew_bells = 1;
-#    }
-#    if (   ( $truncated >= 2 and not $is_flipped )
-#        or ( ( $truncated == 1 or $truncated == 3 ) and $is_flipped ) )
-#    {
-#        $self->draw_truncation_arrows(
-#            is_up         => 0,
-#            map_coords    => $map_coords,
-#            coords        => \@coords,
-#            drawer        => $drawer,
-#            map_area_data => $map_area_data,
-#            drawing_data  => $drawing_data,
-#            is_flipped    => $is_flipped,
-#            map_id        => $map_id,
-#            map_acc       => $map_acc,
-#            slot_no       => $slot_no,
-#        );
-#    }
-#    else {
-#        push @$drawing_data,
-#            [
-#            ARC,        $mid_x, $map_coords->[3], $arc_width,
-#            $arc_width, 0,      360,              $color
-#            ];
-#        push @$drawing_data,
-#            [ FILL_TO_BORDER, $mid_x, $map_coords->[3], $color, $color ];
-#        $drew_bells = 1;
-#    }
-#    push @$drawing_data,
-#        [
-#        FILLED_RECT,      $map_coords->[0], $map_coords->[1],
-#        $map_coords->[2], $map_coords->[3], $color
-#        ];
-#
-#    unless ($omit_all_area_boxes) {
-#        my $map     = $self->map($map_id);
-#        my $buttons = $self->create_buttons(
-#            map_id     => $map_id,
-#            drawer     => $drawer,
-#            slot_no    => $slot_no,
-#            is_flipped => $is_flipped,
-#            buttons    => [ 'map_detail', ],
-#        );
-#        my $url  = $buttons->[0]{'url'};
-#        my $alt  = $buttons->[0]{'alt'};
-#        my $code = '';
-#        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-#        push @{$map_area_data},
-#            {
-#            coords => [
-#                $map_coords->[0], $map_coords->[1],
-#                $map_coords->[2], $map_coords->[3]
-#            ],
-#            url  => $url,
-#            alt  => $alt,
-#            code => $code,
-#            };
-#    }
-#
-#    if ( my $map_units = $args{'map_units'} ) {
-#        $self->draw_map_bottom(
-#            map_id        => $map_id,
-#            slot_no       => $slot_no,
-#            map_x1        => $map_coords->[0],
-#            map_x2        => $map_coords->[2],
-#            map_y2        => $map_coords->[3],
-#            drawer        => $drawer,
-#            drawing_data  => $drawing_data,
-#            map_area_data => $map_area_data,
-#            map_units     => $map_units,
-#            bounds        => \@coords,
-#        );
-#    }
-#    if ($drew_bells) {
-#        $coords[0] = $mid_x - $arc_width / 2
-#            if ( $coords[0] > $mid_x - $arc_width / 2 );
-#        $coords[1] = $map_coords->[1] - $arc_width / 2
-#            if ( $coords[1] > $map_coords->[1] - $arc_width / 2 );
-#        $coords[2] = $mid_x + $arc_width / 2
-#            if ( $coords[2] < $mid_x + $arc_width / 2 );
-#        $coords[3] = $map_coords->[3] + $arc_width / 2
-#            if ( $coords[3] < $map_coords->[3] + $arc_width / 2 );
-#    }
-#    return ( \@coords, $map_coords );
-#}
-#
-## ----------------------------------------------------
-#sub draw_i_beam {
-#
-#=pod
-#
-#=head2 draw_i_beam
-#
-#Draws the map as an "I-beam."  Return the bounds of the image.
-#
-#=cut
-#
-#    my ( $self, %args ) = @_;
-#    my $drawing_data  = $args{'drawing_data'};
-#    my $map_area_data = $args{'map_area_data'};
-#    my $map_coords    = $args{'map_coords'};
-#    my $drawer        = $args{'drawer'} || $self->drawer
-#        or $self->error('No drawer');
-#    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
-#        or $self->error('No coordinates');
-#    my $map_id              = $args{'map_id'};
-#    my $is_flipped          = $args{'is_flipped'};
-#    my $slot_no             = $args{'slot_no'};
-#    my $map_acc             = $self->map_acc($map_id);
-#    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
-#    my $color               = $self->map_color($map_id);
-#    my $width               = $self->map_width($map_id);
-#    my $x2                  = $x1 + $width;
-#    my $x                   = $x1 + $width / 2;
-#
-#    my @coords = ( $x1, $y1, $x2, $y2 );
-#    $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
-#    $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
-#    my $truncated = $drawer->data_module->truncatedMap( $slot_no, $map_id );
-#    if (   ( $truncated >= 2 and $is_flipped )
-#        or ( ( $truncated == 1 or $truncated == 3 ) and not $is_flipped ) )
-#    {
-#        $self->draw_truncation_arrows(
-#            is_up         => 1,
-#            map_coords    => $map_coords,
-#            coords        => \@coords,
-#            drawer        => $drawer,
-#            map_area_data => $map_area_data,
-#            drawing_data  => $drawing_data,
-#            is_flipped    => $is_flipped,
-#            map_id        => $map_id,
-#            map_acc       => $map_acc,
-#            slot_no       => $slot_no,
-#        );
-#    }
-#    else {
-#        push @$drawing_data,
-#            [
-#            LINE,             $map_coords->[0], $map_coords->[1],
-#            $map_coords->[2], $map_coords->[1], $color
-#            ];
-#    }
-#    if (   ( $truncated >= 2 and not $is_flipped )
-#        or ( ( $truncated == 1 or $truncated == 3 ) and $is_flipped ) )
-#    {
-#        $self->draw_truncation_arrows(
-#            is_up         => 0,
-#            map_coords    => $map_coords,
-#            coords        => \@coords,
-#            drawer        => $drawer,
-#            map_area_data => $map_area_data,
-#            drawing_data  => $drawing_data,
-#            is_flipped    => $is_flipped,
-#            map_id        => $map_id,
-#            map_acc       => $map_acc,
-#            slot_no       => $slot_no,
-#        );
-#    }
-#    else {
-#        push @$drawing_data,
-#            [
-#            LINE,             $map_coords->[0], $map_coords->[3],
-#            $map_coords->[2], $map_coords->[3], $color
-#            ];
-#    }
-#    push @$drawing_data,
-#        [ LINE, $x, $map_coords->[1], $x, $map_coords->[3], $color ];
-#    unless ($omit_all_area_boxes) {
-#        my $map     = $self->map($map_id);
-#        my $buttons = $self->create_buttons(
-#            map_id     => $map_id,
-#            drawer     => $drawer,
-#            slot_no    => $slot_no,
-#            is_flipped => $is_flipped,
-#            buttons    => [ 'map_detail', ],
-#        );
-#        my $url  = $buttons->[0]{'url'};
-#        my $alt  = $buttons->[0]{'alt'};
-#        my $code = '';
-#        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-#        push @{$map_area_data},
-#            {
-#            coords => [ $x, $map_coords->[1], $x, $map_coords->[3] ],
-#            url    => $url,
-#            alt    => $alt,
-#            code   => $code,
-#            };
-#    }
-#    if ( my $map_units = $args{'map_units'} ) {
-#        $self->draw_map_bottom(
-#            map_id        => $map_id,
-#            slot_no       => $slot_no,
-#            map_x1        => $map_coords->[0],
-#            map_x2        => $map_coords->[2],
-#            map_y2        => $map_coords->[3],
-#            drawer        => $drawer,
-#            drawing_data  => $drawing_data,
-#            map_area_data => $map_area_data,
-#            map_units     => $map_units,
-#            bounds        => \@coords,
-#        );
-#    }
-#
-#    return ( \@coords, $map_coords );
-#}
 
 1;
 

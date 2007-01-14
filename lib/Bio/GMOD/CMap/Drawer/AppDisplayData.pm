@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.25 2006-12-27 19:34:50 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.26 2007-01-14 17:15:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -197,6 +197,7 @@ Adds the first slot
         expanded           => 1,
         is_top             => 1,
         pixels_per_unit    => 0,
+        show_features      => 1,
     };
 
     my $map_data
@@ -357,6 +358,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             expanded           => 0,
             is_top             => 0,
             pixels_per_unit    => 0,
+            show_features      => 0,
         };
         push @{ $self->{'scaffold'}{$parent_slot_key}{'children'} },
             $child_slot_key;
@@ -1260,6 +1262,9 @@ sub create_slot_coverage_array {
     # Once that's done, maps that overlap the end of the
     #  previous map extend the coverage, otherwise its
     #  a new coverage zone
+
+    # Keep the x_offset in mind
+    my $x_offset = $self->{'scaffold'}{$slot_key}{'x_offset'};
 MAP_KEY:
     foreach my $map_key (
         sort {
@@ -1271,6 +1276,8 @@ MAP_KEY:
         )
     {
         my $coords = $self->{'map_layout'}{$map_key}{'coords'};
+        $coords->[0] -= $x_offset;
+        $coords->[2] -= $x_offset;
         unless (@slot_coverage) {
             push @slot_coverage, [ $coords->[0], $coords->[2] ];
             next MAP_KEY;
@@ -1326,6 +1333,58 @@ sub change_selected_slot {
         app_display_data => $self,
     );
 
+    my $map_set_id   = $self->{'scaffold'}{$slot_key}{'map_set_id'};
+    my $map_set_data = $self->app_data_module()
+        ->get_map_set_data( map_set_id => $map_set_id, );
+
+    $self->app_interface()->int_new_selected_slot(
+        map_set_data     => $map_set_data,
+        slot_key         => $slot_key,
+        app_display_data => $self,
+    );
+    $self->app_interface()->draw_panel(
+        panel_key        => $panel_key,
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub change_feature_status {
+
+=pod
+
+=head2 change_feature_status
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_key      = $args{'slot_key'} or return;
+    my $show_features = $args{'show_features'};
+    my $panel_key     = $self->{'scaffold'}{$slot_key}{'panel_key'};
+    my $window_key    = $self->{'scaffold'}{$slot_key}{'window_key'};
+
+    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
+    $slot_scaffold->{'show_features'} = $show_features;
+
+    if ( $slot_scaffold->{'is_top'} ) {
+        $self->relayout_ref_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+        );
+    }
+    else {
+        $self->relayout_sub_map_slot(
+            window_key => $window_key,
+            panel_key  => $panel_key,
+            slot_key   => $slot_key,
+        );
+    }
+
+    $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
     $self->app_interface()->draw_panel(
         panel_key        => $panel_key,
         window_key       => $window_key,
@@ -1452,11 +1511,76 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'} or return;
-    my $bounds_change = $args{'bounds_change'} || 0;
+    my $slot_key      = $args{'slot_key'}      or return;
+    my $panel_key     = $args{'panel_key'}     or return;
+    my $bounds_change = $args{'bounds_change'} or return;
+    my $app_interface = $self->app_interface();
+    my $window_key = $self->{'scaffold'}{$slot_key}{'window_key'};
 
     $self->{'slot_layout'}{$slot_key}{'bounds'}[3] += $bounds_change;
     $self->{'slot_layout'}{$slot_key}{'changed'} = 1;
+
+    set_slot_bgcolor(
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
+        app_display_data => $self,
+    );
+
+    $app_interface->destroy_slot_controls(
+        panel_key => $panel_key,
+        slot_key  => $slot_key,
+    );
+    $app_interface->add_slot_controls(
+        panel_key        => $panel_key,
+        slot_key         => $slot_key,
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    $self->move_lower_slots(
+        stationary_slot_key => $slot_key,
+        panel_key           => $panel_key,
+        height_change       => $bounds_change,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub move_lower_slots {
+
+=pod
+
+=head2 move_lower_slots
+
+Crawls through the panel and move all of the slots below the given slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $stationary_slot_key = $args{'stationary_slot_key'} or return;
+    my $panel_key           = $args{'panel_key'}           or return;
+    my $height_change = $args{'height_change'} || 0;
+
+    my $seen_stationary_slot = 0;
+    foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } ) {
+
+        # Don't move it if there isn't a map set id (and it hasn't been drawn
+        if (    $seen_stationary_slot
+            and $self->{'scaffold'}{$slot_key}{'map_set_id'} )
+        {
+            move_slot(
+                panel_key        => $panel_key,
+                slot_key         => $slot_key,
+                y                => $height_change,
+                app_display_data => $self,
+                app_interface    => $self->app_interface(),
+            );
+        }
+        elsif ( $stationary_slot_key == $slot_key ) {
+            $seen_stationary_slot = 1;
+        }
+    }
 
     return;
 }
@@ -1743,7 +1867,7 @@ Copies important info to a new slot.
         parent      scale       attached_to_parent
         x_offset    is_top      pixels_per_unit
         map_set_id  window_key  panel_key
-        children
+        children    show_features
         ]
         )
     {
@@ -2425,7 +2549,8 @@ Controls how the ghost map moves.
     my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
     my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
 
-    # If no parent, don't let it move.
+   # If no parent, don't let it move. This is because it would be confusing to
+   # allow movement when the sub-map and parent were at different zoom levels.
     unless ($parent_slot_key
         and $self->{'scaffold'}{$slot_key}{'attached_to_parent'} )
     {
@@ -3076,6 +3201,7 @@ This is a conversion factor to get from map units to pixels.
             expanded           => 0,
             is_top             => 0,
             pixels_per_unit    => 0,
+            show_features      => 1,
         }
     }
 

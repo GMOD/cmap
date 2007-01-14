@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.26 2007-01-11 06:16:24 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.27 2007-01-14 17:15:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -36,6 +36,8 @@ use Tk;
 use Tk::Pane;
 use Tk::Dialog;
 use Tk::LabEntry;
+
+use constant BETWEEN_SLOT_BUFFER => 5;
 
 # ----------------------------------------------------
 sub init {
@@ -222,13 +224,6 @@ This method will create the slot controls for one slot
         app_display_data => $app_display_data,
     );
 
-    #    my $toggle_button = $self->_get_slot_toggle_buttons(
-    #        window_key       => $window_key,
-    #        panel_key        => $panel_key,
-    #        slot_key         => $slot_key,
-    #        app_display_data => $app_display_data,
-    #    );
-
     my $slot_label = $self->_get_slot_label(
         window_key       => $window_key,
         panel_key        => $panel_key,
@@ -236,11 +231,7 @@ This method will create the slot controls for one slot
         app_display_data => $app_display_data,
     );
 
-    #    Tk::grid( $zoom_label1, -sticky => "nw", );
     Tk::grid( $slot_label, -sticky => "ne", );
-
-    #    Tk::grid( $toggle_button, -sticky => "ne", );
-    return;
 
     return;
 }
@@ -418,7 +409,7 @@ Returns the panel_slot_toggle_pane object.
             -relief     => 'groove',
             -border     => 0,
             -width      => 200,
-            -background => "pink",
+            -background => "white",
         );
 
         # Pack later in pack_panes()
@@ -643,11 +634,12 @@ Returns the toggle_slot_pane object.
                 -background => "green",
                 );
         }
+
         $self->{'toggle_slot_pane'}{$slot_key}->place(
             -x        => 0,
             -y        => $y_val,
             -relwidth => 1,
-            -height   => $height + 10
+            -height   => $height + BETWEEN_SLOT_BUFFER,
         );
     }
     return $self->{'toggle_slot_pane'}{$slot_key};
@@ -780,6 +772,12 @@ Adds control buttons to the panel_slot_controls_pane.
     #        -font       => $font,
     #        -background => 'grey',
     #    );
+    $self->{'selected_map_set_text_box'} = $panel_slot_controls_pane->Text(
+        -font       => $font,
+        -background => "white",
+        -width      => 40,
+        -height     => 1,
+    );
     my $zoom_button1 = $panel_slot_controls_pane->Button(
         -text    => "Zoom In",
         -command => sub {
@@ -886,11 +884,26 @@ Adds control buttons to the panel_slot_controls_pane.
         -font => $font,
     );
 
+    my $show_features_check_box = $panel_slot_controls_pane->Checkbutton(
+        -text     => "Show Features",
+        -variable => \$self->{'show_features'},
+        -command  => sub {
+            $self->app_controller()->app_display_data()
+                ->change_feature_status(
+                slot_key      => ${ $self->{'selected_slot_key_scalar'} },
+                show_features => $self->{'show_features'},
+                );
+        },
+        -font => $font,
+    );
+    Tk::grid( $self->{'selected_map_set_text_box'},
+        '-', '-', -sticky => "nw", );
     Tk::grid( $scroll_far_left_button, $scroll_left_button, $reattach_button,
         '-', $scroll_type_1, $scroll_far_type_1, -sticky => "nw", );
     Tk::grid( 'x', 'x', $zoom_button1, $toggle_corrs_button, -sticky => "nw",
     );
     Tk::grid( 'x', 'x', $zoom_button2, $expand_button, -sticky => "nw", );
+    Tk::grid( 'x', 'x', $show_features_check_box, 'x', -sticky => "nw", );
     return;
 }
 
@@ -2049,8 +2062,7 @@ sub popup_map_menu {
             foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
                 $canvas->delete($ghost_id);
             }
-            $self->{'initial_ghost_id'} = undef;
-            $self->{'ghost_ids'}        = undef;
+            $self->{'ghost_ids'} = undef;
         },
     );
     $map_menu_window->bind(
@@ -2679,11 +2691,13 @@ Remove the interface buttons for a slot.
     my ( $self, %args ) = @_;
     my $panel_key = $args{'panel_key'};
     my $slot_key  = $args{'slot_key'};
-    $self->toggle_slot_pane(
-        panel_key => $panel_key,
-        slot_key  => $slot_key,
-    )->destroy();
-    $self->{'toggle_slot_pane'}{$slot_key} = undef;
+    if ( $self->{'toggle_slot_pane'}{$slot_key} ) {
+        $self->toggle_slot_pane(
+            panel_key => $panel_key,
+            slot_key  => $slot_key,
+        )->destroy();
+        $self->{'toggle_slot_pane'}{$slot_key} = undef;
+    }
     return;
 }
 
@@ -2762,11 +2776,6 @@ Handle starting drag
             push @{ $self->{'ghost_ids'} },
                 $canvas->$create_method( @coords, -fill => 'red' );
 
-            # set the initial_ghost_id for calculating the move distance
-            if ( $ori_id == $self->{'drag_ori_id'} ) {
-                $self->{'initial_ghost_id'} = $self->{'ghost_ids'}->[-1];
-            }
-
             $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
 
@@ -2814,7 +2823,6 @@ Handle starting drag
     if ( $self->{'drag_slot_key'} ) {
         $self->app_controller()
             ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
-        ${ $self->{'selected_slot_key_scalar'} } = $self->{'drag_slot_key'};
     }
 
 }    # end start_drag
@@ -2857,7 +2865,11 @@ Handle starting drag
         }
 
         # Create a ghost item for each item in the original feature glyph
-        $self->{ghost_bounds} = [ $canvas->coords( $self->{'drag_ori_id'} ) ];
+        my @init_coords = $canvas->coords( $self->{'drag_ori_id'} );
+        $self->{'ghost_bounds'} = [
+            $init_coords[0], $init_coords[1],
+            $init_coords[0], $init_coords[1],
+        ];
         foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
             my @coords = $canvas->coords($ori_id);
             my $type   = $canvas->type($ori_id);
@@ -2867,14 +2879,10 @@ Handle starting drag
             push @{ $self->{'ghost_ids'} },
                 $canvas->$create_method( @coords, -fill => 'red' );
 
-            # set the initial_ghost_id for calculating the move distance
-            if ( $ori_id == $self->{'drag_ori_id'} ) {
-                $self->{'initial_ghost_id'} = $self->{'ghost_ids'}->[-1];
-            }
-
             $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
         $self->{'drag_mouse_to_edge_x'} = $x - $self->{'ghost_bounds'}[0];
+        $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
 
     }
     elsif ( @tags = grep /^background_/,
@@ -2909,7 +2917,6 @@ Handle starting drag
     if ( $self->{'drag_slot_key'} ) {
         $self->app_controller()
             ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
-        ${ $self->{'selected_slot_key_scalar'} } = $self->{'drag_slot_key'};
     }
 
 }    # end start_drag
@@ -3051,8 +3058,14 @@ Handle the stopping drag event
     my $canvas_x = $canvas->canvasx($x);
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
-            my $dx = int( $canvas->coords( $self->{'initial_ghost_id'} )->[0]
-                    - $canvas->coords( $self->{'drag_ori_id'} )->[0] );
+
+            my $map_key
+                = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
+
+            my $dx = int( $self->{'ghost_bounds'}[0]
+                    - $self->app_controller()->app_display_data()
+                    ->{'map_layout'}{$map_key}{'coords'}[0] );
+
             $self->popup_map_menu(
                 canvas   => $canvas,
                 dx       => $dx,
@@ -3106,6 +3119,7 @@ Handle the ghost map dragging
         ghost_bounds => $self->{'ghost_bounds'},
         mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
     );
+    return unless $new_dx;
 
     # Move the ghost
     foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
@@ -3147,6 +3161,67 @@ Handle the mouse wheel events
         );
     }
 
+}
+
+# ----------------------------------------------------
+sub int_new_selected_slot {
+
+=pod
+
+=head2 int_new_selected_slot
+
+Handler for selecting a new slot.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $slot_key         = $args{'slot_key'};
+    my $map_set_data     = $args{'map_set_data'};
+
+    ${ $self->{'selected_slot_key_scalar'} } = $slot_key;
+    $self->{'show_features'}
+        = $app_display_data->{'scaffold'}{$slot_key}{'show_features'};
+    my $text_box = $self->{'selected_map_set_text_box'};
+    $text_box->configure( -state => 'normal', );
+
+    # Wipe old info
+    $text_box->delete( "1.0", 'end' );
+
+    my $new_text = $map_set_data->{'map_set_name'};
+
+    $text_box->insert( 'end', $new_text );
+    $text_box->configure( -state => 'disabled', );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub int_move_slot {
+
+=pod
+
+=head2 int_move_slot
+
+Does what the interface needs to do to move the slot
+
+=cut
+
+    #xxx
+    #    my ( $self, %args ) = @_;
+    #    my $app_display_data = $args{'app_display_data'};
+    #    my $slot_key = $args{'slot_key'};
+    #    my $y = $args{'y'};
+    #
+    #    $self->{'toggle_slot_pane'}{$slot_key}->place(
+    #        -x        => 0,
+    #            -y        => $y,
+    #            -relwidth => 1,
+    #            -height   => $height + BETWEEN_SLOT_BUFFER,
+    #        );
+    #    );
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -3252,17 +3327,24 @@ second;
     my $self = shift;
     my ( $bounds, $new_coords, ) = @_;
 
-    if ( $bounds->[0] > $new_coords->[0] ) {
-        $bounds->[0] = $new_coords->[0];
-    }
-    if ( $bounds->[1] > $new_coords->[1] ) {
-        $bounds->[1] = $new_coords->[1];
-    }
-    if ( $bounds->[2] < $new_coords->[2] ) {
-        $bounds->[2] = $new_coords->[2];
-    }
-    if ( $bounds->[3] < $new_coords->[3] ) {
-        $bounds->[3] = $new_coords->[3];
+    for ( my $i = 0; $i <= $#{ $new_coords || [] }; $i = $i + 2 ) {
+
+        # Expand the x values if needed
+        if ( $bounds->[0] > $new_coords->[$i] ) {
+            $bounds->[0] = $new_coords->[$i];
+        }
+        elsif ( $bounds->[2] < $new_coords->[$i] ) {
+            $bounds->[2] = $new_coords->[$i];
+        }
+
+        # Expand the y values if needed
+        if ( $bounds->[1] > $new_coords->[ $i + 1 ] ) {
+            $bounds->[1] = $new_coords->[ $i + 1 ];
+        }
+        elsif ( $bounds->[3] < $new_coords->[ $i + 1 ] ) {
+            $bounds->[3] = $new_coords->[ $i + 1 ];
+        }
+
     }
 }
 
