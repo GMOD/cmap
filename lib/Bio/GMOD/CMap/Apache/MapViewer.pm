@@ -2,15 +2,16 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.133 2007-01-05 19:21:57 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.134 2007-01-16 15:51:53 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.133 $)[-1];
+$VERSION = (qw$Revision: 1.134 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
+use Bio::GMOD::CMap::Drawer::Dotplot;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Utils;
 use Template;
@@ -133,11 +134,21 @@ sub handler {
         my ( $extra_code, $extra_form );
 
         if ( @{ $parsed_url_options{'ref_map_accs'} || () } ) {
-            $drawer = Bio::GMOD::CMap::Drawer->new(
-                apr => $apr,
-                %parsed_url_options,
-                )
-                or return $self->error( Bio::GMOD::CMap::Drawer->error );
+            if ( $apr->param('dotplot') ) {
+                $drawer = Bio::GMOD::CMap::Drawer::Dotplot->new(
+                    apr => $apr,
+                    %parsed_url_options,
+                    )
+                    or return $self->error(
+                    Bio::GMOD::CMap::Drawer::Dotplot->error );
+            }
+            else {
+                $drawer = Bio::GMOD::CMap::Drawer->new(
+                    apr => $apr,
+                    %parsed_url_options,
+                    )
+                    or return $self->error( Bio::GMOD::CMap::Drawer->error );
+            }
 
             $parsed_url_options{'slots'} = $drawer->{'slots'};
             $apr->param( 'left_min_corrs',  $drawer->left_min_corrs );

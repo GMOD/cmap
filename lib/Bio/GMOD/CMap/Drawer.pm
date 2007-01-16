@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.134 2007-01-04 20:53:27 mwz444 Exp $
+# $Id: Drawer.pm,v 1.135 2007-01-16 15:51:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -344,7 +344,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.134 $)[-1];
+$VERSION = (qw$Revision: 1.135 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -392,56 +392,7 @@ Initializes the drawing object.
     unless ( $self->skip_drawing() ) {
 
         # Check to make sure the image dir isn't too full.
-        if ( $self->check_img_dir_fullness() ) {
-            if ( $self->clear_img_dir() ) {
-                if ( $self->check_img_dir_fullness() ) {
-                    return $self->error( "Error: Image directory '"
-                            . $self->cache_dir . "' is "
-                            . 'filled.  The maximum allowed is '
-                            . $self->config_data('max_img_dir_fullness')
-                            . '% filled . '
-                            . " CMap was unable to purge enough space."
-                            . " Please contact the site administrator for assistance."
-                    );
-                }
-            }
-            else {
-                return $self->error( "Error: Image directory '"
-                        . $self->cache_dir . "' is "
-                        . 'filled.  The maximum allowed is '
-                        . $self->config_data('max_img_dir_fullness')
-                        . '% filled . '
-                        . " CMap is not set to automatically purge this directory."
-                        . " Please contact the site administrator for assistance."
-                );
-            }
-        }
-        if ( $self->check_img_dir_size() ) {
-            if ( $self->clear_img_dir() ) {
-                if ( $self->check_img_dir_size() ) {
-                    return $self->error( "Error: Image directory '"
-                            . $self->cache_dir
-                            . "' filled.  "
-                            . " The maximum size the directory can grow is "
-                            . $self->config_data('max_img_dir_size')
-                            . " bytes. "
-                            . " CMap was unable to purge enough space."
-                            . " Please contact the site administrator for assistance."
-                    );
-                }
-            }
-            else {
-                return $self->error( "Error: Image directory '"
-                        . $self->cache_dir
-                        . "' filled.  "
-                        . " The maximum size the directory can grow is "
-                        . $self->config_data('max_img_dir_size')
-                        . " bytes. "
-                        . " CMap is not set to automatically purge this directory."
-                        . " Please contact the site administrator for assistance."
-                );
-            }
-        }
+        return unless $self->img_dir_ok();
 
         my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
 
@@ -472,6 +423,78 @@ Initializes the passed parameters.
         $self->$param( $config->{$param} );
     }
 
+}
+
+# ----------------------------------------
+sub img_dir_ok {
+
+=pod
+
+=head2 img_dir_ok
+
+Check the image directory
+
+=cut
+
+    my $self = shift;
+    $self->{'data_module'} = shift if @_;
+
+    if ( $self->check_img_dir_fullness() ) {
+        if ( $self->clear_img_dir() ) {
+            if ( $self->check_img_dir_fullness() ) {
+                $self->error( "Error: Image directory '"
+                        . $self->cache_dir . "' is "
+                        . 'filled.  The maximum allowed is '
+                        . $self->config_data('max_img_dir_fullness')
+                        . '% filled . '
+                        . " CMap was unable to purge enough space."
+                        . " Please contact the site administrator for assistance."
+                );
+                return 0;
+            }
+        }
+        else {
+            $self->error( "Error: Image directory '"
+                    . $self->cache_dir . "' is "
+                    . 'filled.  The maximum allowed is '
+                    . $self->config_data('max_img_dir_fullness')
+                    . '% filled . '
+                    . " CMap is not set to automatically purge this directory."
+                    . " Please contact the site administrator for assistance."
+            );
+            return 0;
+        }
+    }
+    if ( $self->check_img_dir_size() ) {
+        if ( $self->clear_img_dir() ) {
+            if ( $self->check_img_dir_size() ) {
+                $self->error( "Error: Image directory '"
+                        . $self->cache_dir
+                        . "' filled.  "
+                        . " The maximum size the directory can grow is "
+                        . $self->config_data('max_img_dir_size')
+                        . " bytes. "
+                        . " CMap was unable to purge enough space."
+                        . " Please contact the site administrator for assistance."
+                );
+                return 0;
+            }
+        }
+        else {
+            $self->error( "Error: Image directory '"
+                    . $self->cache_dir
+                    . "' filled.  "
+                    . " The maximum size the directory can grow is "
+                    . $self->config_data('max_img_dir_size')
+                    . " bytes. "
+                    . " CMap is not set to automatically purge this directory."
+                    . " Please contact the site administrator for assistance."
+            );
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 # ----------------------------------------
