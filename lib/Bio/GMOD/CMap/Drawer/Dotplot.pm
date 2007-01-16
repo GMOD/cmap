@@ -1,0 +1,521 @@
+package Bio::GMOD::CMap::Drawer::Dotplot;
+
+# vim: set ft=perl:
+
+# $Id: Dotplot.pm,v 1.1 2007-01-16 15:53:42 mwz444 Exp $
+
+=head1 NAME
+
+Bio::GMOD::CMap::Drawer::Dotplot - draw maps 
+
+=head1 SYNOPSIS
+
+  use Bio::GMOD::CMap::Drawer::Dotplot;
+  my $drawer = Bio::GMOD::CMap::Drawer::Dotplot( ref_map_id => 12345 );
+  $drawer->image_name;
+
+=head1 DESCRIPTION
+
+The Dot plot drawer. See Bio::GMOD::CMap::Drawer for more information.
+
+=head1 Usage
+
+The Dot plot drawer. See Bio::GMOD::CMap::Drawer 
+
+    my $drawer = Bio::GMOD::CMap::Drawer::Dotplot->new(
+        %options
+    );
+
+=head1 METHODS
+
+=cut
+
+use strict;
+use vars qw( $VERSION );
+$VERSION = (qw$Revision: 1.1 $)[-1];
+
+use Bio::GMOD::CMap::Utils qw[ commify ];
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Data;
+use Data::Dumper;
+use base 'Bio::GMOD::CMap::Drawer';
+
+# ----------------------------------------------------
+sub init {
+
+=pod
+
+=head2 init
+
+Initializes the drawing object.
+
+=cut
+
+    my ( $self, $config ) = @_;
+
+    $self->initialize_params($config);
+
+    $self->data or return;
+
+    unless ( $self->skip_drawing() ) {
+
+        # Check to make sure the image dir isn't too full.
+        return unless $self->img_dir_ok();
+
+        my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
+
+        eval "use $gd_class";
+
+        return $self->error(@$) if @$;
+
+        $self->draw_dotplot() or return;
+    }
+
+    return $self;
+}
+
+# ----------------------------------------------------
+sub draw_dotplot {
+
+=pod
+
+=head2 draw
+
+Lays out the image and writes it to the file system, set the "image_name."
+
+=cut
+
+    my $self = shift;
+
+    my $base_x = 0;
+    my $base_y = 0;
+
+    my $row_buffer = 4;
+    my ( @drawing_data, @map_area_data );
+
+    my $omit_all_area_boxes = ( $self->omit_area_boxes == 2 );
+
+    my $ref_slot_data        = $self->slot_data(0);
+    my $right_comp_slot_data = $self->slot_data(1);
+    my $left_comp_slot_data  = $self->slot_data(-1);
+
+    my @ref_map_ids
+        = @{ $self->data_module()->sorted_map_ids( 0, $ref_slot_data ) };
+    my @right_comp_map_ids
+        = @{ $self->data_module()->sorted_map_ids( 1, $right_comp_slot_data )
+        };
+    my @left_comp_map_ids
+        = @{ $self->data_module()->sorted_map_ids( -1, $left_comp_slot_data )
+        };
+
+    #get the pixels for each map
+    my %map_pixels;
+    foreach my $map_id (@ref_map_ids) {
+        next if $map_pixels{$map_id};
+        $map_pixels{$map_id} = $self->get_map_pixel_size(
+            slot_no   => 0,
+            slot_data => $ref_slot_data,
+            map_id    => $map_id,
+        );
+    }
+    foreach my $map_id (@right_comp_map_ids) {
+        next if $map_pixels{$map_id};
+        $map_pixels{$map_id} = $self->get_map_pixel_size(
+            slot_no   => 1,
+            slot_data => $right_comp_slot_data,
+            map_id    => $map_id,
+        );
+    }
+    foreach my $map_id (@left_comp_map_ids) {
+        next if $map_pixels{$map_id};
+        $map_pixels{$map_id} = $self->get_map_pixel_size(
+            slot_no   => -1,
+            slot_data => $left_comp_slot_data,
+            map_id    => $map_id,
+        );
+    }
+
+    my ( $max_x, $max_y ) = ( $base_x, $base_y );
+    ( $max_x, $max_y ) = $self->draw_comp_labels(
+        slot_base_x     => $base_x,
+        slot_base_y     => $base_y,
+        max_x           => $max_x,
+        max_y           => $max_y,
+        slot_no         => 1,
+        slot_data       => $right_comp_slot_data,
+        map_ids         => \@right_comp_map_ids,
+        map_pixels_hash => \%map_pixels,
+    );
+    ( $max_x, $max_y ) = $self->draw_comp_labels(
+        slot_base_x     => $max_x,
+        slot_base_y     => $base_y,
+        max_x           => $max_x,
+        max_y           => $max_y,
+        slot_no         => -1,
+        slot_data       => $left_comp_slot_data,
+        map_ids         => \@left_comp_map_ids,
+        map_pixels_hash => \%map_pixels,
+    );
+
+    foreach my $ref_map_id (@ref_map_ids) {
+        $max_y += $row_buffer;
+        my $row_base_y = $max_y;
+        $max_x = $base_x;
+        foreach my $comp_map_id (@right_comp_map_ids) {
+            ( $max_x, $max_y ) = $self->draw_map_dotplot(
+                base_x         => $max_x,
+                base_y         => $row_base_y,
+                max_x          => $max_x,
+                max_y          => $max_y,
+                comp_slot_no   => 1,
+                comp_map_id    => $comp_map_id,
+                comp_slot_data => $right_comp_slot_data,
+                comp_map_width => $map_pixels{$comp_map_id},
+                ref_map_id     => $ref_map_id,
+                ref_slot_data  => $ref_slot_data,
+                ref_map_height => $map_pixels{$ref_map_id},
+            );
+        }
+        foreach my $comp_map_id (@left_comp_map_ids) {
+            ( $max_x, $max_y ) = $self->draw_map_dotplot(
+                base_x         => $max_x,
+                base_y         => $row_base_y,
+                max_x          => $max_x,
+                max_y          => $max_y,
+                comp_slot_no   => -1,
+                comp_map_id    => $comp_map_id,
+                comp_slot_data => $left_comp_slot_data,
+                comp_map_width => $map_pixels{$comp_map_id},
+                ref_map_id     => $ref_map_id,
+                ref_slot_data  => $ref_slot_data,
+                ref_map_height => $map_pixels{$ref_map_id},
+            );
+        }
+    }
+
+    $self->max_y($max_y);
+
+    #
+    # Move all the coordinates to positive numbers.
+    #
+    $self->adjust_frame;
+
+    $self->draw_image();
+
+    return $self;
+}
+
+# ----------------------------------------------------
+sub get_map_pixel_size {
+
+=pod
+
+=head2 get_map_pixel_size
+
+Get the pixel_size of each map
+
+=cut
+
+    my $self      = shift;
+    my %args      = @_;
+    my $slot_no   = $args{'slot_no'};
+    my $slot_data = $args{'slot_data'};
+    my $map_id    = $args{'map_id'};
+
+    return $self->pixel_height();
+}
+
+# ----------------------------------------------------
+sub draw_comp_labels {
+
+=pod
+
+=head2 draw_comp_labels
+
+Get the pixel_size of each map
+
+=cut
+
+    my $self            = shift;
+    my %args            = @_;
+    my $slot_base_x     = $args{'slot_base_x'};
+    my $slot_base_y     = $args{'slot_base_y'};
+    my $max_x           = $args{'max_x'};
+    my $max_y           = $args{'max_y'};
+    my $slot_no         = $args{'slot_no'};
+    my $slot_data       = $args{'slot_data'} or return ( $max_x, $max_y );
+    my $map_ids         = $args{'map_ids'} or return ( $max_x, $max_y );
+    my $map_pixels_hash = $args{'map_pixels_hash'};
+
+    my ( @drawing_data, @map_area_data );
+
+    my $font       = $self->regular_font;
+    my $slot_min_x = $slot_base_x;
+    my $buffer     = 4;
+    return ( $max_x, $max_y )
+        unless ( @{ $map_ids || [] } and %{ $slot_data || {} } );
+
+    # Figure out the width of this slot.
+    my $slot_width = 0;
+    map { $slot_width += $map_pixels_hash->{$_}; } @{ $map_ids || [] };
+    my $slot_max_x = $slot_base_x + $slot_width;
+
+    my $slot_mid_x = $slot_min_x + int( $slot_width / 2 );
+
+    my @map_set_lines;
+    push @map_set_lines,
+        (
+        $slot_data->{ $map_ids->[0] }{'species_common_name'},
+        $slot_data->{ $map_ids->[0] }{'map_set_name'},
+        );
+
+    #
+    # Place the titles.
+    #
+    my $slot_max_y = $slot_base_y;
+    for my $label (@map_set_lines) {
+        my $length  = $font->width * length($label);
+        my $label_x = $slot_mid_x - $length / 2;
+        my $end     = $label_x + $length;
+
+        # Make sure it doesn't overlap the beginning
+        if ( $label_x < $slot_min_x ) {
+            my $offset = $slot_min_x - $label_x;
+            $label_x += $offset;
+            $end     += $offset;
+        }
+
+        push @drawing_data,
+            [ STRING, $font, $label_x, $slot_max_y, $label, 'black' ];
+
+        $slot_max_y += $font->height + $buffer;
+    }
+
+    $self->add_drawing(@drawing_data);
+    $self->add_map_area(@map_area_data);
+
+    # Now draw the Comp map titles
+    my $map_base_y = $slot_max_y;
+    my $map_max_x  = $slot_base_x;
+    foreach my $map_id ( @{ $map_ids || [] } ) {
+        ( $map_max_x, $slot_max_y ) = $self->draw_comp_map_labels(
+            map_base_x => $map_max_x,
+            map_base_y => $map_base_y,
+            max_x      => $max_x,
+            max_y      => $max_y,
+            slot_no    => $slot_no,
+            slot_data  => $slot_data,
+            map_id     => $map_id,
+            map_width  => $map_pixels_hash->{$map_id},
+        );
+    }
+
+    $slot_max_y += $buffer;
+    $max_y = $slot_max_y if ( $max_y < $slot_max_y );
+    $max_x = $slot_max_x if ( $max_x < $slot_max_x );
+
+    return ( $max_x, $max_y );
+}
+
+# ----------------------------------------------------
+sub draw_comp_map_labels {
+
+=pod
+
+=head2 draw_comp_map_labels
+
+Draw the header for a map
+
+=cut
+
+    my $self       = shift;
+    my %args       = @_;
+    my $map_base_x = $args{'map_base_x'};
+    my $map_base_y = $args{'map_base_y'};
+    my $max_x      = $args{'max_x'};
+    my $max_y      = $args{'max_y'};
+    my $slot_no    = $args{'slot_no'};
+    my $slot_data  = $args{'slot_data'} or return ( $max_x, $max_y );
+    my $map_id     = $args{'map_id'} or return ( $max_x, $max_y );
+    my $map_width  = $args{'map_width'};
+
+    my $map_units = $slot_data->{$map_id}{'map_units'};
+
+    my ( @drawing_data, @map_area_data );
+
+    my $font      = $self->regular_font;
+    my $map_min_x = $map_base_x;
+    my $buffer    = 4;
+    return ( $max_x, $max_y ) unless ( %{ $slot_data || {} } );
+
+    my $map_max_x = $map_base_x + $map_width;
+
+    my $map_mid_x = $map_min_x + int( $map_width / 2 );
+
+    my ( $start, $stop )
+        = $self->data_module->getDisplayedStartStop( $slot_no, $map_id );
+    my $start_stop_str
+        = commify($start) . "-" . commify($stop) . " " . $map_units;
+
+    my @map_set_lines;
+    push @map_set_lines,
+        ( $slot_data->{$map_id}{'map_name'}, $start_stop_str, );
+
+    #
+    # Place the titles.
+    #
+    my $map_max_y = $map_base_y;
+    for my $label (@map_set_lines) {
+        my $length  = $font->width * length($label);
+        my $label_x = $map_mid_x - $length / 2;
+        my $end     = $label_x + $length;
+
+        # Make sure it doesn't overlap the beginning
+        if ( $label_x < $map_min_x ) {
+            my $offset = $map_min_x - $label_x;
+            $label_x += $offset;
+            $end     += $offset;
+        }
+
+        push @drawing_data,
+            [ STRING, $font, $label_x, $map_max_y, $label, 'black' ];
+
+        $map_max_y += $font->height + $buffer;
+    }
+
+    # Now draw the Comp map titles
+
+    $self->add_drawing(@drawing_data);
+    $self->add_map_area(@map_area_data);
+
+    $max_y = $map_max_y if ( $max_y < $map_max_y );
+    $max_x = $map_max_x if ( $max_x < $map_max_x );
+
+    return ( $max_x, $max_y );
+}
+
+# ----------------------------------------------------
+sub draw_map_dotplot {
+
+=pod
+
+=head2 draw_map_dotplot
+
+Draw the actual dotplot for each map
+
+=cut
+
+    my $self           = shift;
+    my %args           = @_;
+    my $base_x         = $args{'base_x'};
+    my $base_y         = $args{'base_y'};
+    my $max_x          = $args{'max_x'};
+    my $max_y          = $args{'max_y'};
+    my $comp_slot_no   = $args{'comp_slot_no'};
+    my $comp_slot_data = $args{'comp_slot_data'} or return ( $max_x, $max_y );
+    my $comp_map_id    = $args{'comp_map_id'} or return ( $max_x, $max_y );
+    my $comp_map_width = $args{'comp_map_width'};
+    my $ref_slot_data  = $args{'ref_slot_data'} or return ( $max_x, $max_y );
+    my $ref_map_id     = $args{'ref_map_id'} or return ( $max_x, $max_y );
+    my $ref_map_height = $args{'ref_map_height'};
+    my $ref_slot_no    = 0;
+
+    my ( @drawing_data, @map_area_data );
+
+    my $min_x  = $base_x;
+    my $buffer = 4;
+
+    my $max_x = $base_x + $comp_map_width;
+    my $max_y = $base_y + $ref_map_height;
+
+    push @drawing_data,
+        [ RECTANGLE, ( $base_x, $base_y, $max_x, $max_y, ), 'black' ];
+
+    my $comp_to_ref_corrs_hash
+        = $self->map_correspondences( $comp_slot_no, $comp_map_id ) || {};
+    my $comp_to_ref_corrs_array = $comp_to_ref_corrs_hash->{$ref_map_id};
+    if (    $comp_to_ref_corrs_array
+        and %{ $ref_slot_data  || {} }
+        and %{ $comp_slot_data || {} } )
+    {
+
+        my $graph_min_x = $base_x + 1;
+        my $graph_min_y = $base_y + 1;
+        my $graph_max_x = $max_x - 1;
+        my $graph_max_y = $max_y - 1;
+
+        my ( $ref_map_start, $ref_map_stop )
+            = $self->data_module->getDisplayedStartStop( $ref_slot_no,
+            $ref_map_id, );
+        my ( $comp_map_start, $comp_map_stop )
+            = $self->data_module->getDisplayedStartStop( $comp_slot_no,
+            $comp_map_id, );
+
+        my $ref_factor
+            = ($ref_map_height) / ( $ref_map_stop - $ref_map_start );
+        my $comp_factor
+            = ($comp_map_width) / ( $comp_map_stop - $comp_map_start );
+
+        foreach my $comp_to_ref_corrs ( @{ $comp_to_ref_corrs_array || [] } )
+        {
+            foreach $comp_to_ref_corrs (
+                @{ $comp_to_ref_corrs->{'map_corrs'} || [] } )
+            {
+                my $start_y = (
+                    $comp_to_ref_corrs->{'feature_start2'} - $ref_map_start )
+                    * $ref_factor;
+                my $start_x = (
+                    $comp_to_ref_corrs->{'feature_start1'} - $comp_map_start )
+                    * $comp_factor;
+                my $stop_y = (
+                    $comp_to_ref_corrs->{'feature_stop2'} - $ref_map_start )
+                    * $ref_factor;
+                my $stop_x = (
+                    $comp_to_ref_corrs->{'feature_stop1'} - $comp_map_start )
+                    * $comp_factor;
+                push @drawing_data,
+                    [
+                    RECTANGLE,
+                    (   $graph_min_x + $start_x,
+                        $graph_max_y - $start_y,
+                        $graph_min_x + $stop_x,
+                        $graph_max_y - $stop_y,
+                    ),
+                    'black',
+                    ];
+            }
+        }
+    }
+
+    $self->add_drawing(@drawing_data);
+    $self->add_map_area(@map_area_data);
+
+    return ( $max_x, $max_y );
+}
+
+1;
+
+# ----------------------------------------------------
+# It is not all books that are as dull as their readers.
+# Henry David Thoreau
+# ----------------------------------------------------
+
+=pod
+
+=head1 SEE ALSO
+
+L<perl>, L<GD>, L<GD::SVG>.
+
+=head1 AUTHOR
+
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+
+This library is free software;  you can redistribute it and/or modify 
+it under the same terms as Perl itself.
+
+=cut
+
