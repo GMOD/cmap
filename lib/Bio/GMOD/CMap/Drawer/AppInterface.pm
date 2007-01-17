@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.27 2007-01-14 17:15:59 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.28 2007-01-17 19:41:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2059,10 +2059,7 @@ sub popup_map_menu {
     $map_menu_window->bind(
         '<Destroy>',
         sub {
-            foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-                $canvas->delete($ghost_id);
-            }
-            $self->{'ghost_ids'} = undef;
+            $self->destroy_ghost($canvas);
         },
     );
     $map_menu_window->bind(
@@ -2744,6 +2741,9 @@ Handle starting drag
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
 
+    # Remove previous highlighting
+    $self->destroy_ghost($canvas);
+
     $x = $canvas->canvasx($x);
     $y = $canvas->canvasy($y);
 
@@ -2760,11 +2760,6 @@ Handle starting drag
         return unless ( $self->{'drag_ori_id'} );
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-
-        # Remove previous highlighting
-        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-            $canvas->delete($ghost_id);
-        }
 
         # Create a ghost item for each item in the original feature glyph
         $self->{ghost_bounds} = [ $canvas->coords( $self->{'drag_ori_id'} ) ];
@@ -2786,11 +2781,6 @@ Handle starting drag
 
         my $feature_acc
             = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} );
-
-        # Remove previous highlighting
-        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-            $canvas->delete($ghost_id);
-        }
 
         # Create a ghost item for each item in the original feature glyph
         foreach my $ori_id ( $self->feature_acc_to_drawn_ids($feature_acc) ) {
@@ -2841,6 +2831,9 @@ Handle starting drag
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
 
+    # Remove previous highlighting
+    $self->destroy_ghost($canvas);
+
     $x = $canvas->canvasx($x);
     $y = $canvas->canvasy($y);
 
@@ -2858,11 +2851,6 @@ Handle starting drag
         $self->{'drag_obj'} = 'map';
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-
-        # Remove previous highlighting
-        foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-            $canvas->delete($ghost_id);
-        }
 
         # Create a ghost item for each item in the original feature glyph
         my @init_coords = $canvas->coords( $self->{'drag_ori_id'} );
@@ -3247,6 +3235,26 @@ Handle window resizing
         );
         $self->pack_panes( $window_key, $app_display_data, );
     }
+}
+
+# ----------------------------------------------------
+sub destroy_ghost {
+
+=pod
+
+=head2 destroy_ghost
+
+Destroy the ghost image
+
+=cut
+
+    my $self   = shift;
+    my $canvas = shift;
+
+    foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
+        $canvas->delete($ghost_id);
+    }
+    $self->{'ghost_ids'} = undef;
 }
 
 # ----------------------------------------------------
