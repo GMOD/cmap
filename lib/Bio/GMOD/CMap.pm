@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.111 2006-10-31 21:50:23 mwz444 Exp $
+# $Id: CMap.pm,v 1.112 2007-01-17 19:40:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -195,7 +195,7 @@ Return data from config about map type
     my $config       = $self->config or return;
 
     if ($attribute) {
-        unless (defined $config->get_config('map_type')->{$map_type_acc}){
+        unless ( defined $config->get_config('map_type')->{$map_type_acc} ) {
             return undef;
         }
         return $config->get_config('map_type')->{$map_type_acc}{$attribute};
@@ -225,7 +225,9 @@ Return data from config about feature type
     my $config           = $self->config or return;
 
     if ($attribute) {
-        unless (defined $config->get_config('feature_type')->{$feature_type_acc}){
+        unless (
+            defined $config->get_config('feature_type')->{$feature_type_acc} )
+        {
             return undef;
         }
         return $config->get_config('feature_type')->{$feature_type_acc}
@@ -256,7 +258,10 @@ Return data from config about evidence type
     my $config            = $self->config or return;
 
     if ($attribute) {
-        unless (defined $config->get_config('evidence_type')->{$evidence_type_acc}){
+        unless (
+            defined $config->get_config('evidence_type')
+            ->{$evidence_type_acc} )
+        {
             return undef;
         }
         return $config->get_config('evidence_type')->{$evidence_type_acc}
@@ -828,6 +833,26 @@ The default is 0.
 }
 
 # ----------------------------------------------------
+sub dotplot {
+
+=pod
+
+=head3 dotplot
+
+Returns the boolean dotplot variable.  This determines if the view will be displayed as a dotplot.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'dotplot'} = $val if defined $val;
+    $self->{'dotplot'} ||= 0;
+    return $self->{'dotplot'};
+}
+
+# ----------------------------------------------------
 sub get_multiple_xrefs {
 
 =pod
@@ -1289,6 +1314,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $compMenu                    = $args{'compMenu'};
     my $optionMenu                  = $args{'optionMenu'};
     my $addOpMenu                   = $args{'addOpMenu'};
+    my $dotplot                     = $args{'dotplot'};
     my $session_id                  = $args{'session_id'};
     my $next_step                   = $args{'next_step'};
     my $new_session                 = $args{'new_session'} || 0;
@@ -1459,6 +1485,8 @@ Given information about the link, creates a url to cmap_viewer.
         if ( defined($optionMenu) and $optionMenu ne '' );
     $url .= "addOpMenu=$addOpMenu;"
         if ( defined($addOpMenu) and $addOpMenu ne '' );
+    $url .= "dotplot=$dotplot;"
+        if ($dotplot);
 
     #multi
 
@@ -1514,16 +1542,16 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
     }
 
-    if ( %{$slot_min_corrs ||{}} ) {
-        foreach my $slot_no (keys %{$slot_min_corrs}) {
-            if ($slot_min_corrs->{$slot_no}){
+    if ( %{ $slot_min_corrs || {} } ) {
+        foreach my $slot_no ( keys %{$slot_min_corrs} ) {
+            if ( $slot_min_corrs->{$slot_no} ) {
                 $url .= "slot_min_corrs_" . $slot_no . "=1;";
             }
         }
     }
-    if ( %{$stack_slot ||{}} ) {
-        foreach my $slot_no (keys %{$stack_slot}) {
-            if ($stack_slot->{$slot_no}){
+    if ( %{ $stack_slot || {} } ) {
+        foreach my $slot_no ( keys %{$stack_slot} ) {
+            if ( $stack_slot->{$slot_no} ) {
                 $url .= "stack_slot_" . $slot_no . "=1;";
             }
         }

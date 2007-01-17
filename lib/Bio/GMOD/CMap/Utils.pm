@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.78 2007-01-05 19:21:56 mwz444 Exp $
+# $Id: Utils.pm,v 1.79 2007-01-17 19:40:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -46,7 +46,7 @@ $VERSION = (qw$Revision: 1.78 $)[-1];
     link_group               flip
     session_mod              page_no
     menu_min_corrs           collapse_features
-    aggregate
+    aggregate                dotplot
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
     ignore_image_map_sanity
@@ -80,6 +80,7 @@ $VERSION = (qw$Revision: 1.78 $)[-1];
     'label_features'   => q{},
     'link_group'       => q{},
     'flip'             => q{},
+    'dotplot'          => 0,
     'session_mod'      => q{},
     'page_no'          => 1,
     'action'           => 'view',
@@ -1325,7 +1326,7 @@ sub _get_options_from_url {
         page_no                  action              step
         left_min_corrs           corr_menu_min_corrs_left
         right_min_corrs          corr_menu_min_corrs_right
-        menu_min_corrs
+        menu_min_corrs           dotplot
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
         show_intraslot_corr      split_agg_ev
@@ -1961,13 +1962,12 @@ sub parse_url {
         $parsed_url_options{'comparative_map_right'} = [];
         $parsed_url_options{'comparative_map_left'}  = [];
     }
-    if ($parsed_url_options{'ref_map_start'} eq ''){
+    if ( $parsed_url_options{'ref_map_start'} eq '' ) {
         $parsed_url_options{'ref_map_start'} = undef;
     }
-    if ($parsed_url_options{'ref_map_stop'} eq ''){
+    if ( $parsed_url_options{'ref_map_stop'} eq '' ) {
         $parsed_url_options{'ref_map_stop'} = undef;
     }
-
 
     # If ref_map_start/stop are defined and there is only one ref map
     # use those values and then wipe them from the params.

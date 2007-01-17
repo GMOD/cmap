@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.135 2007-01-16 15:51:52 mwz444 Exp $
+# $Id: Drawer.pm,v 1.136 2007-01-17 19:40:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -67,6 +67,7 @@ The base map drawing module.
         compMenu => $compMenu,
         optionMenu => $optionMenu,
         addOpMenu => $addOpMenu,
+        dotplot => $dotplot,
         skip_drawing => $skip_drawing,
     );
 
@@ -332,6 +333,10 @@ This is set to 1 if the Options Menu is displayed.
 
 This is set to 1 if the Additional Options Menu is displayed.
 
+=item * dotplot
+
+This is set to 1 if a dotplot is to be drawn instead of the map view.
+
 =item * skip_drawing
 
 This is set to 1 if you don't want the drawer to actually do the drawing 
@@ -344,7 +349,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135 $)[-1];
+$VERSION = (qw$Revision: 1.136 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -369,6 +374,7 @@ my @INIT_PARAMS = qw[
     aggregate show_intraslot_corr clean_view
     scale_maps stack_maps ref_map_order comp_menu_order
     omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
+    dotplot
     corrs_to_map session_id next_step ignore_image_map_sanity skip_drawing
 ];
 
@@ -3219,7 +3225,6 @@ Creates default link parameters for CMap->create_viewer_link()
     my $next_step                   = $args{'next_step'};
     my $session_mod                 = $args{'session_mod'};
     my $new_session                 = $args{'new_session'};
-
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
     my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
     my $less_evidence_type_accs     = $args{'less_evidence_type_accs'};
@@ -3231,6 +3236,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $compMenu                    = $args{'compMenu'};
     my $optionMenu                  = $args{'optionMenu'};
     my $addOpMenu                   = $args{'addOpMenu'};
+    my $dotplot                     = $args{'dotplot'};
     my $skip_map_info               = $args{'skip_map_info'};
     my $create_legacy_url           = $args{'create_legacy_url'};
 
@@ -3407,6 +3413,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($addOpMenu) ) {
         $addOpMenu = $self->addOpMenu();
     }
+    unless ( defined($dotplot) ) {
+        $dotplot = $self->dotplot();
+    }
 
     return (
         prev_ref_species_acc        => $prev_ref_species_acc,
@@ -3458,6 +3467,7 @@ Creates default link parameters for CMap->create_viewer_link()
         compMenu                    => $compMenu,
         optionMenu                  => $optionMenu,
         addOpMenu                   => $addOpMenu,
+        dotplot                     => $dotplot,
         session_mod                 => $session_mod,
         new_session                 => $new_session,
         skip_map_info               => $skip_map_info,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Dotplot;
 
 # vim: set ft=perl:
 
-# $Id: Dotplot.pm,v 1.1 2007-01-16 15:53:42 mwz444 Exp $
+# $Id: Dotplot.pm,v 1.2 2007-01-17 19:40:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ The Dot plot drawer. See Bio::GMOD::CMap::Drawer
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Utils qw[ commify ];
 use Bio::GMOD::CMap::Constants;
@@ -90,7 +90,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $base_x = 0;
     my $base_y = 0;
 
-    my $row_buffer = 4;
+    my $row_buffer    = 4;
+    my $column_buffer = 4;
     my ( @drawing_data, @map_area_data );
 
     my $omit_all_area_boxes = ( $self->omit_area_boxes == 2 );
@@ -136,29 +137,12 @@ Lays out the image and writes it to the file system, set the "image_name."
     }
 
     my ( $max_x, $max_y ) = ( $base_x, $base_y );
-    ( $max_x, $max_y ) = $self->draw_comp_labels(
-        slot_base_x     => $base_x,
-        slot_base_y     => $base_y,
-        max_x           => $max_x,
-        max_y           => $max_y,
-        slot_no         => 1,
-        slot_data       => $right_comp_slot_data,
-        map_ids         => \@right_comp_map_ids,
-        map_pixels_hash => \%map_pixels,
-    );
-    ( $max_x, $max_y ) = $self->draw_comp_labels(
-        slot_base_x     => $max_x,
-        slot_base_y     => $base_y,
-        max_x           => $max_x,
-        max_y           => $max_y,
-        slot_no         => -1,
-        slot_data       => $left_comp_slot_data,
-        map_ids         => \@left_comp_map_ids,
-        map_pixels_hash => \%map_pixels,
-    );
+    my ( $min_x, $min_y ) = ( $base_x, $base_y );
 
+    my $plot_base_y = $max_y + $row_buffer;
+
+    # Draw the Dot Plots first.
     foreach my $ref_map_id (@ref_map_ids) {
-        $max_y += $row_buffer;
         my $row_base_y = $max_y;
         $max_x = $base_x;
         foreach my $comp_map_id (@right_comp_map_ids) {
@@ -175,6 +159,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 ref_slot_data  => $ref_slot_data,
                 ref_map_height => $map_pixels{$ref_map_id},
             );
+            $max_x += $column_buffer;
         }
         foreach my $comp_map_id (@left_comp_map_ids) {
             ( $max_x, $max_y ) = $self->draw_map_dotplot(
@@ -190,10 +175,29 @@ Lays out the image and writes it to the file system, set the "image_name."
                 ref_slot_data  => $ref_slot_data,
                 ref_map_height => $map_pixels{$ref_map_id},
             );
+            $max_x += $column_buffer;
         }
+        $max_y += $row_buffer;
     }
+    $self->draw_comp_labels(
+        slot_base_y => $base_y - $row_buffer,
+        slot_no     => 1,
+        slot_data   => $right_comp_slot_data,
+        map_ids     => \@right_comp_map_ids,
+    );
+    $self->draw_comp_labels(
+        slot_base_y => $base_y - $row_buffer,
+        slot_no     => -1,
+        slot_data   => $left_comp_slot_data,
+        map_ids     => \@left_comp_map_ids,
+    );
 
-    $self->max_y($max_y);
+    $self->draw_ref_labels(
+        slot_base_x => $base_x - $column_buffer,
+        slot_no     => 0,
+        slot_data   => $ref_slot_data,
+        map_ids     => \@ref_map_ids,
+    );
 
     #
     # Move all the coordinates to positive numbers.
@@ -236,47 +240,59 @@ Get the pixel_size of each map
 
 =cut
 
-    my $self            = shift;
-    my %args            = @_;
-    my $slot_base_x     = $args{'slot_base_x'};
-    my $slot_base_y     = $args{'slot_base_y'};
-    my $max_x           = $args{'max_x'};
-    my $max_y           = $args{'max_y'};
-    my $slot_no         = $args{'slot_no'};
-    my $slot_data       = $args{'slot_data'} or return ( $max_x, $max_y );
-    my $map_ids         = $args{'map_ids'} or return ( $max_x, $max_y );
-    my $map_pixels_hash = $args{'map_pixels_hash'};
+    my $self        = shift;
+    my %args        = @_;
+    my $slot_base_y = $args{'slot_base_y'};
+    my $slot_no     = $args{'slot_no'};
+    my $slot_data   = $args{'slot_data'};
+    my $map_ids     = $args{'map_ids'};
 
     my ( @drawing_data, @map_area_data );
+    my $slot_min_y = $slot_base_y;
 
-    my $font       = $self->regular_font;
-    my $slot_min_x = $slot_base_x;
-    my $buffer     = 4;
-    return ( $max_x, $max_y )
-        unless ( @{ $map_ids || [] } and %{ $slot_data || {} } );
+    my $font   = $self->regular_font;
+    my $buffer = 4;
+    return unless ( @{ $map_ids || [] } and %{ $slot_data || {} } );
 
-    # Figure out the width of this slot.
-    my $slot_width = 0;
-    map { $slot_width += $map_pixels_hash->{$_}; } @{ $map_ids || [] };
-    my $slot_max_x = $slot_base_x + $slot_width;
+    # Draw the Comp map titles
+    my $map_base_y = $slot_min_y;
+    foreach my $map_id ( @{ $map_ids || [] } ) {
+        $slot_min_y -= $buffer;
+        $slot_min_y = $self->draw_comp_map_labels(
+            map_base_y => $map_base_y,
+            min_y      => $slot_min_y,
+            slot_no    => $slot_no,
+            slot_data  => $slot_data,
+            map_id     => $map_id,
+        );
+    }
 
-    my $slot_mid_x = $slot_min_x + int( $slot_width / 2 );
+    $slot_min_y -= $buffer;
 
+    # Figure out the dimensions of this slot.
+    # Use the first and last map in the slot.
+    my ( $slot_min_x, $slot_max_x, );
+    $slot_min_x = $self->{'comp_plot_bounds_x'}{ $map_ids->[0] }[0];
+    $slot_max_x = $self->{'comp_plot_bounds_x'}{ $map_ids->[-1] }[1];
+    my $slot_mid_x = int( ( $slot_min_x + $slot_max_x ) / 2 );
+
+    # Since these will be printed in reverse order, start them in reverse
+    # order.
     my @map_set_lines;
     push @map_set_lines,
         (
-        $slot_data->{ $map_ids->[0] }{'species_common_name'},
         $slot_data->{ $map_ids->[0] }{'map_set_name'},
+        $slot_data->{ $map_ids->[0] }{'species_common_name'},
         );
 
     #
     # Place the titles.
     #
-    my $slot_max_y = $slot_base_y;
     for my $label (@map_set_lines) {
         my $length  = $font->width * length($label);
         my $label_x = $slot_mid_x - $length / 2;
         my $end     = $label_x + $length;
+        my $label_y = $slot_min_y - $font->height();
 
         # Make sure it doesn't overlap the beginning
         if ( $label_x < $slot_min_x ) {
@@ -286,35 +302,99 @@ Get the pixel_size of each map
         }
 
         push @drawing_data,
-            [ STRING, $font, $label_x, $slot_max_y, $label, 'black' ];
+            [ STRING, $font, $label_x, $label_y, $label, 'black' ];
 
-        $slot_max_y += $font->height + $buffer;
+        $slot_min_y -= $font->height + $buffer;
     }
 
     $self->add_drawing(@drawing_data);
     $self->add_map_area(@map_area_data);
 
-    # Now draw the Comp map titles
-    my $map_base_y = $slot_max_y;
-    my $map_max_x  = $slot_base_x;
+    return;
+}
+
+# ----------------------------------------------------
+sub draw_ref_labels {
+
+=pod
+
+=head2 draw_ref_labels
+
+Similar to draw_comp_labels but this works from the last line to the first as
+to make sure there is space for all of the labels.
+
+=cut
+
+    my $self        = shift;
+    my %args        = @_;
+    my $slot_base_x = $args{'slot_base_x'};
+    my $slot_no     = $args{'slot_no'};
+    my $slot_data   = $args{'slot_data'} or return;
+    my $map_ids     = $args{'map_ids'} or return;
+
+    my ( @drawing_data, @map_area_data );
+    my $slot_min_x = $slot_base_x;
+
+    my $font   = $self->regular_font;
+    my $buffer = 4;
+    return unless ( @{ $map_ids || [] } and %{ $slot_data || {} } );
+
+    # Start by drawing the ref map titles
+    my $map_base_x = $slot_min_x;
     foreach my $map_id ( @{ $map_ids || [] } ) {
-        ( $map_max_x, $slot_max_y ) = $self->draw_comp_map_labels(
-            map_base_x => $map_max_x,
-            map_base_y => $map_base_y,
-            max_x      => $max_x,
-            max_y      => $max_y,
+        $slot_min_x -= $buffer;
+        $slot_min_x = $self->draw_ref_map_labels(
+            map_base_x => $map_base_x,
+            min_x      => $slot_min_x,
             slot_no    => $slot_no,
             slot_data  => $slot_data,
             map_id     => $map_id,
-            map_width  => $map_pixels_hash->{$map_id},
         );
     }
 
-    $slot_max_y += $buffer;
-    $max_y = $slot_max_y if ( $max_y < $slot_max_y );
-    $max_x = $slot_max_x if ( $max_x < $slot_max_x );
+    # Figure out the dimensions of this slot.
+    # Use the first and last map in the slot.
+    my ( $slot_min_y, $slot_max_y, );
+    $slot_min_y = $self->{'ref_plot_bounds_y'}{ $map_ids->[0] }[0];
+    $slot_max_y = $self->{'ref_plot_bounds_y'}{ $map_ids->[-1] }[1];
+    my $slot_mid_y = int( ( $slot_min_y + $slot_max_y ) / 2 );
 
-    return ( $max_x, $max_y );
+    # Since these will be printed in reverse order, start them in reverse
+    # order.
+    my @map_set_lines;
+    push @map_set_lines,
+        (
+        $slot_data->{ $map_ids->[0] }{'map_set_name'},
+        $slot_data->{ $map_ids->[0] }{'species_common_name'},
+        );
+
+    #
+    # Place the titles.
+    #
+    for my $label (@map_set_lines) {
+        my $length  = $font->width * length($label);
+        my $label_y = $slot_mid_y + $length / 2;
+        my $end     = $label_y - $length;
+
+        # Make sure it doesn't overlap the beginning
+        if ( $label_y > $slot_max_y ) {
+            my $offset = $slot_min_x - $label_y;
+            $label_y += $offset;
+            $end     += $offset;
+        }
+        my $label_x = $slot_min_x - $font->height();
+
+        push @drawing_data,
+            [ STRING_UP, $font, $label_x, $label_y, $label, 'black' ];
+
+        $slot_min_x -= $font->height + $buffer;
+
+    }
+
+    $self->add_drawing(@drawing_data);
+    $self->add_map_area(@map_area_data);
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -330,45 +410,44 @@ Draw the header for a map
 
     my $self       = shift;
     my %args       = @_;
-    my $map_base_x = $args{'map_base_x'};
     my $map_base_y = $args{'map_base_y'};
-    my $max_x      = $args{'max_x'};
-    my $max_y      = $args{'max_y'};
+    my $min_y      = $args{'min_y'};
     my $slot_no    = $args{'slot_no'};
-    my $slot_data  = $args{'slot_data'} or return ( $max_x, $max_y );
-    my $map_id     = $args{'map_id'} or return ( $max_x, $max_y );
-    my $map_width  = $args{'map_width'};
+    my $slot_data  = $args{'slot_data'} or return $min_y;
+    my $map_id     = $args{'map_id'} or return $min_y;
 
     my $map_units = $slot_data->{$map_id}{'map_units'};
 
     my ( @drawing_data, @map_area_data );
 
-    my $font      = $self->regular_font;
-    my $map_min_x = $map_base_x;
-    my $buffer    = 4;
-    return ( $max_x, $max_y ) unless ( %{ $slot_data || {} } );
+    my $font   = $self->regular_font;
+    my $buffer = 4;
+    return $min_y unless ( %{ $slot_data || {} } );
 
-    my $map_max_x = $map_base_x + $map_width;
-
-    my $map_mid_x = $map_min_x + int( $map_width / 2 );
+    my $map_min_x = $self->{'comp_plot_bounds_x'}{$map_id}[0];
+    my $map_max_x = $self->{'comp_plot_bounds_x'}{$map_id}[1];
+    my $map_mid_x = int( ( $map_min_x + $map_max_x ) / 2 );
 
     my ( $start, $stop )
         = $self->data_module->getDisplayedStartStop( $slot_no, $map_id );
     my $start_stop_str
         = commify($start) . "-" . commify($stop) . " " . $map_units;
 
+    # Since these will be printed in reverse order, start them in reverse
+    # order.
     my @map_set_lines;
     push @map_set_lines,
-        ( $slot_data->{$map_id}{'map_name'}, $start_stop_str, );
+        ( $start_stop_str, $slot_data->{$map_id}{'map_name'}, );
 
     #
     # Place the titles.
     #
-    my $map_max_y = $map_base_y;
+    my $map_min_y = $map_base_y;
     for my $label (@map_set_lines) {
         my $length  = $font->width * length($label);
         my $label_x = $map_mid_x - $length / 2;
         my $end     = $label_x + $length;
+        my $label_y = $map_min_y - $font->height();
 
         # Make sure it doesn't overlap the beginning
         if ( $label_x < $map_min_x ) {
@@ -378,20 +457,90 @@ Draw the header for a map
         }
 
         push @drawing_data,
-            [ STRING, $font, $label_x, $map_max_y, $label, 'black' ];
+            [ STRING, $font, $label_x, $label_y, $label, 'black' ];
 
-        $map_max_y += $font->height + $buffer;
+        $map_min_y -= $font->height + $buffer;
     }
-
-    # Now draw the Comp map titles
 
     $self->add_drawing(@drawing_data);
     $self->add_map_area(@map_area_data);
 
-    $max_y = $map_max_y if ( $max_y < $map_max_y );
-    $max_x = $map_max_x if ( $max_x < $map_max_x );
+    $min_y = $map_min_y if ( $min_y > $map_min_y );
 
-    return ( $max_x, $max_y );
+    return $min_y;
+}
+
+# ----------------------------------------------------
+sub draw_ref_map_labels {
+
+=pod
+
+=head2 draw_ref_map_labels
+
+Draw the header for a reference map
+
+=cut
+
+    my $self       = shift;
+    my %args       = @_;
+    my $map_base_x = $args{'map_base_x'};
+    my $min_x      = $args{'min_x'};
+    my $slot_no    = $args{'slot_no'};
+    my $slot_data  = $args{'slot_data'} or return $min_x;
+    my $map_id     = $args{'map_id'} or return $min_x;
+
+    my $map_units = $slot_data->{$map_id}{'map_units'};
+
+    my ( @drawing_data, @map_area_data );
+
+    my $font   = $self->regular_font;
+    my $buffer = 4;
+    return $min_x unless ( %{ $slot_data || {} } );
+
+    my $map_min_y = $self->{'ref_plot_bounds_y'}{$map_id}[0];
+    my $map_max_y = $self->{'ref_plot_bounds_y'}{$map_id}[1];
+    my $map_mid_y = int( ( $map_min_y + $map_max_y ) / 2 );
+
+    my ( $start, $stop )
+        = $self->data_module->getDisplayedStartStop( $slot_no, $map_id );
+    my $start_stop_str
+        = commify($start) . "-" . commify($stop) . " " . $map_units;
+
+    # Since these will be printed in reverse order, start them in reverse
+    # order.
+    my @map_set_lines;
+    push @map_set_lines,
+        ( $start_stop_str, $slot_data->{$map_id}{'map_name'}, );
+
+    #
+    # Place the titles.
+    #
+    my $map_min_x = $map_base_x;
+    for my $label (@map_set_lines) {
+        my $length  = $font->width * length($label);
+        my $label_y = $map_mid_y + $length / 2;
+        my $end     = $label_y - $length;
+        my $label_x = $map_min_x - $font->height();
+
+        # Make sure it doesn't overlap the beginning
+        if ( $label_y < $map_min_y ) {
+            my $offset = $map_min_y - $label_y;
+            $label_y += $offset;
+            $end     += $offset;
+        }
+
+        push @drawing_data,
+            [ STRING_UP, $font, $label_x, $label_y, $label, 'black' ];
+
+        $map_min_x -= $font->height + $buffer;
+    }
+
+    $self->add_drawing(@drawing_data);
+    $self->add_map_area(@map_area_data);
+
+    $min_x = $map_min_x if ( $min_x > $map_min_x );
+
+    return $min_x;
 }
 
 # ----------------------------------------------------
@@ -407,8 +556,8 @@ Draw the actual dotplot for each map
 
     my $self           = shift;
     my %args           = @_;
-    my $base_x         = $args{'base_x'};
-    my $base_y         = $args{'base_y'};
+    my $plot_base_x    = $args{'base_x'};
+    my $plot_base_y    = $args{'base_y'};
     my $max_x          = $args{'max_x'};
     my $max_y          = $args{'max_y'};
     my $comp_slot_no   = $args{'comp_slot_no'};
@@ -422,14 +571,27 @@ Draw the actual dotplot for each map
 
     my ( @drawing_data, @map_area_data );
 
-    my $min_x  = $base_x;
-    my $buffer = 4;
+    my $min_x      = $plot_base_x;
+    my $buffer     = 4;
+    my $plot_max_x = $plot_base_x;
+    my $plot_max_y = $plot_base_y;
 
-    my $max_x = $base_x + $comp_map_width;
-    my $max_y = $base_y + $ref_map_height;
+    # Draw left side information here
+
+    # Draw the actual plot
+    my $graph_min_x = $plot_max_x;
+    my $graph_min_y = $plot_max_y;
+    my $graph_max_x = $graph_min_x + $comp_map_width;
+    my $graph_max_y = $graph_min_y + $ref_map_height;
+
+    $plot_max_x = $graph_max_x if ( $plot_max_x < $graph_max_x );
+    $plot_max_y = $graph_max_y if ( $plot_max_y < $graph_max_y );
 
     push @drawing_data,
-        [ RECTANGLE, ( $base_x, $base_y, $max_x, $max_y, ), 'black' ];
+        [
+        RECTANGLE,
+        ( $graph_min_x, $graph_min_y, $graph_max_x, $graph_max_y, ), 'black'
+        ];
 
     my $comp_to_ref_corrs_hash
         = $self->map_correspondences( $comp_slot_no, $comp_map_id ) || {};
@@ -439,10 +601,12 @@ Draw the actual dotplot for each map
         and %{ $comp_slot_data || {} } )
     {
 
-        my $graph_min_x = $base_x + 1;
-        my $graph_min_y = $base_y + 1;
-        my $graph_max_x = $max_x - 1;
-        my $graph_max_y = $max_y - 1;
+        my $graphable_area_min_x = $graph_min_x + 1;
+        my $graphable_area_min_y = $graph_min_y + 1;
+        my $graphable_area_max_x = $graph_max_x - 1;
+        my $graphable_area_max_y = $graph_max_y - 1;
+        my $graphable_area_height
+            = $graphable_area_max_y - $graphable_area_min_y;
 
         my ( $ref_map_start, $ref_map_stop )
             = $self->data_module->getDisplayedStartStop( $ref_slot_no,
@@ -452,7 +616,7 @@ Draw the actual dotplot for each map
             $comp_map_id, );
 
         my $ref_factor
-            = ($ref_map_height) / ( $ref_map_stop - $ref_map_start );
+            = ($graphable_area_height) / ( $ref_map_stop - $ref_map_start );
         my $comp_factor
             = ($comp_map_width) / ( $comp_map_stop - $comp_map_start );
 
@@ -475,16 +639,32 @@ Draw the actual dotplot for each map
                     * $comp_factor;
                 push @drawing_data,
                     [
-                    RECTANGLE,
-                    (   $graph_min_x + $start_x,
-                        $graph_max_y - $start_y,
-                        $graph_min_x + $stop_x,
-                        $graph_max_y - $stop_y,
+                    LINE,
+                    (   $graphable_area_min_x + $start_x,
+                        $graphable_area_max_y - $start_y,
+                        $graphable_area_min_x + $stop_x,
+                        $graphable_area_max_y - $stop_y,
                     ),
                     'black',
                     ];
             }
         }
+    }
+
+    # Draw Right side information here
+
+    # Draw Bottom information here
+
+    $max_x = $plot_max_x if ( $max_x < $plot_max_x );
+    $max_y = $plot_max_y if ( $max_y < $plot_max_y );
+
+    unless ( defined( $self->{'comp_plot_bounds_x'}{$comp_map_id} ) ) {
+        $self->{'comp_plot_bounds_x'}{$comp_map_id}
+            = [ $plot_base_x, $plot_max_x, ];
+    }
+    unless ( defined( $self->{'ref_plot_bounds_y'}{$ref_map_id} ) ) {
+        $self->{'ref_plot_bounds_y'}{$ref_map_id}
+            = [ $plot_base_y, $plot_max_y, ];
     }
 
     $self->add_drawing(@drawing_data);
