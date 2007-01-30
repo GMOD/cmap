@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.64 2006-10-31 21:50:23 mwz444 Exp $
+# $Id: Build.PL,v 1.65 2007-01-30 17:19:55 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -228,7 +228,6 @@ my $builder = CMapBuilder->new(
     },
     recommends => {
         'Apache'    => 0,
-        'Bio::Perl' => 0,
     },
     PL_files => {
         'cgi-bin/cmap.PL'                   => 'cgi-bin/cmap',

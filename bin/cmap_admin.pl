@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.138 2006-12-13 16:14:01 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.139 2007-01-30 17:19:58 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.138 $)[-1];
+$VERSION = (qw$Revision: 1.139 $)[-1];
 
 #
 # Get command-line options
@@ -136,7 +136,6 @@ my %command_line_actions = (
     create_map_set                   => 1,
     import_tab_data                  => 1,
     import_correspondences           => 1,
-    import_alignments                => 1,
     import_object_data               => 1,
     import_links                     => 1,
     purge_query_cache                => 1,
@@ -2358,9 +2357,6 @@ sub import_data {
             {   action  => 'import_correspondences',
                 display => 'Import feature correspondences'
             },
-            {   action  => 'import_alignments',
-                display => 'Import Alignment (ex: BLAST)'
-            },
             {   action  => 'import_object_data',
                 display => 'Import CMap objects [experimental]'
             },
@@ -2650,261 +2646,6 @@ sub import_correspondences {
             };
     }
     $self->purge_query_cache( cache_level => 4 );
-}
-
-# ----------------------------------------------------
-sub import_alignments {
-
-    #
-    # Gathers the info to import feature correspondences.
-    #
-    my ( $self, %args ) = @_;
-    my $command_line      = $args{'command_line'};
-    my $file_str          = $args{'file_str'};
-    my $from_map_set_acc  = $args{'from_map_set_acc'};
-    my $to_map_set_acc    = $args{'to_map_set_acc'};
-    my $format            = $args{'format'};
-    my $feature_type_acc  = $args{'feature_type_acc'};
-    my $evidence_type_acc = $args{'evidence_type_acc'};
-    my $single_file       = $self->file;
-    my $term              = $self->term;
-    my $sql_object        = $self->sql;
-    my $files;
-    my $query_map_set_id;
-    my $hit_map_set_id;
-
-    my $formats = [
-        {   display => 'BLAST',
-            format  => 'blast'
-        },
-    ];
-
-    if ($command_line) {
-        my @missing = ();
-        if ($file_str) {
-            unless ( $files = $self->get_files( file_str => $file_str ) ) {
-                print STDERR "None of the files, '$file_str' succeded.\n";
-                push @missing, 'input file(s)';
-            }
-        }
-        else {
-            push @missing, 'input file(s)';
-        }
-        if ( defined($from_map_set_acc) ) {
-            $query_map_set_id = $sql_object->acc_id_to_internal_id(
-                cmap_object => $self,
-                acc_id      => $from_map_set_acc,
-                object_type => 'map_set'
-            );
-            unless ($query_map_set_id) {
-                print STDERR
-                    "Map set Accession, '$from_map_set_acc' is not valid.\n";
-                push @missing, 'from_map_set_acc';
-            }
-        }
-        else {
-            push @missing, 'from_map_set_acc';
-        }
-        if ( defined($to_map_set_acc) ) {
-            $query_map_set_id = $sql_object->acc_id_to_internal_id(
-                cmap_object => $self,
-                acc_id      => $to_map_set_acc,
-                object_type => 'map_set'
-            );
-            unless ($query_map_set_id) {
-                print STDERR
-                    "Map set Accession, '$to_map_set_acc' is not valid.\n";
-                push @missing, 'to_map_set_acc';
-            }
-        }
-        else {
-            push @missing, 'to_map_set_acc';
-        }
-        if ( defined($feature_type_acc) ) {
-            unless ( $self->feature_type_data($feature_type_acc) ) {
-                print STDERR
-                    "The feature_type_acc, '$feature_type_acc' is not valid.\n";
-                push @missing, 'feature_type_acc';
-            }
-        }
-        else {
-            push @missing, 'feature_type_acc';
-        }
-        if ( defined($evidence_type_acc) ) {
-            unless ( $self->evidence_type_data($evidence_type_acc) ) {
-                print STDERR
-                    "The evidence_type_acc, '$evidence_type_acc' is not valid.\n";
-                push @missing, 'evidence_type_acc';
-            }
-        }
-        else {
-            push @missing, 'evidence_type_acc';
-        }
-        if ($format) {
-            my $found = 0;
-            foreach my $item (@$formats) {
-                if ( $format eq $item->{'format'} ) {
-                    $found = 1;
-                }
-            }
-            unless ($found) {
-                print STDERR "The format, '$format' is not valid.\n";
-                push @missing, 'format';
-            }
-        }
-        else {
-            push @missing, 'evidence_type_acc';
-        }
-        if (@missing) {
-            print STDERR "Missing the following arguments:\n";
-            print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
-        }
-    }
-    else {
-
-        #
-        # Make sure we have a file to parse.
-        #
-        if ($single_file) {
-            print "OK to use '$single_file'? [Y/n] ";
-            chomp( my $answer = <STDIN> );
-            $single_file = '' if $answer =~ m/^[Nn]/;
-        }
-
-        if ( -r $single_file and -f _ ) {
-            push @$files, $single_file;
-        }
-        else {
-            print "Unable to read '$single_file' or not a regular file.\n"
-                if $single_file;
-            $files = $self->get_files() or return;
-        }
-
-        #
-        # Get the map set.
-        #
-        my $query_map_sets = $self->get_map_sets(
-            explanation => 'First you will select the map set of the Query',
-            allow_mult  => 0,
-            allow_null  => 0,
-            )
-            or return;
-        my $use_query_as_hit_answer = $self->show_question( question =>
-                'Do you want to use the query map set as the Subject set? [y|N]',
-        );
-        my $hit_map_sets;
-        if ( $use_query_as_hit_answer =~ /^y/ ) {
-            $hit_map_sets = $query_map_sets;
-        }
-        else {
-            $hit_map_sets = $self->get_map_sets(
-                explanation => 'Now you will select the subject map set',
-                allow_mult  => 0,
-                allow_null  => 0,
-                )
-                or return;
-        }
-
-        $query_map_set_id = $query_map_sets->[0]{'map_set_id'};
-        $hit_map_set_id   = $hit_map_sets->[0]{'map_set_id'};
-
-        #
-        # Get the feature type
-        #
-        my @feature_type = $self->show_menu(
-            title  => 'Feature Type of the Hits',
-            prompt => "Select the feature type that the newly "
-                . "created features will be assigned.\n"
-                . "It is recommended that alignment features have "
-                . "their own feature type such as blast_alignment.",
-            display    => 'feature_type',
-            return     => 'feature_type_acc,feature_type',
-            allow_null => 0,
-            allow_mult => 0,
-            data       => sort_selectall_arrayref(
-                $self->fake_selectall_arrayref(
-                    $self->feature_type_data(), 'feature_type_acc',
-                    'feature_type'
-                ),
-                'feature_type'
-            ),
-        );
-
-        #
-        # Get the evidence type
-        #
-        my @evidence_type = $self->show_menu(
-            title  => 'Evidence Type of the Hits',
-            prompt => "Select the evidence type that the newly created "
-                . "evidences will be assigned.\n"
-                . "It is recommended that alignment "
-                . "evidences have their own evidence type such as blast_alignment.",
-            display    => 'evidence_type',
-            return     => 'evidence_type_acc,evidence_type',
-            allow_null => 0,
-            allow_mult => 0,
-            data       => $self->fake_selectall_arrayref(
-                $self->evidence_type_data(), 'evidence_type_acc',
-                'evidence_type'
-            ),
-        );
-
-        $feature_type_acc  = $feature_type[0];
-        $evidence_type_acc = $evidence_type[0];
-
-        #
-        # Get the format of the alignment (BLAST...)
-        #
-        # SearchIO.pm from BioPerl has a list of available formats.
-        # Currently only BLAST is included because that is the only one
-        # that I have files to test.
-
-        $format = $self->show_menu(
-            title   => 'Alignment Format',
-            prompt  => 'What format is the alignment in?',
-            display => 'display',
-            return  => 'format',
-            data    => $formats,
-        );
-
-        print join( "\n",
-            'OK to import?',
-            '  Data source     : ' . $self->data_source,
-            "  File            : " . join( ", ", @$files ),
-            '  Query Map Set   : '
-                . $query_map_sets->[0]{'map_set_short_name'},
-            '  Subject Map Set : ' . $hit_map_sets->[0]{'map_set_short_name'},
-            '  Feature Type    : ' . $feature_type[1],
-            '  Evidence Type   : ' . $evidence_type[1],
-            '  Format          : ' . $format,
-        );
-
-        print "\n[Y/n] ";
-
-        chomp( my $answer = <STDIN> );
-        return if $answer =~ /^[Nn]/;
-    }
-
-    require Bio::GMOD::CMap::Admin::ImportAlignments;
-    my $importer = Bio::GMOD::CMap::Admin::ImportAlignments->new(
-        data_source => $self->data_source, );
-    foreach my $file (@$files) {
-        $importer->import_alignments(
-            file_name         => $file,
-            query_map_set_id  => $query_map_set_id,
-            hit_map_set_id    => $hit_map_set_id,
-            feature_type_acc  => $feature_type_acc,
-            evidence_type_acc => $evidence_type_acc,
-            format            => $format,
-            log_fh            => $self->log_fh,
-            )
-            or do {
-            print "Error: ", $importer->error, "\n";
-            return;
-            };
-    }
-    $self->purge_query_cache( cache_level => 2 );
 }
 
 # ----------------------------------------------------
@@ -4130,18 +3871,6 @@ cmap_admin.pl [-d data_source] --action  import_correspondences --map_set_accs "
 
   Required:
     --map_set_accs : A comma (or space) separated list of map set accessions
-
-=head2 import_alignments 
-
-cmap_admin.pl [-d data_source] --action import_alignments --from_map_set_acc accession --to_map_set_acc accession --format format --feature_type_acc accession --evidence_type_acc accession file1 [file2 ...]
-
-  Required:     --from_map_set_acc : Accession ID of the query
-    --to_map_set_acc : Accession ID of the subject
-    --format : Type of alingment file
-                Current formats: blast
-    --feature_type_acc : Accession ID of for the feature type 
-               of the feature that represents the alignment
-    --evidence_type_acc : Accession ID of for the evidence type of the alignment
 
 =head2 import_tab_data
 

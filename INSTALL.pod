@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.19 $
+$Revision: 1.20 $
 
 =head1 QUICK START
 
@@ -366,12 +366,6 @@ Required Modules:
 Optional Modules:
 
 =over 4
-
-=item *   Bio::Perl
-
-Bioperl is needed if you want to import BLAST files directly with
-cmap_admin.pl.  For more information see "perldoc
-Bio::GMOD::CMap::Admin::ImportAlignments".
 
 =item *   Apache
 
