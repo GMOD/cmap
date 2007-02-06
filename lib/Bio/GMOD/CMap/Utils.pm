@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.79 2007-01-17 19:40:15 mwz444 Exp $
+# $Id: Utils.pm,v 1.80 2007-02-06 07:00:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -762,7 +762,7 @@ sub sort_selectall_arrayref {
     my $arrayref = shift;
     my @columns  = @_;
     my @return   = sort {
-        for ( my $i = 0; $i < $#columns; $i++ )
+        for ( my $i = 0; $i <= $#columns; $i++ )
         {
             my $col = $columns[$i];
             my $dir = 1;
@@ -782,20 +782,7 @@ sub sort_selectall_arrayref {
                 }
             }
         }
-        my $col = $columns[-1];
-        my $dir = 1;
-        if ( $col =~ /^(\S+)\s+(\S+)/ ) {
-            $col = $1;
-            $dir = -1 if ( $2 eq ( uc 'DESC' ) );
-        }
-
-        if ( $col =~ /^#(\S+)/ ) {
-            $col = $1;
-            return $dir * ( $a->{$col} <=> $b->{$col} );
-        }
-        else {
-            return $dir * ( $a->{$col} cmp $b->{$col} );
-        }
+        return 0;
     } @$arrayref;
 
     return \@return;
