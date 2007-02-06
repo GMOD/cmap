@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.47 2006-12-13 19:57:47 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.48 2007-02-06 07:03:07 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -738,7 +738,6 @@ use constant UNITS      => {
 use constant APP_BACKGROUND_COLORS  => [
     'white',
     'grey',
-    'yellow',
     'lightblue',
     'lightgreen',
 ];

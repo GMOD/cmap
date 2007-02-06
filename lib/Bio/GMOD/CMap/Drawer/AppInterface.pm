@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.28 2007-01-17 19:41:49 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.29 2007-02-06 07:03:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -96,6 +96,10 @@ This method will create the Application.
         edit_menu_items =>
             $self->edit_menu_items( window_key => $window_key, ),
     );
+    $self->top_pane( window_key => $window_key, );
+    $self->bottom_pane( window_key => $window_key, );
+    $self->middle_pane( window_key => $window_key, );
+    $self->pack_panes( $window_key, $app_display_data, );
 
     # Window Bindings
     $self->{'windows'}{$window_key}->protocol(
@@ -106,132 +110,96 @@ This method will create the Application.
     );
     $self->{'windows'}{$window_key}
         ->bind( '<Control-Key-q>' => sub { exit; }, );
-    $self->{'windows'}{$window_key}->bind(
-        '<Control-Key-l>' => sub {
-            $self->app_controller()
-                ->new_reference_maps( window_key => $window_key, );
-        },
-    );
-    $self->{'windows'}{$window_key}->bind(
-        '<Control-Key-e>' => sub {
-            $self->export_map_moves( window_key => $window_key, );
-        },
-    );
-    $self->{'windows'}{$window_key}->bind(
-        '<Control-Key-z>' => sub {
-            $self->app_controller()
-                ->app_display_data->undo_action( window_key => $window_key, );
-        },
-    );
-    $self->{'windows'}{$window_key}->bind(
-        '<Control-Key-y>' => sub {
-            $self->app_controller()
-                ->app_display_data->redo_action( window_key => $window_key, );
-        },
-    );
+
+# BF RE ADD THESE
+#    $self->{'windows'}{$window_key}->bind(
+#        '<Control-Key-l>' => sub {
+#            $self->app_controller()
+#                ->new_reference_maps( window_key => $window_key, );
+#        },
+#    );
+#    $self->{'windows'}{$window_key}->bind(
+#        '<Control-Key-e>' => sub {
+#            $self->export_map_moves( window_key => $window_key, );
+#        },
+#    );
+#    $self->{'windows'}{$window_key}->bind(
+#        '<Control-Key-z>' => sub {
+#            $self->app_controller()
+#                ->app_display_data->undo_action( window_key => $window_key, );
+#        },
+#    );
+#    $self->{'windows'}{$window_key}->bind(
+#        '<Control-Key-y>' => sub {
+#            $self->app_controller()
+#                ->app_display_data->redo_action( window_key => $window_key, );
+#        },
+#    );
     return $window_key;
 }
 
 # ----------------------------------------------------
-sub int_create_panel {
+sub int_create_zone_controls {
+
+    #print STDERR "AI_NEEDS_MODDED 1\n";
 
 =pod
 
-=head2 int_create_panel
+=head2 int_create_zone_controls
 
-This method will create the Application.
+This method will create the zone controls for the panel.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $app_display_data = $args{'app_display_data'};
-
-    #   $self->panel_pane(
-    #       window_key => $window_key,
-    #       panel_key  => $panel_key,
-    #   );
-    $self->panel_overview_pane(
-        panel_key  => $panel_key,
-        window_key => $window_key,
-    );
-    $self->bottom_pane(
-        panel_key  => $panel_key,
-        window_key => $window_key,
-    );
-    $self->middle_pane(
-        panel_key  => $panel_key,
-        window_key => $window_key,
-    );
-    $self->pack_panes( $window_key, $app_display_data, );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub int_create_slot_controls {
-
-=pod
-
-=head2 int_create_slot_controls
-
-This method will create the slot controls for the panel.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
+    my $window_key       = $args{'window_key'} or return;
     my $app_display_data = $args{'app_display_data'};
 
     foreach
-        my $slot_key ( @{ $app_display_data->{'slot_order'}{$panel_key} } )
+        my $zone_key ( @{ $app_display_data->{'zone_order'}{$window_key} } )
     {
-        $self->add_slot_controls(
+        $self->add_zone_controls(
             window_key       => $window_key,
-            panel_key        => $panel_key,
-            slot_key         => $slot_key,
+            zone_key         => $zone_key,
             app_display_data => $app_display_data,
         );
     }
-    ${ $self->{'selected_slot_key_scalar'} }
-        = $app_display_data->{'slot_order'}{$panel_key}[0] || 0;
+    ${ $self->{'selected_zone_key_scalar'} }
+        = $app_display_data->{'zone_order'}{$window_key}[0] || 0;
 
     return;
 }
 
 # ----------------------------------------------------
-sub add_slot_controls {
+sub add_zone_controls {
+
+    #print STDERR "AI_NEEDS_MODDED 2\n";
 
 =pod
 
-=head2 add_slot_controls
+=head2 add_zone_controls
 
-This method will create the slot controls for one slot
+This method will create the zone controls for one zone
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
     my $app_display_data = $args{'app_display_data'};
 
-    $self->toggle_slot_pane(
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+    $self->toggle_zone_pane(
+        zone_key         => $zone_key,
         app_display_data => $app_display_data,
     );
 
-    my $slot_label = $self->_get_slot_label(
+    my $zone_label = $self->_get_zone_label(
         window_key       => $window_key,
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+        zone_key         => $zone_key,
         app_display_data => $app_display_data,
     );
 
-    Tk::grid( $slot_label, -sticky => "ne", );
+    Tk::grid( $zone_label, -sticky => "ne", );
 
     return;
 }
@@ -336,112 +304,58 @@ Returns the menu_bar object.
 }
 
 # ----------------------------------------------------
-sub panel_pane {
+sub top_pane {
 
 =pod
 
-=head2 panel_pane
+=head2 top_pane
 
-Returns the panel_pane object.
+Returns the top_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
-    my $panel_key  = $args{'panel_key'}  or return undef;
-    unless ( $self->{'panel_pane'}{$panel_key} ) {
-        my $window = $self->{'windows'}{$window_key};
-        $self->{'panel_pane'}{$panel_key} = $window->Frame(
-            -relief     => 'groove',
-            -border     => 0,
-            -background => "white"
-        );
-
-        # Pack later in pack_panes()
-    }
-    return $self->{'panel_pane'}{$panel_key};
-}
-
-# ----------------------------------------------------
-sub panel_overview_pane {
-
-=pod
-
-=head2 panel_overview_pane
-
-Returns the panel_overview_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
-    unless ( $self->{'panel_overview_pane'}{$panel_key} ) {
+    unless ( $self->{'top_pane'}{$window_key} ) {
         my $window_key = $args{'window_key'} or return undef;
         my $window = $self->{'windows'}{$window_key};
-        $self->{'panel_overview_pane'}{$panel_key} = $window->Frame(
+        $self->{'top_pane'}{$window_key} = $window->Frame(
             -relief     => 'groove',
             -border     => 1,
             -background => "white",
         );
 
         # Pack later in pack_panes()
-        $self->overview_canvas( panel_key => $panel_key, );
+        $self->overview_canvas( window_key => $window_key, );
     }
-    return $self->{'panel_overview_pane'}{$panel_key};
+    return $self->{'top_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
-sub panel_slot_toggle_pane {
+sub canvas_pane {
 
 =pod
 
-=head2 panel_slot_toggle_pane
+=head2 canvas_pane
 
-Returns the panel_slot_toggle_pane object.
+Returns the canvas_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
-    unless ( $self->{'panel_slot_toggle_pane'}{$panel_key} ) {
-        my $middle_pane = $self->{'middle_pane'}{$panel_key};
-        $self->{'panel_slot_toggle_pane'}{$panel_key} = $middle_pane->Frame(
-            -relief     => 'groove',
-            -border     => 0,
-            -width      => 200,
-            -background => "white",
-        );
-
-        # Pack later in pack_panes()
-    }
-    return $self->{'panel_slot_toggle_pane'}{$panel_key};
-}
-
-# ----------------------------------------------------
-sub panel_canvas_pane {
-
-=pod
-
-=head2 panel_canvas_pane
-
-Returns the panel_canvas_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
-    unless ( $self->{'panel_canvas_pane'}{$panel_key} ) {
-        my $middle_pane = $self->{'middle_pane'}{$panel_key};
-        $self->{'panel_canvas_pane'}{$panel_key} = $middle_pane->Frame(
+    my $window_key = $args{'window_key'} or return undef;
+    unless ( $self->{'canvas_pane'}{$window_key} ) {
+        my $middle_pane = $self->{'middle_pane'}{$window_key};
+        $self->{'canvas_pane'}{$window_key} = $middle_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
             -background => "blue",
         );
-        $self->canvas( panel_key => $panel_key, );
+        $self->canvas( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
-    return $self->{'panel_canvas_pane'}{$panel_key};
+    return $self->{'canvas_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -456,25 +370,23 @@ Returns the middle_pane object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'middle_pane'}{$panel_key} ) {
+    unless ( $self->{'middle_pane'}{$window_key} ) {
         my $y_val  = $args{'y_val'};
         my $height = $args{'height'};
         my $window = $self->{'windows'}{$window_key};
-        $self->{'middle_pane'}{$panel_key} = $window->Scrolled(
+        $self->{'middle_pane'}{$window_key} = $window->Scrolled(
             "Pane",
             -scrollbars => "oe",
-            -background => "purple",
+            -background => "white",
             -height     => $window->screenheight(),
         );
-        $self->panel_slot_toggle_pane( panel_key => $panel_key, );
-        $self->panel_canvas_pane( panel_key => $panel_key, );
+        $self->canvas_pane( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
-    return $self->{'middle_pane'}{$panel_key};
+    return $self->{'middle_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -489,29 +401,28 @@ Returns the bottom_pane object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'bottom_pane'}{$panel_key} ) {
+    unless ( $self->{'bottom_pane'}{$window_key} ) {
         my $y_val  = $args{'y_val'};
         my $height = $args{'height'};
         my $window = $self->{'windows'}{$window_key};
-        $self->{'bottom_pane'}{$panel_key} = $window->Frame(
+        $self->{'bottom_pane'}{$window_key} = $window->Frame(
             -borderwidth => 0,
             -relief      => 'groove',
             -background  => "white",
         );
         $self->info_pane(
-            panel_key  => $panel_key,
+            window_key => $window_key,
             window_key => $window_key,
         );
-        $self->panel_slot_controls_pane(
-            panel_key  => $panel_key,
+        $self->controls_pane(
+            window_key => $window_key,
             window_key => $window_key,
         );
 
         # Pack later in pack_panes()
     }
-    return $self->{'bottom_pane'}{$panel_key};
+    return $self->{'bottom_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -526,166 +437,71 @@ Returns the info_pane object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'panel_info_pane'}{$panel_key} ) {
-        my $y_val       = $args{'y_val'};
-        my $height      = $args{'height'};
-        my $bottom_pane = $self->{'bottom_pane'}{$panel_key};
-        $self->{'panel_info_pane'}{$panel_key} = $bottom_pane->Frame(
+    unless ( $self->{'info_pane'}{$window_key} ) {
+        my $y_val    = $args{'y_val'};
+        my $height   = $args{'height'};
+        my $top_pane = $self->{'top_pane'}{$window_key};
+        $self->{'info_pane'}{$window_key} = $top_pane->Frame(
             -borderwidth => 0,
             -relief      => 'groove',
             -background  => "white",
         );
-        $self->_add_info_widgets(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-        );
+        $self->_add_info_widgets( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
-    return $self->{'panel_info_pane'}{$panel_key};
+    return $self->{'info_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
-sub panel_slot_controls_pane {
+sub controls_pane {
 
 =pod
 
-=head2 panel_slot_controls_pane
+=head2 controls_pane
 
-Returns the panel_slot_controls_pane object.
+Returns the controls_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key  = $args{'panel_key'}  or return undef;
     my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'panel_slot_controls_pane'}{$panel_key} ) {
+    unless ( $self->{'controls_pane'}{$window_key} ) {
         my $y_val       = $args{'y_val'};
         my $height      = $args{'height'};
-        my $bottom_pane = $self->{'bottom_pane'}{$panel_key};
+        my $bottom_pane = $self->{'bottom_pane'}{$window_key};
         if (1) {
-            $self->{'panel_slot_controls_pane'}{$panel_key}
-                = $bottom_pane->Frame(
+            $self->{'controls_pane'}{$window_key} = $bottom_pane->Frame(
                 -borderwidth => 0,
                 -relief      => 'groove',
                 -background  => "white",
-                );
+            );
         }
         else {
-            $self->{'panel_slot_controls_pane'}{$panel_key}
-                = $bottom_pane->Scrolled(
+            $self->{'controls_pane'}{$window_key} = $bottom_pane->Scrolled(
                 "Pane",
 
                 #-scrollbars => "oe",
                 #-relief     => 'groove',
                 -background => "blue",
-                );
+            );
         }
-        $self->_add_slot_control_widgets(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-        );
+        $self->_add_zone_control_widgets( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
-    return $self->{'panel_slot_controls_pane'}{$panel_key};
+    return $self->{'controls_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
-sub toggle_slot_pane {
+sub _get_zone_label {
+
+    #print STDERR "AI_NEEDS_MODDED 4\n";
 
 =pod
 
-=head2 toggle_slot_pane
-
-Returns the toggle_slot_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
-    my $slot_key  = $args{'slot_key'}  or return undef;
-    unless ( $self->{'toggle_slot_pane'}{$slot_key} ) {
-        my $app_display_data = $args{'app_display_data'} or return undef;
-        my $y_val
-            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1];
-        my $height
-            = $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[3]
-            - $app_display_data->{'slot_layout'}{$slot_key}{'bounds'}[1] + 1;
-        my $panel_slot_toggle_pane
-            = $self->{'panel_slot_toggle_pane'}{$panel_key};
-        if (1) {
-            $self->{'toggle_slot_pane'}{$slot_key}
-                = $panel_slot_toggle_pane->Frame(
-                -borderwidth => 3,
-                -relief      => 'groove',
-                -background  => "white",
-                );
-        }
-        else {
-            $self->{'toggle_slot_pane'}{$slot_key}
-                = $panel_slot_toggle_pane->Scrolled(
-                "Pane",
-
-                #-scrollbars => "oe",
-                #-relief     => 'groove',
-                -background => "green",
-                );
-        }
-
-        $self->{'toggle_slot_pane'}{$slot_key}->place(
-            -x        => 0,
-            -y        => $y_val,
-            -relwidth => 1,
-            -height   => $height + BETWEEN_SLOT_BUFFER,
-        );
-    }
-    return $self->{'toggle_slot_pane'}{$slot_key};
-}
-
-# ----------------------------------------------------
-sub _get_slot_toggle_buttons {
-
-=pod
-
-=head2 _get_slot_toggle_buttons
-
-Adds control buttons to the toggle_slot_pane.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
-    my $app_display_data = $args{'app_display_data'};
-    my $toggle_slot_pane = $self->{'toggle_slot_pane'}{$slot_key};
-    my $font             = [
-        -family => 'Times',
-        -size   => 12,
-    ];
-
-    return $toggle_slot_pane->Radiobutton(
-        -text       => "Select",
-        -background => "white",
-        -value      => $slot_key,
-        -command    => sub {
-            $self->app_controller()
-                ->new_selected_slot( slot_key => $slot_key, );
-        },
-        -variable => \${ $self->{'selected_slot_key_scalar'} }
-    );
-
-}
-
-# ----------------------------------------------------
-sub _get_slot_label {
-
-=pod
-
-=head2 _get_slot_label
+=head2 _get_zone_label
 
 Gets Map set label 
 
@@ -693,21 +509,20 @@ Gets Map set label
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
     my $app_display_data = $args{'app_display_data'};
-    my $toggle_slot_pane = $self->{'toggle_slot_pane'}{$slot_key};
+    my $toggle_zone_pane = $self->{'toggle_zone_pane'}{$zone_key};
     my $font             = [
         -family => 'Times',
         -size   => 12,
     ];
     my $controller = $self->app_controller();
-    my $map_set_id = $controller->app_display_data->{'scaffold'}{$slot_key}
+    my $map_set_id = $controller->app_display_data->{'scaffold'}{$zone_key}
         {'map_set_id'};
     my $map_set_data = $self->app_data_module()
         ->get_map_set_data( map_set_id => $map_set_id, );
 
-    return $toggle_slot_pane->Label(
+    return $toggle_zone_pane->Label(
         -text => $map_set_data->{'species_common_name'} . " "
             . $map_set_data->{'map_set_short_name'},
         -background => "white",
@@ -717,6 +532,8 @@ Gets Map set label
 
 # ----------------------------------------------------
 sub _add_info_widgets {
+
+    #print STDERR "AI_NEEDS_MODDED 5\n";
 
 =pod
 
@@ -728,15 +545,14 @@ Adds information widgets to the info pane
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $panel_info_pane = $self->{'panel_info_pane'}{$panel_key};
-    my $font            = [ 'Times', 24, ];
+    my $info_pane  = $self->{'info_pane'}{$window_key};
+    my $font       = [ 'Times', 12, ];
 
-    $self->{'information_text'} = $panel_info_pane->Text(
+    $self->{'information_text'} = $info_pane->Text(
         -font       => $font,
         -background => "white",
         -width      => 40,
-        -height     => 5,
+        -height     => 3,
     );
     $self->{'information_text'}
         ->insert( 'end', "Click on a map to display information." );
@@ -747,163 +563,183 @@ Adds information widgets to the info pane
 }
 
 # ----------------------------------------------------
-sub _add_slot_control_widgets {
+sub _add_zone_control_widgets {
+
+    #print STDERR "AI_NEEDS_MODDED 6\n";
 
 =pod
 
-=head2 _add_slot_control_widgets
+=head2 _add_zone_control_widgets
 
-Adds control buttons to the panel_slot_controls_pane.
+Adds control buttons to the controls_pane.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $panel_slot_controls_pane
-        = $self->{'panel_slot_controls_pane'}{$panel_key};
-    my $font = [
+    my $window_key    = $args{'window_key'} or return;
+    my $controls_pane = $self->{'controls_pane'}{$window_key};
+    my $font          = [
         -family => 'Times',
         -size   => 12,
     ];
 
-    #    my $zoom_label1 = $panel_slot_controls_pane->Label(
+    #    my $zoom_label1 = $controls_pane->Label(
     #        -text       => "Zoom",
     #        -font       => $font,
     #        -background => 'grey',
     #    );
-    $self->{'selected_map_set_text_box'} = $panel_slot_controls_pane->Text(
+    $self->{'selected_map_set_text_box'} = $controls_pane->Text(
         -font       => $font,
         -background => "white",
         -width      => 40,
         -height     => 1,
     );
-    my $zoom_button1 = $panel_slot_controls_pane->Button(
+    my $zoom_button1 = $controls_pane->Button(
         -text    => "Zoom In",
         -command => sub {
-            $self->app_controller()->zoom_slot(
+            $self->app_controller()->zoom_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
                 zoom_value => 2,
             );
         },
         -font => $font,
     );
-    my $zoom_button2 = $panel_slot_controls_pane->Button(
+    my $zoom_button2 = $controls_pane->Button(
         -text    => "Zoom Out",
         -command => sub {
-            $self->app_controller()->zoom_slot(
+            $self->app_controller()->zoom_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
                 zoom_value => .5,
             );
         },
         -font => $font,
     );
-    my $toggle_corrs_button = $panel_slot_controls_pane->Button(
+    my $toggle_corrs_button = $controls_pane->Button(
         -text    => "Toggle Correspondences",
         -command => sub {
-            $self->app_controller()->toggle_corrs_slot(
+            $self->app_controller()->toggle_corrs_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
             );
         },
         -font => $font,
     );
-    my $expand_button = $panel_slot_controls_pane->Button(
+    my $expand_button = $controls_pane->Button(
         -text    => "Add Sub Maps",
         -command => sub {
-            $self->app_controller()->expand_slot(
+            $self->app_controller()->expand_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
             );
         },
         -font => $font,
     );
-    my $reattach_button = $panel_slot_controls_pane->Button(
+    my $reattach_button = $controls_pane->Button(
         -text    => "Reattach Slot to Parent",
         -command => sub {
-            $self->app_controller()->app_display_data()->reattach_slot(
+            $self->app_controller()->app_display_data()->reattach_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
             );
         },
         -font => $font,
     );
-    my $scroll_left_button = $panel_slot_controls_pane->Button(
+    my $scroll_left_button = $controls_pane->Button(
         -text    => "<",
         -command => sub {
-            $self->app_controller()->scroll_slot(
+            $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
-                panel_key    => $panel_key,
-                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
                 scroll_value => -10,
             );
         },
         -font => $font,
     );
-    my $scroll_type_1 = $panel_slot_controls_pane->Button(
+    my $scroll_type_1 = $controls_pane->Button(
         -text    => ">",
         -command => sub {
-            $self->app_controller()->scroll_slot(
+            $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
-                panel_key    => $panel_key,
-                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
                 scroll_value => 10,
             );
         },
         -font => $font,
     );
-    my $scroll_far_left_button = $panel_slot_controls_pane->Button(
+    my $scroll_far_left_button = $controls_pane->Button(
         -text    => "<<",
         -command => sub {
-            $self->app_controller()->scroll_slot(
+            $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
-                panel_key    => $panel_key,
-                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
                 scroll_value => -200,
             );
         },
         -font => $font,
     );
-    my $scroll_far_type_1 = $panel_slot_controls_pane->Button(
+    my $scroll_far_type_1 = $controls_pane->Button(
         -text    => ">>",
         -command => sub {
-            $self->app_controller()->scroll_slot(
+            $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
-                panel_key    => $panel_key,
-                slot_key     => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
                 scroll_value => 200,
             );
         },
         -font => $font,
     );
 
-    my $show_features_check_box = $panel_slot_controls_pane->Checkbutton(
+    my $show_features_check_box = $controls_pane->Checkbutton(
         -text     => "Show Features",
         -variable => \$self->{'show_features'},
         -command  => sub {
             $self->app_controller()->app_display_data()
                 ->change_feature_status(
-                slot_key      => ${ $self->{'selected_slot_key_scalar'} },
+                zone_key      => ${ $self->{'selected_zone_key_scalar'} },
                 show_features => $self->{'show_features'},
                 );
         },
         -font => $font,
     );
-    Tk::grid( $self->{'selected_map_set_text_box'},
-        '-', '-', -sticky => "nw", );
-    Tk::grid( $scroll_far_left_button, $scroll_left_button, $reattach_button,
-        '-', $scroll_type_1, $scroll_far_type_1, -sticky => "nw", );
-    Tk::grid( 'x', 'x', $zoom_button1, $toggle_corrs_button, -sticky => "nw",
+    $self->{'attach_to_parent_check_box'} = $controls_pane->Checkbutton(
+        -text     => "Attached to Parent",
+        -variable => \$self->{'attached_to_parent'},
+        -command  => sub {
+            if ( $self->{'attached_to_parent'} ) {
+                print STDERR "DETACH\n";
+
+                #$self->app_controller()->app_display_data()->reattach_zone(
+                #window_key => $window_key,
+                #zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                #);
+            }
+            else {
+                print STDERR "ATTACH\n";
+
+                #$self->app_controller()->app_display_data()->reattach_zone(
+                #window_key => $window_key,
+                #zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                #);
+            }
+        },
+        -font => $font,
     );
-    Tk::grid( 'x', 'x', $zoom_button2, $expand_button, -sticky => "nw", );
-    Tk::grid( 'x', 'x', $show_features_check_box, 'x', -sticky => "nw", );
+    Tk::grid(
+        $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
+        '-',    #$reattach_button, $toggle_corrs_button,
+        -sticky => "nw",
+    );
+    Tk::grid(
+        $scroll_far_left_button, $scroll_left_button,
+
+        # $zoom_button1,           $zoom_button2,
+        $scroll_type_1, $scroll_far_type_1,
+
+        # $expand_button,          $show_features_check_box,
+        # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
+    );
     return;
 }
 
@@ -938,7 +774,7 @@ Populates the menu_bar object.
 }
 
 # ----------------------------------------------------
-sub draw_panel {
+sub draw_window {
 
 =pod
 
@@ -949,57 +785,55 @@ Draws and re-draws on the canvas
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'}
-        or die 'no panel key for draw';
-    my $window_key       = $args{'window_key'};
+    my $window_key = $args{'window_key'}
+        or die 'no window key for draw';
     my $app_display_data = $args{'app_display_data'};
 
-    my $canvas = $self->canvas( panel_key => $panel_key, );
+    my $canvas = $self->canvas( window_key => $window_key, );
 
-    my $panel_layout = $app_display_data->{'panel_layout'}{$panel_key};
-    if ( $panel_layout->{'changed'} ) {
+    my $window_layout = $app_display_data->{'window_layout'}{$window_key};
+    if ( $window_layout->{'changed'} ) {
         foreach my $drawing_section (qw[ misc_items ]) {
             $self->draw_items(
                 canvas => $canvas,
-                items  => $panel_layout->{$drawing_section},
+                items  => $window_layout->{$drawing_section},
                 tags   => [ 'on_top', ],
             );
         }
-        foreach my $button ( @{ $panel_layout->{'buttons'} || [] } ) {
+        foreach my $button ( @{ $window_layout->{'buttons'} || [] } ) {
             $self->draw_button(
                 canvas => $canvas,
                 button => $button,
             );
 
         }
-        $panel_layout->{'changed'} = 0;
+        $window_layout->{'changed'} = 0;
     }
-    if ( $panel_layout->{'sub_changed'} ) {
+    if ( $window_layout->{'sub_changed'} ) {
 
         # SLOTS
-        foreach my $slot_key (
-            @{ $app_display_data->{'slot_order'}{$panel_key} || [] } )
+        foreach my $zone_key (
+            keys %{ $app_display_data->{'zone_in_window'}{$window_key}
+                    || {} } )
         {
-            $self->draw_slot(
-                slot_key         => $slot_key,
+            $self->draw_zone(
+                zone_key         => $zone_key,
                 canvas           => $canvas,
                 app_display_data => $app_display_data,
             );
         }
-        $panel_layout->{'sub_changed'} = 0;
+        $window_layout->{'sub_changed'} = 0;
     }
 
     my $canvas_width
-        = $panel_layout->{'bounds'}[2] - $panel_layout->{'bounds'}[0] + 1;
+        = $window_layout->{'bounds'}[2] - $window_layout->{'bounds'}[0] + 1;
     my $canvas_height
-        = $panel_layout->{'bounds'}[3] - $panel_layout->{'bounds'}[1] + 1;
+        = $window_layout->{'bounds'}[3] - $window_layout->{'bounds'}[1] + 1;
 
     $canvas->configure(
-        -scrollregion => $panel_layout->{'bounds'},
-
-        # -height       => 800,#$canvas_height, BF
-        -height => $canvas_height,
-        -width  => $canvas_width,
+        -scrollregion => $window_layout->{'bounds'},
+        -height       => $canvas_height,
+        -width        => $canvas_width,
     );
 
     # Pack later in pack_panes()
@@ -1010,20 +844,23 @@ Draws and re-draws on the canvas
     );
 
     $self->draw_overview(
-        panel_key        => $panel_key,
         window_key       => $window_key,
         app_display_data => $app_display_data,
     );
 
     $self->layer_tagged_items( canvas => $canvas, );
-    $self->layer_tagged_items(
-        canvas => $self->overview_canvas( panel_key => $panel_key, ) );
+
+    # BF ADD BACK IN AT SOME POINT
+    #$self->layer_tagged_items(
+    #canvas => $self->overview_canvas( window_key => $window_key, ) );
 
     return;
 }
 
 # ----------------------------------------------------
 sub draw_overview {
+
+    #print STDERR "AI_NEEDS_MODDED 7\n";
 
 =pod
 
@@ -1034,16 +871,15 @@ Draws and re-draws on the overview canvas
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'}
+    my $window_key = $args{'window_key'}
         or die 'no panel key for draw_overview';
-    my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
 
-    my $canvas = $self->overview_canvas( panel_key => $panel_key, );
+    my $canvas = $self->overview_canvas( window_key => $window_key, );
 
-    my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
-    my $top_slot_key
-        = $app_display_data->{'overview'}{$panel_key}{'slot_key'};
+    my $overview_layout = $app_display_data->{'overview_layout'}{$window_key};
+    my $top_zone_key
+        = $app_display_data->{'overview'}{$window_key}{'zone_key'};
 
     if ( $overview_layout->{'changed'} ) {
         foreach my $drawing_section (qw[ misc_items]) {
@@ -1064,17 +900,16 @@ Draws and re-draws on the overview canvas
     if ( $overview_layout->{'sub_changed'} ) {
 
         # SLOTS
-        foreach my $slot_key ( $top_slot_key,
-            @{ $overview_layout->{'child_slot_order'} || [] } )
+        foreach my $zone_key ( $top_zone_key,
+            @{ $overview_layout->{'child_zone_order'} || [] } )
         {
-            $self->draw_overview_slot(
+            $self->draw_overview_zone(
                 window_key           => $window_key,
-                panel_key            => $panel_key,
-                slot_key             => $slot_key,
+                zone_key             => $zone_key,
                 canvas               => $canvas,
                 app_display_data     => $app_display_data,
-                overview_slot_layout =>
-                    $overview_layout->{'slots'}{$slot_key},
+                overview_zone_layout =>
+                    $overview_layout->{'zones'}{$zone_key},
             );
         }
         $overview_layout->{'sub_changed'} = 0;
@@ -1097,58 +932,55 @@ Draws and re-draws on the overview canvas
 }
 
 # ----------------------------------------------------
-sub draw_overview_slot {
+sub draw_overview_zone {
+
+    #print STDERR "AI_NEEDS_MODDED 8\n";
 
 =pod
 
-=head2 draw_overview_slot
+=head2 draw_overview_zone
 
 Draws and re-draws on the canvas
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'}
-        or die 'no slot key for draw';
-    my $panel_key  = $args{'panel_key'};
+    my $zone_key = $args{'zone_key'}
+        or die 'no zone key for draw';
     my $window_key = $args{'window_key'};
     my $canvas     = $args{'canvas'}
-        || $self->canvas( panel_key => $args{'panel_key'}, );
+        || $self->canvas( window_key => $args{'window_key'}, );
     my $app_display_data     = $args{'app_display_data'};
-    my $overview_slot_layout = $args{'overview_slot_layout'};
+    my $overview_zone_layout = $args{'overview_zone_layout'};
 
-    if ( $overview_slot_layout->{'changed'} ) {
+    if ( $overview_zone_layout->{'changed'} ) {
         $self->draw_items(
             canvas => $canvas,
-            items  => $overview_slot_layout->{'viewed_region'},
+            items  => $overview_zone_layout->{'viewed_region'},
             tags   => [
-                'on_bottom',
-                'viewed_region_'
-                    . $window_key . '_'
-                    . $panel_key . '_'
-                    . $slot_key,
+                'on_bottom', 'viewed_region_' . $window_key . '_' . $zone_key,
             ],
         );
         $self->draw_items(
             canvas => $canvas,
-            items  => $overview_slot_layout->{'misc_items'},
+            items  => $overview_zone_layout->{'misc_items'},
             tags   => [ 'on_top', ],
         );
-        foreach my $button ( @{ $overview_slot_layout->{'buttons'} || [] } ) {
+        foreach my $button ( @{ $overview_zone_layout->{'buttons'} || [] } ) {
             $self->draw_button(
                 canvas => $canvas,
                 button => $button,
             );
         }
-        $overview_slot_layout->{'changed'} = 0;
+        $overview_zone_layout->{'changed'} = 0;
     }
-    if ( $overview_slot_layout->{'sub_changed'} ) {
+    if ( $overview_zone_layout->{'sub_changed'} ) {
 
         # MAPS
         foreach my $map_key (
-            @{ $app_display_data->{'map_order'}{$slot_key} || {} } )
+            @{ $app_display_data->{'map_order'}{$zone_key} || {} } )
         {
-            my $map_layout = $overview_slot_layout->{'maps'}{$map_key};
+            my $map_layout = $overview_zone_layout->{'maps'}{$map_key};
             next unless ( $map_layout->{'changed'} );
             $self->draw_items(
                 canvas => $canvas,
@@ -1157,71 +989,77 @@ Draws and re-draws on the canvas
             );
             $map_layout->{'changed'} = 0;
         }
-        $overview_slot_layout->{'sub_changed'} = 0;
+        $overview_zone_layout->{'sub_changed'} = 0;
     }
 
     return;
 }
 
 # ----------------------------------------------------
-sub draw_slot {
+sub draw_zone {
 
 =pod
 
-=head2 draw_slot
+=head2 draw_zone
 
 Draws and re-draws on the canvas
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'}
-        or die 'no slot key for draw';
+    my $zone_key = $args{'zone_key'}
+        or die 'no zone key for draw';
     my $canvas = $args{'canvas'}
-        || $self->canvas( panel_key => $args{'panel_key'}, );
+        || $self->canvas( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
-    my $window_key = $app_display_data->{'scaffold'}{$slot_key}{'window_key'};
-    my $panel_key  = $app_display_data->{'scaffold'}{$slot_key}{'panel_key'};
+    my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
 
-    my $slot_layout = $app_display_data->{'slot_layout'}{$slot_key};
-    if ( $slot_layout->{'changed'} ) {
+    my $zone_x_offset
+        = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'}
+        + $app_display_data->{'zone_layout'}{$zone_key}{'master_x1'};
+    my $zone_y_offset
+        = $app_display_data->{'zone_layout'}{$zone_key}{'master_y1'};
+
+    my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
+    if ( $zone_layout->{'changed'} ) {
         $self->draw_items(
-            canvas => $canvas,
-            items  => $slot_layout->{'separator'},
-            tags   => [ 'on_top', ],
+            canvas   => $canvas,
+            x_offset => $zone_x_offset,
+            y_offset => $zone_y_offset,
+            items    => $zone_layout->{'separator'},
+            tags     => [ 'on_top', ],
         );
         $self->draw_items(
-            canvas => $canvas,
-            items  => $slot_layout->{'background'},
-            tags   => [
-                'on_bottom',
-                'background_'
-                    . $window_key . '_'
-                    . $panel_key . '_'
-                    . $slot_key
+            canvas   => $canvas,
+            x_offset => $zone_x_offset,
+            y_offset => $zone_y_offset,
+            items    => $zone_layout->{'background'},
+            tags     => [
+                'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
         );
-        foreach my $button ( @{ $slot_layout->{'buttons'} || [] } ) {
+        foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
             $self->draw_button(
-                canvas => $canvas,
-                button => $button,
+                x_offset => $zone_x_offset,
+                y_offset => $zone_y_offset,
+                canvas   => $canvas,
+                button   => $button,
             );
         }
-        $slot_layout->{'changed'} = 0;
+        $zone_layout->{'changed'} = 0;
     }
-    if ( $slot_layout->{'sub_changed'} ) {
-        my $x_offset
-            = $app_display_data->{'scaffold'}{$slot_key}->{'x_offset'};
+    if ( $zone_layout->{'sub_changed'} ) {
 
         # MAPS
         foreach my $map_key (
-            @{ $app_display_data->{'map_order'}{$slot_key} || {} } )
+            @{ $app_display_data->{'map_order'}{$zone_key} || {} } )
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
                     canvas   => $canvas,
-                    x_offset => $x_offset,
+                    x_offset => $zone_x_offset,
+                    y_offset => $zone_y_offset,
                     items    => $map_layout->{$drawing_section},
                     tags     => [ 'middle_layer', 'display', 'map' ],
                 );
@@ -1233,7 +1071,8 @@ Draws and re-draws on the canvas
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
                 $self->draw_button(
                     canvas   => $canvas,
-                    x_offset => $x_offset,
+                    x_offset => $zone_x_offset,
+                    y_offset => $zone_y_offset,
                     button   => $button,
                 );
             }
@@ -1247,7 +1086,8 @@ Draws and re-draws on the canvas
                         = $map_layout->{'features'}{$feature_acc};
                     $self->draw_items(
                         canvas   => $canvas,
-                        x_offset => $x_offset,
+                        x_offset => $zone_x_offset,
+                        y_offset => $zone_y_offset,
                         items    => $feature_layout->{'items'},
                         tags     => [ 'feature', 'display', ],
                     );
@@ -1260,7 +1100,7 @@ Draws and re-draws on the canvas
             }
             $map_layout->{'changed'} = 0;
         }
-        $slot_layout->{'sub_changed'} = 0;
+        $zone_layout->{'sub_changed'} = 0;
     }
 
     return;
@@ -1268,6 +1108,8 @@ Draws and re-draws on the canvas
 
 # ----------------------------------------------------
 sub draw_corrs {
+
+    #print STDERR "AI_NEEDS_MODDED 10\n";
 
 =pod
 
@@ -1282,7 +1124,7 @@ corr can be different.
 
     my ( $self, %args ) = @_;
     my $canvas = $args{'canvas'}
-        || $self->canvas( panel_key => $args{'panel_key'}, );
+        || $self->canvas( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
 
     my $corr_layout = $app_display_data->{'corr_layout'};
@@ -1300,14 +1142,14 @@ MAP1:
                 {'changed'} );
             my $map_corr_layout
                 = $corr_layout->{'maps'}{$tmp_map_key1}{$tmp_map_key2};
-            my $slot_key1 = $map_corr_layout->{'slot_key1'};
-            my $slot_key2 = $map_corr_layout->{'slot_key2'};
+            my $zone_key1 = $map_corr_layout->{'zone_key1'};
+            my $zone_key2 = $map_corr_layout->{'zone_key2'};
             my $map_key1  = $map_corr_layout->{'map_key1'};
             my $map_key2  = $map_corr_layout->{'map_key2'};
             my $x_offset1
-                = $app_display_data->{'scaffold'}{$slot_key1}{'x_offset'};
+                = $app_display_data->{'scaffold'}{$zone_key1}{'x_offset'};
             my $x_offset2
-                = $app_display_data->{'scaffold'}{$slot_key2}{'x_offset'};
+                = $app_display_data->{'scaffold'}{$zone_key2}{'x_offset'};
             my $tags = [];
 
             foreach my $item ( @{ $map_corr_layout->{'items'} || [] } ) {
@@ -1320,8 +1162,8 @@ MAP1:
                 my @coords  = @{ $item->[3] };    # creates duplicate array
                 my $options = $item->[4];
 
-                $coords[0] -= $x_offset1;
-                $coords[2] -= $x_offset2;
+                $coords[0] += $x_offset1;
+                $coords[2] += $x_offset2;
 
                 if ( defined($item_id) ) {
                     $canvas->coords( $item_id, @coords );
@@ -1348,6 +1190,8 @@ MAP1:
 }
 
 sub pre_draw_text {
+
+    #print STDERR "AI_NEEDS_MODDED 11\n";
 
 =pod
 
@@ -1381,6 +1225,8 @@ This is an effort to reserve the text space for the app_display_data.
 
 sub pre_draw_button {
 
+    #print STDERR "AI_NEEDS_MODDED 12\n";
+
 =pod
 
 =head2 pre_draw_button
@@ -1393,8 +1239,7 @@ This is an effort to reserve the button space for the app_display_data.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'}
         or die 'no window key for file_menu_items';
-    my $panel_key        = $args{'panel_key'};
-    my $slot_key         = $args{'slot_key'};
+    my $zone_key         = $args{'zone_key'};
     my $app_display_data = $args{'app_display_data'};
     my $x1               = $args{'x1'};
     my $y1               = $args{'y1'};
@@ -1419,6 +1264,8 @@ This is an effort to reserve the button space for the app_display_data.
 
 sub get_button_command {
 
+    #print STDERR "AI_NEEDS_MODDED 13\n";
+
 =pod
 
 =head2 get_button_command
@@ -1429,16 +1276,14 @@ Returns the subroutine to use for a button
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
     my $type       = $args{'type'};
 
     if ( $type eq 'zoom_in' ) {
         return sub {
-            $self->app_controller()->zoom_slot(
+            $self->app_controller()->zoom_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                zone_key   => $zone_key,
                 zoom_value => $args{'zoom_value'},
             );
         };
@@ -1466,6 +1311,7 @@ Item structure:
     my ( $self, %args ) = @_;
     my $canvas   = $args{'canvas'};
     my $x_offset = $args{'x_offset'} || 0;
+    my $y_offset = $args{'y_offset'} || 0;
     my $items    = $args{'items'} || return;
     my $tags     = $args{'tags'} || [];
 
@@ -1480,7 +1326,8 @@ Item structure:
         my $options = $items->[$i][4];
 
         for ( my $i = 0; $i <= $#coords; $i += 2 ) {
-            $coords[$i] -= $x_offset;
+            $coords[$i]       += $x_offset;
+            $coords[ $i + 1 ] += $y_offset;
         }
 
         if ( defined($item_id) ) {
@@ -1531,6 +1378,8 @@ Item structure:
 # ----------------------------------------------------
 sub drawn_id_to_map_key {
 
+    #print STDERR "AI_NEEDS_MODDED 16\n";
+
 =pod
 
 =head2 drawn_id_to_map_key
@@ -1546,6 +1395,8 @@ Accessor method to map_keys from drawn ids
 
 # ----------------------------------------------------
 sub map_key_to_drawn_ids {
+
+    #print STDERR "AI_NEEDS_MODDED 17\n";
 
 =pod
 
@@ -1592,6 +1443,8 @@ Item structure:
 # ----------------------------------------------------
 sub drawn_id_to_feature_acc {
 
+    #print STDERR "AI_NEEDS_MODDED 19\n";
+
 =pod
 
 =head2 drawn_id_to_feature_acc
@@ -1607,6 +1460,8 @@ Accessor method to feature_accs from drawn ids
 
 # ----------------------------------------------------
 sub feature_acc_to_drawn_ids {
+
+    #print STDERR "AI_NEEDS_MODDED 20\n";
 
 =pod
 
@@ -1639,9 +1494,9 @@ Item structure:
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'};
-    my $canvas    = $args{'canvas'}
-        || $self->canvas( panel_key => $args{'panel_key'}, );
+    my $window_key = $args{'window_key'};
+    my $canvas     = $args{'canvas'}
+        || $self->canvas( window_key => $args{'window_key'}, );
     my $x = $args{'x'} || 0;
     my $y = $args{'y'} || 0;
     my $items = $args{'items'} or return;
@@ -1658,6 +1513,8 @@ Item structure:
 
 # ----------------------------------------------------
 sub add_tags_to_items {
+
+    #print STDERR "AI_NEEDS_MODDED 22\n";
 
 =pod
 
@@ -1686,6 +1543,8 @@ Item structure:
 
 # ----------------------------------------------------
 sub draw_button {
+
+    #print STDERR "AI_NEEDS_MODDED 23\n";
 
 =pod
 
@@ -1812,12 +1671,12 @@ Returns the canvas object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
+    my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'canvas'}{$panel_key} ) {
-        my $canvas_frame = $self->{'panel_canvas_pane'}{$panel_key};
+    unless ( $self->{'canvas'}{$window_key} ) {
+        my $canvas_frame = $self->{'canvas_pane'}{$window_key};
 
-        #        $self->{'canvas'}{$panel_key} = $canvas_frame->Scrolled(
+        #        $self->{'canvas'}{$window_key} = $canvas_frame->Scrolled(
         #            'Canvas',
         #            (   '-width'       => 1100,
         #                '-height'      => 800,
@@ -1827,7 +1686,7 @@ Returns the canvas object.
         #                '-scrollbars'  => 's',
         #            ),
         #        )->pack( -side => 'top', -fill => 'both', );
-        $self->{'canvas'}{$panel_key} = $canvas_frame->Canvas(
+        $self->{'canvas'}{$window_key} = $canvas_frame->Canvas(
             '-width'       => 1100,
             '-height'      => 800,
             '-relief'      => 'sunken',
@@ -1837,13 +1696,15 @@ Returns the canvas object.
         );
 
         # Pack later in pack_panes()
-        $self->bind_canvas( canvas => $self->{'canvas'}{$panel_key} );
+        $self->bind_canvas( canvas => $self->{'canvas'}{$window_key} );
     }
-    return $self->{'canvas'}{$panel_key};
+    return $self->{'canvas'}{$window_key};
 }
 
 # ----------------------------------------------------
 sub bind_canvas {
+
+    #print STDERR "AI_NEEDS_MODDED 27\n";
 
 =pod
 
@@ -1894,32 +1755,36 @@ Bind events to a canvas
             $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
-    if ( $^O eq 'MSWin32' ) {
-        $canvas->CanvasBind(
-            '<MouseWheel>' => sub {
-                $self->mouse_wheel_event( $canvas,
-                    ( Ev('D') < 0 ) ? 0.5 : 2 );
-            }
-        );
-    }
-    else {
-        $canvas->CanvasBind(
-            '<4>' => sub {
-                $self->mouse_wheel_event( $canvas, 0.5 );
-            }
-        );
-        $canvas->CanvasBind(
-            '<5>' => sub {
-                $self->mouse_wheel_event( $canvas, 2 );
-            }
-        );
 
-    }
+    # BF READD THESE BINDINGS
+    #    if ( $^O eq 'MSWin32' ) {
+    #        $canvas->CanvasBind(
+    #            '<MouseWheel>' => sub {
+    #                $self->mouse_wheel_event( $canvas,
+    #                    ( Ev('D') < 0 ) ? 0.5 : 2 );
+    #            }
+    #        );
+    #    }
+    #    else {
+    #        $canvas->CanvasBind(
+    #            '<4>' => sub {
+    #                $self->mouse_wheel_event( $canvas, 0.5 );
+    #            }
+    #        );
+    #        $canvas->CanvasBind(
+    #            '<5>' => sub {
+    #                $self->mouse_wheel_event( $canvas, 2 );
+    #            }
+    #        );
+    #
+    #    }
 
 }
 
 # ----------------------------------------------------
 sub bind_overview_canvas {
+
+    #print STDERR "AI_NEEDS_MODDED 28\n";
 
 =pod
 
@@ -1966,13 +1831,12 @@ Returns the overview_canvas object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return undef;
+    my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'overview_canvas'}{$panel_key} ) {
-        my $overview_canvas_frame
-            = $self->{'panel_overview_pane'}{$panel_key};
+    unless ( $self->{'overview_canvas'}{$window_key} ) {
+        my $overview_canvas_frame = $self->{'top_pane'}{$window_key};
 
-        #        $self->{'overview_canvas'}{$panel_key}
+        #        $self->{'overview_canvas'}{$window_key}
         #            = $overview_canvas_frame->Scrolled(
         #            'Canvas',
         #            (   '-width'       => 1100,
@@ -1983,9 +1847,9 @@ Returns the overview_canvas object.
         #                '-scrollbars'  => 's',
         #            ),
         #            )->pack( -side => 'top', -fill => 'both', );
-        $self->{'overview_canvas'}{$panel_key}
+        $self->{'overview_canvas'}{$window_key}
             = $overview_canvas_frame->Canvas(
-            '-width'       => 1100,
+            '-width'       => 300,
             '-height'      => 300,
             '-relief'      => 'sunken',
             '-borderwidth' => 2,
@@ -1995,13 +1859,15 @@ Returns the overview_canvas object.
 
         # Pack later in pack_panes()
         $self->bind_overview_canvas(
-            canvas => $self->{'overview_canvas'}{$panel_key} );
+            canvas => $self->{'overview_canvas'}{$window_key} );
     }
-    return $self->{'overview_canvas'}{$panel_key};
+    return $self->{'overview_canvas'}{$window_key};
 }
 
 # ----------------------------------------------------
 sub popup_map_menu {
+
+    #print STDERR "AI_NEEDS_MODDED 30\n";
 
 =pod
 
@@ -2082,6 +1948,8 @@ sub popup_map_menu {
 # ----------------------------------------------------
 sub fill_map_info_box {
 
+    #print STDERR "AI_NEEDS_MODDED 31\n";
+
 =pod
 
 =head2 fill_map_info_box
@@ -2095,8 +1963,8 @@ sub fill_map_info_box {
         or return;
     my $controller       = $self->app_controller();
     my $app_display_data = $controller->app_display_data();
-    my $slot_key  = $app_display_data->{'map_key_to_slot_key'}{$map_key};
-    my $panel_key = $app_display_data->{'scaffold'}{$slot_key}{'panel_key'};
+    my $zone_key   = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+    my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
 
     my $text_box = $self->{'information_text'};
     $text_box->configure( -state => 'normal', );
@@ -2105,8 +1973,8 @@ sub fill_map_info_box {
     $text_box->delete( "1.0", 'end' );
 
     my $new_text = $controller->get_map_info_text(
-        map_key   => $map_key,
-        panel_key => $panel_key,
+        map_key    => $map_key,
+        window_key => $window_key,
     );
 
     $text_box->insert( 'end', $new_text );
@@ -2117,6 +1985,8 @@ sub fill_map_info_box {
 
 # ----------------------------------------------------
 sub fill_feature_info_box {
+
+    #print STDERR "AI_NEEDS_MODDED 32\n";
 
 =pod
 
@@ -2151,6 +2021,8 @@ sub fill_feature_info_box {
 # ----------------------------------------------------
 sub export_map_moves {
 
+    #print STDERR "AI_NEEDS_MODDED 33\n";
+
 =pod
 
 =head2 export_map_moves
@@ -2180,6 +2052,8 @@ exporting the map moves.
 # ----------------------------------------------------
 sub commit_map_moves {
 
+    #print STDERR "AI_NEEDS_MODDED 34\n";
+
 =pod
 
 =head2 commit_map_moves
@@ -2207,6 +2081,8 @@ sub commit_map_moves {
 
 # ----------------------------------------------------
 sub move_map_popup {
+
+    #print STDERR "AI_NEEDS_MODDED 35\n";
 
 =pod
 
@@ -2262,6 +2138,8 @@ sub move_map_popup {
 # ----------------------------------------------------
 sub password_box {
 
+    #print STDERR "AI_NEEDS_MODDED 36\n";
+
 =pod
 
 =head2 commit_map_moves
@@ -2305,6 +2183,8 @@ sub password_box {
 
 # ----------------------------------------------------
 sub select_reference_maps {
+
+    #print STDERR "AI_NEEDS_MODDED 37\n";
 
 =pod
 
@@ -2454,6 +2334,8 @@ sub select_reference_maps {
 # ----------------------------------------------------
 sub display_reference_map_sets {
 
+    #print STDERR "AI_NEEDS_MODDED 38\n";
+
 =pod
 
 =head2 display_reference_map_sets
@@ -2497,6 +2379,8 @@ sub display_reference_map_sets {
 # ----------------------------------------------------
 sub display_reference_maps {
 
+    #print STDERR "AI_NEEDS_MODDED 39\n";
+
 =pod
 
 =head2 display_reference_map_sets
@@ -2521,6 +2405,8 @@ sub display_reference_maps {
 # ----------------------------------------------------
 sub clear_buttons {
 
+    #print STDERR "AI_NEEDS_MODDED 40\n";
+
 =pod
 
 =head2 clear_buttons
@@ -2541,6 +2427,8 @@ sub clear_buttons {
 # ----------------------------------------------------
 sub clear_ref_maps {
 
+    #print STDERR "AI_NEEDS_MODDED 41\n";
+
 =pod
 
 =head2 clear_ref_maps
@@ -2558,6 +2446,8 @@ sub clear_ref_maps {
 
 # ----------------------------------------------------
 sub return_to_last_window {
+
+    #print STDERR "AI_NEEDS_MODDED 42\n";
 
 =pod
 
@@ -2589,14 +2479,14 @@ Deletes all widgets in the provided list
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key   = $args{'panel_key'};
+    my $window_key  = $args{'window_key'};
     my $items       = $args{'items'} || return;
     my $is_overview = $args{'is_overview'};
 
     my $canvas =
           $is_overview
-        ? $self->overview_canvas( panel_key => $panel_key, )
-        : $self->canvas( panel_key => $panel_key, );
+        ? $self->overview_canvas( window_key => $window_key, )
+        : $self->canvas( window_key => $window_key, );
     $canvas->delete( map { $_->[1] } @$items );
 
     # Maybe clear bindings if they aren't destroyed with delete.
@@ -2619,13 +2509,9 @@ Deletes all widgets in the current window.
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
 
-    foreach
-        my $panel_key ( @{ $app_display_data->{'panel_order'}{$window_key} } )
-    {
-        $self->{'panel_overview_pane'}{$panel_key}->destroy();
-        $self->{'bottom_pane'}{$panel_key}->destroy();
-        $self->{'middle_pane'}{$panel_key}->destroy();
-    }
+    $self->{'top_pane'}{$window_key}->destroy();
+    $self->{'bottom_pane'}{$window_key}->destroy();
+    $self->{'middle_pane'}{$window_key}->destroy();
 
     # Maybe clear bindings if they aren't destroyed with delete.
 
@@ -2634,6 +2520,8 @@ Deletes all widgets in the current window.
 
 # ----------------------------------------------------
 sub destroy_interface_window {
+
+    #print STDERR "AI_NEEDS_MODDED 45\n";
 
 =pod
 
@@ -2653,6 +2541,8 @@ Deletes all widgets in the current window.
 
 # ----------------------------------------------------
 sub layer_tagged_items {
+
+    #print STDERR "AI_NEEDS_MODDED 46\n";
 
 =pod
 
@@ -2675,25 +2565,27 @@ Handle the placement of tagged items in layers
 }
 
 # ----------------------------------------------------
-sub destroy_slot_controls {
+sub destroy_zone_controls {
+
+    #print STDERR "AI_NEEDS_MODDED 47\n";
 
 =pod
 
-=head2 destroy_slot_controls
+=head2 destroy_zone_controls
 
-Remove the interface buttons for a slot.
+Remove the interface buttons for a zone.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'};
-    my $slot_key  = $args{'slot_key'};
-    if ( $self->{'toggle_slot_pane'}{$slot_key} ) {
-        $self->toggle_slot_pane(
-            panel_key => $panel_key,
-            slot_key  => $slot_key,
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
+    if ( $self->{'toggle_zone_pane'}{$zone_key} ) {
+        $self->toggle_zone_pane(
+            window_key => $window_key,
+            zone_key   => $zone_key,
         )->destroy();
-        $self->{'toggle_slot_pane'}{$slot_key} = undef;
+        $self->{'toggle_zone_pane'}{$zone_key} = undef;
     }
     return;
 }
@@ -2728,6 +2620,8 @@ head2 Type 2
 
 # ----------------------------------------------------
 sub start_drag_type_1 {
+
+    #print STDERR "AI_NEEDS_MODDED 48\n";
 
 =pod
 
@@ -2796,29 +2690,31 @@ Handle starting drag
     elsif ( @tags = grep /^background_/,
         $canvas->gettags( $self->{'drag_ori_id'} ) )
     {
-        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
-        $self->{'drag_panel_key'}  = $2;
-        $self->{'drag_slot_key'}   = $3;
-    }
-    elsif ( @tags = grep /^viewed_region_/,
-        $canvas->gettags( $self->{'drag_ori_id'} ) )
-    {
-        $tags[0] =~ /^viewed_region_(\S+)_(\S+)_(\S+)/;
-        $self->{'drag_window_key'} = $1;
-        $self->{'drag_panel_key'}  = $2;
-        $self->{'drag_slot_key'}   = $3;
+        $self->{'drag_zone_key'}   = $2;
     }
 
-    if ( $self->{'drag_slot_key'} ) {
+    # BF ADD THIS BACK LATER
+    #    elsif ( @tags = grep /^viewed_region_/,
+    #        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    #    {
+    #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
+    #        $self->{'drag_window_key'} = $1;
+    #        $self->{'drag_zone_key'}   = $2;
+    #    }
+    #
+    if ( $self->{'drag_zone_key'} ) {
         $self->app_controller()
-            ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
+            ->new_selected_zone( zone_key => $self->{'drag_zone_key'}, );
     }
 
 }    # end start_drag
 
 # ----------------------------------------------------
 sub start_drag_type_2 {
+
+    #print STDERR "AI_NEEDS_MODDED 49\n";
 
 =pod
 
@@ -2876,41 +2772,41 @@ Handle starting drag
     elsif ( @tags = grep /^background_/,
         $canvas->gettags( $self->{'drag_ori_id'} ) )
     {
-        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
-        $self->{'drag_panel_key'}  = $2;
-        $self->{'drag_slot_key'}   = $3;
+        $self->{'drag_zone_key'}   = $2;
         $self->{'drag_obj'}        = 'background';
         $self->app_controller()->hide_corrs(
             window_key => $self->{'drag_window_key'},
-            panel_key  => $self->{'drag_panel_key'},
-            slot_key   => $self->{'drag_slot_key'},
-        );
-    }
-    elsif ( @tags = grep /^viewed_region_/,
-        $canvas->gettags( $self->{'drag_ori_id'} ) )
-    {
-        $tags[0] =~ /^viewed_region_(\S+)_(\S+)_(\S+)/;
-        $self->{'drag_window_key'} = $1;
-        $self->{'drag_panel_key'}  = $2;
-        $self->{'drag_slot_key'}   = $3;
-        $self->{'drag_obj'}        = 'viewed_region';
-        $self->app_controller()->hide_corrs(
-            window_key => $self->{'drag_window_key'},
-            panel_key  => $self->{'drag_panel_key'},
-            slot_key   => $self->{'drag_slot_key'},
+            zone_key   => $self->{'drag_zone_key'},
         );
     }
 
-    if ( $self->{'drag_slot_key'} ) {
+    # BF ADD THIS BACK LATER
+    #    elsif ( @tags = grep /^viewed_region_/,
+    #        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    #    {
+    #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
+    #        $self->{'drag_window_key'} = $1;
+    #        $self->{'drag_zone_key'}   = $2;
+    #        $self->{'drag_obj'}        = 'viewed_region';
+    #        $self->app_controller()->hide_corrs(
+    #            window_key => $self->{'drag_window_key'},
+    #            zone_key   => $self->{'drag_zone_key'},
+    #        );
+    #    }
+    #
+    if ( $self->{'drag_zone_key'} ) {
         $self->app_controller()
-            ->new_selected_slot( slot_key => $self->{'drag_slot_key'}, );
+            ->new_selected_zone( zone_key => $self->{'drag_zone_key'}, );
     }
 
 }    # end start_drag
 
 # ----------------------------------------------------
 sub drag_type_1 {
+
+    #print STDERR "AI_NEEDS_MODDED 50\n";
 
 =pod
 
@@ -2941,6 +2837,8 @@ Stubbed out, not currently used.
 # ----------------------------------------------------
 sub drag_type_2 {
 
+    #print STDERR "AI_NEEDS_MODDED 51\n";
+
 =pod
 
 =head2 drag_type_1
@@ -2949,6 +2847,8 @@ Handle the drag event
 
 =cut
 
+    # BF ADD THIS BACK LATER
+    return;
     my $self = shift;
     my ( $canvas, $x, $y, ) = @_;
     return unless ( $self->{'drag_ori_id'} );
@@ -2968,18 +2868,16 @@ Handle the drag event
             );
         }
         elsif ( $self->{'drag_obj'} eq 'background' ) {
-            $self->app_controller()->scroll_slot(
+            $self->app_controller()->scroll_zone(
                 window_key   => $self->{'drag_window_key'},
-                panel_key    => $self->{'drag_panel_key'},
-                slot_key     => $self->{'drag_slot_key'},
+                zone_key     => $self->{'drag_zone_key'},
                 scroll_value => $dx * -1,
             );
         }
         elsif ( $self->{'drag_obj'} eq 'viewed_region' ) {
-            $self->app_controller()->overview_scroll_slot(
+            $self->app_controller()->overview_scroll_zone(
                 window_key   => $self->{'drag_window_key'},
-                panel_key    => $self->{'drag_panel_key'},
-                slot_key     => $self->{'drag_slot_key'},
+                zone_key     => $self->{'drag_zone_key'},
                 scroll_value => $dx * 1,
             );
         }
@@ -3016,8 +2914,7 @@ Stubbed out, Not currently used.
     foreach (
         qw{
         drag_ori_id drag_ori_x      drag_ori_y
-        drag_obj    drag_window_key drag_panel_key
-        drag_slot_key
+        drag_obj    drag_window_key drag_zone_key
         }
         )
     {
@@ -3028,6 +2925,8 @@ Stubbed out, Not currently used.
 
 # ----------------------------------------------------
 sub stop_drag_type_2 {
+
+    #print STDERR "AI_NEEDS_MODDED 53\n";
 
 =pod
 
@@ -3042,40 +2941,40 @@ Handle the stopping drag event
 
     return unless ( $self->{'drag_ori_id'} );
 
-    # Move original object
-    my $canvas_x = $canvas->canvasx($x);
-    if ( $self->{'drag_obj'} ) {
-        if ( $self->{'drag_obj'} eq 'map' ) {
-
-            my $map_key
-                = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-
-            my $dx = int( $self->{'ghost_bounds'}[0]
-                    - $self->app_controller()->app_display_data()
-                    ->{'map_layout'}{$map_key}{'coords'}[0] );
-
-            $self->popup_map_menu(
-                canvas   => $canvas,
-                dx       => $dx,
-                drawn_id => ( $self->{'drag_ori_id'} ),
-            );
-        }
-        elsif ($self->{'drag_obj'} eq 'background'
-            or $self->{'drag_obj'} eq 'viewed_region' )
-        {
-            $self->app_controller()->unhide_corrs(
-                window_key => $self->{'drag_window_key'},
-                panel_key  => $self->{'drag_panel_key'},
-                slot_key   => $self->{'drag_slot_key'},
-            );
-        }
-    }
+    # BF ADD THIS BACK LATER
+    #
+    #    # Move original object
+    #    my $canvas_x = $canvas->canvasx($x);
+    #    if ( $self->{'drag_obj'} ) {
+    #        if ( $self->{'drag_obj'} eq 'map' ) {
+    #
+    #            my $map_key
+    #                = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
+    #
+    #            my $dx = int( $self->{'ghost_bounds'}[0]
+    #                    - $self->app_controller()->app_display_data()
+    #                    ->{'map_layout'}{$map_key}{'coords'}[0] );
+    #
+    #            $self->popup_map_menu(
+    #                canvas   => $canvas,
+    #                dx       => $dx,
+    #                drawn_id => ( $self->{'drag_ori_id'} ),
+    #            );
+    #        }
+    #        elsif ($self->{'drag_obj'} eq 'background'
+    #            or $self->{'drag_obj'} eq 'viewed_region' )
+    #        {
+    #            $self->app_controller()->unhide_corrs(
+    #                window_key => $self->{'drag_window_key'},
+    #                zone_key   => $self->{'drag_zone_key'},
+    #            );
+    #        }
+    #    }
 
     foreach (
         qw{
         drag_ori_id drag_ori_x      drag_ori_y
-        drag_obj    drag_window_key drag_panel_key
-        drag_slot_key
+        drag_obj    drag_window_key drag_zone_key
         }
         )
     {
@@ -3086,6 +2985,8 @@ Handle the stopping drag event
 
 # ----------------------------------------------------
 sub drag_ghost {
+
+    #print STDERR "AI_NEEDS_MODDED 54\n";
 
 =pod
 
@@ -3124,6 +3025,8 @@ Handle the ghost map dragging
 # ----------------------------------------------------
 sub mouse_wheel_event {
 
+    #print STDERR "AI_NEEDS_MODDED 55\n";
+
 =pod
 
 =head2 mouse_wheel_event
@@ -3136,15 +3039,13 @@ Handle the mouse wheel events
     my ( $canvas, $value ) = @_;
 
     if ( my @tags = grep /^background_/, $canvas->gettags("current") ) {
-        $tags[0] =~ /^background_(\S+)_(\S+)_(\S+)/;
+        $tags[0] =~ /^background_(\S+)_(\S+)/;
         my $window_key = $1;
-        my $panel_key  = $2;
-        my $slot_key   = $3;
+        my $zone_key   = $2;
 
-        $self->app_controller()->zoom_slot(
+        $self->app_controller()->zoom_zone(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
             zoom_value => $value,
         );
     }
@@ -3152,24 +3053,38 @@ Handle the mouse wheel events
 }
 
 # ----------------------------------------------------
-sub int_new_selected_slot {
+sub int_new_selected_zone {
+
+    #print STDERR "AI_NEEDS_MODDED 56\n";
 
 =pod
 
-=head2 int_new_selected_slot
+=head2 int_new_selected_zone
 
-Handler for selecting a new slot.
+Handler for selecting a new zone.
+
+Modifies the controls to act on this slot.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $app_display_data = $args{'app_display_data'};
-    my $slot_key         = $args{'slot_key'};
+    my $zone_key         = $args{'zone_key'};
     my $map_set_data     = $args{'map_set_data'};
 
-    ${ $self->{'selected_slot_key_scalar'} } = $slot_key;
+    ${ $self->{'selected_zone_key_scalar'} } = $zone_key;
     $self->{'show_features'}
-        = $app_display_data->{'scaffold'}{$slot_key}{'show_features'};
+        = $app_display_data->{'scaffold'}{$zone_key}{'show_features'};
+    $self->{'attached_to_parent'}
+        = $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'};
+    if ( $app_display_data->{'scaffold'}{$zone_key}{'is_top'} ) {
+        $self->{'attach_to_parent_check_box'}
+            ->configure( -state => 'disable', );
+    }
+    else {
+        $self->{'attach_to_parent_check_box'}
+            ->configure( -state => 'normal', );
+    }
     my $text_box = $self->{'selected_map_set_text_box'};
     $text_box->configure( -state => 'normal', );
 
@@ -3185,23 +3100,25 @@ Handler for selecting a new slot.
 }
 
 # ----------------------------------------------------
-sub int_move_slot {
+sub int_move_zone {
+
+    #print STDERR "AI_NEEDS_MODDED 57\n";
 
 =pod
 
-=head2 int_move_slot
+=head2 int_move_zone
 
-Does what the interface needs to do to move the slot
+Does what the interface needs to do to move the zone
 
 =cut
 
     #xxx
     #    my ( $self, %args ) = @_;
     #    my $app_display_data = $args{'app_display_data'};
-    #    my $slot_key = $args{'slot_key'};
+    #    my $zone_key = $args{'zone_key'};
     #    my $y = $args{'y'};
     #
-    #    $self->{'toggle_slot_pane'}{$slot_key}->place(
+    #    $self->{'toggle_zone_pane'}{$zone_key}->place(
     #        -x        => 0,
     #            -y        => $y,
     #            -relwidth => 1,
@@ -3226,7 +3143,11 @@ Handle window resizing
     my $self = shift;
     my ( $event, $window_key, $app_display_data, ) = @_;
 
-    if ( $event->w
+    if ( not $app_display_data->{'window_layout'}{$window_key}{'width'} ) {
+        $app_display_data->{'window_layout'}{$window_key}{'width'}
+            = $event->w;
+    }
+    elsif ( $event->w
         != $app_display_data->{'window_layout'}{$window_key}{'width'} )
     {
         $app_display_data->change_width(
@@ -3235,10 +3156,13 @@ Handle window resizing
         );
         $self->pack_panes( $window_key, $app_display_data, );
     }
+    return;
 }
 
 # ----------------------------------------------------
 sub destroy_ghost {
+
+    #print STDERR "AI_NEEDS_MODDED 59\n";
 
 =pod
 
@@ -3260,6 +3184,8 @@ Destroy the ghost image
 # ----------------------------------------------------
 sub pack_panes {
 
+    #print STDERR "AI_NEEDS_MODDED 60\n";
+
 =pod
 
 =head2 pack_panes
@@ -3270,55 +3196,45 @@ Pack the frames
 
     my $self = shift;
     my ( $window_key, $app_display_data, ) = @_;
-    foreach my $panel_key (
-        @{ $app_display_data->{'panel_order'}{$window_key} || [] } )
-    {
 
-        # Top Panel
-        $self->{'overview_canvas'}{$panel_key}->pack(
-            -side => 'top',
-            -fill => 'both',
-        );
-        $self->{'panel_overview_pane'}{$panel_key}->pack(
-            -side   => 'top',
-            -fill   => 'x',
-            -anchor => 'n',
-            -expand => 1,
-        );
+    # Top Pane
+    $self->{'overview_canvas'}{$window_key}->pack(
+        -side => 'left',
+        -fill => 'both',
+    );
+    $self->{'info_pane'}{$window_key}->pack( -side => 'right', );
+    $self->{'top_pane'}{$window_key}->pack(
+        -side   => 'top',
+        -fill   => 'x',
+        -anchor => 'n',
+        -expand => 1,
+    );
 
-        # Bottom Panel
-        $self->{'panel_info_pane'}{$panel_key}->pack( -side => 'left', );
-        $self->{'panel_slot_controls_pane'}{$panel_key}->pack(
-            -side => 'left',
-            -fill => 'both',
-        );
-        $self->{'bottom_pane'}{$panel_key}->pack(
-            -side => 'bottom',
-            -fill => 'both',
-        );
+    # Bottom Pane
+    $self->{'controls_pane'}{$window_key}->pack(
+        -side => 'left',
+        -fill => 'both',
+    );
+    $self->{'bottom_pane'}{$window_key}->pack(
+        -side => 'bottom',
+        -fill => 'both',
+    );
 
-        # Middle Panel
-        $self->{'panel_slot_toggle_pane'}{$panel_key}->pack(
-            -side   => 'left',
-            -fill   => 'y',
-            -anchor => 'n',
-        );
-        $self->{'canvas'}{$panel_key}->pack(
-            -side => 'top',
-            -fill => 'both',
-        );
+    # Middle Pane
+    $self->{'canvas'}{$window_key}->pack(
+        -side => 'top',
+        -fill => 'both',
+    );
+    $self->{'canvas_pane'}{$window_key}->pack(
+        -side   => 'left',
+        -fill   => 'x',
+        -anchor => 'n',
+    );
+    $self->{'middle_pane'}{$window_key}->pack(
+        -side => 'top',
+        -fill => 'both',
+    );
 
-        $self->{'panel_canvas_pane'}{$panel_key}->pack(
-            -side   => 'left',
-            -fill   => 'x',
-            -anchor => 'n',
-        );
-        $self->{'middle_pane'}{$panel_key}->pack(
-            -side => 'top',
-            -fill => 'both',
-        );
-
-    }
 }
 
 sub expand_bounds {

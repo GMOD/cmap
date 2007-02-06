@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.26 2007-01-14 17:15:58 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.27 2007-02-06 07:03:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,21 +52,21 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
-    layout_new_panel
-    layout_new_slot
+    layout_new_window
+    layout_zone
     layout_overview
     overview_selected_area
-    layout_reference_maps
+    layout_head_maps
     layout_sub_maps
-    layout_slot_with_current_maps
+    layout_zone_with_current_maps
     add_correspondences
-    add_slot_separator
-    move_slot
-    set_slot_bgcolor
+    add_zone_separator
+    move_zone
+    set_zone_bgcolor
 ];
 use Bio::GMOD::CMap::Utils qw[
     round_to_granularity
@@ -175,21 +175,20 @@ Adds the first slot
     my $map_ids    = $args{'map_ids'};
 
     # Remove old info if any
-    if ( $self->{'panel_order'}{$window_key} ) {
+    if ( $self->{'zone_in_window'}{$window_key} ) {
         $self->clear_window( window_key => $window_key, );
     }
 
-    my $panel_key = $self->next_internal_key('panel');
-    my $slot_key  = $self->next_internal_key('slot');
+    my $zone_key = $self->next_internal_key('zone');
 
-    $self->{'panel_order'}{$window_key} = [ $panel_key, ];
-    $self->{'slot_order'}{$panel_key}   = [ $slot_key, ];
+    $self->{'head_zone_key'}{$window_key} = $zone_key;
+    $self->{'overview'}{$window_key}{'zone_key'} = $zone_key;
 
-    $self->{'scaffold'}{$slot_key} = {
+    $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,
-        panel_key          => $panel_key,
         map_set_id         => undef,
-        parent             => undef,
+        parent_zone_key    => undef,
+        parent_map_key     => undef,
         children           => [],
         scale              => 1,
         x_offset           => 0,
@@ -205,74 +204,57 @@ Adds the first slot
 
     $self->set_default_window_layout( window_key => $window_key, );
 
-    $self->initialize_panel_layout($panel_key);
-    $self->initialize_slot_layout($slot_key);
-    $self->app_interface()->int_create_panel(
-        window_key       => $window_key,
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    $self->initialize_zone_layout( $zone_key, $window_key, );
 
     foreach my $map_id ( @{ $map_ids || [] } ) {
         my $map_key = $self->next_internal_key('map');
-        push @{ $self->{'map_order'}{$slot_key} },    $map_key;
+        push @{ $self->{'map_order'}{$zone_key} },    $map_key;
         push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
-        $self->{'map_id_to_key_by_slot'}{$slot_key}{$map_id} = $map_key;
+        $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id} = $map_key;
         $self->{'map_key_to_id'}{$map_key}                   = $map_id;
-        $self->{'map_key_to_slot_key'}{$map_key}             = $slot_key;
+        $self->{'map_key_to_zone_key'}{$map_key}             = $zone_key;
         $self->initialize_map_layout($map_key);
+
+        $self->add_sub_maps_to_map(
+            window_key      => $window_key,
+            parent_zone_key => $zone_key,
+            parent_map_key  => $map_key,
+        );
     }
 
-    $self->add_sub_maps(
-        window_key      => $window_key,
-        panel_key       => $panel_key,
-        parent_slot_key => $slot_key,
-    );
-
-    # Handle overview after the regular slots, so we can use that info
-    $self->{'overview'}{$panel_key} = {
-        slot_key   => $slot_key,     # top slot in overview
-        window_key => $window_key,
+    # Handle overview after the regular zones, so we can use that info
+    $self->{'overview'}{$window_key} = {
+        zone_key => $zone_key,    # top zone in overview
     };
-    $self->initialize_overview_layout($panel_key);
+    $self->initialize_overview_layout($window_key);
 
-    layout_new_panel(
+    layout_new_window(
         window_key       => $window_key,
-        panel_key        => $panel_key,
+        head_zone_key    => $zone_key,
         app_display_data => $self,
     );
     layout_overview(
         window_key       => $window_key,
-        panel_key        => $panel_key,
         app_display_data => $self,
     );
 
-    $self->change_selected_slot(
-        window_key => $window_key,
-        panel_key  => $panel_key,
-        slot_key   => $slot_key,
-    );
-    $self->app_interface()->int_create_slot_controls(
-        window_key       => $window_key,
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    $self->change_selected_zone( zone_key => $zone_key, );
 
-    $self->app_interface()->draw_panel(
-        window_key       => $window_key,
-        panel_key        => $panel_key,
-        app_display_data => $self,
-    );
+    # Redundant after change_selected_zone
+    #$self->app_interface()->draw_window(
+    #    window_key       => $window_key,
+    #    app_display_data => $self,
+    #);
 
     return;
 }
 
 # ----------------------------------------------------
-sub add_sub_maps {
+sub add_sub_maps_to_map {
 
 =pod
 
-=head2 add_sub_maps
+=head2 add_sub_maps_to_map
 
 Adds sub-maps to the view.  Doesn't do any sanity checking.
 
@@ -280,55 +262,41 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
     my ( $self, %args ) = @_;
     my $window_key      = $args{'window_key'}      or return;
-    my $panel_key       = $args{'panel_key'}       or return;
-    my $parent_slot_key = $args{'parent_slot_key'} or return;
-    my $slot_order_array = $args{'slot_order_array'}
-        || $self->{'slot_order'}{$panel_key};
+    my $parent_zone_key = $args{'parent_zone_key'} or return;
+    my $parent_map_key  = $args{'parent_map_key'}  or return;
 
     my @sub_map_keys;
-    foreach my $map_key ( @{ $self->{'map_order'}{$parent_slot_key} || [] } )
-    {
-        my $map_id = $self->{'map_key_to_id'}{$map_key};
 
-        # Collect Sub-Maps
-        my $sub_maps
-            = $self->app_data_module()->sub_maps( map_id => $map_id, );
+    my $parent_map_id = $self->{'map_key_to_id'}{$parent_map_key};
 
-        foreach my $sub_map ( @{ $sub_maps || [] } ) {
-            my $sub_map_id  = $sub_map->{'sub_map_id'};
-            my $sub_map_key = $self->next_internal_key('map');
+    # Collect Sub-Maps
+    my $sub_maps
+        = $self->app_data_module()->sub_maps( map_id => $parent_map_id, );
 
-            push @{ $self->{'map_id_to_keys'}{$sub_map_id} }, $sub_map_key;
-            $self->{'map_key_to_id'}{$sub_map_key} = $sub_map_id;
+    foreach my $sub_map ( @{ $sub_maps || [] } ) {
+        my $sub_map_id  = $sub_map->{'sub_map_id'};
+        my $sub_map_key = $self->next_internal_key('map');
 
-            $self->{'sub_maps'}{$sub_map_key} = {
-                parent_map_key => $map_key,
-                feature_start  => $sub_map->{'feature_start'},
-                feature_stop   => $sub_map->{'feature_stop'},
-                feature_id     => $sub_map->{'feature_id'},
-            };
-            push @sub_map_keys, $sub_map_key;
+        push @{ $self->{'map_id_to_keys'}{$sub_map_id} }, $sub_map_key;
+        $self->{'map_key_to_id'}{$sub_map_key} = $sub_map_id;
 
-        }
+        $self->{'sub_maps'}{$sub_map_key} = {
+            parent_map_key => $parent_map_key,
+            feature_start  => $sub_map->{'feature_start'},
+            feature_stop   => $sub_map->{'feature_stop'},
+            feature_id     => $sub_map->{'feature_id'},
+        };
+        push @sub_map_keys, $sub_map_key;
+
     }
+
     unless (@sub_map_keys) {
 
         # No Sub Maps
         return;
     }
 
-    my $slot_order_index;
-    for ( my $i = 0; $i <= $#{$slot_order_array}; $i++ ) {
-        if ( $parent_slot_key == $slot_order_array->[$i] ) {
-            $slot_order_index = $i;
-            last;
-        }
-    }
-    unless ( defined $slot_order_index ) {
-        die "Slot $parent_slot_key not in Panel $panel_key\n";
-    }
-
-    # Split maps into slots based on their map set
+    # Split maps into zones based on their map set
     my %maps_by_set;
     foreach my $sub_map_key (@sub_map_keys) {
         my $sub_map_id = $self->{'map_key_to_id'}{$sub_map_key};
@@ -337,20 +305,18 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         push @{ $maps_by_set{ $sub_map_data->{'map_set_id'} } }, $sub_map_key;
     }
 
-    my $parent_x_offset = $self->{'scaffold'}{$parent_slot_key}{'x_offset'};
-    my @new_slot_keys;
+    my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
+    my @new_zone_keys;
     foreach my $set_key ( keys %maps_by_set ) {
-        my $child_slot_key = $self->next_internal_key('slot');
-        push @new_slot_keys, $child_slot_key;
-        $slot_order_index++;
-        splice @{$slot_order_array}, $slot_order_index, 0, ($child_slot_key);
+        my $child_zone_key = $self->next_internal_key('zone');
+        push @new_zone_keys, $child_zone_key;
 
-        $self->initialize_slot_layout($child_slot_key);
-        $self->{'scaffold'}{$child_slot_key} = {
+        $self->initialize_zone_layout( $child_zone_key, $window_key, );
+        $self->{'scaffold'}{$child_zone_key} = {
             window_key         => $window_key,
-            panel_key          => $panel_key,
+            parent_zone_key    => $parent_zone_key,
+            parent_map_key     => $parent_map_key,
             map_set_id         => undef,
-            parent             => $parent_slot_key,
             children           => [],
             scale              => 1,
             x_offset           => $parent_x_offset,
@@ -360,18 +326,18 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             pixels_per_unit    => 0,
             show_features      => 0,
         };
-        push @{ $self->{'scaffold'}{$parent_slot_key}{'children'} },
-            $child_slot_key;
+        push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} },
+            $child_zone_key;
 
         foreach my $map_key ( @{ $maps_by_set{$set_key} || [] } ) {
-            push @{ $self->{'map_order'}{$child_slot_key} }, $map_key;
-            $self->{'map_key_to_slot_key'}{$map_key} = $child_slot_key;
-            $self->{'map_id_to_key_by_slot'}{$child_slot_key}
+            push @{ $self->{'map_order'}{$child_zone_key} }, $map_key;
+            $self->{'map_key_to_zone_key'}{$map_key} = $child_zone_key;
+            $self->{'map_id_to_key_by_zone'}{$child_zone_key}
                 { $self->{'map_key_to_id'}{$map_key} } = $map_key;
             $self->initialize_map_layout($map_key);
         }
     }
-    return \@new_slot_keys;
+    return \@new_zone_keys;
 }
 
 # ----------------------------------------------------
@@ -384,6 +350,8 @@ sub zoom_slot {
 Zoom slots
 
 =cut
+
+    #print STDERR "ADD_NEEDS_MODDED 1\n";
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
@@ -433,11 +401,12 @@ Zoom slots
             else {
 
                 # Reset correspondences
-                $self->reset_slot_corrs(
-                    window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
-                );
+                # BF ADD THIS BACK
+                #$self->reset_slot_corrs(
+                #    window_key => $window_key,
+                #    panel_key  => $panel_key,
+                #    slot_key   => $slot_key,
+                #);
             }
         }
     }
@@ -522,8 +491,7 @@ Zoom slots
 
     unless ($cascading) {
         $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_panel(
-            panel_key        => $panel_key,
+        $self->app_interface()->draw_window(
             window_key       => $window_key,
             app_display_data => $self,
         );
@@ -541,6 +509,8 @@ sub overview_scroll_slot {
 Scroll slots based on the overview scrolling
 
 =cut
+
+    #print STDERR "ADD_NEEDS_MODDED 2\n";
 
     my ( $self, %args ) = @_;
     my $window_key   = $args{'window_key'};
@@ -569,135 +539,154 @@ Scroll slots based on the overview scrolling
 }
 
 # ----------------------------------------------------
-sub scroll_slot {
+sub scroll_zone {
+
+    #print STDERR "ADD_NEEDS_MODDED 3\n";
 
 =pod
 
-=head2 scroll_slot
+=head2 scroll_zone
 
-Scroll slots
+Scroll zones
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key   = $args{'window_key'};
-    my $panel_key    = $args{'panel_key'};
-    my $slot_key     = $args{'slot_key'};
+    my $zone_key     = $args{'zone_key'};
+    my $scroll_value = $args{'scroll_value'} or return;
+
+    $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
+
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        move_offset_x    => $scroll_value,
+        move_offset_y    => 0,
+    );
+
+   # handle overview highlighting
+   # BF ADD BACK LATER
+   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
+   #        $self->destroy_items(
+   #            items =>
+   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #                {'viewed_region'},
+   #            panel_key   => $panel_key,
+   #            is_overview => 1,
+   #        );
+   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #            {'viewed_region'} = [];
+   #        overview_selected_area(
+   #            zone_key         => $zone_key,
+   #            panel_key        => $panel_key,
+   #            app_display_data => $self,
+   #        );
+   #    }
+
+    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+    return;
+}
+
+# ----------------------------------------------------
+sub scroll_zone_old {
+
+    #print STDERR "ADD_NEEDS_MODDED 3\n";
+
+=pod
+
+=head2 scroll_zone
+
+Scroll zones
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $zone_key     = $args{'zone_key'};
     my $cascading    = $args{'cascading'} || 0;
     my $scroll_value = $args{'scroll_value'} or return;
 
-    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
-    my $overview_slot_layout
-        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+    if ( not $cascading ) {
+        $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
+    }
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+    my $zone_layout   = $self->{'zone_layout'}{$zone_key};
+    my $overview_zone_layout
+        = $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key};
 
     if ($cascading) {
-        if ( $slot_scaffold->{'attached_to_parent'} ) {
 
-            # Get Offset from parent
-            $slot_scaffold->{'x_offset'}
-                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
-                {'x_offset'};
+        # Get Offset from parent
+        $zone_scaffold->{'x_offset'}
+            = $self->{'scaffold'}{ $zone_scaffold->{'parent'} }{'x_offset'};
 
-            $self->relayout_sub_map_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
-            );
-        }
-        else {
-            if ($slot_scaffold->{'scale'} == 1
-                and ( $slot_scaffold->{'x_offset'} + $scroll_value
-                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
-                    {'x_offset'} )
-                )
-            {
-                $slot_scaffold->{'x_offset'} += $scroll_value;
-                $self->attach_slot_to_parent(
-                    slot_key  => $slot_key,
-                    panel_key => $panel_key,
-                );
-                $self->relayout_sub_map_slot(
-                    window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
-                );
-            }
-            else {
-
-                # Reset correspondences
-                $self->reset_slot_corrs(
-                    window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
-                );
-            }
-        }
-    }
-    elsif ( $slot_scaffold->{'is_top'} ) {
-        $slot_scaffold->{'x_offset'} += $scroll_value;
-        $self->relayout_ref_map_slot(
+        $self->relayout_sub_map_zone(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
+        );
+
+        # Reset correspondences
+        # BF ADD THIS BACK
+        #$self->reset_zone_corrs(
+        #    window_key => $window_key,
+        #    zone_key   => $zone_key,
+        #);
+    }
+    elsif ( $zone_scaffold->{'is_top'} ) {
+        $zone_scaffold->{'x_offset'} += $scroll_value;
+        $self->relayout_ref_map_zone(
+            window_key => $window_key,
+            zone_key   => $zone_key,
         );
     }
     else {
-        $slot_scaffold->{'x_offset'} += $scroll_value;
-        if ( $slot_scaffold->{'attached_to_parent'} ) {
-            $self->detach_slot_from_parent( slot_key => $slot_key, );
-        }
-        elsif (
-            $slot_scaffold->{'scale'} == 1
-            and ( $slot_scaffold->{'x_offset'}
-                == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
-                {'x_offset'} )
-            )
-        {
-            $self->attach_slot_to_parent(
-                slot_key  => $slot_key,
-                panel_key => $panel_key,
-            );
-        }
 
-        $self->relayout_sub_map_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
-        );
+        # This should never happen now that it can no longer detach
+        #$zone_layout->{'bounds'}[0] += $scroll_value;
+        #$self->relayout_sub_map_zone(
+        #window_key => $window_key,
+        #zone_key   => $zone_key,
+        #);
     }
 
-    # handle overview highlighting
-    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
-        $self->destroy_items(
-            items =>
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                {'viewed_region'},
-            panel_key   => $panel_key,
-            is_overview => 1,
-        );
-        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-            {'viewed_region'} = [];
-        overview_selected_area(
-            slot_key         => $slot_key,
-            panel_key        => $panel_key,
-            app_display_data => $self,
-        );
-    }
+   # handle overview highlighting
+   # BF ADD BACK LATER
+   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
+   #        $self->destroy_items(
+   #            items =>
+   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #                {'viewed_region'},
+   #            panel_key   => $panel_key,
+   #            is_overview => 1,
+   #        );
+   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #            {'viewed_region'} = [];
+   #        overview_selected_area(
+   #            zone_key         => $zone_key,
+   #            panel_key        => $panel_key,
+   #            app_display_data => $self,
+   #        );
+   #    }
 
-    foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
-        $self->scroll_slot(
+    foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } ) {
+        $self->scroll_zone(
             window_key   => $window_key,
-            panel_key    => $panel_key,
-            slot_key     => $child_slot_key,
+            zone_key     => $child_zone_key,
             scroll_value => $scroll_value,
             cascading    => 1,
         );
     }
 
     unless ($cascading) {
-        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_panel(
-            panel_key        => $panel_key,
+        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_window(
             window_key       => $window_key,
             app_display_data => $self,
         );
@@ -706,7 +695,33 @@ Scroll slots
 }
 
 # ----------------------------------------------------
+sub get_top_attached_parent {
+
+=pod
+
+=head2 get_top_attached_parent
+
+Crawl the scaffold to find the top zone that is attached.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'};
+
+    while ( $self->{'scaffold'}{$zone_key}{'attached_to_parent'}
+        and $self->{'scaffold'}{$zone_key}{'parent_zone_key'}
+        and not $self->{'scaffold'}{$zone_key}{'is_top'} )
+    {
+        $zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    }
+
+    return $zone_key;
+}
+
+# ----------------------------------------------------
 sub toggle_corrs_slot {
+
+    #print STDERR "ADD_NEEDS_MODDED 4\n";
 
 =pod
 
@@ -745,6 +760,8 @@ toggle the correspondences for a slot
 
 # ----------------------------------------------------
 sub expand_slot {
+
+    #print STDERR "ADD_NEEDS_MODDED 5\n";
 
 =pod
 
@@ -952,8 +969,7 @@ expand slots
         );
     }
 
-    $self->app_interface()->draw_panel(
-        panel_key        => $panel_key,
+    $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
     );
@@ -963,6 +979,8 @@ expand slots
 
 # ----------------------------------------------------
 sub reattach_slot {
+
+    #print STDERR "ADD_NEEDS_MODDED 6\n";
 
 =pod
 
@@ -1008,7 +1026,7 @@ Reattach a map and recursively handle the children
                 $slot_scaffold->{'scale'} /= $unattached_child_zoom_value;
             }
             if ($slot_scaffold->{'scale'} == 1
-                and ( $slot_scaffold->{'x_offset'} + $scroll_value
+                and ( $slot_scaffold->{'x_offset'} - $scroll_value
                     == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
                     {'x_offset'} )
                 )
@@ -1026,11 +1044,12 @@ Reattach a map and recursively handle the children
             else {
 
                 # Reset correspondences
-                $self->reset_slot_corrs(
-                    window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
-                );
+                # BF ADD THIS BACK
+                #$self->reset_slot_corrs(
+                #    window_key => $window_key,
+                #    panel_key  => $panel_key,
+                #    slot_key   => $slot_key,
+                #);
             }
         }
     }
@@ -1093,8 +1112,7 @@ Reattach a map and recursively handle the children
 
     unless ($cascading) {
         $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_panel(
-            panel_key        => $panel_key,
+        $self->app_interface()->draw_window(
             window_key       => $window_key,
             app_display_data => $self,
         );
@@ -1104,6 +1122,8 @@ Reattach a map and recursively handle the children
 
 # ----------------------------------------------------
 sub change_width {
+
+    #print STDERR "ADD_NEEDS_MODDED 7\n";
 
 =pod
 
@@ -1124,32 +1144,31 @@ canvases.
     # Set new width
     $self->{'window_layout'}{$window_key}{'width'} = $width;
 
-    # Redraw everything
-    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
-        layout_new_panel(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            app_display_data => $self,
-            width            => $width - 200,
-        );
-        layout_overview(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            app_display_data => $self,
-            width            => $width - 10,
-        );
-        $self->app_interface()->draw_panel(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            app_display_data => $self,
-        );
-    }
+    my $head_zone_key = $self->{'head_zone_key'}{$window_key};
+
+    layout_new_window(
+        window_key       => $window_key,
+        width            => $width,
+        head_zone_key    => $head_zone_key,
+        app_display_data => $self,
+    );
+    layout_overview(
+        window_key       => $window_key,
+        app_display_data => $self,
+        width            => $width - 400,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
     return;
 }
 
 # ----------------------------------------------------
 sub set_new_zoomed_offset {
+
+    #print STDERR "ADD_NEEDS_MODDED 8\n";
 
 =pod
 
@@ -1171,35 +1190,35 @@ sub set_new_zoomed_offset {
     my $change = ( $new_width - $old_width ) / 2;
 
     $self->{'scaffold'}{$slot_key}{'x_offset'} *= $zoom_value;
-    $self->{'scaffold'}{$slot_key}{'x_offset'} += $change;
+    $self->{'scaffold'}{$slot_key}{'x_offset'} -= $change;
 
     return;
 }
 
 # ----------------------------------------------------
-sub relayout_ref_map_slot {
+sub relayout_ref_map_zone {
+
+    #print STDERR "ADD_NEEDS_MODDED 9\n";
 
 =pod
 
-=head2 relayout_ref_map_slot
+=head2 relayout_ref_map_zone
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
 
-    $self->clear_slot_maps(
-        panel_key => $panel_key,
-        slot_key  => $slot_key,
+    $self->clear_zone_maps(
+        window_key => $window_key,
+        zone_key   => $zone_key,
     );
 
     # These maps are features of the parent map
-    layout_reference_maps(
+    layout_head_maps(
         window_key       => $window_key,
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+        zone_key         => $zone_key,
         app_display_data => $self,
     );
 
@@ -1207,44 +1226,46 @@ sub relayout_ref_map_slot {
 }
 
 # ----------------------------------------------------
-sub relayout_sub_map_slot {
+sub relayout_sub_map_zone {
+
+    #print STDERR "ADD_NEEDS_MODDED 10\n";
 
 =pod
 
-=head2 relayout_sub_map_slot
+=head2 relayout_sub_map_zone
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
 
-    $self->clear_slot_maps(
-        panel_key => $panel_key,
-        slot_key  => $slot_key,
+    $self->clear_zone_maps(
+        window_key => $window_key,
+        zone_key   => $zone_key,
     );
 
     # These maps are features of the parent map
     layout_sub_maps(
         window_key       => $window_key,
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+        zone_key         => $zone_key,
         app_display_data => $self,
     );
 
     # Reset correspondences
-    $self->reset_slot_corrs(
-        window_key => $window_key,
-        panel_key  => $panel_key,
-        slot_key   => $slot_key,
-    );
+    # BF ADD THIS BACK
+    #    $self->reset_zone_corrs(
+    #        window_key => $window_key,
+    #        zone_key   => $zone_key,
+    #    );
 
     return;
 }
 
 # ----------------------------------------------------
 sub create_slot_coverage_array {
+
+    #print STDERR "ADD_NEEDS_MODDED 11\n";
 
 =pod
 
@@ -1276,8 +1297,8 @@ MAP_KEY:
         )
     {
         my $coords = $self->{'map_layout'}{$map_key}{'coords'};
-        $coords->[0] -= $x_offset;
-        $coords->[2] -= $x_offset;
+        $coords->[0] += $x_offset;
+        $coords->[2] += $x_offset;
         unless (@slot_coverage) {
             push @slot_coverage, [ $coords->[0], $coords->[2] ];
             next MAP_KEY;
@@ -1299,51 +1320,52 @@ MAP_KEY:
 }
 
 # ----------------------------------------------------
-sub change_selected_slot {
+sub change_selected_zone {
+
+    #print STDERR "ADD_NEEDS_MODDED 12\n";
 
 =pod
 
-=head2 change_selected_slot
+=head2 change_selected_zone
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key   = $args{'slot_key'} or return;
-    my $panel_key  = $self->{'scaffold'}{$slot_key}{'panel_key'};
-    my $window_key = $self->{'scaffold'}{$slot_key}{'window_key'};
+    my $zone_key   = $args{'zone_key'} or return;
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
 
-    my $old_selected_slot_key = $self->{'selected_slot_key'};
-    $self->{'selected_slot_key'} = $slot_key;
+    my $old_selected_zone_key = $self->{'selected_zone_key'};
+    $self->{'selected_zone_key'} = $zone_key;
 
     return
-        if ( $old_selected_slot_key and $old_selected_slot_key == $slot_key );
+        if ( $old_selected_zone_key and $old_selected_zone_key == $zone_key );
 
-    if (    $old_selected_slot_key
-        and $self->{'scaffold'}{$old_selected_slot_key} )
+    if (    $old_selected_zone_key
+        and $self->{'scaffold'}{$old_selected_zone_key} )
     {
-        set_slot_bgcolor(
-            panel_key        => $panel_key,
-            slot_key         => $old_selected_slot_key,
+        set_zone_bgcolor(
+            window_key       => $window_key,
+            zone_key         => $old_selected_zone_key,
             app_display_data => $self,
         );
     }
-    set_slot_bgcolor(
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+    set_zone_bgcolor(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
         app_display_data => $self,
     );
 
-    my $map_set_id   = $self->{'scaffold'}{$slot_key}{'map_set_id'};
+    my $map_set_id   = $self->{'scaffold'}{$zone_key}{'map_set_id'};
     my $map_set_data = $self->app_data_module()
         ->get_map_set_data( map_set_id => $map_set_id, );
 
-    $self->app_interface()->int_new_selected_slot(
+    $self->app_interface()->int_new_selected_zone(
         map_set_data     => $map_set_data,
-        slot_key         => $slot_key,
+        zone_key         => $zone_key,
         app_display_data => $self,
     );
-    $self->app_interface()->draw_panel(
-        panel_key        => $panel_key,
+
+    $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
     );
@@ -1353,6 +1375,8 @@ sub change_selected_slot {
 
 # ----------------------------------------------------
 sub change_feature_status {
+
+    #print STDERR "ADD_NEEDS_MODDED 13\n";
 
 =pod
 
@@ -1385,8 +1409,7 @@ sub change_feature_status {
     }
 
     $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_panel(
-        panel_key        => $panel_key,
+    $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
     );
@@ -1395,18 +1418,20 @@ sub change_feature_status {
 }
 
 # ----------------------------------------------------
-sub slot_bgcolor {
+sub zone_bgcolor {
+
+    #print STDERR "ADD_NEEDS_MODDED 14\n";
 
 =pod
 
-=head2 slot_bgcolor
+=head2 zone_bgcolor
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'} or return;
+    my $zone_key = $args{'zone_key'} or return;
 
-    my $map_set_id = $self->{'scaffold'}{$slot_key}{'map_set_id'};
+    my $map_set_id = $self->{'scaffold'}{$zone_key}{'map_set_id'};
 
     unless ($self->{'map_set_bgcolor'}
         and $self->{'map_set_bgcolor'}{$map_set_id} )
@@ -1429,27 +1454,34 @@ sub slot_bgcolor {
 }
 
 # ----------------------------------------------------
-sub detach_slot_from_parent {
+sub detach_zone_from_parent {
+
+    #print STDERR "ADD_NEEDS_MODDED 15\n";
 
 =pod
 
-=head2 detach_slot_from_parent
+=head2 detach_zone_from_parent
 
 =cut
 
+    # No longer allowing zones to detach
+    return;
+
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'} or return;
+    my $zone_key = $args{'zone_key'} or return;
 
-    $self->{'scaffold'}{$slot_key}{'attached_to_parent'} = 0;
-    $self->{'slot_layout'}{$slot_key}{'changed'}         = 1;
+    $self->{'scaffold'}{$zone_key}{'attached_to_parent'} = 0;
+    $self->{'zone_layout'}{$zone_key}{'changed'}         = 1;
 
-    add_slot_separator( slot_layout => $self->{'slot_layout'}{$slot_key}, );
+    add_zone_separator( zone_layout => $self->{'zone_layout'}{$zone_key}, );
 
     return;
 }
 
 # ----------------------------------------------------
 sub attach_slot_to_parent {
+
+    #print STDERR "ADD_NEEDS_MODDED 16\n";
 
 =pod
 
@@ -1474,36 +1506,40 @@ sub attach_slot_to_parent {
 }
 
 # ----------------------------------------------------
-sub modify_panel_bottom_bound {
+sub modify_window_bottom_bound {
+
+    #print STDERR "ADD_NEEDS_MODDED 17\n";
 
 =pod
 
-=head2 modify_panel_bottom_bound
+=head2 modify_window_bottom_bound
 
-Changes the hight of the panel
+Changes the hight of the window
 
 If bounds_change is given, it will change the y2 value of 'bounds'.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return;
+    my $window_key = $args{'window_key'} or return;
     my $bounds_change = $args{'bounds_change'} || 0;
 
-    $self->{'panel_layout'}{$panel_key}{'bounds'}[3] += $bounds_change;
-    $self->{'panel_layout'}{$panel_key}{'changed'} = 1;
+    $self->{'window_layout'}{$window_key}{'bounds'}[3] += $bounds_change;
+    $self->{'window_layout'}{$window_key}{'changed'} = 1;
 
     return;
 }
 
 # ----------------------------------------------------
-sub modify_slot_bottom_bound {
+sub modify_zone_bottom_bound {
+
+    #print STDERR "ADD_NEEDS_MODDED 18\n";
 
 =pod
 
-=head2 modify_slot_bottom_bound
+=head2 modify_zone_bottom_bound
 
-Changes the hight of the slot
+Changes the hight of the zone
 
 If bounds_change is given, it will change the y2 value of 'bounds'.
 
@@ -1511,43 +1547,46 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key      = $args{'slot_key'}      or return;
-    my $panel_key     = $args{'panel_key'}     or return;
+    my $zone_key      = $args{'zone_key'}      or return;
+    my $window_key    = $args{'window_key'}    or return;
     my $bounds_change = $args{'bounds_change'} or return;
     my $app_interface = $self->app_interface();
-    my $window_key = $self->{'scaffold'}{$slot_key}{'window_key'};
 
-    $self->{'slot_layout'}{$slot_key}{'bounds'}[3] += $bounds_change;
-    $self->{'slot_layout'}{$slot_key}{'changed'} = 1;
+    $self->{'zone_layout'}{$zone_key}{'bounds'}[3]          += $bounds_change;
+    $self->{'zone_layout'}{$zone_key}{'internal_bounds'}[3] += $bounds_change;
+    $self->{'zone_layout'}{$zone_key}{'changed'} = 1;
 
-    set_slot_bgcolor(
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
-        app_display_data => $self,
-    );
-
-    $app_interface->destroy_slot_controls(
-        panel_key => $panel_key,
-        slot_key  => $slot_key,
-    );
-    $app_interface->add_slot_controls(
-        panel_key        => $panel_key,
-        slot_key         => $slot_key,
+    set_zone_bgcolor(
         window_key       => $window_key,
+        zone_key         => $zone_key,
         app_display_data => $self,
     );
 
-    $self->move_lower_slots(
-        stationary_slot_key => $slot_key,
-        panel_key           => $panel_key,
-        height_change       => $bounds_change,
-    );
+    #$app_interface->destroy_zone_controls(
+    #window_key => $window_key,
+    #zone_key  => $zone_key,
+    #);
+    #$app_interface->add_zone_controls(
+    #window_key        => $window_key,
+    #zone_key         => $zone_key,
+    #window_key       => $window_key,
+    #app_display_data => $self,
+    #);
+
+    # BF DO THIS SOMETIME
+    #$self->move_lower_zones(
+    #    stationary_zone_key => $zone_key,
+    #    window_key           => $window_key,
+    #    height_change       => $bounds_change,
+    #);
 
     return;
 }
 
 # ----------------------------------------------------
 sub move_lower_slots {
+
+    #print STDERR "ADD_NEEDS_MODDED 19\n";
 
 =pod
 
@@ -1627,35 +1666,40 @@ Initializes map_layout
     my $map_key = shift;
 
     $self->{'map_layout'}{$map_key} = {
-        bounds      => [ 0, 0, 0, 0 ],
-        coords      => [ 0, 0, 0, 0 ],
+        bounds      => [],
+        coords      => [],
         buttons     => [],
         features    => {},
         items       => [],
         changed     => 1,
         sub_changed => 1,
         row_index   => undef,
+        color       => 'black',
     };
 
     return;
 }
 
 # ----------------------------------------------------
-sub initialize_slot_layout {
+sub initialize_zone_layout {
+
+    #print STDERR "ADD_NEEDS_MODDED 22\n";
 
 =pod
 
-=head2 initialize_slot_layout
+=head2 initialize_zone_layout
 
-Initializes slot_layout
+Initializes zone_layout
 
 =cut
 
-    my $self     = shift;
-    my $slot_key = shift;
+    my $self       = shift;
+    my $zone_key   = shift;
+    my $window_key = shift;
+    $self->{'zone_in_window'}{$window_key}{$zone_key} = 1;
 
-    $self->{'slot_layout'}{$slot_key} = {
-        bounds      => [ 0, 0, 0, 0 ],
+    $self->{'zone_layout'}{$zone_key} = {
+        bounds      => [],
         separator   => [],
         background  => [],
         buttons     => [],
@@ -1667,32 +1711,9 @@ Initializes slot_layout
 }
 
 # ----------------------------------------------------
-sub initialize_panel_layout {
-
-=pod
-
-=head2 initialize_panel_layout
-
-Initializes panel_layout
-
-=cut
-
-    my $self      = shift;
-    my $panel_key = shift;
-
-    $self->{'panel_layout'}{$panel_key} = {
-        bounds      => [ 0, 0, 0, 0 ],
-        misc_items  => [],
-        buttons     => [],
-        changed     => 1,
-        sub_changed => 1,
-    };
-
-    return;
-}
-
-# ----------------------------------------------------
 sub recreate_overview {
+
+    #print STDERR "ADD_NEEDS_MODDED 23\n";
 
 =pod
 
@@ -1752,7 +1773,6 @@ Destroys then recreates the overview
 
     layout_overview(
         window_key       => $window_key,
-        panel_key        => $panel_key,
         app_display_data => $self,
     );
 
@@ -1762,6 +1782,8 @@ Destroys then recreates the overview
 # ----------------------------------------------------
 sub initialize_overview_layout {
 
+    #print STDERR "ADD_NEEDS_MODDED 24\n";
+
 =pod
 
 =head2 initialize_overview_layout
@@ -1770,62 +1792,55 @@ Initializes overview_layout
 
 =cut
 
-    my $self      = shift;
-    my $panel_key = shift;
+    my $self       = shift;
+    my $window_key = shift;
 
-    my $top_slot_key = $self->{'overview'}{$panel_key}{'slot_key'};
+    my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
-    $self->{'overview_layout'}{$panel_key} = {
+    $self->{'overview_layout'}{$window_key} = {
         bounds           => [ 0, 0, 0, 0 ],
         misc_items       => [],
         buttons          => [],
         changed          => 1,
         sub_changed      => 1,
-        slots            => {},
-        child_slot_order => [],
+        zones            => {},
+        child_zone_order => [],
     };
 
-    # Create an ordered list of the slots in the overview.
-    my %child_slots;
-    foreach my $child_slot_key (
-        @{ $self->{'scaffold'}{$top_slot_key}{'children'} || [] } )
+    # Create an ordered list of the zones in the overview.
+    my @child_zones;
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$top_zone_key}{'children'} || [] } )
     {
-        $child_slots{$child_slot_key} = 1;
-    }
-    foreach
-        my $ordered_slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
-    {
-        if ( $child_slots{$ordered_slot_key} ) {
-            push @{ $self->{'overview_layout'}{$panel_key}
-                    {'child_slot_order'} }, $ordered_slot_key;
-        }
+        push @child_zones, $child_zone_key;
     }
 
-    foreach my $slot_key ( $top_slot_key,
-        @{ $self->{'overview_layout'}{$panel_key}{'child_slot_order'} } )
-    {
-        $self->initialize_overview_slot_layout( $panel_key, $slot_key, );
+    $self->{'overview_layout'}{$window_key}{'child_zone_order'}
+        = \@child_zones;
+
+    foreach my $zone_key ( $top_zone_key, @child_zones, ) {
+        $self->initialize_overview_zone_layout( $window_key, $zone_key, );
     }
 
     return;
 }
 
 # ----------------------------------------------------
-sub initialize_overview_slot_layout {
+sub initialize_overview_zone_layout {
 
 =pod
 
-=head2 initialize_overview_slot_layout
+=head2 initialize_overview_zone_layout
 
 Initializes overview_layout
 
 =cut
 
-    my $self      = shift;
-    my $panel_key = shift;
-    my $slot_key  = shift;
+    my $self       = shift;
+    my $window_key = shift;
+    my $zone_key   = shift;
 
-    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} = {
+    $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} = {
         bounds                 => [ 0, 0, 0, 0 ],
         misc_items             => [],
         buttons                => [],
@@ -1835,8 +1850,8 @@ Initializes overview_layout
         maps                   => {},
         scale_factor_from_main => 0,
     };
-    foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
-        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}{'maps'}
+    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+        $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}{'maps'}
             {$map_key} = {
             items   => [],
             changed => 1,
@@ -1848,6 +1863,8 @@ Initializes overview_layout
 
 # ----------------------------------------------------
 sub copy_slot_scaffold {
+
+    #print STDERR "ADD_NEEDS_MODDED 26\n";
 
 =pod
 
@@ -1866,7 +1883,7 @@ Copies important info to a new slot.
         qw[
         parent      scale       attached_to_parent
         x_offset    is_top      pixels_per_unit
-        map_set_id  window_key  panel_key
+        map_set_id  window_key
         children    show_features
         ]
         )
@@ -1881,6 +1898,8 @@ Copies important info to a new slot.
 # ----------------------------------------------------
 sub set_default_window_layout {
 
+    #print STDERR "ADD_NEEDS_MODDED 27\n";
+
 =pod
 
 =head2 set_default_window_layout
@@ -1894,30 +1913,36 @@ Set the default window layout.
     my $title      = $args{'title'} || 'CMap';
 
     $self->{'window_layout'}{$window_key} = {
-        title  => $title,
-        height => 0,
-        width  => 0,
+        title       => $title,
+        bounds      => [ 0, 0, 0, 0 ],
+        misc_items  => [],
+        buttons     => [],
+        changed     => 1,
+        sub_changed => 1,
+        width       => 0,
     };
 
 }
 
 # ----------------------------------------------------
-sub clear_slot_maps {
+sub clear_zone_maps {
+
+    #print STDERR "ADD_NEEDS_MODDED 28\n";
 
 =pod
 
-=head2 clear_slot_maps
+=head2 clear_zone_maps
 
-Clears a slot of map data and calls on the interface to remove the drawings.
+Clears a zone of map data and calls on the interface to remove the drawings.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return;
-    my $slot_key  = $args{'slot_key'}  or return;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key   = $args{'zone_key'}   or return;
 
-    delete $self->{'slot_info'}{$slot_key};
-    foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
+    delete $self->{'slot_info'}{$zone_key};
+    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
         foreach my $feature_acc (
             keys %{ $self->{'map_layout'}{$map_key}{'features'} || {} } )
         {
@@ -1925,12 +1950,12 @@ Clears a slot of map data and calls on the interface to remove the drawings.
                 items =>
                     $self->{'map_layout'}{$map_key}{'features'}{$feature_acc}
                     {'items'},
-                panel_key => $panel_key,
+                window_key => $window_key,
             );
         }
         $self->destroy_items(
-            items     => $self->{'map_layout'}{$map_key}{'items'},
-            panel_key => $panel_key,
+            items      => $self->{'map_layout'}{$map_key}{'items'},
+            window_key => $window_key,
         );
         $self->initialize_map_layout($map_key);
     }
@@ -1940,6 +1965,8 @@ Clears a slot of map data and calls on the interface to remove the drawings.
 
 # ----------------------------------------------------
 sub hide_corrs {
+
+    #print STDERR "ADD_NEEDS_MODDED 29\n";
 
 =pod
 
@@ -1951,7 +1978,6 @@ Hide Corrs for moving
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key1  = $args{'slot_key'}   or return;
 
     # Record the current corrs
@@ -1962,9 +1988,9 @@ Hide Corrs for moving
             push @{ $self->{'correspondences_hidden'}{$slot_key1} },
                 $slot_key2;
             $self->clear_slot_corrs(
-                panel_key => $panel_key,
-                slot_key1 => $slot_key1,
-                slot_key2 => $slot_key2,
+                window_key => $window_key,
+                slot_key1  => $slot_key1,
+                slot_key2  => $slot_key2,
             );
         }
     }
@@ -1975,7 +2001,6 @@ Hide Corrs for moving
         if ( $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} ) {
             $self->hide_corrs(
                 window_key => $window_key,
-                panel_key  => $panel_key,
                 slot_key   => $child_slot_key,
             );
         }
@@ -1987,6 +2012,8 @@ Hide Corrs for moving
 # ----------------------------------------------------
 sub unhide_corrs {
 
+    #print STDERR "ADD_NEEDS_MODDED 30\n";
+
 =pod
 
 =head2 hide_corrs
@@ -1997,7 +2024,6 @@ Hide Corrs for moving
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key1  = $args{'slot_key'}   or return;
 
     return unless ( $self->{'correspondences_hidden'} );
@@ -2008,7 +2034,6 @@ Hide Corrs for moving
         delete $self->{'correspondences_hidden'}{$slot_key1};
         $self->add_slot_corrs(
             window_key => $window_key,
-            panel_key  => $panel_key,
             slot_key1  => $slot_key1,
             slot_key2  => $slot_key2,
         );
@@ -2022,7 +2047,6 @@ Hide Corrs for moving
         if ( $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} ) {
             $self->unhide_corrs(
                 window_key => $window_key,
-                panel_key  => $panel_key,
                 slot_key   => $child_slot_key,
             );
         }
@@ -2033,6 +2057,8 @@ Hide Corrs for moving
 
 # ----------------------------------------------------
 sub get_move_map_data {
+
+    #print STDERR "ADD_NEEDS_MODDED 31\n";
 
 =pod
 
@@ -2105,6 +2131,8 @@ Move a map from one place on a parent to another
 # ----------------------------------------------------
 sub move_map {
 
+    #print STDERR "ADD_NEEDS_MODDED 32\n";
+
 =pod
 
 =head2 move_map
@@ -2150,6 +2178,8 @@ Move a map from one place on a parent to another
 
 # ----------------------------------------------------
 sub move_map_old {
+
+    #print STDERR "ADD_NEEDS_MODDED 33\n";
 
 =pod
 
@@ -2230,6 +2260,8 @@ Move a map from one place on a parent to another
 # ----------------------------------------------------
 sub move_sub_map_on_parents_in_memory {
 
+    #print STDERR "ADD_NEEDS_MODDED 34\n";
+
 =pod
 
 =head2 move_sub_map_on_parents_in_memory
@@ -2247,7 +2279,6 @@ another (and possibly on a different parrent.
 
     my $sub_slot_key    = $self->{'map_key_to_slot_key'}{$sub_map_key};
     my $window_key      = $self->{'scaffold'}{$sub_slot_key}{'window_key'};
-    my $panel_key       = $self->{'scaffold'}{$sub_slot_key}{'panel_key'};
     my $parent_slot_key = $self->{'scaffold'}{$sub_slot_key}{'parent'};
 
     # Modify Parent
@@ -2257,7 +2288,6 @@ another (and possibly on a different parrent.
 
     $self->cascade_relayout_sub_map_slot(
         window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $sub_slot_key,
     );
 
@@ -2267,6 +2297,8 @@ another (and possibly on a different parrent.
 # ----------------------------------------------------
 sub cascade_relayout_sub_map_slot {
 
+    #print STDERR "ADD_NEEDS_MODDED 35\n";
+
 =pod
 
 =head2 relayout_sub_map_slot
@@ -2275,14 +2307,12 @@ sub cascade_relayout_sub_map_slot {
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key   = $args{'slot_key'}   or return;
     my $cascading = $args{'cascading'} || 0;
 
     # relayout the sub map
     $self->relayout_sub_map_slot(
         window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $slot_key,
     );
 
@@ -2296,17 +2326,15 @@ sub cascade_relayout_sub_map_slot {
 
         $self->cascade_relayout_sub_map_slot(
             window_key => $window_key,
-            panel_key  => $panel_key,
             slot_key   => $child_slot_key,
             cascading  => 1,
         );
     }
 
-    # Finish by drawing the panel
+    # Finish by drawing the window
     unless ($cascading) {
-        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_panel(
-            panel_key        => $panel_key,
+        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+        $self->app_interface()->draw_window(
             window_key       => $window_key,
             app_display_data => $self,
         );
@@ -2317,6 +2345,8 @@ sub cascade_relayout_sub_map_slot {
 
 # ----------------------------------------------------
 sub add_action {
+
+    #print STDERR "ADD_NEEDS_MODDED 36\n";
 
 =pod
 
@@ -2357,6 +2387,8 @@ be after this action (because of undoing).
 # ----------------------------------------------------
 sub undo_action {
 
+    #print STDERR "ADD_NEEDS_MODDED 37\n";
+
 =pod
 
 =head2 undo_action
@@ -2396,6 +2428,8 @@ Undo the action that was just performed.
 # ----------------------------------------------------
 sub redo_action {
 
+    #print STDERR "ADD_NEEDS_MODDED 38\n";
+
 =pod
 
 =head2 redo_action
@@ -2433,6 +2467,8 @@ Redo the action that was last undone.
 
 # ----------------------------------------------------
 sub condenced_window_actions {
+
+    #print STDERR "ADD_NEEDS_MODDED 39\n";
 
 =pod
 
@@ -2475,6 +2511,8 @@ Condence redundant window actions for commits and exporting.
 
 # ----------------------------------------------------
 sub window_actions {
+
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
 
 =pod
 
@@ -2531,6 +2569,8 @@ Accessor method for window actions;
 
 # ----------------------------------------------------
 sub move_ghost_map {
+
+    #print STDERR "ADD_NEEDS_MODDED 41\n";
 
 =pod
 
@@ -2629,6 +2669,8 @@ COVERAGE_LOOP:
 # ----------------------------------------------------
 sub clear_slot_corrs {
 
+    #print STDERR "ADD_NEEDS_MODDED 42\n";
+
 =pod
 
 =head2 clear_slot_corrs
@@ -2638,9 +2680,9 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'} or return;
-    my $slot_key1 = $args{'slot_key1'} or return;
-    my $slot_key2 = $args{'slot_key2'} or return;
+    my $window_key = $args{'window_key'} or return;
+    my $slot_key1  = $args{'slot_key1'}  or return;
+    my $slot_key2  = $args{'slot_key2'}  or return;
 
     $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 0;
     $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 0;
@@ -2655,7 +2697,7 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
             $self->destroy_items(
                 items => $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
                     {'items'},
-                panel_key => $panel_key,
+                window_key => $window_key,
             );
             delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
             delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
@@ -2677,6 +2719,8 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
 # ----------------------------------------------------
 sub add_slot_corrs {
 
+    #print STDERR "ADD_NEEDS_MODDED 43\n";
+
 =pod
 
 =head2 add_slot_corrs
@@ -2687,7 +2731,6 @@ Adds a slot of correspondences
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key1  = $args{'slot_key1'}  or return;
     my $slot_key2  = $args{'slot_key2'}  or return;
 
@@ -2696,13 +2739,12 @@ Adds a slot of correspondences
 
     add_correspondences(
         window_key       => $window_key,
-        panel_key        => $panel_key,
         slot_key1        => $slot_key1,
         slot_key2        => $slot_key2,
         app_display_data => $self,
     );
     $self->app_interface()->draw_corrs(
-        panel_key        => $panel_key,
+        window_key       => $window_key,
         app_display_data => $self,
     );
 
@@ -2711,6 +2753,8 @@ Adds a slot of correspondences
 
 # ----------------------------------------------------
 sub reset_slot_corrs {
+
+    #print STDERR "ADD_NEEDS_MODDED 44\n";
 
 =pod
 
@@ -2722,7 +2766,6 @@ reset  a slot of correspondences
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
     my $slot_key1  = $args{'slot_key'}   or return;
 
     foreach my $slot_key2 (
@@ -2731,13 +2774,12 @@ reset  a slot of correspondences
         next unless ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} );
 
         $self->clear_slot_corrs(
-            panel_key => $panel_key,
-            slot_key1 => $slot_key1,
-            slot_key2 => $slot_key2,
+            window_key => $window_key,
+            slot_key1  => $slot_key1,
+            slot_key2  => $slot_key2,
         );
         $self->add_slot_corrs(
             window_key => $window_key,
-            panel_key  => $panel_key,
             slot_key1  => $slot_key1,
             slot_key2  => $slot_key2,
         );
@@ -2748,6 +2790,8 @@ reset  a slot of correspondences
 
 # ----------------------------------------------------
 sub clear_window {
+
+    #print STDERR "ADD_NEEDS_MODDED 45\n";
 
 =pod
 
@@ -2781,12 +2825,12 @@ Destroys items that were drawn
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key   = $args{'panel_key'};
+    my $window_key  = $args{'window_key'};
     my $items       = $args{'items'};
     my $is_overview = $args{'is_overview'};
 
     $self->app_interface()->int_destroy_items(
-        panel_key   => $panel_key,
+        window_key  => $window_key,
         items       => $items,
         is_overview => $is_overview,
     );
@@ -2794,6 +2838,8 @@ Destroys items that were drawn
 
 # ----------------------------------------------------
 sub delete_slot {
+
+    #print STDERR "ADD_NEEDS_MODDED 47\n";
 
 =pod
 
@@ -2804,8 +2850,8 @@ Deletes the slot data and wipes them from the canvas
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key = $args{'panel_key'};
-    my $slot_key  = $args{'slot_key'};
+    my $window_key = $args{'window_key'};
+    my $slot_key   = $args{'slot_key'};
 
     my $slot_layout = $self->{'slot_layout'}{$slot_key};
 
@@ -2814,17 +2860,17 @@ Deletes the slot data and wipes them from the canvas
         my $slot_key2 ( keys %{ $self->{'correspondences_on'}{$slot_key} } )
     {
         $self->clear_slot_corrs(
-            panel_key => $panel_key,
-            slot_key1 => $slot_key,
-            slot_key2 => $slot_key2,
+            window_key => $window_key,
+            slot_key1  => $slot_key,
+            slot_key2  => $slot_key2,
         );
     }
 
     # Remove Drawing info
     foreach my $drawing_item_name (qw[ separator background ]) {
         $self->destroy_items(
-            panel_key => $panel_key,
-            items     => $slot_layout->{$drawing_item_name},
+            window_key => $window_key,
+            items      => $slot_layout->{$drawing_item_name},
         );
     }
 
@@ -2855,24 +2901,13 @@ Deletes the slot data and wipes them from the canvas
     delete $self->{'slot_info'}{$slot_key};
     delete $self->{'map_id_to_key_by_slot'}{$slot_key};
 
-    # Remove from slot_order if it hasn't already been done
-    for (
-        my $i = 0;
-        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
-        $i++
-        )
-    {
-        if ( $slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
-            splice @{ $self->{'slot_order'}{$panel_key} }, $i, 1;
-            last;
-        }
-    }
-
     return;
 }
 
 # ----------------------------------------------------
 sub wipe_window_canvases {
+
+    #print STDERR "ADD_NEEDS_MODDED 48\n";
 
 =pod
 
@@ -2886,100 +2921,99 @@ AppInterface.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
-    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
-        foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
-        {
-            foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } )
+    foreach my $zone_key (
+        keys %{ $self->{'zone_in_window'}{$window_key} || {} } )
+    {
+        foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+            foreach my $feature_acc (
+                keys %{ $self->{'map_layout'}{$map_key}{'features'} || {} } )
             {
-                foreach my $feature_acc (
-                    keys %{ $self->{'map_layout'}{$map_key}{'features'}
-                            || {} } )
-                {
-                    $self->destroy_items(
-                        items => $self->{'map_layout'}{$map_key}{'features'}
-                            {$feature_acc}{'items'},
-                        panel_key => $panel_key,
-                    );
-                    $self->{'map_layout'}{$map_key}{'features'}{$feature_acc}
-                        {'items'} = [];
-                }
-                $self->{'map_pixels_per_unit'}{$map_key} = undef;
-                $self->{'map_layout'}{$map_key}{'bounds'} = [ 0, 0, 0, 0 ];
-                $self->{'map_layout'}{$map_key}{'coords'} = [ 0, 0, 0, 0 ];
                 $self->destroy_items(
-                    items     => $self->{'map_layout'}{$map_key}{'items'},
-                    panel_key => $panel_key,
+                    items => $self->{'map_layout'}{$map_key}{'features'}
+                        {$feature_acc}{'items'},
+                    window_key => $window_key,
                 );
-                $self->{'map_layout'}{$map_key}{'items'} = [];
-                if ( $self->{'corr_layout'}{'maps'}{$map_key} ) {
-                    $self->destroy_items(
-                        items =>
-                            $self->{'corr_layout'}{'maps'}{$map_key}{'items'},
-                        panel_key => $panel_key,
-                    );
-                    $self->{'corr_layout'}{'maps'}{$map_key}{'items'} = [];
-                }
+                $self->{'map_layout'}{$map_key}{'features'}{$feature_acc}
+                    {'items'} = [];
             }
-            $self->{'slot_layout'}{$slot_key}{'bounds'}     = [ 0, 0, 0, 0 ];
-            $self->{'slot_layout'}{$slot_key}{'maps_min_x'} = undef;
-            $self->{'slot_layout'}{$slot_key}{'maps_max_x'} = undef;
-            foreach my $field (qw[ separator background ]) {
+            $self->{'map_pixels_per_unit'}{$map_key} = undef;
+            $self->{'map_layout'}{$map_key}{'bounds'} = [ 0, 0, 0, 0 ];
+            $self->{'map_layout'}{$map_key}{'coords'} = [ 0, 0, 0, 0 ];
+            $self->destroy_items(
+                items      => $self->{'map_layout'}{$map_key}{'items'},
+                window_key => $window_key,
+            );
+            $self->{'map_layout'}{$map_key}{'items'} = [];
+            if ( $self->{'corr_layout'}{'maps'}{$map_key} ) {
                 $self->destroy_items(
-                    items     => $self->{'slot_layout'}{$slot_key}{$field},
-                    panel_key => $panel_key,
+                    items =>
+                        $self->{'corr_layout'}{'maps'}{$map_key}{'items'},
+                    window_key => $window_key,
                 );
-                $self->{'slot_layout'}{$slot_key}{$field} = [];
+                $self->{'corr_layout'}{'maps'}{$map_key}{'items'} = [];
             }
         }
-        $self->{'panel_layout'}{$panel_key}{'bounds'} = [ 0, 0, 0, 0 ];
-        $self->destroy_items(
-            items     => $self->{'panel_layout'}{$panel_key}{'misc_items'},
-            panel_key => $panel_key,
-        );
-        $self->{'panel_layout'}{$panel_key}{'misc_items'} = [];
+        $self->{'zone_layout'}{$zone_key}{'bounds'}          = [ 0, 0, 0, 0 ];
+        $self->{'zone_layout'}{$zone_key}{'internal_bounds'} = [ 0, 0, 0, 0 ];
+        $self->{'zone_layout'}{$zone_key}{'maps_min_x'}   = undef;
+        $self->{'zone_layout'}{$zone_key}{'maps_max_x'}   = undef;
+        $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
+        foreach my $field (qw[ separator background ]) {
+            $self->destroy_items(
+                items      => $self->{'zone_layout'}{$zone_key}{$field},
+                window_key => $window_key,
+            );
+            $self->{'zone_layout'}{$zone_key}{$field} = [];
+        }
+    }
+    $self->{'window_layout'}{$window_key}{'bounds'} = [ 0, 0, 0, 0 ];
+    $self->destroy_items(
+        items      => $self->{'window_layout'}{$window_key}{'misc_items'},
+        window_key => $window_key,
+    );
+    $self->{'window_layout'}{$window_key}{'misc_items'} = [];
 
-        # Overview
-        $self->{'overview_layout'}{$panel_key}{'bounds'} = [ 0, 0, 0, 0 ];
-        $self->destroy_items(
-            items     => $self->{'overview_layout'}{$panel_key}{'misc_items'},
-            panel_key => $panel_key,
-            is_overview => 1,
-        );
-        $self->{'overview_layout'}{$panel_key}{'misc_items'} = [];
-        foreach my $slot_key (
-            keys %{ $self->{'overview_layout'}{$panel_key}{'slots'} || {} } )
+    # Overview
+    $self->{'overview_layout'}{$window_key}{'bounds'} = [ 0, 0, 0, 0 ];
+    $self->destroy_items(
+        items       => $self->{'overview_layout'}{$window_key}{'misc_items'},
+        window_key  => $window_key,
+        is_overview => 1,
+    );
+    $self->{'overview_layout'}{$window_key}{'misc_items'} = [];
+    foreach my $zone_key (
+        keys %{ $self->{'overview_layout'}{$window_key}{'zones'} || {} } )
+    {
+        $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}{'bounds'}
+            = [ 0, 0, 0, 0 ];
+        $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+            {'scale_factor_from_main'} = 0;
+        foreach my $field (qw[ viewed_region misc_items ]) {
+            $self->destroy_items(
+                items => $self->{'overview_layout'}{$window_key}{'zones'}
+                    {$zone_key}{$field},
+                window_key  => $window_key,
+                is_overview => 1,
+            );
+            $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+                {$field} = [];
+        }
+
+        foreach my $map_key (
+            keys %{
+                $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+                    {'maps'} || {}
+            }
+            )
         {
-            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                {'bounds'} = [ 0, 0, 0, 0 ];
-            $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                {'scale_factor_from_main'} = 0;
-            foreach my $field (qw[ viewed_region misc_items ]) {
-                $self->destroy_items(
-                    items => $self->{'overview_layout'}{$panel_key}{'slots'}
-                        {$slot_key}{$field},
-                    panel_key   => $panel_key,
-                    is_overview => 1,
-                );
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                    {$field} = [];
-            }
-
-            foreach my $map_key (
-                keys %{
-                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                        {'maps'} || {}
-                }
-                )
-            {
-                $self->destroy_items(
-                    items => $self->{'overview_layout'}{$panel_key}{'slots'}
-                        {$slot_key}{'maps'}{$map_key}{'items'},
-                    panel_key   => $panel_key,
-                    is_overview => 1,
-                );
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                    {'maps'}{$map_key}{'items'} = [];
-            }
+            $self->destroy_items(
+                items => $self->{'overview_layout'}{$window_key}{'zones'}
+                    {$zone_key}{'maps'}{$map_key}{'items'},
+                window_key  => $window_key,
+                is_overview => 1,
+            );
+            $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+                {'maps'}{$map_key}{'items'} = [];
         }
     }
 
@@ -2988,6 +3022,8 @@ AppInterface.
 
 # ----------------------------------------------------
 sub remove_window_data {
+
+    #print STDERR "ADD_NEEDS_MODDED 49\n";
 
 =pod
 
@@ -3002,36 +3038,36 @@ Returns the number of remaining windows.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
-    foreach my $panel_key ( @{ $self->{'panel_order'}{$window_key} || [] } ) {
-        foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } )
-        {
-            foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } )
-            {
-                delete $self->{'map_id_to_keys'}
-                    { $self->{'map_key_to_id'}{$map_key} };
-                delete $self->{'map_key_to_id'}{$map_key};
-                delete $self->{'map_layout'}{$map_key};
-            }
-            delete $self->{'slot_layout'}{$slot_key};
-            delete $self->{'scaffold'}{$slot_key};
-            delete $self->{'map_order'}{$slot_key};
-            delete $self->{'slot_info'}{$slot_key};
-            delete $self->{'map_id_to_key_by_slot'}{$slot_key};
+    foreach my $zone_key (
+        keys %{ $self->{'zone_in_window'}{$window_key} || {} } )
+    {
+        foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+            delete $self->{'map_id_to_keys'}
+                { $self->{'map_key_to_id'}{$map_key} };
+            delete $self->{'map_key_to_id'}{$map_key};
+            delete $self->{'map_layout'}{$map_key};
         }
-        delete $self->{'panel_layout'}{$panel_key};
-        delete $self->{'slot_order'}{$panel_key};
-        delete $self->{'overview'}{$panel_key};
-        delete $self->{'overview_layout'}{$panel_key};
+        delete $self->{'zone_layout'}{$zone_key};
+        delete $self->{'scaffold'}{$zone_key};
+        delete $self->{'map_order'}{$zone_key};
+        delete $self->{'slot_info'}{$zone_key};
+        delete $self->{'map_id_to_key_by_zone'}{$zone_key};
     }
-    delete $self->{'panel_order'}{$window_key};
+    delete $self->{'window_layout'}{$window_key};
+    delete $self->{'zone_in_window'}{$window_key};
+    delete $self->{'overview'}{$window_key};
+    delete $self->{'overview_layout'}{$window_key};
+    delete $self->{'window_order'}{$window_key};
 
     delete $self->{'sub_maps'}{$window_key};
 
-    return scalar( keys %{ $self->{'scaffold'} || {} } );
+    return scalar( keys %{ $self->{'window_layout'} || {} } );
 }
 
 # ----------------------------------------------------
 sub get_map_ids {
+
+    #print STDERR "ADD_NEEDS_MODDED 50\n";
 
 =pod
 
@@ -3057,6 +3093,8 @@ returns
 
 # ----------------------------------------------------
 sub map_truncated {
+
+    #print STDERR "ADD_NEEDS_MODDED 51\n";
 
 =pod
 
@@ -3165,11 +3203,6 @@ This is a conversion factor to get from map units to pixels.
         $slot_key => [ $map_key, ]
     }
 
-=head3 Slot Order in Panel
-    $self->{'slot_order'} = {
-        $panel_key => [ $slot_key, ]
-    }
-
 =head3 Panel Order in Window
     $self->{'panel_order'} = {
         $window_key => [ $panel_key, ]
@@ -3191,7 +3224,6 @@ This is a conversion factor to get from map units to pixels.
     $self->{'scaffold'} = {
         $slot_key => {
             window_key         => $window_key,
-            panel_key          => $panel_key,
             map_set_id         => undef,
             parent             => $parent_slot_key,
             children           => [$child_slot_key, ],
@@ -3246,9 +3278,13 @@ to drawing.
 
     $self->{'window_layout'} = {
         $window_key => {
-            title  => $title,
-            height => $height,
-            width  => $width,
+            title       => $title,
+            bounds      => [ 0, 0, 0, 0 ],
+            misc_items  => [],
+            buttons     => [],
+            changed     => 1,
+            sub_changed => 1,
+            width       => 0,
         }
     }
 
@@ -3308,7 +3344,6 @@ to drawing.
             buttons          => [],
             changed          => 1,
             sub_changed      => 1,
-            child_slot_order => [ $child_slot_key, ],
             slots            => {
                 $slot_key => {
                     bounds                 => [ 0, 0, 0, 0 ],

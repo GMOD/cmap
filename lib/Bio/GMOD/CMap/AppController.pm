@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.22 2007-01-09 22:50:42 mwz444 Exp $
+# $Id: AppController.pm,v 1.23 2007-02-06 07:03:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -330,13 +330,11 @@ Handler for zooming a slot.
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
     my $slot_key   = $args{'slot_key'};
     my $zoom_value = $args{'zoom_value'} || 1;
 
     $self->app_display_data()->zoom_slot(
         window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $slot_key,
         zoom_value => $zoom_value,
     );
@@ -357,13 +355,11 @@ Handler for overview scrolling a slot.
 
     my ( $self, %args ) = @_;
     my $window_key   = $args{'window_key'};
-    my $panel_key    = $args{'panel_key'};
     my $slot_key     = $args{'slot_key'};
     my $scroll_value = $args{'scroll_value'} || 1;
 
     $self->app_display_data()->overview_scroll_slot(
         window_key   => $window_key,
-        panel_key    => $panel_key,
         slot_key     => $slot_key,
         scroll_value => $scroll_value,
     );
@@ -372,26 +368,24 @@ Handler for overview scrolling a slot.
 }
 
 # ----------------------------------------------------
-sub scroll_slot {
+sub scroll_zone {
 
 =pod
 
-=head2 scroll_slot
+=head2 scroll_zone
 
-Handler for scrolling a slot.
+Handler for scrolling a zone.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key   = $args{'window_key'};
-    my $panel_key    = $args{'panel_key'};
-    my $slot_key     = $args{'slot_key'};
+    my $zone_key     = $args{'zone_key'};
     my $scroll_value = $args{'scroll_value'} || 1;
 
-    $self->app_display_data()->scroll_slot(
+    $self->app_display_data()->scroll_zone(
         window_key   => $window_key,
-        panel_key    => $panel_key,
-        slot_key     => $slot_key,
+        zone_key     => $zone_key,
         scroll_value => $scroll_value,
     );
 
@@ -411,12 +405,10 @@ Handler for expanding a slot.
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
     my $slot_key   = $args{'slot_key'};
 
     $self->app_display_data()->expand_slot(
         window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $slot_key,
     );
 
@@ -436,12 +428,10 @@ Handler for toggling correspondences for a slot.
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
     my $slot_key   = $args{'slot_key'};
 
     $self->app_display_data()->toggle_corrs_slot(
         window_key => $window_key,
-        panel_key  => $panel_key,
         slot_key   => $slot_key,
     );
 
@@ -460,18 +450,22 @@ Create the text to go into the info box when a map is clicked.
 =cut
 
     my ( $self, %args ) = @_;
-    my $panel_key        = $args{'panel_key'};
     my $map_key          = $args{'map_key'};
     my $app_display_data = $self->app_display_data();
     my $map_id           = $app_display_data->{'map_key_to_id'}{$map_key};
 
     my $map_data = $self->app_data_module()->map_data( map_id => $map_id, );
 
-    my $map_info_str = "Map Name: "
+#    my $feature_info_str = $self->feature_type_data($feature_data->{'feature_type_acc'},'feature_type').": "
+#        . $feature_data->{'feature_name'} . "\n"
+#        . "Location: "
+#        . $feature_data->{'feature_start'} . "-"
+#        . $feature_data->{'feature_stop'} . "\n";
+    my $map_info_str = $map_data->{'map_type'} . ": "
         . $map_data->{'map_name'} . "\n"
-        . "Map Start: "
+        . "Start: "
         . $map_data->{'map_start'} . "\n"
-        . "Map Stop: "
+        . "Stop: "
         . $map_data->{'map_stop'} . "\n";
 
     my $sub_map_data = $app_display_data->{'sub_maps'}{$map_key};
@@ -503,33 +497,33 @@ Create the text to go into the info box when a feature is clicked.
     my $feature_data = $self->app_data_module()
         ->feature_data( feature_acc => $feature_acc, );
 
-    my $feature_info_str = "Feature Name: "
+    my $feature_info_str
+        = $self->feature_type_data( $feature_data->{'feature_type_acc'},
+        'feature_type' )
+        . ": "
         . $feature_data->{'feature_name'} . "\n"
-        . "Feature Start: "
-        . $feature_data->{'feature_start'} . "\n"
-        . "Feature Stop: "
-        . $feature_data->{'feature_stop'} . "\n"
-        . "Feature Type Accession: "
-        . $feature_data->{'feature_type_acc'} . "\n";
+        . "Location: "
+        . $feature_data->{'feature_start'} . "-"
+        . $feature_data->{'feature_stop'} . "\n";
 
     return $feature_info_str;
 }
 
 # ----------------------------------------------------
-sub new_selected_slot {
+sub new_selected_zone {
 
 =pod
 
-=head2 new_selected_slot
+=head2 new_selected_zone
 
-Handler for selecting a new slot.
+Handler for selecting a new zone.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'};
+    my $zone_key = $args{'zone_key'};
 
-    $self->app_display_data()->change_selected_slot( slot_key => $slot_key, );
+    $self->app_display_data()->change_selected_zone( zone_key => $zone_key, );
 
     return;
 }
@@ -549,7 +543,6 @@ Hide correspondences while moving.
 
     $self->app_display_data()->hide_corrs(
         window_key => $args{'window_key'},
-        panel_key  => $args{'panel_key'},
         slot_key   => $args{'slot_key'},
     );
 
@@ -571,7 +564,6 @@ Hide correspondences while moving.
 
     $self->app_display_data()->unhide_corrs(
         window_key => $args{'window_key'},
-        panel_key  => $args{'panel_key'},
         slot_key   => $args{'slot_key'},
     );
 
