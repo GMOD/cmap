@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.27 2007-02-06 07:03:07 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.28 2007-02-21 20:09:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -341,13 +341,85 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 }
 
 # ----------------------------------------------------
-sub zoom_slot {
+sub scroll_zone {
+
+    #print STDERR "ADD_NEEDS_MODDED 3\n";
 
 =pod
 
-=head2 zoom_slot
+=head2 scroll_zone
 
-Zoom slots
+Scroll zones
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $zone_key     = $args{'zone_key'};
+    my $scroll_value = $args{'scroll_value'} or return;
+
+    $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
+    my $x_offset    = $self->{'scaffold'}{$zone_key}{'x_offset'};
+    my $zone_layout = $self->{'zone_layout'}{$zone_key};
+
+    if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value + $x_offset
+        > $zone_layout->{'viewable_internal_x1'} )
+    {
+        $scroll_value = -1 * $x_offset;
+    }
+    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value + $x_offset
+        < $zone_layout->{'viewable_internal_x2'} )
+    {
+        $scroll_value = $zone_layout->{'viewable_internal_x2'}
+            - $zone_layout->{'internal_bounds'}[2];
+    }
+
+    return unless ($scroll_value);
+
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        move_offset_x    => $scroll_value,
+        move_offset_y    => 0,
+    );
+
+   # handle overview highlighting
+   # BF ADD BACK LATER
+   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
+   #        $self->destroy_items(
+   #            items =>
+   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #                {'viewed_region'},
+   #            panel_key   => $panel_key,
+   #            is_overview => 1,
+   #        );
+   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
+   #            {'viewed_region'} = [];
+   #        overview_selected_area(
+   #            zone_key         => $zone_key,
+   #            panel_key        => $panel_key,
+   #            app_display_data => $self,
+   #        );
+   #    }
+
+    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+    return;
+}
+
+# ----------------------------------------------------
+sub zoom_zone {
+
+=pod
+
+=head2 zoom_zone
+
+Zoom zones
 
 =cut
 
@@ -355,142 +427,208 @@ Zoom slots
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
+    my $zoom_value = $args{'zoom_value'} or return;
+
+    $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
+
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    $zone_scaffold->{'scale'}           *= $zoom_value;
+    $zone_scaffold->{'pixels_per_unit'} *= $zoom_value;
+    my $move_offset_x = $self->get_zooming_offset(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+        zoom_value => $zoom_value,
+    );
+
+    # Create new zone bounds for this zone, taking into
+    my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
+    my $zone_width  = $zone_bounds->[2] - $zone_bounds->[0] + 1;
+    $zone_bounds->[2] += ( $zone_width * $zoom_value ) - $zone_width;
+
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        zone_bounds      => $zone_bounds,
+        move_offset_x    => $move_offset_x,
+        move_offset_y    => 0,
+        zooming          => 1,
+    );
+
+    # handle overview highlighting
+    # BF ADD BACK LATER
+    #if ( $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} ) {
+    #    $self->destroy_items(
+    #        items =>
+    #            $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+    #            {'viewed_region'},
+    #        window_key   => $window_key,
+    #        is_overview => 1,
+    #    );
+    #    $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+    #        {'viewed_region'} = [];
+    #    overview_selected_area(
+    #        zone_key         => $zone_key,
+    #        window_key        => $window_key,
+    #        app_display_data => $self,
+    #    );
+    #}
+
+    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub zoom_zone_old {
+
+=pod
+
+=head2 zoom_zone
+
+Zoom zones
+
+=cut
+
+    #print STDERR "ADD_NEEDS_MODDED 1\n";
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
     my $cascading  = $args{'cascading'} || 0;
     my $zoom_value = $args{'zoom_value'} or return;
 
-    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
-    my $overview_slot_layout
-        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+    my $overview_zone_layout
+        = $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key};
 
     if ($cascading) {
-        if ( $slot_scaffold->{'attached_to_parent'} ) {
-            $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
-                if ($overview_slot_layout);
+        if ( $zone_scaffold->{'attached_to_parent'} ) {
+            $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
+                if ($overview_zone_layout);
 
             # Get Offset from parent
-            $slot_scaffold->{'x_offset'}
-                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+            $zone_scaffold->{'x_offset'}
+                = $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
                 {'x_offset'};
 
-            $self->relayout_sub_map_slot(
+            $self->relayout_sub_map_zone(
                 window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
+                zone_key   => $zone_key,
             );
         }
         else {
-            $slot_scaffold->{'scale'} /= $zoom_value;
-            if ($slot_scaffold->{'scale'} == 1
-                and ( $slot_scaffold->{'x_offset'}
-                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+            $zone_scaffold->{'scale'} /= $zoom_value;
+            if ($zone_scaffold->{'scale'} == 1
+                and ( $zone_scaffold->{'x_offset'}
+                    == $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
                     {'x_offset'} )
                 )
             {
-                $self->attach_slot_to_parent(
-                    slot_key  => $slot_key,
-                    panel_key => $panel_key,
-                );
-                $self->relayout_sub_map_slot(
+                $self->attach_zone_to_parent(
+                    zone_key   => $zone_key,
                     window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
+                );
+                $self->relayout_sub_map_zone(
+                    window_key => $window_key,
+                    zone_key   => $zone_key,
                 );
             }
             else {
 
                 # Reset correspondences
                 # BF ADD THIS BACK
-                #$self->reset_slot_corrs(
+                #$self->reset_zone_corrs(
                 #    window_key => $window_key,
-                #    panel_key  => $panel_key,
-                #    slot_key   => $slot_key,
+                #    zone_key   => $zone_key,
                 #);
             }
         }
     }
-    elsif ( $slot_scaffold->{'is_top'} ) {
-        $slot_scaffold->{'scale'}           *= $zoom_value;
-        $slot_scaffold->{'pixels_per_unit'} *= $zoom_value;
-        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
-            if ($overview_slot_layout);
+    elsif ( $zone_scaffold->{'is_top'} ) {
+        $zone_scaffold->{'scale'}           *= $zoom_value;
+        $zone_scaffold->{'pixels_per_unit'} *= $zoom_value;
+        $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
+            if ($overview_zone_layout);
         $self->set_new_zoomed_offset(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
             zoom_value => $zoom_value,
         );
-        $self->relayout_ref_map_slot(
+        $self->relayout_ref_map_zone(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
         );
     }
     else {
-        $overview_slot_layout->{'scale_factor_from_main'} /= $zoom_value
-            if ($overview_slot_layout);
-        $slot_scaffold->{'scale'} *= $zoom_value;
-        if ( $slot_scaffold->{'attached_to_parent'} ) {
-            $self->detach_slot_from_parent( slot_key => $slot_key, );
+        $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
+            if ($overview_zone_layout);
+        $zone_scaffold->{'scale'} *= $zoom_value;
+        if ( $zone_scaffold->{'attached_to_parent'} ) {
+            $self->detach_zone_from_parent( zone_key => $zone_key, );
         }
         elsif (
-            $slot_scaffold->{'scale'} == 1
-            and ( $slot_scaffold->{'x_offset'}
-                == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+            $zone_scaffold->{'scale'} == 1
+            and ( $zone_scaffold->{'x_offset'}
+                == $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
                 {'x_offset'} )
             )
         {
-            $self->attach_slot_to_parent(
-                slot_key  => $slot_key,
-                panel_key => $panel_key,
+            $self->attach_zone_to_parent(
+                zone_key   => $zone_key,
+                window_key => $window_key,
             );
         }
 
         $self->set_new_zoomed_offset(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
             zoom_value => $zoom_value,
         );
 
-        $self->relayout_sub_map_slot(
+        $self->relayout_sub_map_zone(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
+            zone_key   => $zone_key,
         );
     }
 
     # handle overview highlighting
-    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
+    if ( $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} ) {
         $self->destroy_items(
             items =>
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
                 {'viewed_region'},
-            panel_key   => $panel_key,
+            window_key  => $window_key,
             is_overview => 1,
         );
-        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+        $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
             {'viewed_region'} = [];
         overview_selected_area(
-            slot_key         => $slot_key,
-            panel_key        => $panel_key,
+            zone_key         => $zone_key,
+            window_key       => $window_key,
             app_display_data => $self,
         );
     }
 
-    foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
-        $self->zoom_slot(
+    foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } ) {
+        $self->zoom_zone(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $child_slot_key,
+            window_key => $window_key,
+            zone_key   => $child_zone_key,
             zoom_value => $zoom_value,
             cascading  => 1,
         );
     }
 
     unless ($cascading) {
-        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
+        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
         $self->app_interface()->draw_window(
             window_key       => $window_key,
             app_display_data => $self,
@@ -536,162 +674,6 @@ Scroll slots based on the overview scrolling
 
     return;
 
-}
-
-# ----------------------------------------------------
-sub scroll_zone {
-
-    #print STDERR "ADD_NEEDS_MODDED 3\n";
-
-=pod
-
-=head2 scroll_zone
-
-Scroll zones
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key   = $args{'window_key'};
-    my $zone_key     = $args{'zone_key'};
-    my $scroll_value = $args{'scroll_value'} or return;
-
-    $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
-
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        move_offset_x    => $scroll_value,
-        move_offset_y    => 0,
-    );
-
-   # handle overview highlighting
-   # BF ADD BACK LATER
-   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
-   #        $self->destroy_items(
-   #            items =>
-   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #                {'viewed_region'},
-   #            panel_key   => $panel_key,
-   #            is_overview => 1,
-   #        );
-   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #            {'viewed_region'} = [];
-   #        overview_selected_area(
-   #            zone_key         => $zone_key,
-   #            panel_key        => $panel_key,
-   #            app_display_data => $self,
-   #        );
-   #    }
-
-    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-    return;
-}
-
-# ----------------------------------------------------
-sub scroll_zone_old {
-
-    #print STDERR "ADD_NEEDS_MODDED 3\n";
-
-=pod
-
-=head2 scroll_zone
-
-Scroll zones
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key   = $args{'window_key'};
-    my $zone_key     = $args{'zone_key'};
-    my $cascading    = $args{'cascading'} || 0;
-    my $scroll_value = $args{'scroll_value'} or return;
-
-    if ( not $cascading ) {
-        $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
-    }
-    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
-    my $zone_layout   = $self->{'zone_layout'}{$zone_key};
-    my $overview_zone_layout
-        = $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key};
-
-    if ($cascading) {
-
-        # Get Offset from parent
-        $zone_scaffold->{'x_offset'}
-            = $self->{'scaffold'}{ $zone_scaffold->{'parent'} }{'x_offset'};
-
-        $self->relayout_sub_map_zone(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-        );
-
-        # Reset correspondences
-        # BF ADD THIS BACK
-        #$self->reset_zone_corrs(
-        #    window_key => $window_key,
-        #    zone_key   => $zone_key,
-        #);
-    }
-    elsif ( $zone_scaffold->{'is_top'} ) {
-        $zone_scaffold->{'x_offset'} += $scroll_value;
-        $self->relayout_ref_map_zone(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-        );
-    }
-    else {
-
-        # This should never happen now that it can no longer detach
-        #$zone_layout->{'bounds'}[0] += $scroll_value;
-        #$self->relayout_sub_map_zone(
-        #window_key => $window_key,
-        #zone_key   => $zone_key,
-        #);
-    }
-
-   # handle overview highlighting
-   # BF ADD BACK LATER
-   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
-   #        $self->destroy_items(
-   #            items =>
-   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #                {'viewed_region'},
-   #            panel_key   => $panel_key,
-   #            is_overview => 1,
-   #        );
-   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #            {'viewed_region'} = [];
-   #        overview_selected_area(
-   #            zone_key         => $zone_key,
-   #            panel_key        => $panel_key,
-   #            app_display_data => $self,
-   #        );
-   #    }
-
-    foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } ) {
-        $self->scroll_zone(
-            window_key   => $window_key,
-            zone_key     => $child_zone_key,
-            scroll_value => $scroll_value,
-            cascading    => 1,
-        );
-    }
-
-    unless ($cascading) {
-        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_window(
-            window_key       => $window_key,
-            app_display_data => $self,
-        );
-    }
-    return;
 }
 
 # ----------------------------------------------------
@@ -1166,33 +1148,32 @@ canvases.
 }
 
 # ----------------------------------------------------
-sub set_new_zoomed_offset {
+sub get_zooming_offset {
 
     #print STDERR "ADD_NEEDS_MODDED 8\n";
 
 =pod
 
-=head2 set_new_zoomed_offset
+=head2 get_zooming_offset
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
-    my $slot_key   = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
     my $zoom_value = $args{'zoom_value'} or return;
 
-    my $old_width = $self->{'slot_layout'}{$slot_key}{'bounds'}[2]
-        - $self->{'slot_layout'}{$slot_key}{'bounds'}[0] + 1;
+    my $old_width = $self->{'zone_layout'}{$zone_key}{'bounds'}[2]
+        - $self->{'zone_layout'}{$zone_key}{'bounds'}[0] + 1;
 
     my $new_width = $old_width * $zoom_value;
 
     my $change = ( $new_width - $old_width ) / 2;
 
-    $self->{'scaffold'}{$slot_key}{'x_offset'} *= $zoom_value;
-    $self->{'scaffold'}{$slot_key}{'x_offset'} -= $change;
+    my $old_offset = $self->{'scaffold'}{$zone_key}{'x_offset'};
+    my $new_offset = ( $old_offset * $zoom_value );               # - $change;
 
-    return;
+    return $new_offset;
 }
 
 # ----------------------------------------------------

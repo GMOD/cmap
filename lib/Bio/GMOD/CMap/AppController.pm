@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.23 2007-02-06 07:03:07 mwz444 Exp $
+# $Id: AppController.pm,v 1.24 2007-02-21 20:09:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -318,24 +318,24 @@ When window is closed, delete drawing data and if it is the last window, exit.
 }
 
 # ----------------------------------------------------
-sub zoom_slot {
+sub zoom_zone {
 
 =pod
 
-=head2 zoom_slot
+=head2 zoom_zone
 
-Handler for zooming a slot.
+Handler for zooming a zone.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
     my $zoom_value = $args{'zoom_value'} || 1;
 
-    $self->app_display_data()->zoom_slot(
+    $self->app_display_data()->zoom_zone(
         window_key => $window_key,
-        slot_key   => $slot_key,
+        zone_key   => $zone_key,
         zoom_value => $zoom_value,
     );
 
@@ -624,7 +624,6 @@ Export the map moves to a file.
                 $action->[6],
                 $action->[7],
             );
-            print $fh join( "\t", @print_array ) . "\n";
         }
     }
 

@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use base 'Class::Base';
 
@@ -74,9 +74,9 @@ sub line {
     my @coords;
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $mid_x, $y_pos1, $mid_x, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
     @coords = ( $x_pos2, $y_pos1, $x_pos2, $y_pos2 );
@@ -110,17 +110,17 @@ sub span {
     my $mid_y = int( ( $y_pos1 + $y_pos2 ) / 2 );
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $y_pos1, $x_pos1, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ]
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -173,17 +173,17 @@ Up is left in the app.
     my $arrow_head_half_width = 5;
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos1 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -217,17 +217,17 @@ Down is right in the app
     my $mid_y = int( ( $y_pos1 + $y_pos2 ) / 2 );
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos1 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -261,25 +261,25 @@ This is going to point up in the app
     my $mid_x = int( ( $x_pos1 + $x_pos2 ) / 2 );
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $mid_x, $y_pos1, $mid_x, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [   $mid_x - $arrow_head_half_width,
                 $y_pos1 + $arrow_head_half_width,
                 $mid_x,
                 $y_pos1
             ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [   $mid_x + $arrow_head_half_width,
                 $y_pos1 + $arrow_head_half_width,
                 $mid_x,
                 $y_pos1
             ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
     @coords = (
@@ -316,25 +316,25 @@ sub double_arrow {
     my $mid_y = int( ( $y_pos1 + $y_pos2 ) / 2 );
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos1 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos1 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -369,18 +369,22 @@ sub dumbbell {
     my $mid_y = int( ( $y_pos1 + $y_pos2 ) / 2 );
     my $height = $y_pos2 - $y_pos1;
     push @$items, (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
 
-        [   1, undef, 'oval',
+        [   1,
+            undef,
+            'arc',
             [ $x_pos1, $y_pos1, $x_pos1 + $height, $y_pos2, ],
-            { -fill => $color, -outline => $color }
+            { -fillcolor => $color, -linecolor => $color, -filled => 1, }
         ],
-        [   1, undef, 'oval',
+        [   1,
+            undef,
+            'arc',
             [ $x_pos2 - $height, $y_pos1, $x_pos2, $y_pos2, ],
-            { -fill => $color, -outline => $color }
+            { -fillcolor => $color, -linecolor => $color, -filled => 1, }
         ],
     );
 
@@ -417,17 +421,17 @@ sub i_beam {
     my $height = $y_pos2 - $y_pos1;
     push @$items,
         (
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos1, $y_pos1, $x_pos1, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
-        [   1, undef, 'line',
+        [   1, undef, 'curve',
             [ $x_pos2, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, }
+            { -linecolor => $color, }
         ],
         );
 
@@ -464,7 +468,7 @@ sub box {
         (
         [   1, undef, 'rectangle',
             [ $x_pos1, $y_pos1, $x_pos2, $y_pos2 ],
-            { -outline => $color, }
+            { -linecolor => $color, }
         ],
         );
 
@@ -499,7 +503,7 @@ sub filled_box {
         (
         [   1, undef, 'rectangle',
             [ $x_pos1, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, -outline => 'black', }
+            { -fillcolor => $color, -linecolor => 'black', -filled => 1, }
         ],
         );
 
@@ -547,7 +551,7 @@ sub banding {
         (
         [   1, undef, 'rectangle',
             [ $x_pos1, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, -outline => $color, }
+            { -fillcolor => $color, -linecolor => $color, -filled => 1, }
         ],
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -583,7 +587,7 @@ sub bar {
         (
         [   1, undef, 'rectangle',
             [ $x_pos1, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, -outline => $color, }
+            { -fillcolor => $color, -linecolor => $color, -filled => 1, }
         ],
         );
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
@@ -633,12 +637,11 @@ Left is up in the app.
 
     push @$items,
         (
-        [   1, undef,
-            'polygon',
+        [   1, undef, 'curve',
             [   $mid_x - $width, $y_pos2, $mid_x + $width,
                 $y_pos2,         $mid_x,  $y_pos1,
             ],
-            { -fill => $color, }
+            { -fillcolor => $color, -filled => 1, -closed => 1 }
         ],
         );
 
@@ -675,12 +678,11 @@ Right is down in the app.
 
     push @$items,
         (
-        [   1, undef,
-            'polygon',
+        [   1, undef, 'curve',
             [   $mid_x - $width, $y_pos1, $mid_x + $width,
                 $y_pos1,         $mid_x,  $y_pos2,
             ],
-            { -fill => $color, }
+            { -fillcolor => $color, -filled => 1, -closed => 1 }
         ],
         );
 
@@ -835,7 +837,7 @@ sub heatmap {
         (
         [   1, undef, 'rectangle',
             [ $x_pos1, $y_pos1, $x_pos2, $y_pos2 ],
-            { -fill => $color, -outline => $color, }
+            { -fillcolor => $color, -linecolor => $color, -filled => 1, }
         ],
         );
     @coords = ( $x_pos2, $y_pos1, $x_pos1, $y_pos2 );

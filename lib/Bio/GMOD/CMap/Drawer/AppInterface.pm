@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.29 2007-02-06 07:03:07 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.30 2007-02-21 20:09:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,12 +27,13 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap::AppController';
 use Tk;
+use Tk::Zinc;
 use Tk::Pane;
 use Tk::Dialog;
 use Tk::LabEntry;
@@ -326,36 +327,36 @@ Returns the top_pane object.
         );
 
         # Pack later in pack_panes()
-        $self->overview_canvas( window_key => $window_key, );
+        $self->overview_zinc( window_key => $window_key, );
     }
     return $self->{'top_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
-sub canvas_pane {
+sub zinc_pane {
 
 =pod
 
-=head2 canvas_pane
+=head2 zinc_pane
 
-Returns the canvas_pane object.
+Returns the zinc_pane object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'canvas_pane'}{$window_key} ) {
+    unless ( $self->{'zinc_pane'}{$window_key} ) {
         my $middle_pane = $self->{'middle_pane'}{$window_key};
-        $self->{'canvas_pane'}{$window_key} = $middle_pane->Frame(
+        $self->{'zinc_pane'}{$window_key} = $middle_pane->Frame(
             -relief     => 'groove',
             -border     => 0,
             -background => "blue",
         );
-        $self->canvas( window_key => $window_key, );
+        $self->zinc( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
-    return $self->{'canvas_pane'}{$window_key};
+    return $self->{'zinc_pane'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -382,7 +383,7 @@ Returns the middle_pane object.
             -background => "white",
             -height     => $window->screenheight(),
         );
-        $self->canvas_pane( window_key => $window_key, );
+        $self->zinc_pane( window_key => $window_key, );
 
         # Pack later in pack_panes()
     }
@@ -583,11 +584,6 @@ Adds control buttons to the controls_pane.
         -size   => 12,
     ];
 
-    #    my $zoom_label1 = $controls_pane->Label(
-    #        -text       => "Zoom",
-    #        -font       => $font,
-    #        -background => 'grey',
-    #    );
     $self->{'selected_map_set_text_box'} = $controls_pane->Text(
         -font       => $font,
         -background => "white",
@@ -652,7 +648,7 @@ Adds control buttons to the controls_pane.
             $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
                 zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-                scroll_value => -10,
+                scroll_value => 10,
             );
         },
         -font => $font,
@@ -663,7 +659,7 @@ Adds control buttons to the controls_pane.
             $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
                 zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-                scroll_value => 10,
+                scroll_value => -10,
             );
         },
         -font => $font,
@@ -674,7 +670,7 @@ Adds control buttons to the controls_pane.
             $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
                 zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-                scroll_value => -200,
+                scroll_value => 200,
             );
         },
         -font => $font,
@@ -685,7 +681,7 @@ Adds control buttons to the controls_pane.
             $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
                 zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-                scroll_value => 200,
+                scroll_value => -200,
             );
         },
         -font => $font,
@@ -733,9 +729,8 @@ Adds control buttons to the controls_pane.
     );
     Tk::grid(
         $scroll_far_left_button, $scroll_left_button,
-
-        # $zoom_button1,           $zoom_button2,
-        $scroll_type_1, $scroll_far_type_1,
+        $zoom_button1,           $zoom_button2,
+        $scroll_type_1,          $scroll_far_type_1,
 
         # $expand_button,          $show_features_check_box,
         # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
@@ -780,7 +775,7 @@ sub draw_window {
 
 =head2 draw
 
-Draws and re-draws on the canvas
+Draws and re-draws on the zinc
 
 =cut
 
@@ -789,20 +784,20 @@ Draws and re-draws on the canvas
         or die 'no window key for draw';
     my $app_display_data = $args{'app_display_data'};
 
-    my $canvas = $self->canvas( window_key => $window_key, );
+    my $zinc = $self->zinc( window_key => $window_key, );
 
     my $window_layout = $app_display_data->{'window_layout'}{$window_key};
     if ( $window_layout->{'changed'} ) {
         foreach my $drawing_section (qw[ misc_items ]) {
             $self->draw_items(
-                canvas => $canvas,
-                items  => $window_layout->{$drawing_section},
-                tags   => [ 'on_top', ],
+                zinc  => $zinc,
+                items => $window_layout->{$drawing_section},
+                tags  => [ 'on_top', ],
             );
         }
         foreach my $button ( @{ $window_layout->{'buttons'} || [] } ) {
             $self->draw_button(
-                canvas => $canvas,
+                zinc   => $zinc,
                 button => $button,
             );
 
@@ -818,28 +813,28 @@ Draws and re-draws on the canvas
         {
             $self->draw_zone(
                 zone_key         => $zone_key,
-                canvas           => $canvas,
+                zinc             => $zinc,
                 app_display_data => $app_display_data,
             );
         }
         $window_layout->{'sub_changed'} = 0;
     }
 
-    my $canvas_width
+    my $zinc_width
         = $window_layout->{'bounds'}[2] - $window_layout->{'bounds'}[0] + 1;
-    my $canvas_height
+    my $zinc_height
         = $window_layout->{'bounds'}[3] - $window_layout->{'bounds'}[1] + 1;
 
-    $canvas->configure(
+    $zinc->configure(
         -scrollregion => $window_layout->{'bounds'},
-        -height       => $canvas_height,
-        -width        => $canvas_width,
+        -height       => $zinc_height,
+        -width        => $zinc_width,
     );
 
     # Pack later in pack_panes()
 
     $self->draw_corrs(
-        canvas           => $canvas,
+        zinc             => $zinc,
         app_display_data => $app_display_data,
     );
 
@@ -848,11 +843,11 @@ Draws and re-draws on the canvas
         app_display_data => $app_display_data,
     );
 
-    $self->layer_tagged_items( canvas => $canvas, );
+    $self->layer_tagged_items( zinc => $zinc, );
 
     # BF ADD BACK IN AT SOME POINT
     #$self->layer_tagged_items(
-    #canvas => $self->overview_canvas( window_key => $window_key, ) );
+    #zinc => $self->overview_zinc( window_key => $window_key, ) );
 
     return;
 }
@@ -866,7 +861,7 @@ sub draw_overview {
 
 =head2 draw_overview
 
-Draws and re-draws on the overview canvas
+Draws and re-draws on the overview zinc
 
 =cut
 
@@ -875,7 +870,7 @@ Draws and re-draws on the overview canvas
         or die 'no panel key for draw_overview';
     my $app_display_data = $args{'app_display_data'};
 
-    my $canvas = $self->overview_canvas( window_key => $window_key, );
+    my $zinc = $self->overview_zinc( window_key => $window_key, );
 
     my $overview_layout = $app_display_data->{'overview_layout'}{$window_key};
     my $top_zone_key
@@ -884,14 +879,14 @@ Draws and re-draws on the overview canvas
     if ( $overview_layout->{'changed'} ) {
         foreach my $drawing_section (qw[ misc_items]) {
             $self->draw_items(
-                canvas => $canvas,
-                items  => $overview_layout->{$drawing_section},
-                tags   => [ 'on_top', ],
+                zinc  => $zinc,
+                items => $overview_layout->{$drawing_section},
+                tags  => [ 'on_top', ],
             );
         }
         foreach my $button ( @{ $overview_layout->{'buttons'} || [] } ) {
             $self->draw_button(
-                canvas => $canvas,
+                zinc   => $zinc,
                 button => $button,
             );
         }
@@ -906,7 +901,7 @@ Draws and re-draws on the overview canvas
             $self->draw_overview_zone(
                 window_key           => $window_key,
                 zone_key             => $zone_key,
-                canvas               => $canvas,
+                zinc                 => $zinc,
                 app_display_data     => $app_display_data,
                 overview_zone_layout =>
                     $overview_layout->{'zones'}{$zone_key},
@@ -915,17 +910,17 @@ Draws and re-draws on the overview canvas
         $overview_layout->{'sub_changed'} = 0;
     }
 
-    my $canvas_width
+    my $zinc_width
         = $overview_layout->{'bounds'}[2] - $overview_layout->{'bounds'}[0]
         + 1;
-    my $canvas_height
+    my $zinc_height
         = $overview_layout->{'bounds'}[3] - $overview_layout->{'bounds'}[1]
         + 1;
 
-    $canvas->configure(
+    $zinc->configure(
         -scrollregion => $overview_layout->{'bounds'},
-        -height       => $canvas_height,
-        -width        => $canvas_width,
+        -height       => $zinc_height,
+        -width        => $zinc_width,
     );
 
     return;
@@ -940,7 +935,7 @@ sub draw_overview_zone {
 
 =head2 draw_overview_zone
 
-Draws and re-draws on the canvas
+Draws and re-draws on the zinc
 
 =cut
 
@@ -948,27 +943,27 @@ Draws and re-draws on the canvas
     my $zone_key = $args{'zone_key'}
         or die 'no zone key for draw';
     my $window_key = $args{'window_key'};
-    my $canvas     = $args{'canvas'}
-        || $self->canvas( window_key => $args{'window_key'}, );
+    my $zinc       = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
     my $app_display_data     = $args{'app_display_data'};
     my $overview_zone_layout = $args{'overview_zone_layout'};
 
     if ( $overview_zone_layout->{'changed'} ) {
         $self->draw_items(
-            canvas => $canvas,
-            items  => $overview_zone_layout->{'viewed_region'},
-            tags   => [
+            zinc  => $zinc,
+            items => $overview_zone_layout->{'viewed_region'},
+            tags  => [
                 'on_bottom', 'viewed_region_' . $window_key . '_' . $zone_key,
             ],
         );
         $self->draw_items(
-            canvas => $canvas,
-            items  => $overview_zone_layout->{'misc_items'},
-            tags   => [ 'on_top', ],
+            zinc  => $zinc,
+            items => $overview_zone_layout->{'misc_items'},
+            tags  => [ 'on_top', ],
         );
         foreach my $button ( @{ $overview_zone_layout->{'buttons'} || [] } ) {
             $self->draw_button(
-                canvas => $canvas,
+                zinc   => $zinc,
                 button => $button,
             );
         }
@@ -983,9 +978,9 @@ Draws and re-draws on the canvas
             my $map_layout = $overview_zone_layout->{'maps'}{$map_key};
             next unless ( $map_layout->{'changed'} );
             $self->draw_items(
-                canvas => $canvas,
-                items  => $map_layout->{'items'},
-                tags   => [ 'on_top', 'overview_map', ],
+                zinc  => $zinc,
+                items => $map_layout->{'items'},
+                tags  => [ 'on_top', 'overview_map', ],
             );
             $map_layout->{'changed'} = 0;
         }
@@ -1002,38 +997,58 @@ sub draw_zone {
 
 =head2 draw_zone
 
-Draws and re-draws on the canvas
+Draws and re-draws on the zinc
 
 =cut
 
     my ( $self, %args ) = @_;
     my $zone_key = $args{'zone_key'}
         or die 'no zone key for draw';
-    my $canvas = $args{'canvas'}
-        || $self->canvas( window_key => $args{'window_key'}, );
+    my $zinc = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
     my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
 
     my $zone_x_offset
-        = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'}
-        + $app_display_data->{'zone_layout'}{$zone_key}{'master_x1'};
-    my $zone_y_offset
-        = $app_display_data->{'zone_layout'}{$zone_key}{'master_y1'};
+        = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
+    my $zone_y_offset = 0;
+
+    my $zone_group_id = $self->get_zone_group_id(
+        zone_key         => $zone_key,
+        zinc             => $zinc,
+        app_display_data => $app_display_data,
+    );
 
     my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
     if ( $zone_layout->{'changed'} ) {
+        $zinc->coords(
+            $zone_group_id,
+            [   $zone_x_offset + $zone_layout->{'bounds'}[0],
+                $zone_y_offset + $zone_layout->{'bounds'}[1]
+            ]
+        );
+        $self->set_zone_clip(
+            zone_key      => $zone_key,
+            zone_group_id => $zone_group_id,
+            zinc          => $zinc,
+            zone_layout   => $zone_layout,
+        );
+
         $self->draw_items(
-            canvas   => $canvas,
+            zinc     => $zinc,
             x_offset => $zone_x_offset,
             y_offset => $zone_y_offset,
             items    => $zone_layout->{'separator'},
+            group_id => $zone_group_id,
             tags     => [ 'on_top', ],
         );
+
         $self->draw_items(
-            canvas   => $canvas,
-            x_offset => $zone_x_offset,
-            y_offset => $zone_y_offset,
+            zinc     => $zinc,
+            x_offset => 0,                              #$zone_x_offset,
+            y_offset => 0,                              #$zone_y_offset,
             items    => $zone_layout->{'background'},
+            group_id => $zone_group_id,
             tags     => [
                 'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
@@ -1042,7 +1057,7 @@ Draws and re-draws on the canvas
             $self->draw_button(
                 x_offset => $zone_x_offset,
                 y_offset => $zone_y_offset,
-                canvas   => $canvas,
+                zinc     => $zinc,
                 button   => $button,
             );
         }
@@ -1057,11 +1072,12 @@ Draws and re-draws on the canvas
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
-                    canvas   => $canvas,
+                    zinc     => $zinc,
                     x_offset => $zone_x_offset,
                     y_offset => $zone_y_offset,
                     items    => $map_layout->{$drawing_section},
                     tags     => [ 'middle_layer', 'display', 'map' ],
+                    group_id => $zone_group_id,
                 );
             }
             $self->record_map_key_drawn_id(
@@ -1070,7 +1086,7 @@ Draws and re-draws on the canvas
             );
             foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
                 $self->draw_button(
-                    canvas   => $canvas,
+                    zinc     => $zinc,
                     x_offset => $zone_x_offset,
                     y_offset => $zone_y_offset,
                     button   => $button,
@@ -1085,10 +1101,11 @@ Draws and re-draws on the canvas
                     my $feature_layout
                         = $map_layout->{'features'}{$feature_acc};
                     $self->draw_items(
-                        canvas   => $canvas,
+                        zinc     => $zinc,
                         x_offset => $zone_x_offset,
                         y_offset => $zone_y_offset,
                         items    => $feature_layout->{'items'},
+                        group_id => $zone_group_id,
                         tags     => [ 'feature', 'display', ],
                     );
                     $self->record_feature_acc_drawn_id(
@@ -1115,7 +1132,7 @@ sub draw_corrs {
 
 =head2 draw_corrs
 
-Draws and re-draws correspondences on the canvas
+Draws and re-draws correspondences on the zinc
 
 This has it's own item drawing code because the offsets for each end of the
 corr can be different.
@@ -1123,8 +1140,8 @@ corr can be different.
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'}
-        || $self->canvas( window_key => $args{'window_key'}, );
+    my $zinc = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
 
     my $corr_layout = $app_display_data->{'corr_layout'};
@@ -1166,16 +1183,16 @@ MAP1:
                 $coords[2] += $x_offset2;
 
                 if ( defined($item_id) ) {
-                    $canvas->coords( $item_id, @coords );
-                    $canvas->itemconfigure( $item_id, %{ $options || {} } );
+                    $zinc->coords( $item_id, @coords );
+                    $zinc->itemconfigure( $item_id, %{ $options || {} } );
                 }
                 else {
-                    $canvas->coords( $item_id, @coords );
+                    $zinc->coords( $item_id, @coords );
                     my $create_method = 'create' . ucfirst lc $type;
                     $item->[1]
-                        = $canvas->$create_method( @coords, %{$options} );
+                        = $zinc->$create_method( @coords, %{$options} );
                     foreach my $tag (@$tags) {
-                        $canvas->addtag( $tag, 'withtag', $item->[1] );
+                        $zinc->addtag( $tag, 'withtag', $item->[1] );
                     }
                 }
                 $item->[0] = 0;
@@ -1210,9 +1227,9 @@ This is an effort to reserve the text space for the app_display_data.
     my $y1               = $args{'y1'};
     my $text             = $args{'text'};
 
-    my $canvas = $self->canvas( window_key => $window_key, );
+    my $zinc = $self->zinc( window_key => $window_key, );
 
-    my $item_id = $canvas->createText(
+    my $item_id = $zinc->createText(
         ( $x1, $y1 ),
         (   '-text'   => $text,
             '-anchor' => 'nw',
@@ -1220,7 +1237,7 @@ This is an effort to reserve the text space for the app_display_data.
             #-font => $font_string,
         )
     );
-    return ( $item_id, [ $canvas->bbox($item_id) ] );
+    return ( $item_id, [ $zinc->bbox($item_id) ] );
 }
 
 sub pre_draw_button {
@@ -1246,20 +1263,20 @@ This is an effort to reserve the button space for the app_display_data.
     my $text             = $args{'text'};
     my $type             = $args{'type'};
 
-    my $canvas      = $self->canvas( window_key => $window_key, );
+    my $zinc        = $self->zinc( window_key => $window_key, );
     my $command_ref = $self->get_button_command( %args, );
 
-    my $button_win_id = $canvas->createWindow(
+    my $button_win_id = $zinc->createWindow(
         $x1, $y1,
         -anchor => 'nw',
-        -window => $canvas->Button(
+        -window => $zinc->Button(
             -text    => $text,
             -command => $command_ref,
         ),
         -tags => [ 'button', ],
     );
 
-    return ( $button_win_id, [ $canvas->bbox($button_win_id) ] );
+    return ( $button_win_id, [ $zinc->bbox($button_win_id) ] );
 }
 
 sub get_button_command {
@@ -1294,13 +1311,98 @@ Returns the subroutine to use for a button
 }
 
 # ----------------------------------------------------
+sub get_zone_group_id {
+
+=pod
+
+=head2 get_zone_group_id
+
+Gets the group_id for a zone.  If it doesn't exist, this will create a new
+group.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'}
+        or die 'no zone key for draw';
+    my $zinc = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
+    my $app_display_data = $args{'app_display_data'};
+
+    unless ( $self->{'zone_group_id'}{$zone_key} ) {
+        my $parent_group_id;
+        if ( my $parent_zone_key
+            = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'} )
+        {
+            $parent_group_id = $self->get_zone_group_id(
+                zone_key         => $parent_zone_key,
+                zinc             => $zinc,
+                app_display_data => $app_display_data,
+            );
+        }
+        else {
+            $parent_group_id = 1;
+        }
+        $self->{'zone_group_id'}{$zone_key}
+            = $zinc->add( "group", $parent_group_id, );
+
+    }
+
+    return $self->{'zone_group_id'}{$zone_key};
+}
+
+# ----------------------------------------------------
+sub set_zone_clip {
+
+=pod
+
+=head2 set_zone_clip
+
+Sets the group clip object
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'}
+        or die 'no zone key set_zone_clip';
+    my $zone_group_id = $args{'zone_group_id'}
+        or die 'no zone group_id set_zone_clip';
+    my $zinc = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
+    my $zone_layout = $args{'zone_layout'};
+
+    #my $fillcolor = ( $zone_key == 1 ) ? 'green' : 'red';
+    my $clip_bounds = $zone_layout->{'internal_bounds'};
+    unless ( $self->{'zone_group_clip_id'}{$zone_key} ) {
+        $self->{'zone_group_clip_id'}{$zone_key} = $zinc->add(
+            'rectangle', $zone_group_id,
+            $clip_bounds,
+            -visible => 0,
+
+            #-filled    => 1,
+            #-fillcolor => $fillcolor,
+        );
+        $zinc->itemconfigure( $zone_group_id,
+            -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
+    }
+    else {
+        $zinc->coords( $self->{'zone_group_clip_id'}{$zone_key}, $clip_bounds,
+        );
+    }
+    $zinc->itemconfigure( $zone_group_id,
+        -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
+
+    return $self->{'zone_group_id'}{$zone_key};
+}
+
+# ----------------------------------------------------
 sub draw_items {
 
 =pod
 
 =head2 draw_items
 
-Draws items on the canvas.
+Draws items on the zinc.
 
 Item structure:
 
@@ -1309,9 +1411,10 @@ Item structure:
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas   = $args{'canvas'};
+    my $zinc     = $args{'zinc'};
     my $x_offset = $args{'x_offset'} || 0;
     my $y_offset = $args{'y_offset'} || 0;
+    my $group_id = $args{'group_id'} || 1;
     my $items    = $args{'items'} || return;
     my $tags     = $args{'tags'} || [];
 
@@ -1331,15 +1434,24 @@ Item structure:
         }
 
         if ( defined($item_id) ) {
-            $canvas->coords( $item_id, @coords );
-            $canvas->itemconfigure( $item_id, %{ $options || {} } );
+            $zinc->coords( $item_id, \@coords );
+            $zinc->itemconfigure( $item_id, %{ $options || {} } );
         }
         else {
-            $canvas->coords( $item_id, @coords );
-            my $create_method = 'create' . ucfirst lc $type;
-            $items->[$i][1] = $canvas->$create_method( @coords, %{$options} );
+            if ( $type eq 'text' ) {
+                $items->[$i][1] = $zinc->add(
+                    $type, $group_id,
+                    -position => \@coords,
+                    %{$options},
+                );
+            }
+            else {
+                $items->[$i][1]
+                    = $zinc->add( $type, $group_id, \@coords, %{$options}, );
+            }
+
             foreach my $tag (@$tags) {
-                $canvas->addtag( $tag, 'withtag', $items->[$i][1] );
+                $zinc->addtag( $tag, 'withtag', $items->[$i][1] );
             }
         }
         $items->[$i][0] = 0;
@@ -1483,7 +1595,7 @@ sub move_items {
 
 =head2 move_items
 
-Move items on the canvas rather than redraw it
+Move items on the zinc rather than redraw it
 
 The underlying coords in the data structure must be changed externally.
 
@@ -1495,8 +1607,8 @@ Item structure:
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $canvas     = $args{'canvas'}
-        || $self->canvas( window_key => $args{'window_key'}, );
+    my $zinc       = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
     my $x = $args{'x'} || 0;
     my $y = $args{'y'} || 0;
     my $items = $args{'items'} or return;
@@ -1507,7 +1619,7 @@ Item structure:
         next unless ( defined( $items->[$i][1] ) );
 
         my $item_id = $items->[$i][1];
-        $canvas->move( $item_id, $x, $y );
+        $zinc->translate( $item_id, $x, $y );
     }
 }
 
@@ -1520,7 +1632,7 @@ sub add_tags_to_items {
 
 =head2 add_tags_to_items
 
-Adds tags to items on the canvas.
+Adds tags to items on the zinc.
 
 Item structure:
 
@@ -1529,14 +1641,14 @@ Item structure:
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'};
-    my $items  = $args{'items'} || [];
-    my $tags   = $args{'tags'} || [];
+    my $zinc  = $args{'zinc'};
+    my $items = $args{'items'} || [];
+    my $tags  = $args{'tags'} || [];
 
     foreach my $item ( @{ $items || [] } ) {
         next unless ( $item->[1] );
         foreach my $tag (@$tags) {
-            $canvas->addtag( $tag, 'withtag', $item->[1] );
+            $zinc->addtag( $tag, 'withtag', $item->[1] );
         }
     }
 }
@@ -1550,7 +1662,7 @@ sub draw_button {
 
 =head2 draw_button
 
-Draws a button on the canvas and associates callbacks to it.
+Draws a button on the zinc and associates callbacks to it.
 
 Item structure:
 
@@ -1559,7 +1671,7 @@ Item structure:
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'};
+    my $zinc   = $args{'zinc'};
     my $button = $args{'button'} || return;
 
     my $button_id   = $button->{'item_id'};
@@ -1572,9 +1684,9 @@ Item structure:
         #could add special tags.
     }
     $self->add_tags_to_items(
-        canvas => $canvas,
-        items  => $button->{'items'},
-        tags   => \@tags,
+        zinc  => $zinc,
+        items => $button->{'items'},
+        tags  => \@tags,
     );
 
 }
@@ -1660,23 +1772,23 @@ Populates the edit menu with menu_items
 }
 
 # ----------------------------------------------------
-sub canvas {
+sub zinc {
 
 =pod
 
-=head2 canvas
+=head2 zinc
 
-Returns the canvas object.
+Returns the zinc object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'canvas'}{$window_key} ) {
-        my $canvas_frame = $self->{'canvas_pane'}{$window_key};
+    unless ( $self->{'zinc'}{$window_key} ) {
+        my $zinc_frame = $self->{'zinc_pane'}{$window_key};
 
-        #        $self->{'canvas'}{$window_key} = $canvas_frame->Scrolled(
+        #        $self->{'zinc'}{$window_key} = $zinc_frame->Scrolled(
         #            'Canvas',
         #            (   '-width'       => 1100,
         #                '-height'      => 800,
@@ -1686,94 +1798,103 @@ Returns the canvas object.
         #                '-scrollbars'  => 's',
         #            ),
         #        )->pack( -side => 'top', -fill => 'both', );
-        $self->{'canvas'}{$window_key} = $canvas_frame->Canvas(
-            '-width'       => 1100,
-            '-height'      => 800,
-            '-relief'      => 'sunken',
-            '-borderwidth' => 2,
-            '-background'  => 'white',
+        #        $self->{'zinc'}{$window_key} = $zinc_frame->Canvas(
+        #            '-width'       => 1100,
+        #            '-height'      => 800,
+        #            '-relief'      => 'sunken',
+        #            '-borderwidth' => 2,
+        #            '-background'  => 'white',
+        #        );
 
+        $self->{'zinc'}{$window_key} = $zinc_frame->Zinc(
+            -width       => 1100,
+            -height      => 800,
+            -backcolor   => 'white',
+            -borderwidth => 2,
+            -relief      => 'sunken'
         );
 
         # Pack later in pack_panes()
-        $self->bind_canvas( canvas => $self->{'canvas'}{$window_key} );
+        # BF ADD BACK LATER
+        $self->bind_zinc( zinc => $self->{'zinc'}{$window_key} );
     }
-    return $self->{'canvas'}{$window_key};
+    return $self->{'zinc'}{$window_key};
 }
 
 # ----------------------------------------------------
-sub bind_canvas {
+sub bind_zinc {
 
     #print STDERR "AI_NEEDS_MODDED 27\n";
 
 =pod
 
-=head2 bind_canvas
+=head2 bind_zinc
 
-Bind events to a canvas
+Bind events to a zinc
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'} or return undef;
+    my $zinc = $args{'zinc'} or return undef;
 
-    $canvas->CanvasBind(
+    $zinc->Tk::bind(
         '<1>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->start_drag_type_1( $canvas, $e->x, $e->y, );
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->start_drag_type_1( $zinc, $e->x, $e->y, );
         }
     );
-    $canvas->CanvasBind(
-        '<3>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->start_drag_type_2( $canvas, $e->x, $e->y, );
-        }
-    );
-    $canvas->CanvasBind(
-        '<B1-ButtonRelease>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->stop_drag_type_1( $canvas, $e->x, $e->y, );
-        }
-    );
-    $canvas->CanvasBind(
-        '<B3-ButtonRelease>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->stop_drag_type_2( $canvas, $e->x, $e->y, );
-        }
-    );
-    $canvas->CanvasBind(
-        '<B1-Motion>' => sub {
-            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
-        }
-    );
-    $canvas->CanvasBind(
-        '<B3-Motion>' => sub {
-            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
-        }
-    );
+
+    #    $zinc->CanvasBind(
+    #        '<3>' => sub {
+    #            my ($zinc) = @_;
+    #            my $e = $zinc->XEvent;
+    #            $self->start_drag_type_2( $zinc, $e->x, $e->y, );
+    #        }
+    #    );
+    #    $zinc->CanvasBind(
+    #        '<B1-ButtonRelease>' => sub {
+    #            my ($zinc) = @_;
+    #            my $e = $zinc->XEvent;
+    #            $self->stop_drag_type_1( $zinc, $e->x, $e->y, );
+    #        }
+    #    );
+    #    $zinc->CanvasBind(
+    #        '<B3-ButtonRelease>' => sub {
+    #            my ($zinc) = @_;
+    #            my $e = $zinc->XEvent;
+    #            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
+    #        }
+    #    );
+    #    $zinc->CanvasBind(
+    #        '<B1-Motion>' => sub {
+    #            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
+    #        }
+    #    );
+    #    $zinc->CanvasBind(
+    #        '<B3-Motion>' => sub {
+    #            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
+    #        }
+    #    );
 
     # BF READD THESE BINDINGS
     #    if ( $^O eq 'MSWin32' ) {
-    #        $canvas->CanvasBind(
+    #        $zinc->CanvasBind(
     #            '<MouseWheel>' => sub {
-    #                $self->mouse_wheel_event( $canvas,
+    #                $self->mouse_wheel_event( $zinc,
     #                    ( Ev('D') < 0 ) ? 0.5 : 2 );
     #            }
     #        );
     #    }
     #    else {
-    #        $canvas->CanvasBind(
+    #        $zinc->CanvasBind(
     #            '<4>' => sub {
-    #                $self->mouse_wheel_event( $canvas, 0.5 );
+    #                $self->mouse_wheel_event( $zinc, 0.5 );
     #            }
     #        );
-    #        $canvas->CanvasBind(
+    #        $zinc->CanvasBind(
     #            '<5>' => sub {
-    #                $self->mouse_wheel_event( $canvas, 2 );
+    #                $self->mouse_wheel_event( $zinc, 2 );
     #            }
     #        );
     #
@@ -1782,36 +1903,36 @@ Bind events to a canvas
 }
 
 # ----------------------------------------------------
-sub bind_overview_canvas {
+sub bind_overview_zinc {
 
     #print STDERR "AI_NEEDS_MODDED 28\n";
 
 =pod
 
-=head2 bind_overview_canvas
+=head2 bind_overview_zinc
 
-Bind events to the overview canvas
+Bind events to the overview zinc
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'} or return undef;
+    my $zinc = $args{'zinc'} or return undef;
 
-    $canvas->CanvasBind(
+    $zinc->CanvasBind(
         '<1>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->start_drag_type_2( $canvas, $e->x, $e->y, );
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->start_drag_type_2( $zinc, $e->x, $e->y, );
         }
     );
-    $canvas->CanvasBind(
+    $zinc->CanvasBind(
         '<B1-ButtonRelease>' => sub {
-            my ($canvas) = @_;
-            my $e = $canvas->XEvent;
-            $self->stop_drag_type_2( $canvas, $e->x, $e->y, );
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
         }
     );
-    $canvas->CanvasBind(
+    $zinc->CanvasBind(
         '<B1-Motion>' => sub {
             $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
         }
@@ -1820,24 +1941,24 @@ Bind events to the overview canvas
 }
 
 # ----------------------------------------------------
-sub overview_canvas {
+sub overview_zinc {
 
 =pod
 
-=head2 overview_canvas
+=head2 overview_zinc
 
-Returns the overview_canvas object.
+Returns the overview_zinc object.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
 
-    unless ( $self->{'overview_canvas'}{$window_key} ) {
-        my $overview_canvas_frame = $self->{'top_pane'}{$window_key};
+    unless ( $self->{'overview_zinc'}{$window_key} ) {
+        my $overview_zinc_frame = $self->{'top_pane'}{$window_key};
 
-        #        $self->{'overview_canvas'}{$window_key}
-        #            = $overview_canvas_frame->Scrolled(
+        #        $self->{'overview_zinc'}{$window_key}
+        #            = $overview_zinc_frame->Scrolled(
         #            'Canvas',
         #            (   '-width'       => 1100,
         #                '-height'      => 300,
@@ -1847,21 +1968,28 @@ Returns the overview_canvas object.
         #                '-scrollbars'  => 's',
         #            ),
         #            )->pack( -side => 'top', -fill => 'both', );
-        $self->{'overview_canvas'}{$window_key}
-            = $overview_canvas_frame->Canvas(
-            '-width'       => 300,
-            '-height'      => 300,
-            '-relief'      => 'sunken',
-            '-borderwidth' => 2,
-            '-background'  => 'white',
-
-            );
+        #$self->{'overview_zinc'}{$window_key}
+        #    = $overview_zinc_frame->Canvas(
+        #    '-width'       => 300,
+        #    '-height'      => 300,
+        #    '-relief'      => 'sunken',
+        #    '-borderwidth' => 2,
+        #    '-background'  => 'white',
+        #    );
+        $self->{'overview_zinc'}{$window_key} = $overview_zinc_frame->Zinc(
+            -width       => 300,
+            -height      => 300,
+            -backcolor   => 'white',
+            -borderwidth => 2,
+            -relief      => 'sunken'
+        );
 
         # Pack later in pack_panes()
-        $self->bind_overview_canvas(
-            canvas => $self->{'overview_canvas'}{$window_key} );
+        # BF ADD BACK LATER
+        #$self->bind_overview_zinc(
+        #zinc => $self->{'overview_zinc'}{$window_key} );
     }
-    return $self->{'overview_canvas'}{$window_key};
+    return $self->{'overview_zinc'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -1878,7 +2006,7 @@ sub popup_map_menu {
 
     my ( $self, %args ) = @_;
     my $drawn_id = $args{'drawn_id'};
-    my $canvas   = $args{'canvas'};
+    my $zinc     = $args{'zinc'};
     my $dx       = $args{'dx'};
     my $map_key  = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
     my $controller = $self->app_controller();
@@ -1925,7 +2053,7 @@ sub popup_map_menu {
     $map_menu_window->bind(
         '<Destroy>',
         sub {
-            $self->destroy_ghost($canvas);
+            $self->destroy_ghost($zinc);
         },
     );
     $map_menu_window->bind(
@@ -2483,11 +2611,13 @@ Deletes all widgets in the provided list
     my $items       = $args{'items'} || return;
     my $is_overview = $args{'is_overview'};
 
-    my $canvas =
+    my $zinc =
           $is_overview
-        ? $self->overview_canvas( window_key => $window_key, )
-        : $self->canvas( window_key => $window_key, );
-    $canvas->delete( map { $_->[1] } @$items );
+        ? $self->overview_zinc( window_key => $window_key, )
+        : $self->zinc( window_key => $window_key, );
+
+    #$zinc->remove( map { $_->[1] } @$items );
+    map { $zinc->remove( $_->[1] ) } @$items;
 
     # Maybe clear bindings if they aren't destroyed with delete.
 
@@ -2553,13 +2683,13 @@ Handle the placement of tagged items in layers
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'};
+    my $zinc = $args{'zinc'};
 
-    #my $real_canvas = $canvas->Subwidget("canvas");
-    my $real_canvas = $canvas;
+    #my $real_zinc = $zinc->Subwidget("zinc");
+    my $real_zinc = $zinc;
 
-    $real_canvas->raise( 'on_top', 'all' );
-    $real_canvas->lower( 'on_bottom', 'all' );
+    $real_zinc->raise( 'on_top', 'all' );
+    $real_zinc->lower( 'on_bottom', 'all' );
 
     return;
 }
@@ -2633,44 +2763,44 @@ Handle starting drag
 =cut
 
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
 
     # Remove previous highlighting
-    $self->destroy_ghost($canvas);
+    $self->destroy_ghost($zinc);
 
-    $x = $canvas->canvasx($x);
-    $y = $canvas->canvasy($y);
-
-    $self->{'drag_ori_x'}  = $x;
-    $self->{'drag_ori_y'}  = $y;
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
-    $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
+    $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
     my @tags;
-    if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
+    my $ghost_color = 'red';
+    if ( grep /^map/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
 
         # Create a ghost item for each item in the original feature glyph
-        $self->{ghost_bounds} = [ $canvas->coords( $self->{'drag_ori_id'} ) ];
         foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
-            my @coords = $canvas->coords($ori_id);
-            my $type   = $canvas->type($ori_id);
+            my @coords = $zinc->coords($ori_id);
+            my $type   = $zinc->type($ori_id);
             next if ( $type eq 'text' );
-            my $create_method = 'create' . ucfirst lc $type;
-            push @{ $self->{'ghost_ids'} },
-                $canvas->$create_method( @coords, -fill => 'red' );
+            my $ghost_id = $zinc->clone($ori_id);
+            push @{ $self->{'ghost_ids'} }, $ghost_id;
 
+            # Make ghost a different color.
+            $zinc->itemconfigure(
+                $ghost_id,
+                -linecolor => $ghost_color,
+                -fillcolor => $ghost_color,
+            );
             $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
 
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
     }
-    elsif ( grep /^feature/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
+    elsif ( grep /^feature/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
 
         my $feature_acc
@@ -2678,17 +2808,24 @@ Handle starting drag
 
         # Create a ghost item for each item in the original feature glyph
         foreach my $ori_id ( $self->feature_acc_to_drawn_ids($feature_acc) ) {
-            my @coords        = $canvas->coords($ori_id);
-            my $type          = $canvas->type($ori_id);
-            my $create_method = 'create' . ucfirst lc $type;
-            push @{ $self->{'ghost_ids'} },
-                $canvas->$create_method( @coords, -fill => 'red' );
+            my @coords = $zinc->coords($ori_id);
+            my $type   = $zinc->type($ori_id);
+            next if ( $type eq 'text' );
+            my $ghost_id = $zinc->clone($ori_id);
+            push @{ $self->{'ghost_ids'} }, $ghost_id;
+
+            # Make ghost a different color.
+            $zinc->itemconfigure(
+                $ghost_id,
+                -linecolor => $ghost_color,
+                -fillcolor => $ghost_color,
+            );
         }
 
         $self->fill_feature_info_box( drawn_id => $self->{'drag_ori_id'}, );
     }
     elsif ( @tags = grep /^background_/,
-        $canvas->gettags( $self->{'drag_ori_id'} ) )
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
@@ -2697,7 +2834,7 @@ Handle starting drag
 
     # BF ADD THIS BACK LATER
     #    elsif ( @tags = grep /^viewed_region_/,
-    #        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
     #    {
     #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
     #        $self->{'drag_window_key'} = $1;
@@ -2725,43 +2862,33 @@ Handle starting drag
 =cut
 
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
 
     # Remove previous highlighting
-    $self->destroy_ghost($canvas);
+    $self->destroy_ghost($zinc);
 
-    $x = $canvas->canvasx($x);
-    $y = $canvas->canvasy($y);
-
-    $self->{'drag_ori_x'}  = $x;
-    $self->{'drag_ori_y'}  = $y;
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
-    $self->{'drag_ori_id'} = $canvas->find( 'withtag', 'current' );
+    $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
     my @tags;
-    if ( grep /^map/, $canvas->gettags( $self->{'drag_ori_id'} ) ) {
+    if ( grep /^map/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
         $self->{'drag_obj'} = 'map';
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
 
         # Create a ghost item for each item in the original feature glyph
-        my @init_coords = $canvas->coords( $self->{'drag_ori_id'} );
-        $self->{'ghost_bounds'} = [
-            $init_coords[0], $init_coords[1],
-            $init_coords[0], $init_coords[1],
-        ];
         foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
-            my @coords = $canvas->coords($ori_id);
-            my $type   = $canvas->type($ori_id);
+            my @coords = $zinc->coords($ori_id);
+            my $type   = $zinc->type($ori_id);
             next if ( $type eq 'text' );
 
             my $create_method = 'create' . ucfirst lc $type;
             push @{ $self->{'ghost_ids'} },
-                $canvas->$create_method( @coords, -fill => 'red' );
+                $zinc->$create_method( @coords, -fill => 'red' );
 
             $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
@@ -2770,7 +2897,7 @@ Handle starting drag
 
     }
     elsif ( @tags = grep /^background_/,
-        $canvas->gettags( $self->{'drag_ori_id'} ) )
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_window_key'} = $1;
@@ -2784,7 +2911,7 @@ Handle starting drag
 
     # BF ADD THIS BACK LATER
     #    elsif ( @tags = grep /^viewed_region_/,
-    #        $canvas->gettags( $self->{'drag_ori_id'} ) )
+    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
     #    {
     #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
     #        $self->{'drag_window_key'} = $1;
@@ -2819,10 +2946,8 @@ Stubbed out, not currently used.
 =cut
 
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
     return unless ( $self->{'drag_ori_id'} );
-    $x = $canvas->canvasx($x);
-    $y = $canvas->canvasy($y);
     my $dx = $x - $self->{'drag_last_x'};
     my $dy = $y - $self->{'drag_last_y'};
 
@@ -2850,21 +2975,19 @@ Handle the drag event
     # BF ADD THIS BACK LATER
     return;
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
     return unless ( $self->{'drag_ori_id'} );
-    $x = $canvas->canvasx($x);
-    $y = $canvas->canvasy($y);
     my $dx = $x - $self->{'drag_last_x'};
     my $dy = $y - $self->{'drag_last_y'};
 
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
             $self->drag_ghost(
-                canvas => $canvas,
-                x      => $x,
-                y      => $y,
-                dx     => $dx,
-                dy     => $dy,
+                zinc => $zinc,
+                x    => $x,
+                y    => $y,
+                dx   => $dx,
+                dy   => $dy,
             );
         }
         elsif ( $self->{'drag_obj'} eq 'background' ) {
@@ -2902,18 +3025,17 @@ Stubbed out, Not currently used.
 =cut
 
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
 
     return unless ( $self->{'drag_ori_id'} );
 
     # Move original object
-    my $canvas_x = $canvas->canvasx($x);
     if ( $self->{'drag_obj'} ) {
     }
 
     foreach (
         qw{
-        drag_ori_id drag_ori_x      drag_ori_y
+        drag_ori_id
         drag_obj    drag_window_key drag_zone_key
         }
         )
@@ -2937,14 +3059,14 @@ Handle the stopping drag event
 =cut
 
     my $self = shift;
-    my ( $canvas, $x, $y, ) = @_;
+    my ( $zinc, $x, $y, ) = @_;
 
     return unless ( $self->{'drag_ori_id'} );
 
     # BF ADD THIS BACK LATER
     #
     #    # Move original object
-    #    my $canvas_x = $canvas->canvasx($x);
+    #    my $zinc_x = $zinc->zincx($x);
     #    if ( $self->{'drag_obj'} ) {
     #        if ( $self->{'drag_obj'} eq 'map' ) {
     #
@@ -2956,7 +3078,7 @@ Handle the stopping drag event
     #                    ->{'map_layout'}{$map_key}{'coords'}[0] );
     #
     #            $self->popup_map_menu(
-    #                canvas   => $canvas,
+    #                zinc   => $zinc,
     #                dx       => $dx,
     #                drawn_id => ( $self->{'drag_ori_id'} ),
     #            );
@@ -2973,7 +3095,7 @@ Handle the stopping drag event
 
     foreach (
         qw{
-        drag_ori_id drag_ori_x      drag_ori_y
+        drag_ori_id
         drag_obj    drag_window_key drag_zone_key
         }
         )
@@ -2997,9 +3119,9 @@ Handle the ghost map dragging
 =cut
 
     my ( $self, %args ) = @_;
-    my $canvas = $args{'canvas'};
-    my $x      = $args{'x'};
-    my $dx     = $args{'dx'};
+    my $zinc = $args{'zinc'};
+    my $x    = $args{'x'};
+    my $dx   = $args{'dx'};
     return unless ($dx);
 
     my $new_dx = $self->app_controller()->move_ghost_map(
@@ -3012,13 +3134,13 @@ Handle the ghost map dragging
 
     # Move the ghost
     foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-        $canvas->move( $ghost_id, $new_dx, 0, );
+        $zinc->move( $ghost_id, $new_dx, 0, );
     }
 
     #Move the ghost bounds
     $self->{'ghost_bounds'}[0] += $new_dx;
     $self->{'ghost_bounds'}[2] += $new_dx;
-    $canvas->configure( -scrollregion => [ $canvas->bbox('all') ] );
+    $zinc->configure( -scrollregion => [ $zinc->bbox('all') ] );
 
 }    # end drag_ghost
 
@@ -3036,9 +3158,9 @@ Handle the mouse wheel events
 =cut
 
     my $self = shift;
-    my ( $canvas, $value ) = @_;
+    my ( $zinc, $value ) = @_;
 
-    if ( my @tags = grep /^background_/, $canvas->gettags("current") ) {
+    if ( my @tags = grep /^background_/, $zinc->gettags("current") ) {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         my $window_key = $1;
         my $zone_key   = $2;
@@ -3112,19 +3234,21 @@ Does what the interface needs to do to move the zone
 
 =cut
 
-    #xxx
-    #    my ( $self, %args ) = @_;
-    #    my $app_display_data = $args{'app_display_data'};
-    #    my $zone_key = $args{'zone_key'};
-    #    my $y = $args{'y'};
-    #
-    #    $self->{'toggle_zone_pane'}{$zone_key}->place(
-    #        -x        => 0,
-    #            -y        => $y,
-    #            -relwidth => 1,
-    #            -height   => $height + BETWEEN_SLOT_BUFFER,
-    #        );
-    #    );
+    my ( $self, %args ) = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $window_key       = $args{'window_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $x                = $args{'x'};
+    my $y                = $args{'y'};
+
+    my $zinc = $self->zinc( window_key => $window_key, );
+    my $zone_group_id = $self->get_zone_group_id(
+        zone_key         => $zone_key,
+        zinc             => $zinc,
+        app_display_data => $app_display_data,
+    );
+
+    $zinc->translate( $zone_group_id, $x, $y );
 
     return;
 }
@@ -3172,11 +3296,11 @@ Destroy the ghost image
 
 =cut
 
-    my $self   = shift;
-    my $canvas = shift;
+    my $self = shift;
+    my $zinc = shift;
 
     foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-        $canvas->delete($ghost_id);
+        $zinc->remove($ghost_id);
     }
     $self->{'ghost_ids'} = undef;
 }
@@ -3198,7 +3322,7 @@ Pack the frames
     my ( $window_key, $app_display_data, ) = @_;
 
     # Top Pane
-    $self->{'overview_canvas'}{$window_key}->pack(
+    $self->{'overview_zinc'}{$window_key}->pack(
         -side => 'left',
         -fill => 'both',
     );
@@ -3221,11 +3345,11 @@ Pack the frames
     );
 
     # Middle Pane
-    $self->{'canvas'}{$window_key}->pack(
+    $self->{'zinc'}{$window_key}->pack(
         -side => 'top',
         -fill => 'both',
     );
-    $self->{'canvas_pane'}{$window_key}->pack(
+    $self->{'zinc_pane'}{$window_key}->pack(
         -side   => 'left',
         -fill   => 'x',
         -anchor => 'n',
@@ -3250,6 +3374,25 @@ second;
 
     my $self = shift;
     my ( $bounds, $new_coords, ) = @_;
+
+    return unless @{ $new_coords || [] };
+
+    # Flatten the coords array
+    $new_coords = [ map { ( ref($_) eq 'ARRAY' ) ? @$_ : $_ }
+            @{ $new_coords || [] } ];
+
+    unless ( defined( $bounds->[0] ) ) {
+        $bounds->[0] = $new_coords->[0];
+    }
+    unless ( defined( $bounds->[1] ) ) {
+        $bounds->[1] = $new_coords->[1];
+    }
+    unless ( defined( $bounds->[2] ) ) {
+        $bounds->[2] = $new_coords->[0];
+    }
+    unless ( defined( $bounds->[3] ) ) {
+        $bounds->[3] = $new_coords->[1];
+    }
 
     for ( my $i = 0; $i <= $#{ $new_coords || [] }; $i = $i + 2 ) {
 
