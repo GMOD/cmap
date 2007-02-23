@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.26 2007-02-21 20:09:43 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.27 2007-02-23 16:11:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -509,19 +509,19 @@ Lays out head maps in a zone
 
     # Set the viewable space by using the window
     my $window_layout = $app_display_data->{'window_layout'}{$window_key};
-    $zone_layout->{'viewable_internal_x1'} = 0;
-    $zone_layout->{'viewable_internal_x2'} = $zone_width;
+    $zone_layout->{'viewable_internal_x1'} = -1 * $x_offset;
+    $zone_layout->{'viewable_internal_x2'} = $zone_width - $x_offset;
     if ( $zone_layout->{'viewable_internal_x1'}
-        < $window_layout->{'bounds'}[0] )
+        < $window_layout->{'bounds'}[0] - $x_offset )
     {
         $zone_layout->{'viewable_internal_x1'}
-            = $window_layout->{'bounds'}[0];
+            = $window_layout->{'bounds'}[0] - $x_offset;
     }
     if ( $zone_layout->{'viewable_internal_x2'}
-        > $window_layout->{'bounds'}[2] )
+        > $window_layout->{'bounds'}[2] - $x_offset )
     {
         $zone_layout->{'viewable_internal_x2'}
-            = $window_layout->{'bounds'}[2];
+            = $window_layout->{'bounds'}[2] - $x_offset;
     }
 
     # The left and right bound limit where the maps get layed out to.
@@ -617,10 +617,9 @@ Lays out head maps in a zone
         }
 
         # If map is not on the screen, don't lay it out.
-        if ( ( $map_min_x + $map_container_width + $x_offset )
+        if ( ( $map_min_x + $map_container_width )
             < $zone_layout->{'viewable_internal_x1'}
-            or $map_min_x + $x_offset
-            > $zone_layout->{'viewable_internal_x2'} )
+            or $map_min_x > $zone_layout->{'viewable_internal_x2'} )
         {
             destroy_map_for_relayout(
                 app_display_data => $app_display_data,
@@ -737,8 +736,8 @@ Lays out sub maps in a slot.
     my $row_max_y = $row_min_y;
 
     $zone_layout->{'internal_bounds'}      = [ 0, 0, $zone_width, 0, ];
-    $zone_layout->{'viewable_internal_x1'} = 0;
-    $zone_layout->{'viewable_internal_x2'} = $zone_width;
+    $zone_layout->{'viewable_internal_x1'} = -1 * $x_offset;
+    $zone_layout->{'viewable_internal_x2'} = $zone_width - $x_offset;
 
     #print STDERR "ZW $zone_width\n";
     #print STDERR $zone_layout->{'viewable_internal_x2'}." A1\n";
@@ -750,7 +749,7 @@ Lays out sub maps in a slot.
         $zone_layout->{'viewable_internal_x1'}
             = $zone_layout->{'internal_bounds'}[0]
             + ( $parent_zone_layout->{'viewable_internal_x1'}
-                - $zone_layout->{'bounds'}[0] );
+                - $zone_layout->{'bounds'}[0] ) - $x_offset;
     }
     if ( $parent_zone_layout->{'viewable_internal_x2'}
         < $zone_layout->{'bounds'}[2] )
@@ -758,7 +757,7 @@ Lays out sub maps in a slot.
         $zone_layout->{'viewable_internal_x2'}
             = $zone_layout->{'internal_bounds'}[2]
             - ( $zone_layout->{'bounds'}[2]
-                - $parent_zone_layout->{'viewable_internal_x2'} );
+                - $parent_zone_layout->{'viewable_internal_x2'} ) - $x_offset;
     }
 
     #print STDERR $zone_layout->{'viewable_internal_x2'}." A2\n";
@@ -895,12 +894,9 @@ Lays out sub maps in a slot.
                 $zone_layout->{'maps_max_x'} = $x2;
             }
 
-#print STDERR "ONSCREEN?\n";
-#print STDERR "Viewable: ".$zone_layout->{'viewable_internal_x1'}.", ".$zone_layout->{'viewable_internal_x2'}."\n";
-#print STDERR "$x2 + $x_offset , $x1 + $x_offset\n";
-# If map is not on the screen, don't lay it out.
-            if (   $x2 + $x_offset < $zone_layout->{'viewable_internal_x1'}
-                or $x1 + $x_offset > $zone_layout->{'viewable_internal_x2'} )
+            # If map is not on the screen, don't lay it out.
+            if (   $x2 < $zone_layout->{'viewable_internal_x1'}
+                or $x1 > $zone_layout->{'viewable_internal_x2'} )
             {
 
                 #print STDERR "NOT ONSCREEN\n";
@@ -1361,6 +1357,8 @@ Lays out a maps in a contained area.
         map_coords       => $map_coords,
         label_y          => $min_y - $font_height - $tick_overhang,
         label_x          => $min_x,
+        viewable_x1      => $viewable_x1,
+        viewable_x2      => $viewable_x2,
         app_display_data => $app_display_data,
     );
     $min_y = $max_y = $map_coords->[3];
@@ -1388,14 +1386,20 @@ Lays out a maps in a contained area.
             $map_key == $app_display_data->{'scaffold'}{$child_zone_key}
             {'parent_map_key'} );
         my $zone_bounds = [ $min_x, $max_y + BETWEEN_ZONE_BUFFER, $max_x, ];
+
+        #print STDERR "Next Zone Bounds\n";
+        #print STDERR Dumper($zone_bounds)."\n";
+
+        # The x and y offsets are not needed in the next zone since the zone
+        # has it's own coordinate system.
         layout_zone(
             window_key       => $window_key,
             zone_key         => $child_zone_key,
             zone_bounds      => $zone_bounds,
             app_display_data => $app_display_data,
             relayout         => $relayout,
-            move_offset_x    => $move_offset_x,
-            move_offset_y    => $move_offset_y,
+            move_offset_x    => 0,
+            move_offset_y    => 0,
             zooming          => $zooming,
             depth            => $depth + 1,
         );
@@ -1490,16 +1494,17 @@ Lays out feautures
                 my $x2 = $min_x
                     + ( ( $feature_stop - $map_start ) * $pixels_per_unit );
 
+                # Skip if not visible
+                if ( $x2 < $viewable_x1 or $x1 > $viewable_x2 ) {
+                    next;
+                }
+
                 if ( not $glyph->allow_glyph_overlap($feature_glyph) ) {
                     my $adjusted_left  = $x1 - $min_x;
                     my $adjusted_right = $x2 - $min_x;
                     $adjusted_left = 0 if ( $adjusted_left < 0 );
                     $adjusted_right = $map_width
                         if ( $adjusted_right > $map_width );
-                    if ( $adjusted_left > $map_width or $adjusted_right < 0 )
-                    {
-                        next;
-                    }
 
                     #xxx
                     $column_index = simple_column_distribution(
@@ -1564,6 +1569,12 @@ Lays out feautures
                     feature          => $feature,
                     feature_type_acc => $feature_type_acc,
                     );
+
+#if ($feature->{'feature_name'} eq 'c0196M02'){
+#print STDERR "FEATURE ---------------------\n" if ($feature->{'feature_name'} eq 'c0196M02');
+#print STDERR "viewable $viewable_x1  $viewable_x2\n";
+#print STDERR Dumper($coords)."\n" if ($feature->{'feature_name'} eq 'c0196M02');
+#}
 
                 $feature_layout->{'changed'} = 1;
                 if ( $y2 > $max_y ) {
@@ -1751,20 +1762,15 @@ object used in CMap.
     my $x_offset          = $args{'x_offset'};
     my $pixels_per_unit   = $args{'pixels_per_unit'};
 
-    my $adjusted_map_min_x = $map_min_x + $x_offset;
-    my $adjusted_map_max_x = $map_max_x + $x_offset;
-
     $app_display_data->{'slot_info'}{$zone_key}{$map_id}
         = [ undef, undef, $map_start, $map_stop, 1 ];
-    if ( $adjusted_map_min_x < $visible_min_bound ) {
-        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0]
-            = $map_start + (
-            ( $visible_min_bound - $adjusted_map_min_x ) / $pixels_per_unit );
+    if ( $map_min_x < $visible_min_bound ) {
+        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0] = $map_start
+            + ( ( $visible_min_bound - $map_min_x ) / $pixels_per_unit );
     }
-    if ( $adjusted_map_max_x > $visible_max_bound ) {
-        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[1]
-            = $map_stop - (
-            ( $adjusted_map_max_x - $visible_max_bound ) / $pixels_per_unit );
+    if ( $map_max_x > $visible_max_bound ) {
+        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[1] = $map_stop
+            - ( ( $map_max_x - $visible_max_bound ) / $pixels_per_unit );
     }
 
     return;
@@ -2202,7 +2208,11 @@ Adds tick marks to a map.
     my $label_x          = $args{'label_x'};
     my $label_y          = $args{'label_y'};
     my $map_coords       = $args{'map_coords'};
+    my $viewable_x1      = $args{'viewable_x1'};
+    my $viewable_x2      = $args{'viewable_x2'};
     my $app_display_data = $args{'app_display_data'};
+    my $x_offset = $app_display_data->{'scaffold'}{$zone_key}{'x_offset'}
+        || 0;
 
     my $map_key = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key}
         { $map->{'map_id'} };
@@ -2217,7 +2227,9 @@ Adds tick marks to a map.
             [2];
     }
 
-    my $visible_pixel_start = $map_coords->[0];
+    my $visible_pixel_start = ( $viewable_x1 > $map_coords->[0] )
+        ? $viewable_x1
+        : $map_coords->[0];
 
     # BF REMOVED THE COMPLICATED STUFF SINCE COORDS WILL HAVE THE FIRST PIXEL
     #+ (
@@ -2233,7 +2245,9 @@ Adds tick marks to a map.
             = $app_display_data->{'slot_info'}{$zone_key}{ $map->{'map_id'} }
             [3];
     }
-    my $visible_pixel_stop = $map_coords->[2];
+    my $visible_pixel_stop = ( $viewable_x2 < $map_coords->[2] )
+        ? $viewable_x2
+        : $map_coords->[2];
 
     # BF REMOVED THE COMPLICATED STUFF SINCE COORDS WILL HAVE THE LAST PIXEL
     #- (
@@ -2275,7 +2289,6 @@ Adds tick marks to a map.
         {
             next;
         }
-
         $last_tick_rel_pos = $rel_position;
 
         my $x_pos

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.30 2007-02-21 20:09:43 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.31 2007-02-23 16:11:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1009,9 +1009,16 @@ Draws and re-draws on the zinc
     my $app_display_data = $args{'app_display_data'};
     my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
 
+    my $parent_zone_key
+        = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'};
+
     my $zone_x_offset
         = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
     my $zone_y_offset = 0;
+
+    my $parent_zone_x_offset = ($parent_zone_key)
+        ? $app_display_data->{'scaffold'}{$parent_zone_key}->{'x_offset'}
+        : 0;
 
     my $zone_group_id = $self->get_zone_group_id(
         zone_key         => $zone_key,
@@ -1023,8 +1030,8 @@ Draws and re-draws on the zinc
     if ( $zone_layout->{'changed'} ) {
         $zinc->coords(
             $zone_group_id,
-            [   $zone_x_offset + $zone_layout->{'bounds'}[0],
-                $zone_y_offset + $zone_layout->{'bounds'}[1]
+            [   $parent_zone_x_offset + $zone_layout->{'bounds'}[0],
+                $zone_layout->{'bounds'}[1]
             ]
         );
         $self->set_zone_clip(
@@ -1053,6 +1060,31 @@ Draws and re-draws on the zinc
                 'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
         );
+
+# The following places bars on the slot for debugging
+#my @colors = ('red','black','blue','green','yellow','purple','orange','black','green','red','blue',);
+#for ( my $i = 1; $i <= 10; $i++ ) {
+#    $self->draw_items(
+#        zinc     => $zinc,
+#        x_offset => 0,       #$zone_x_offset,
+#        y_offset => 0,       #$zone_y_offset,
+#        items    => [
+#            [   1, undef, 'curve',
+#                [ $i*100, 10, $i*100, 100 ],
+#                { -linecolor => $colors[$i-1], -linewidth => '3', }
+#            ],
+#            [   1, undef, 'text',
+#            [ $i*100, 2 ],
+#        {   -text   => $i*100,
+#            -anchor => 'nw',
+#            -color  => 'black',
+#        }
+#    ],
+#        ],
+#        group_id => $zone_group_id,
+#        tags     => [ 'on_top', ],
+#    );
+#}
         foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
             $self->draw_button(
                 x_offset => $zone_x_offset,
@@ -1372,7 +1404,16 @@ Sets the group clip object
     my $zone_layout = $args{'zone_layout'};
 
     #my $fillcolor = ( $zone_key == 1 ) ? 'green' : 'red';
-    my $clip_bounds = $zone_layout->{'internal_bounds'};
+    my $clip_bounds = [
+
+        #$zone_layout->{'viewable_internal_x1'},
+        $zone_layout->{'internal_bounds'}[0],
+        $zone_layout->{'internal_bounds'}[1],
+        $zone_layout->{'internal_bounds'}[2],
+
+        #$zone_layout->{'viewable_internal_x2'},
+        $zone_layout->{'internal_bounds'}[3]
+    ];
     unless ( $self->{'zone_group_clip_id'}{$zone_key} ) {
         $self->{'zone_group_clip_id'}{$zone_key} = $zinc->add(
             'rectangle', $zone_group_id,
@@ -1845,37 +1886,37 @@ Bind events to a zinc
         }
     );
 
-    #    $zinc->CanvasBind(
-    #        '<3>' => sub {
-    #            my ($zinc) = @_;
-    #            my $e = $zinc->XEvent;
-    #            $self->start_drag_type_2( $zinc, $e->x, $e->y, );
-    #        }
-    #    );
-    #    $zinc->CanvasBind(
-    #        '<B1-ButtonRelease>' => sub {
-    #            my ($zinc) = @_;
-    #            my $e = $zinc->XEvent;
-    #            $self->stop_drag_type_1( $zinc, $e->x, $e->y, );
-    #        }
-    #    );
-    #    $zinc->CanvasBind(
-    #        '<B3-ButtonRelease>' => sub {
-    #            my ($zinc) = @_;
-    #            my $e = $zinc->XEvent;
-    #            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
-    #        }
-    #    );
-    #    $zinc->CanvasBind(
-    #        '<B1-Motion>' => sub {
-    #            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
-    #        }
-    #    );
-    #    $zinc->CanvasBind(
-    #        '<B3-Motion>' => sub {
-    #            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
-    #        }
-    #    );
+    $zinc->Tk::bind(
+        '<3>' => sub {
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->start_drag_type_2( $zinc, $e->x, $e->y, );
+        }
+    );
+    $zinc->Tk::bind(
+        '<B1-ButtonRelease>' => sub {
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->stop_drag_type_1( $zinc, $e->x, $e->y, );
+        }
+    );
+    $zinc->Tk::bind(
+        '<B3-ButtonRelease>' => sub {
+            my ($zinc) = @_;
+            my $e = $zinc->XEvent;
+            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
+        }
+    );
+    $zinc->Tk::bind(
+        '<B1-Motion>' => sub {
+            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
+        }
+    );
+    $zinc->Tk::bind(
+        '<B3-Motion>' => sub {
+            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
+        }
+    );
 
     # BF READD THESE BINDINGS
     #    if ( $^O eq 'MSWin32' ) {
@@ -2795,7 +2836,8 @@ Handle starting drag
                 -linecolor => $ghost_color,
                 -fillcolor => $ghost_color,
             );
-            $self->expand_bounds( $self->{ghost_bounds}, \@coords );
+            $self->{ghost_bounds}
+                = $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
 
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
@@ -2874,6 +2916,7 @@ Handle starting drag
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
     my @tags;
+    my $ghost_color = 'red';
     if ( grep /^map/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         return unless ( $self->{'drag_ori_id'} );
         $self->{'drag_obj'} = 'map';
@@ -2885,12 +2928,17 @@ Handle starting drag
             my @coords = $zinc->coords($ori_id);
             my $type   = $zinc->type($ori_id);
             next if ( $type eq 'text' );
+            my $ghost_id = $zinc->clone($ori_id);
+            push @{ $self->{'ghost_ids'} }, $ghost_id;
 
-            my $create_method = 'create' . ucfirst lc $type;
-            push @{ $self->{'ghost_ids'} },
-                $zinc->$create_method( @coords, -fill => 'red' );
-
-            $self->expand_bounds( $self->{ghost_bounds}, \@coords );
+            # Make ghost a different color.
+            $zinc->itemconfigure(
+                $ghost_id,
+                -linecolor => $ghost_color,
+                -fillcolor => $ghost_color,
+            );
+            $self->{ghost_bounds}
+                = $self->expand_bounds( $self->{ghost_bounds}, \@coords );
         }
         $self->{'drag_mouse_to_edge_x'} = $x - $self->{'ghost_bounds'}[0];
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
@@ -2972,8 +3020,6 @@ Handle the drag event
 
 =cut
 
-    # BF ADD THIS BACK LATER
-    return;
     my $self = shift;
     my ( $zinc, $x, $y, ) = @_;
     return unless ( $self->{'drag_ori_id'} );
@@ -2982,6 +3028,9 @@ Handle the drag event
 
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
+
+            # BF ADD THIS FEATURE BACK AT SOME POINT
+            return;
             $self->drag_ghost(
                 zinc => $zinc,
                 x    => $x,
@@ -2994,10 +3043,13 @@ Handle the drag event
             $self->app_controller()->scroll_zone(
                 window_key   => $self->{'drag_window_key'},
                 zone_key     => $self->{'drag_zone_key'},
-                scroll_value => $dx * -1,
+                scroll_value => $dx,
             );
         }
         elsif ( $self->{'drag_obj'} eq 'viewed_region' ) {
+
+            # BF ADD THIS FEATURE BACK AT SOME POINT
+            return;
             $self->app_controller()->overview_scroll_zone(
                 window_key   => $self->{'drag_window_key'},
                 zone_key     => $self->{'drag_zone_key'},
@@ -3413,6 +3465,7 @@ second;
         }
 
     }
+    return $bounds;
 }
 
 1;

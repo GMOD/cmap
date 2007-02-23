@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.28 2007-02-21 20:09:43 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.29 2007-02-23 16:11:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -362,12 +362,12 @@ Scroll zones
     my $x_offset    = $self->{'scaffold'}{$zone_key}{'x_offset'};
     my $zone_layout = $self->{'zone_layout'}{$zone_key};
 
-    if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value + $x_offset
+    if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value
         > $zone_layout->{'viewable_internal_x1'} )
     {
         $scroll_value = -1 * $x_offset;
     }
-    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value + $x_offset
+    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value
         < $zone_layout->{'viewable_internal_x2'} )
     {
         $scroll_value = $zone_layout->{'viewable_internal_x2'}
