@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.31 2007-02-23 16:11:22 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.32 2007-02-23 22:01:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -534,8 +534,6 @@ Gets Map set label
 # ----------------------------------------------------
 sub _add_info_widgets {
 
-    #print STDERR "AI_NEEDS_MODDED 5\n";
-
 =pod
 
 =head2 _add_info_widgets
@@ -565,8 +563,6 @@ Adds information widgets to the info pane
 
 # ----------------------------------------------------
 sub _add_zone_control_widgets {
-
-    #print STDERR "AI_NEEDS_MODDED 6\n";
 
 =pod
 
@@ -795,13 +791,6 @@ Draws and re-draws on the zinc
                 tags  => [ 'on_top', ],
             );
         }
-        foreach my $button ( @{ $window_layout->{'buttons'} || [] } ) {
-            $self->draw_button(
-                zinc   => $zinc,
-                button => $button,
-            );
-
-        }
         $window_layout->{'changed'} = 0;
     }
     if ( $window_layout->{'sub_changed'} ) {
@@ -846,16 +835,14 @@ Draws and re-draws on the zinc
     $self->layer_tagged_items( zinc => $zinc, );
 
     # BF ADD BACK IN AT SOME POINT
-    #$self->layer_tagged_items(
-    #zinc => $self->overview_zinc( window_key => $window_key, ) );
+    $self->layer_tagged_items(
+        zinc => $self->overview_zinc( window_key => $window_key, ) );
 
     return;
 }
 
 # ----------------------------------------------------
 sub draw_overview {
-
-    #print STDERR "AI_NEEDS_MODDED 7\n";
 
 =pod
 
@@ -884,17 +871,10 @@ Draws and re-draws on the overview zinc
                 tags  => [ 'on_top', ],
             );
         }
-        foreach my $button ( @{ $overview_layout->{'buttons'} || [] } ) {
-            $self->draw_button(
-                zinc   => $zinc,
-                button => $button,
-            );
-        }
         $overview_layout->{'changed'} = 0;
     }
     if ( $overview_layout->{'sub_changed'} ) {
 
-        # SLOTS
         foreach my $zone_key ( $top_zone_key,
             @{ $overview_layout->{'child_zone_order'} || [] } )
         {
@@ -910,12 +890,10 @@ Draws and re-draws on the overview zinc
         $overview_layout->{'sub_changed'} = 0;
     }
 
-    my $zinc_width
-        = $overview_layout->{'bounds'}[2] - $overview_layout->{'bounds'}[0]
-        + 1;
-    my $zinc_height
-        = $overview_layout->{'bounds'}[3] - $overview_layout->{'bounds'}[1]
-        + 1;
+    my $zinc_width = $overview_layout->{'internal_bounds'}[2]
+        - $overview_layout->{'internal_bounds'}[0] + 1;
+    my $zinc_height = $overview_layout->{'internal_bounds'}[3]
+        - $overview_layout->{'internal_bounds'}[1] + 1;
 
     $zinc->configure(
         -scrollregion => $overview_layout->{'bounds'},
@@ -928,8 +906,6 @@ Draws and re-draws on the overview zinc
 
 # ----------------------------------------------------
 sub draw_overview_zone {
-
-    #print STDERR "AI_NEEDS_MODDED 8\n";
 
 =pod
 
@@ -945,28 +921,39 @@ Draws and re-draws on the zinc
     my $window_key = $args{'window_key'};
     my $zinc       = $args{'zinc'}
         || $self->zinc( window_key => $args{'window_key'}, );
+    my $depth                = $args{'depth'} || 0;
     my $app_display_data     = $args{'app_display_data'};
     my $overview_zone_layout = $args{'overview_zone_layout'};
 
+    my $zone_group_id = $self->get_zone_group_id(
+        zone_key         => $zone_key,
+        zinc             => $zinc,
+        overview         => 1,
+        app_display_data => $app_display_data,
+    );
+
+    $zinc->coords(
+        $zone_group_id,
+        [   $overview_zone_layout->{'bounds'}[0],
+            $overview_zone_layout->{'bounds'}[1]
+        ]
+    );
+
     if ( $overview_zone_layout->{'changed'} ) {
         $self->draw_items(
-            zinc  => $zinc,
-            items => $overview_zone_layout->{'viewed_region'},
-            tags  => [
+            zinc     => $zinc,
+            items    => $overview_zone_layout->{'viewed_region'},
+            group_id => $zone_group_id,
+            tags     => [
                 'on_bottom', 'viewed_region_' . $window_key . '_' . $zone_key,
             ],
         );
         $self->draw_items(
-            zinc  => $zinc,
-            items => $overview_zone_layout->{'misc_items'},
-            tags  => [ 'on_top', ],
+            zinc     => $zinc,
+            items    => $overview_zone_layout->{'misc_items'},
+            group_id => $zone_group_id,
+            tags     => [ 'on_top', ],
         );
-        foreach my $button ( @{ $overview_zone_layout->{'buttons'} || [] } ) {
-            $self->draw_button(
-                zinc   => $zinc,
-                button => $button,
-            );
-        }
         $overview_zone_layout->{'changed'} = 0;
     }
     if ( $overview_zone_layout->{'sub_changed'} ) {
@@ -978,9 +965,10 @@ Draws and re-draws on the zinc
             my $map_layout = $overview_zone_layout->{'maps'}{$map_key};
             next unless ( $map_layout->{'changed'} );
             $self->draw_items(
-                zinc  => $zinc,
-                items => $map_layout->{'items'},
-                tags  => [ 'on_top', 'overview_map', ],
+                zinc     => $zinc,
+                items    => $map_layout->{'items'},
+                group_id => $zone_group_id,
+                tags     => [ 'on_top', 'overview_map', ],
             );
             $map_layout->{'changed'} = 0;
         }
@@ -1016,7 +1004,8 @@ Draws and re-draws on the zinc
         = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
     my $zone_y_offset = 0;
 
-    my $parent_zone_x_offset = ($parent_zone_key)
+    my $parent_zone_x_offset =
+        ($parent_zone_key)
         ? $app_display_data->{'scaffold'}{$parent_zone_key}->{'x_offset'}
         : 0;
 
@@ -1085,14 +1074,6 @@ Draws and re-draws on the zinc
 #        tags     => [ 'on_top', ],
 #    );
 #}
-        foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
-            $self->draw_button(
-                x_offset => $zone_x_offset,
-                y_offset => $zone_y_offset,
-                zinc     => $zinc,
-                button   => $button,
-            );
-        }
         $zone_layout->{'changed'} = 0;
     }
     if ( $zone_layout->{'sub_changed'} ) {
@@ -1116,14 +1097,6 @@ Draws and re-draws on the zinc
                 map_key => $map_key,
                 items   => $map_layout->{'items'},
             );
-            foreach my $button ( @{ $map_layout->{'buttons'} || [] } ) {
-                $self->draw_button(
-                    zinc     => $zinc,
-                    x_offset => $zone_x_offset,
-                    y_offset => $zone_y_offset,
-                    button   => $button,
-                );
-            }
             if ( $map_layout->{'sub_changed'} ) {
 
                 # Features
@@ -1157,8 +1130,6 @@ Draws and re-draws on the zinc
 
 # ----------------------------------------------------
 sub draw_corrs {
-
-    #print STDERR "AI_NEEDS_MODDED 10\n";
 
 =pod
 
@@ -1272,45 +1243,6 @@ This is an effort to reserve the text space for the app_display_data.
     return ( $item_id, [ $zinc->bbox($item_id) ] );
 }
 
-sub pre_draw_button {
-
-    #print STDERR "AI_NEEDS_MODDED 12\n";
-
-=pod
-
-=head2 pre_draw_button
-
-Draw button and return the id and the boundaries.
-This is an effort to reserve the button space for the app_display_data.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'}
-        or die 'no window key for file_menu_items';
-    my $zone_key         = $args{'zone_key'};
-    my $app_display_data = $args{'app_display_data'};
-    my $x1               = $args{'x1'};
-    my $y1               = $args{'y1'};
-    my $text             = $args{'text'};
-    my $type             = $args{'type'};
-
-    my $zinc        = $self->zinc( window_key => $window_key, );
-    my $command_ref = $self->get_button_command( %args, );
-
-    my $button_win_id = $zinc->createWindow(
-        $x1, $y1,
-        -anchor => 'nw',
-        -window => $zinc->Button(
-            -text    => $text,
-            -command => $command_ref,
-        ),
-        -tags => [ 'button', ],
-    );
-
-    return ( $button_win_id, [ $zinc->bbox($button_win_id) ] );
-}
-
 sub get_button_command {
 
     #print STDERR "AI_NEEDS_MODDED 13\n";
@@ -1359,28 +1291,39 @@ group.
         or die 'no zone key for draw';
     my $zinc = $args{'zinc'}
         || $self->zinc( window_key => $args{'window_key'}, );
+    my $overview         = $args{'overview'} || 0;
     my $app_display_data = $args{'app_display_data'};
 
-    unless ( $self->{'zone_group_id'}{$zone_key} ) {
+    my $storage_key = $overview ? 'ov_zone_group_id' : 'zone_group_id';
+
+    unless ( $self->{$storage_key}{$zone_key} ) {
         my $parent_group_id;
-        if ( my $parent_zone_key
+        if (    $overview
+            and $app_display_data->{'overview'}
+            { $app_display_data->{'scaffold'}{$zone_key}{'window_key'} }
+            {'zone_key'} == $zone_key )
+        {
+            $parent_group_id = 1;
+        }
+        elsif ( my $parent_zone_key
             = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'} )
         {
             $parent_group_id = $self->get_zone_group_id(
                 zone_key         => $parent_zone_key,
                 zinc             => $zinc,
+                overview         => $overview,
                 app_display_data => $app_display_data,
             );
         }
         else {
             $parent_group_id = 1;
         }
-        $self->{'zone_group_id'}{$zone_key}
+        $self->{$storage_key}{$zone_key}
             = $zinc->add( "group", $parent_group_id, );
 
     }
 
-    return $self->{'zone_group_id'}{$zone_key};
+    return $self->{$storage_key}{$zone_key};
 }
 
 # ----------------------------------------------------
@@ -1695,44 +1638,6 @@ Item structure:
 }
 
 # ----------------------------------------------------
-sub draw_button {
-
-    #print STDERR "AI_NEEDS_MODDED 23\n";
-
-=pod
-
-=head2 draw_button
-
-Draws a button on the zinc and associates callbacks to it.
-
-Item structure:
-
-  [ changed, item_id, type, coord_array, options_hash ]
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $zinc   = $args{'zinc'};
-    my $button = $args{'button'} || return;
-
-    my $button_id   = $button->{'item_id'};
-    my $button_type = $button->{'type'};
-
-    # Add Tags
-    my @tags;
-    if ( $button_type eq 'test' ) {
-
-        #could add special tags.
-    }
-    $self->add_tags_to_items(
-        zinc  => $zinc,
-        items => $button->{'items'},
-        tags  => \@tags,
-    );
-
-}
-
-# ----------------------------------------------------
 sub file_menu_items {
 
 =pod
@@ -1865,8 +1770,6 @@ Returns the zinc object.
 # ----------------------------------------------------
 sub bind_zinc {
 
-    #print STDERR "AI_NEEDS_MODDED 27\n";
-
 =pod
 
 =head2 bind_zinc
@@ -1998,25 +1901,6 @@ Returns the overview_zinc object.
     unless ( $self->{'overview_zinc'}{$window_key} ) {
         my $overview_zinc_frame = $self->{'top_pane'}{$window_key};
 
-        #        $self->{'overview_zinc'}{$window_key}
-        #            = $overview_zinc_frame->Scrolled(
-        #            'Canvas',
-        #            (   '-width'       => 1100,
-        #                '-height'      => 300,
-        #                '-relief'      => 'sunken',
-        #                '-borderwidth' => 2,
-        #                '-background'  => 'white',
-        #                '-scrollbars'  => 's',
-        #            ),
-        #            )->pack( -side => 'top', -fill => 'both', );
-        #$self->{'overview_zinc'}{$window_key}
-        #    = $overview_zinc_frame->Canvas(
-        #    '-width'       => 300,
-        #    '-height'      => 300,
-        #    '-relief'      => 'sunken',
-        #    '-borderwidth' => 2,
-        #    '-background'  => 'white',
-        #    );
         $self->{'overview_zinc'}{$window_key} = $overview_zinc_frame->Zinc(
             -width       => 300,
             -height      => 300,
@@ -2692,8 +2576,6 @@ Deletes all widgets in the current window.
 # ----------------------------------------------------
 sub destroy_interface_window {
 
-    #print STDERR "AI_NEEDS_MODDED 45\n";
-
 =pod
 
 =head2 clear_interface_window
@@ -2712,8 +2594,6 @@ Deletes all widgets in the current window.
 
 # ----------------------------------------------------
 sub layer_tagged_items {
-
-    #print STDERR "AI_NEEDS_MODDED 46\n";
 
 =pod
 
@@ -3229,8 +3109,6 @@ Handle the mouse wheel events
 # ----------------------------------------------------
 sub int_new_selected_zone {
 
-    #print STDERR "AI_NEEDS_MODDED 56\n";
-
 =pod
 
 =head2 int_new_selected_zone
@@ -3359,8 +3237,6 @@ Destroy the ghost image
 
 # ----------------------------------------------------
 sub pack_panes {
-
-    #print STDERR "AI_NEEDS_MODDED 60\n";
 
 =pod
 

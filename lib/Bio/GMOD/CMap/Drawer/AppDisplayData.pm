@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.29 2007-02-23 16:11:22 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.30 2007-02-23 22:01:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -343,8 +343,6 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 # ----------------------------------------------------
 sub scroll_zone {
 
-    #print STDERR "ADD_NEEDS_MODDED 3\n";
-
 =pod
 
 =head2 scroll_zone
@@ -385,24 +383,23 @@ Scroll zones
         move_offset_y    => 0,
     );
 
-   # handle overview highlighting
-   # BF ADD BACK LATER
-   #    if ( $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key} ) {
-   #        $self->destroy_items(
-   #            items =>
-   #                $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #                {'viewed_region'},
-   #            panel_key   => $panel_key,
-   #            is_overview => 1,
-   #        );
-   #        $self->{'overview_layout'}{$panel_key}{'zones'}{$zone_key}
-   #            {'viewed_region'} = [];
-   #        overview_selected_area(
-   #            zone_key         => $zone_key,
-   #            panel_key        => $panel_key,
-   #            app_display_data => $self,
-   #        );
-   #    }
+    # handle overview highlighting
+    if ( $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} ) {
+        $self->destroy_items(
+            items =>
+                $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+                {'viewed_region'},
+            window_key  => $window_key,
+            is_overview => 1,
+        );
+        $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
+            {'viewed_region'} = [];
+        overview_selected_area(
+            zone_key         => $zone_key,
+            window_key       => $window_key,
+            app_display_data => $self,
+        );
+    }
 
     $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
     $self->app_interface()->draw_window(
@@ -422,8 +419,6 @@ sub zoom_zone {
 Zoom zones
 
 =cut
-
-    #print STDERR "ADD_NEEDS_MODDED 1\n";
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
@@ -459,147 +454,6 @@ Zoom zones
     );
 
     # handle overview highlighting
-    # BF ADD BACK LATER
-    #if ( $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} ) {
-    #    $self->destroy_items(
-    #        items =>
-    #            $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
-    #            {'viewed_region'},
-    #        window_key   => $window_key,
-    #        is_overview => 1,
-    #    );
-    #    $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
-    #        {'viewed_region'} = [];
-    #    overview_selected_area(
-    #        zone_key         => $zone_key,
-    #        window_key        => $window_key,
-    #        app_display_data => $self,
-    #    );
-    #}
-
-    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub zoom_zone_old {
-
-=pod
-
-=head2 zoom_zone
-
-Zoom zones
-
-=cut
-
-    #print STDERR "ADD_NEEDS_MODDED 1\n";
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $zone_key   = $args{'zone_key'};
-    my $cascading  = $args{'cascading'} || 0;
-    my $zoom_value = $args{'zoom_value'} or return;
-
-    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
-    my $overview_zone_layout
-        = $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key};
-
-    if ($cascading) {
-        if ( $zone_scaffold->{'attached_to_parent'} ) {
-            $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
-                if ($overview_zone_layout);
-
-            # Get Offset from parent
-            $zone_scaffold->{'x_offset'}
-                = $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
-                {'x_offset'};
-
-            $self->relayout_sub_map_zone(
-                window_key => $window_key,
-                zone_key   => $zone_key,
-            );
-        }
-        else {
-            $zone_scaffold->{'scale'} /= $zoom_value;
-            if ($zone_scaffold->{'scale'} == 1
-                and ( $zone_scaffold->{'x_offset'}
-                    == $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
-                    {'x_offset'} )
-                )
-            {
-                $self->attach_zone_to_parent(
-                    zone_key   => $zone_key,
-                    window_key => $window_key,
-                );
-                $self->relayout_sub_map_zone(
-                    window_key => $window_key,
-                    zone_key   => $zone_key,
-                );
-            }
-            else {
-
-                # Reset correspondences
-                # BF ADD THIS BACK
-                #$self->reset_zone_corrs(
-                #    window_key => $window_key,
-                #    zone_key   => $zone_key,
-                #);
-            }
-        }
-    }
-    elsif ( $zone_scaffold->{'is_top'} ) {
-        $zone_scaffold->{'scale'}           *= $zoom_value;
-        $zone_scaffold->{'pixels_per_unit'} *= $zoom_value;
-        $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
-            if ($overview_zone_layout);
-        $self->set_new_zoomed_offset(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-            zoom_value => $zoom_value,
-        );
-        $self->relayout_ref_map_zone(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-        );
-    }
-    else {
-        $overview_zone_layout->{'scale_factor_from_main'} /= $zoom_value
-            if ($overview_zone_layout);
-        $zone_scaffold->{'scale'} *= $zoom_value;
-        if ( $zone_scaffold->{'attached_to_parent'} ) {
-            $self->detach_zone_from_parent( zone_key => $zone_key, );
-        }
-        elsif (
-            $zone_scaffold->{'scale'} == 1
-            and ( $zone_scaffold->{'x_offset'}
-                == $self->{'scaffold'}{ $zone_scaffold->{'parent'} }
-                {'x_offset'} )
-            )
-        {
-            $self->attach_zone_to_parent(
-                zone_key   => $zone_key,
-                window_key => $window_key,
-            );
-        }
-
-        $self->set_new_zoomed_offset(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-            zoom_value => $zoom_value,
-        );
-
-        $self->relayout_sub_map_zone(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-        );
-    }
-
-    # handle overview highlighting
     if ( $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key} ) {
         $self->destroy_items(
             items =>
@@ -617,23 +471,12 @@ Zoom zones
         );
     }
 
-    foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } ) {
-        $self->zoom_zone(
-            window_key => $window_key,
-            window_key => $window_key,
-            zone_key   => $child_zone_key,
-            zoom_value => $zoom_value,
-            cascading  => 1,
-        );
-    }
+    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
-    unless ($cascading) {
-        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_window(
-            window_key       => $window_key,
-            app_display_data => $self,
-        );
-    }
     return;
 }
 
@@ -1105,8 +948,6 @@ Reattach a map and recursively handle the children
 # ----------------------------------------------------
 sub change_width {
 
-    #print STDERR "ADD_NEEDS_MODDED 7\n";
-
 =pod
 
 =head2 change_width
@@ -1149,8 +990,6 @@ canvases.
 
 # ----------------------------------------------------
 sub get_zooming_offset {
-
-    #print STDERR "ADD_NEEDS_MODDED 8\n";
 
 =pod
 
@@ -3319,14 +3158,14 @@ to drawing.
 =head3 Overview Layout
 
     $self->{'overview_layout'} = {
-        $panel_key => {
+        $window_key => {
             bounds           => [ 0, 0, 0, 0 ],
             misc_items       => [],
             buttons          => [],
             changed          => 1,
             sub_changed      => 1,
-            slots            => {
-                $slot_key => {
+            zones            => {
+                $zone_key => {
                     bounds                 => [ 0, 0, 0, 0 ],
                     misc_items             => [],
                     buttons                => [],

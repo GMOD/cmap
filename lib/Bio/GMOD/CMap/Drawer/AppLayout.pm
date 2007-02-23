@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.27 2007-02-23 16:11:22 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.28 2007-02-23 22:01:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -72,8 +72,6 @@ my %SHAPE = (
 
 # ----------------------------------------------------
 sub layout_new_window {
-
-    #print STDERR "AL_NEEDS_MODDED 1\n";
 
 =pod
 
@@ -140,37 +138,36 @@ sub layout_overview {
     my $zone_buffer_y = 15;
     my $zone_buffer_x = 15;
 
-    $overview_layout->{'bounds'} = [ 0, 0, $width, 0 ];
-    $overview_layout->{'maps_min_x'}
-        = $overview_layout->{'bounds'}[0] + $zone_buffer_x;
-    $overview_layout->{'maps_max_x'}
-        = $overview_layout->{'bounds'}[2] - $zone_buffer_x;
-    my $zone_min_y = 0;
-    my $zone_max_y = 0;
-
-    $zone_min_y += $zone_buffer_y;
+    $overview_layout->{'internal_bounds'} = [ 0, 0, $width, 0 ];
 
     # zone_max_y is going to be used to place maps.
-    $zone_max_y = $zone_min_y;
-
-    my $zone_width
-        = $overview_layout->{'maps_max_x'} - $overview_layout->{'maps_min_x'}
-        + 1;
+    my $zone_min_y = 0;
+    my $zone_max_y = $zone_min_y;
 
     # Layout Top Slot
     my $main_zone_layout = $app_display_data->{'zone_layout'}{$head_zone_key};
-    my $top_pixel_factor = $zone_width / ( $main_zone_layout->{'maps_max_x'}
-            - $main_zone_layout->{'maps_min_x'} );
-    my $overview_zone_layout = $overview_layout->{'zones'}{$head_zone_key};
-    $overview_zone_layout->{'scale_factor_from_main'} = $top_pixel_factor;
-    $overview_zone_layout->{'bounds'}                 = [
-        $overview_layout->{'maps_min_x'}, $zone_min_y,
-        $overview_layout->{'maps_max_x'}, $zone_min_y
+    my $top_overview_zone_layout
+        = $overview_layout->{'zones'}{$head_zone_key};
+
+    my $zone_width = $width - ( $zone_buffer_x * 2 );
+
+    # Set the Bounds for the zone.
+    $top_overview_zone_layout->{'bounds'} = [
+        $zone_buffer_x,
+        $zone_min_y + $zone_buffer_y,
+        $width - $zone_buffer_x,
+        $zone_min_y + $zone_buffer_y
     ];
+    $top_overview_zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0 ];
 
-    $overview_layout->{'main_pixel_offset'}
-        = $main_zone_layout->{'maps_min_x'};
+    # Get the scale diff between the overview and the main view
+    my $top_pixel_factor = overview_scale_factor_from_main(
+        overview_zone_layout => $top_overview_zone_layout,
+        main_zone_layout     => $main_zone_layout,
+    );
 
+    # Sort maps according to height.  This way, maps can be drawn from top to
+    # bottom
     my @sorted_map_keys = sort {
         $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
             <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
@@ -196,7 +193,7 @@ sub layout_overview {
         my $draw_sub_ref = $map_layout->{'shape_sub_ref'};
 
         my ( $bounds, $map_coords ) = &$draw_sub_ref(
-            map_layout       => $overview_zone_layout->{'maps'}{$map_key},
+            map_layout       => $top_overview_zone_layout->{'maps'}{$map_key},
             app_display_data => $app_display_data,
             min_x            => $o_map_x1,
             min_y            => $zone_max_y,
@@ -205,39 +202,36 @@ sub layout_overview {
             thickness        => $map_height,
         );
 
-        $overview_zone_layout->{'maps'}{$map_key}{'changed'} = 1;
+        $top_overview_zone_layout->{'maps'}{$map_key}{'changed'} = 1;
     }
-    $overview_zone_layout->{'bounds'}[3]
-        = $zone_max_y + $overview_layout->{'map_buffer_y'};
-    $overview_zone_layout->{'changed'}     = 1;
-    $overview_zone_layout->{'sub_changed'} = 1;
+    $top_overview_zone_layout->{'changed'}     = 1;
+    $top_overview_zone_layout->{'sub_changed'} = 1;
     $zone_max_y += $map_height + $zone_buffer_y;
-
-    # create selected region
-    # BF COME BACK TO THIS
-    #overview_selected_area(
-    #    zone_key         => $head_zone_key,
-    #    window_key        => $window_key,
-    #    app_display_data => $app_display_data,
-    #);
 
     foreach my $child_zone_key ( @{ $overview_layout->{'child_zone_order'} } )
     {
         $main_zone_layout
             = $app_display_data->{'zone_layout'}{$child_zone_key};
-        $overview_zone_layout = $overview_layout->{'zones'}{$child_zone_key};
-        $overview_zone_layout->{'bounds'}[0]
+        my $child_overview_zone_layout
+            = $overview_layout->{'zones'}{$child_zone_key};
+        $child_overview_zone_layout->{'bounds'}[0]
             = $main_zone_layout->{'bounds'}[0] * $top_pixel_factor;
-        $overview_zone_layout->{'bounds'}[1]
+        $child_overview_zone_layout->{'bounds'}[1]
             = $zone_max_y - $overview_layout->{'map_buffer_y'};
-        $overview_zone_layout->{'bounds'}[2]
+        $child_overview_zone_layout->{'bounds'}[2]
             = $main_zone_layout->{'bounds'}[2] * $top_pixel_factor;
+        $zone_width = $child_overview_zone_layout->{'bounds'}[2]
+            - $child_overview_zone_layout->{'bounds'}[1];
+        $child_overview_zone_layout->{'internal_bounds'}
+            = [ 0, 0, $zone_width, 0 ];
 
-        my $child_pixel_factor = $top_pixel_factor
-            * $app_display_data->{'scaffold'}{$child_zone_key}{'scale'};
-        $overview_zone_layout->{'scale_factor_from_main'}
-            = $child_pixel_factor;
+        my $child_pixel_factor = overview_scale_factor_from_main(
+            overview_zone_layout => $child_overview_zone_layout,
+            main_zone_layout     => $main_zone_layout,
+        );
 
+        # Sort maps according to height.  This way, maps can be drawn from top
+        # to bottom
         @sorted_map_keys = sort {
             $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
                 <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
@@ -253,21 +247,17 @@ sub layout_overview {
             unless ( $last_y == $map_layout->{'bounds'}[1] ) {
                 $zone_max_y
                     += $map_height + $overview_layout->{'map_buffer_y'};
-
                 $last_y = $map_layout->{'bounds'}[1];
             }
-            my $o_map_x1 = $child_pixel_factor * ( $map_layout->{'bounds'}[0]
-                    - $overview_layout->{'main_pixel_offset'} )
-                + $overview_layout->{'maps_min_x'};
-            my $o_map_x2 = $child_pixel_factor * ( $map_layout->{'bounds'}[2]
-                    - $overview_layout->{'main_pixel_offset'} )
-                + $overview_layout->{'maps_min_x'};
+            my $o_map_x1 = $child_pixel_factor * $map_layout->{'bounds'}[0];
+
+            my $o_map_x2 = $child_pixel_factor * $map_layout->{'bounds'}[2];
 
             my $draw_sub_ref
                 = _map_shape_sub_ref( map_layout => $map_layout, );
 
             my ( $bounds, $map_coords ) = &$draw_sub_ref(
-                map_layout       => $overview_zone_layout->{'maps'}{$map_key},
+                map_layout => $child_overview_zone_layout->{'maps'}{$map_key},
                 app_display_data => $app_display_data,
                 min_x            => $o_map_x1,
                 min_y            => $zone_max_y,
@@ -276,35 +266,44 @@ sub layout_overview {
                 thickness        => $map_height,
             );
 
-            $overview_zone_layout->{'maps'}{$map_key}{'changed'} = 1;
+            $child_overview_zone_layout->{'maps'}{$map_key}{'changed'} = 1;
         }
 
         $zone_max_y += $map_height;
-        $overview_zone_layout->{'bounds'}[3]   = $zone_max_y;
-        $overview_zone_layout->{'changed'}     = 1;
-        $overview_zone_layout->{'sub_changed'} = 1;
+        $child_overview_zone_layout->{'bounds'}[3]   = $zone_max_y;
+        $child_overview_zone_layout->{'changed'}     = 1;
+        $child_overview_zone_layout->{'sub_changed'} = 1;
         $zone_max_y += $zone_buffer_y;
 
         # create selected region
         # BF COME BACK TO THIS
-        #overview_selected_area(
-        #    zone_key         => $child_zone_key,
-        #    window_key        => $window_key,
-        #    app_display_data => $app_display_data,
-        #);
+        overview_selected_area(
+            zone_key         => $child_zone_key,
+            window_key       => $window_key,
+            app_display_data => $app_display_data,
+        );
     }
 
-    $overview_layout->{'bounds'}[3]   = $zone_max_y;
-    $overview_layout->{'changed'}     = 1;
-    $overview_layout->{'sub_changed'} = 1;
+    $top_overview_zone_layout->{'bounds'}[3]
+        += $zone_max_y + $overview_layout->{'map_buffer_y'};
+    $top_overview_zone_layout->{'internal_bounds'}[3]
+        += $zone_max_y + $overview_layout->{'map_buffer_y'};
+    $overview_layout->{'internal_bounds'}[3] = $zone_max_y;
+    $overview_layout->{'changed'}            = 1;
+    $overview_layout->{'sub_changed'}        = 1;
+
+    # create selected region
+    overview_selected_area(
+        zone_key         => $head_zone_key,
+        window_key       => $window_key,
+        app_display_data => $app_display_data,
+    );
 
     return;
 }
 
 # ----------------------------------------------------
 sub layout_zone {
-
-    #print STDERR "AL_NEEDS_MODDED 3\n";
 
 =pod
 
@@ -471,8 +470,6 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
 # ----------------------------------------------------
 sub layout_head_maps {
-
-    #print STDERR "AL_NEEDS_MODDED 6\n";
 
 =pod
 
@@ -700,8 +697,6 @@ Lays out head maps in a zone
 # ----------------------------------------------------
 sub layout_sub_maps {
 
-    #print STDERR "AL_NEEDS_MODDED 7\n";
-
 =pod
 
 =head2 layout_sub_maps
@@ -739,9 +734,6 @@ Lays out sub maps in a slot.
     $zone_layout->{'viewable_internal_x1'} = -1 * $x_offset;
     $zone_layout->{'viewable_internal_x2'} = $zone_width - $x_offset;
 
-    #print STDERR "ZW $zone_width\n";
-    #print STDERR $zone_layout->{'viewable_internal_x2'}." A1\n";
-
     # set the viewable space by looking to see if the parent has been clipped
     if ( $parent_zone_layout->{'viewable_internal_x1'}
         > $zone_layout->{'bounds'}[0] )
@@ -759,8 +751,6 @@ Lays out sub maps in a slot.
             - ( $zone_layout->{'bounds'}[2]
                 - $parent_zone_layout->{'viewable_internal_x2'} ) - $x_offset;
     }
-
-    #print STDERR $zone_layout->{'viewable_internal_x2'}." A2\n";
 
     # Sort maps for easier layout
     my @sub_map_keys = sort {
@@ -899,7 +889,6 @@ Lays out sub maps in a slot.
                 or $x1 > $zone_layout->{'viewable_internal_x2'} )
             {
 
-                #print STDERR "NOT ONSCREEN\n";
                 destroy_map_for_relayout(
                     app_display_data => $app_display_data,
                     map_key          => $sub_map_key,
@@ -923,7 +912,6 @@ Lays out sub maps in a slot.
                 pixels_per_unit   => $map_pixels_per_unit,
             );
 
-            #print STDERR "LAYOUT \n";
             my $tmp_map_max_y = _layout_contained_map(
                 app_display_data => $app_display_data,
                 window_key       => $window_key,
@@ -973,65 +961,8 @@ Lays out sub maps in a slot.
     return $height_change;
 }
 
-## ----------------------------------------------------
-#sub layout_zone_tree {
-##print STDERR "AL_NEEDS_MODDED 3\n";
-#
-#=pod
-#
-#=head2 layout_zone_tree
-#
-#Lays out a zone and its children after they have been placed already.
-#
-#$zone_bounds only needs the first three (min_x,min_y,max_x)
-#
-#=cut
-#
-#    my %args             = @_;
-#    my $window_key       = $args{'window_key'};
-#    my $zone_key         = $args{'zone_key'};
-#    my $app_display_data = $args{'app_display_data'};
-#    my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
-#    my $start_min_y      = $zone_bounds->[1];
-#    my $start_max_y      = $zone_bounds->[3];
-#
-#    my $zone_width = $zone_bounds->[2]-$zone_bounds->[0];
-#
-#    if ( $app_display_data->{'scaffold'}{$zone_key}{'is_top'} ) {
-#
-#        # These maps are "head" maps
-#        layout_head_maps(
-#            window_key       => $window_key,
-#            zone_key         => $zone_key,
-#            zone_width       => $zone_width,
-#            app_display_data => $app_display_data,
-#        );
-#    }
-#    else {
-#
-#        # These maps are features of the parent map
-#        layout_sub_maps(
-#            window_key       => $window_key,
-#            zone_key         => $zone_key,
-#            zone_width       => $zone_width,
-#            app_display_data => $app_display_data,
-#        );
-#    }
-#    unless ( $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'}
-#        or $app_display_data->{'scaffold'}{$zone_key}{'is_top'} )
-#    {
-#        add_zone_separator( zone_layout => $zone_layout, );
-#    }
-#
-#    $zone_layout->{'sub_changed'} = 1;
-#
-#    return;
-#}
-
 # ----------------------------------------------------
 sub set_zone_bgcolor {
-
-    #print STDERR "AL_NEEDS_MODDED 4\n";
 
 =pod
 
@@ -1226,8 +1157,6 @@ Lays out maps in a zone where they are already placed horizontally.
 # ----------------------------------------------------
 sub _layout_contained_map {
 
-    #print STDERR "AL_NEEDS_MODDED 9\n";
-
 =pod
 
 =head2 _layout_contained_map
@@ -1387,9 +1316,6 @@ Lays out a maps in a contained area.
             {'parent_map_key'} );
         my $zone_bounds = [ $min_x, $max_y + BETWEEN_ZONE_BUFFER, $max_x, ];
 
-        #print STDERR "Next Zone Bounds\n";
-        #print STDERR Dumper($zone_bounds)."\n";
-
         # The x and y offsets are not needed in the next zone since the zone
         # has it's own coordinate system.
         layout_zone(
@@ -1418,8 +1344,6 @@ Lays out a maps in a contained area.
 
 # ----------------------------------------------------
 sub _layout_features {
-
-    #print STDERR "AL_NEEDS_MODDED 10\n";
 
 =pod
 
@@ -1738,8 +1662,6 @@ Lays out correspondences between two slots
 # ----------------------------------------------------
 sub _add_to_slot_info {
 
-    #print STDERR "AL_NEEDS_MODDED 12\n";
-
 =pod
 
 =head2 _add_to_slot_info
@@ -1778,8 +1700,6 @@ object used in CMap.
 
 # ----------------------------------------------------
 sub _pixels_per_map_unit {
-
-    #print STDERR "AL_NEEDS_MODDED 13\n";
 
 =pod
 
@@ -1884,32 +1804,34 @@ Shows the selected region.
 =cut
 
     my %args             = @_;
-    my $slot_key         = $args{'slot_key'};
-    my $panel_key        = $args{'panel_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
 
-    my $overview_layout = $app_display_data->{'overview_layout'}{$panel_key};
-    my $overview_slot_layout = $overview_layout->{'slots'}{$slot_key}
+    return
+        if (
+        $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'} );
+
+    # Get all of the info needed
+    my $overview_layout = $app_display_data->{'overview_layout'}{$window_key};
+    my $overview_zone_layout = $overview_layout->{'zones'}{$zone_key}
         or return;
-    my $main_slot_layout = $app_display_data->{'slot_layout'}{$slot_key};
+    my $main_zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
     my $main_offset_x
-        = $app_display_data->{'scaffold'}{$slot_key}{'x_offset'};
+        = $app_display_data->{'scaffold'}{$zone_key}{'x_offset'};
 
-    my $bracket_y1 = $overview_slot_layout->{'bounds'}[1]
-        - $overview_layout->{'map_buffer_y'};
-    my $bracket_y2 = $overview_slot_layout->{'bounds'}[3]
-        + $overview_layout->{'map_buffer_y'};
-    my $scale_factor_from_main
-        = $overview_slot_layout->{'scale_factor_from_main'};
-    my $min_x = $main_slot_layout->{'bounds'}[0];
-    my $max_x = $main_slot_layout->{'bounds'}[2];
-    $min_x -= $overview_layout->{'main_pixel_offset'};
-    $max_x -= $overview_layout->{'main_pixel_offset'};
+    my $bracket_y1 = $overview_zone_layout->{'internal_bounds'}[1];
+    my $bracket_y2 = $overview_zone_layout->{'internal_bounds'}[3];
 
-    my $bracket_x1 = ( ( $min_x + $main_offset_x ) * $scale_factor_from_main )
-        + $overview_layout->{'maps_min_x'};
-    my $bracket_x2 = ( ( $max_x + $main_offset_x ) * $scale_factor_from_main )
-        + $overview_layout->{'maps_min_x'};
+    my $scale_factor_from_main = overview_scale_factor_from_main(
+        overview_zone_layout => $overview_zone_layout,
+        main_zone_layout     => $main_zone_layout,
+    );
+    my $min_x = $main_zone_layout->{'viewable_internal_x1'};
+    my $max_x = $main_zone_layout->{'viewable_internal_x2'};
+
+    my $bracket_x1 = $min_x * $scale_factor_from_main;
+    my $bracket_x2 = $max_x * $scale_factor_from_main;
 
     my $bracket_width = 5;
 
@@ -1917,7 +1839,7 @@ Shows the selected region.
     if ($use_brackets) {
 
         # Left bracket
-        push @{ $overview_slot_layout->{'viewed_region'} },
+        push @{ $overview_zone_layout->{'viewed_region'} },
             (
             [   1, undef, 'curve',
                 [   $bracket_x1 + $bracket_width, $bracket_y1,
@@ -1930,7 +1852,7 @@ Shows the selected region.
             );
 
         # Right bracket
-        push @{ $overview_slot_layout->{'viewed_region'} },
+        push @{ $overview_zone_layout->{'viewed_region'} },
             (
             [   1, undef, 'curve',
                 [   $bracket_x2 - $bracket_width, $bracket_y1,
@@ -1943,7 +1865,7 @@ Shows the selected region.
             );
 
         # top line
-        push @{ $overview_slot_layout->{'viewed_region'} },
+        push @{ $overview_zone_layout->{'viewed_region'} },
             (
             [   1,
                 undef,
@@ -1954,7 +1876,7 @@ Shows the selected region.
             );
 
         # bottom line
-        push @{ $overview_slot_layout->{'viewed_region'} },
+        push @{ $overview_zone_layout->{'viewed_region'} },
             (
             [   1,
                 undef,
@@ -1967,7 +1889,7 @@ Shows the selected region.
     else {
 
         # rectangle
-        push @{ $overview_slot_layout->{'viewed_region'} },
+        push @{ $overview_zone_layout->{'viewed_region'} },
             (
             [   1, undef,
                 'rectangle',
@@ -1983,14 +1905,12 @@ Shows the selected region.
             );
     }
     $overview_layout->{'sub_changed'}  = 1;
-    $overview_slot_layout->{'changed'} = 1;
+    $overview_zone_layout->{'changed'} = 1;
 
 }
 
 # ----------------------------------------------------
 sub move_zone {
-
-    #print STDERR "AL_NEEDS_MODDED 15\n";
 
 =pod
 
@@ -2029,8 +1949,6 @@ Move a zone
 
 # ----------------------------------------------------
 sub move_map {
-
-    #print STDERR "AL_NEEDS_MODDED 16\n";
 
 =pod
 
@@ -2092,8 +2010,6 @@ Move a map
 # ----------------------------------------------------
 sub move_drawing_items {
 
-    #print STDERR "AL_NEEDS_MODDED 17\n";
-
 =pod
 
 =head2 move_drawing_items
@@ -2126,8 +2042,6 @@ Move drawing_items
 # ----------------------------------------------------
 sub _map_shape_sub_ref {
 
-    #print STDERR "AL_NEEDS_MODDED 17\n";
-
 =pod
 
 =head2 _map_shape_sub_ref
@@ -2159,8 +2073,6 @@ return a reference to the map shape subroutine
 # ----------------------------------------------------
 sub _tick_mark_interval {
 
-    #print STDERR "AL_NEEDS_MODDED 18\n";
-
 =pod
 
 =head2 _tick_mark_interval
@@ -2189,9 +2101,29 @@ Returns the map's tick mark interval.
 }
 
 # ----------------------------------------------------
-sub _add_tick_marks {
+sub overview_scale_factor_from_main {
 
-    #print STDERR "AL_NEEDS_MODDED 19\n";
+=pod
+
+=head2 overview_scale_factor_from_main
+
+Get the scale value between the main layout and the overview
+
+=cut
+
+    my %args                 = @_;
+    my $overview_zone_layout = $args{'overview_zone_layout'};
+    my $main_zone_layout     = $args{'main_zone_layout'};
+
+    my $return_val = ( $overview_zone_layout->{'internal_bounds'}[2]
+            - $overview_zone_layout->{'internal_bounds'}[1] + 1 ) /
+        ( $main_zone_layout->{'internal_bounds'}[2]
+            - $main_zone_layout->{'internal_bounds'}[0] + 1 );
+    return $return_val;
+}
+
+# ----------------------------------------------------
+sub _add_tick_marks {
 
 =pod
 
@@ -2227,7 +2159,8 @@ Adds tick marks to a map.
             [2];
     }
 
-    my $visible_pixel_start = ( $viewable_x1 > $map_coords->[0] )
+    my $visible_pixel_start =
+        ( $viewable_x1 > $map_coords->[0] )
         ? $viewable_x1
         : $map_coords->[0];
 
@@ -2245,7 +2178,8 @@ Adds tick marks to a map.
             = $app_display_data->{'slot_info'}{$zone_key}{ $map->{'map_id'} }
             [3];
     }
-    my $visible_pixel_stop = ( $viewable_x2 < $map_coords->[2] )
+    my $visible_pixel_stop =
+        ( $viewable_x2 < $map_coords->[2] )
         ? $viewable_x2
         : $map_coords->[2];
 
@@ -2328,8 +2262,6 @@ Adds tick marks to a map.
 
 # ----------------------------------------------------
 sub _draw_box {
-
-    #print STDERR "AL_NEEDS_MODDED 20\n";
 
 =pod
 
@@ -2428,8 +2360,6 @@ box.
 # ----------------------------------------------------
 sub _draw_dumbbell {
 
-    #print STDERR "AL_NEEDS_MODDED 21\n";
-
 =pod
 
 =head2 _draw_dumbbell
@@ -2515,8 +2445,6 @@ Return the bounds of the map.
 
 # ----------------------------------------------------
 sub _draw_i_beam {
-
-    #print STDERR "AL_NEEDS_MODDED 22\n";
 
 =pod
 
