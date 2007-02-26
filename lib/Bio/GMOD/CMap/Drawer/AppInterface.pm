@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.32 2007-02-23 22:01:43 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.33 2007-02-26 18:57:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -720,7 +720,7 @@ Adds control buttons to the controls_pane.
     );
     Tk::grid(
         $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
-        '-',    #$reattach_button, $toggle_corrs_button,
+        '-', $toggle_corrs_button,    #$reattach_button,
         -sticky => "nw",
     );
     Tk::grid(
@@ -1147,6 +1147,10 @@ corr can be different.
         || $self->zinc( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
 
+    # The group id will be 1 because we are drawing this right on the zinc
+    # surface.
+    my $group_id = 1;
+
     my $corr_layout = $app_display_data->{'corr_layout'};
 
     return unless ( $corr_layout->{'changed'} );
@@ -1186,14 +1190,22 @@ MAP1:
                 $coords[2] += $x_offset2;
 
                 if ( defined($item_id) ) {
-                    $zinc->coords( $item_id, @coords );
+                    $zinc->coords( $item_id, \@coords );
                     $zinc->itemconfigure( $item_id, %{ $options || {} } );
                 }
                 else {
-                    $zinc->coords( $item_id, @coords );
-                    my $create_method = 'create' . ucfirst lc $type;
-                    $item->[1]
-                        = $zinc->$create_method( @coords, %{$options} );
+                    if ( $type eq 'text' ) {
+                        $item->[1] = $zinc->add(
+                            $type, $group_id,
+                            -position => \@coords,
+                            %{$options},
+                        );
+                    }
+                    else {
+                        $item->[1] = $zinc->add( $type, $group_id, \@coords,
+                            %{$options}, );
+                    }
+
                     foreach my $tag (@$tags) {
                         $zinc->addtag( $tag, 'withtag', $item->[1] );
                     }

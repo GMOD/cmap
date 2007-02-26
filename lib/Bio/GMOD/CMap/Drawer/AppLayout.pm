@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.28 2007-02-23 22:01:43 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.29 2007-02-26 18:57:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -630,7 +630,7 @@ Lays out head maps in a zone
         # BF this may not be needed anymore
         $app_display_data->{'map_layout'}{$map_key}{'row_index'} = $row_index;
 
-        # Add info to zone_info needed for creation of correspondences
+        # Add info to slot_info needed for creation of correspondences
         _add_to_slot_info(
             app_display_data  => $app_display_data,
             zone_key          => $zone_key,
@@ -1561,7 +1561,7 @@ sub add_correspondences {
 
 =head2 add_correspondences
 
-Lays out correspondences between two slots
+Lays out correspondences between two zones
 
 =cut
 
@@ -1569,19 +1569,25 @@ Lays out correspondences between two slots
     my $app_display_data = $args{'app_display_data'};
     my $window_key       = $args{'window_key'};
     my $panel_key        = $args{'panel_key'};
-    my $slot_key1        = $args{'slot_key1'};
-    my $slot_key2        = $args{'slot_key2'};
+    my $zone_key1        = $args{'zone_key1'};
+    my $zone_key2        = $args{'zone_key2'};
 
-    ( $slot_key1, $slot_key2 ) = ( $slot_key2, $slot_key1 )
-        if ( $slot_key1 > $slot_key2 );
+    ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
+        if ( $zone_key1 > $zone_key2 );
 
     # Get Correspondence Data
-    my $corrs = $app_display_data->app_data_module()->slot_correspondences(
-        slot_key1  => $slot_key1,
-        slot_key2  => $slot_key2,
-        slot_info1 => $app_display_data->{'slot_info'}{$slot_key1},
-        slot_info2 => $app_display_data->{'slot_info'}{$slot_key2},
+    my $corrs = $app_display_data->app_data_module()->zone_correspondences(
+        zone_key1  => $zone_key1,
+        zone_key2  => $zone_key2,
+        slot_info1 => $app_display_data->{'slot_info'}{$zone_key1},
+        slot_info2 => $app_display_data->{'slot_info'}{$zone_key2},
     );
+
+    # Get the zone offsets which reflect the "real" coordinates.
+    my ( $zone1_x_offset, $zone1_y_offset )
+        = $app_display_data->get_main_zone_offsets( zone_key => $zone_key1, );
+    my ( $zone2_x_offset, $zone2_y_offset )
+        = $app_display_data->get_main_zone_offsets( zone_key => $zone_key2, );
 
     if ( @{ $corrs || [] } ) {
         $app_display_data->{'corr_layout'}{'changed'} = 1;
@@ -1589,10 +1595,10 @@ Lays out correspondences between two slots
 
     foreach my $corr ( @{ $corrs || [] } ) {
         my $map_key1
-            = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key1}
+            = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key1}
             { $corr->{'map_id1'} };
         my $map_key2
-            = $app_display_data->{'map_id_to_key_by_slot'}{$slot_key2}
+            = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key2}
             { $corr->{'map_id2'} };
         my $map1_x1
             = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
@@ -1615,10 +1621,10 @@ Lays out correspondences between two slots
         }
         my $map1_pixels_per_unit
             = $app_display_data->{'map_pixels_per_unit'}{$map_key1}
-            || $app_display_data->{'scaffold'}{$slot_key1}{'pixels_per_unit'};
+            || $app_display_data->{'scaffold'}{$zone_key1}{'pixels_per_unit'};
         my $map2_pixels_per_unit
             = $app_display_data->{'map_pixels_per_unit'}{$map_key2}
-            || $app_display_data->{'scaffold'}{$slot_key2}{'pixels_per_unit'};
+            || $app_display_data->{'scaffold'}{$zone_key2}{'pixels_per_unit'};
         my $corr_avg_x1
             = ( $corr->{'feature_start1'} + $corr->{'feature_stop1'} ) / 2;
         my $corr_x1 = $map1_x1 + ( $map1_pixels_per_unit * $corr_avg_x1 );
@@ -1633,8 +1639,8 @@ Lays out correspondences between two slots
                 = {
                 changed   => 1,
                 items     => [],
-                slot_key1 => $slot_key1,
-                slot_key2 => $slot_key2,
+                zone_key1 => $zone_key1,
+                zone_key2 => $zone_key2,
                 map_key1  => $map_key1,
                 map_key2  => $map_key2,
                 };
@@ -1650,8 +1656,12 @@ Lays out correspondences between two slots
                 {$map_key2}{'items'} },
             (
             [   1, undef, 'curve',
-                [ $corr_x1, $corr_y1, $corr_x2, $corr_y2, ],
-                { -fill => 'red', -width => '1', }
+                [   $corr_x1 + $zone1_x_offset,
+                    $corr_y1 + $zone1_y_offset,
+                    $corr_x2 + $zone2_x_offset,
+                    $corr_y2 + $zone2_y_offset,
+                ],
+                { -linecolor => 'red', -linewidth => '1', }
             ]
             );
     }

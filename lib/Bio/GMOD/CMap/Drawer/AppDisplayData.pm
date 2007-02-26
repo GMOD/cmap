@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.30 2007-02-23 22:01:43 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.31 2007-02-26 18:57:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -406,6 +406,10 @@ Scroll zones
         window_key       => $window_key,
         app_display_data => $self,
     );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
     return;
 }
 
@@ -477,6 +481,10 @@ Zoom zones
         app_display_data => $self,
     );
 
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
     return;
 }
 
@@ -544,39 +552,38 @@ Crawl the scaffold to find the top zone that is attached.
 }
 
 # ----------------------------------------------------
-sub toggle_corrs_slot {
+sub toggle_corrs_zone {
 
     #print STDERR "ADD_NEEDS_MODDED 4\n";
 
 =pod
 
-=head2 toggle_corrs_slot
+=head2 toggle_corrs_zone
 
-toggle the correspondences for a slot
+toggle the correspondences for a zone
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $panel_key  = $args{'panel_key'};
-    my $slot_key1  = $args{'slot_key'};
+    my $zone_key1  = $args{'zone_key'};
 
-    my $slot_key2 = $self->{'scaffold'}{$slot_key1}{'parent'};
-    return unless ($slot_key2);
+    print STDERR "Toggling $zone_key1\n";
+    my $zone_key2 = $self->{'scaffold'}{$zone_key1}{'parent_zone_key'};
+    return unless ($zone_key2);
 
-    if ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} ) {
-        $self->clear_slot_corrs(
-            panel_key => $panel_key,
-            slot_key1 => $slot_key1,
-            slot_key2 => $slot_key2,
+    if ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} ) {
+        $self->clear_zone_corrs(
+            window_key => $window_key,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
         );
     }
     else {
-        $self->add_slot_corrs(
+        $self->add_zone_corrs(
             window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key1  => $slot_key1,
-            slot_key2  => $slot_key2,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
         );
     }
 
@@ -606,7 +613,7 @@ expand slots
 
     return if $old_slot_scaffold->{'expanded'};
 
-    my $parent_slot_key = $old_slot_scaffold->{'parent'};
+    my $parent_slot_key = $old_slot_scaffold->{'parent_zone_key'};
 
     my %row_index_maps;
 
@@ -837,7 +844,7 @@ Reattach a map and recursively handle the children
 
             # Get Offset from parent
             $slot_scaffold->{'x_offset'}
-                = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
+                = $self->{'scaffold'}{ $slot_scaffold->{'parent_zone_key'} }
                 {'x_offset'};
 
             $self->relayout_sub_map_slot(
@@ -852,8 +859,8 @@ Reattach a map and recursively handle the children
             }
             if ($slot_scaffold->{'scale'} == 1
                 and ( $slot_scaffold->{'x_offset'} - $scroll_value
-                    == $self->{'scaffold'}{ $slot_scaffold->{'parent'} }
-                    {'x_offset'} )
+                    == $self->{'scaffold'}
+                    { $slot_scaffold->{'parent_zone_key'} }{'x_offset'} )
                 )
             {
                 $self->attach_slot_to_parent(
@@ -889,7 +896,8 @@ Reattach a map and recursively handle the children
 
         # Get Offset from parent
         $slot_scaffold->{'x_offset'}
-            = $self->{'scaffold'}{ $slot_scaffold->{'parent'} }{'x_offset'};
+            = $self->{'scaffold'}{ $slot_scaffold->{'parent_zone_key'} }
+            {'x_offset'};
 
         $overview_slot_layout->{'scale_factor_from_main'}
             /= $unattached_child_zoom_value
@@ -1798,30 +1806,30 @@ Hide Corrs for moving
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $slot_key1  = $args{'slot_key'}   or return;
+    my $zone_key1  = $args{'zone_key'}   or return;
 
     # Record the current corrs
-    foreach my $slot_key2 (
-        keys %{ $self->{'correspondences_on'}{$slot_key1} || {} } )
+    foreach my $zone_key2 (
+        keys %{ $self->{'correspondences_on'}{$zone_key1} || {} } )
     {
-        if ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} ) {
-            push @{ $self->{'correspondences_hidden'}{$slot_key1} },
-                $slot_key2;
-            $self->clear_slot_corrs(
+        if ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} ) {
+            push @{ $self->{'correspondences_hidden'}{$zone_key1} },
+                $zone_key2;
+            $self->clear_zone_corrs(
                 window_key => $window_key,
-                slot_key1  => $slot_key1,
-                slot_key2  => $slot_key2,
+                zone_key1  => $zone_key1,
+                zone_key2  => $zone_key2,
             );
         }
     }
 
-    foreach my $child_slot_key (
-        @{ $self->{'scaffold'}{$slot_key1}{'children'} || [] } )
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key1}{'children'} || [] } )
     {
-        if ( $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} ) {
+        if ( $self->{'scaffold'}{$child_zone_key}{'attached_to_parent'} ) {
             $self->hide_corrs(
                 window_key => $window_key,
-                slot_key   => $child_slot_key,
+                zone_key   => $child_zone_key,
             );
         }
     }
@@ -1893,7 +1901,7 @@ Move a map from one place on a parent to another
     my $ghost_bounds    = $args{'ghost_bounds'};
     my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
     my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
     my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
     my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
 
@@ -2014,7 +2022,7 @@ Move a map from one place on a parent to another
     my $ghost_bounds    = $args{'ghost_bounds'};
     my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
     my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
     my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
     my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
 
@@ -2097,9 +2105,10 @@ another (and possibly on a different parrent.
     my $feature_start  = $args{'feature_start'};
     my $feature_stop   = $args{'feature_stop'};
 
-    my $sub_slot_key    = $self->{'map_key_to_slot_key'}{$sub_map_key};
-    my $window_key      = $self->{'scaffold'}{$sub_slot_key}{'window_key'};
-    my $parent_slot_key = $self->{'scaffold'}{$sub_slot_key}{'parent'};
+    my $sub_slot_key = $self->{'map_key_to_slot_key'}{$sub_map_key};
+    my $window_key   = $self->{'scaffold'}{$sub_slot_key}{'window_key'};
+    my $parent_slot_key
+        = $self->{'scaffold'}{$sub_slot_key}{'parent_zone_key'};
 
     # Modify Parent
     $self->{'sub_maps'}{$sub_map_key}{'parent_map_key'} = $parent_map_key;
@@ -2355,6 +2364,39 @@ Accessor method for window actions;
     return;
 }
 
+# ----------------------------------------------------
+sub get_main_zone_offsets {
+
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
+
+=pod
+
+=head2 get_main_zone_offsets
+
+Given a zone, figure out the coordinates on the main window.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'};
+    my $bounds   = $self->{'zone_layout'}{$zone_key}{'bounds'};
+    my $x_offset = $bounds->[0];
+    my $y_offset = $bounds->[1];
+
+    if ( my $parent_zone_key
+        = $self->{'scaffold'}{$zone_key}{'parent_zone_key'} )
+    {
+        my ( $parent_x_offset, $parent_y_offset )
+            = $self->get_main_zone_offsets( zone_key => $parent_zone_key, );
+        $x_offset += $parent_x_offset
+            + ( $self->{'scaffold'}{$parent_zone_key}{'x_offset'} || 0 );
+        $y_offset += $parent_y_offset
+            + ( $self->{'scaffold'}{$parent_zone_key}{'y_offset'} || 0 );
+    }
+
+    return ( $x_offset, $y_offset );
+}
+
 ## ----------------------------------------------------
 #sub move_drawing_items {
 #
@@ -2487,33 +2529,33 @@ COVERAGE_LOOP:
 }
 
 # ----------------------------------------------------
-sub clear_slot_corrs {
+sub clear_zone_corrs {
 
     #print STDERR "ADD_NEEDS_MODDED 42\n";
 
 =pod
 
-=head2 clear_slot_corrs
+=head2 clear_zone_corrs
 
-Clears a slot of correspondences and calls on the interface to remove the drawings.
+Clears a zone of correspondences and calls on the interface to remove the drawings.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $slot_key1  = $args{'slot_key1'}  or return;
-    my $slot_key2  = $args{'slot_key2'}  or return;
+    my $zone_key1  = $args{'zone_key1'}  or return;
+    my $zone_key2  = $args{'zone_key2'}  or return;
 
-    $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 0;
-    $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 0;
-    my %slot2_maps;
-    map { $slot2_maps{$_} = 1 } @{ $self->{'map_order'}{$slot_key2} || [] };
+    $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 0;
+    $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 0;
+    my %zone2_maps;
+    map { $zone2_maps{$_} = 1 } @{ $self->{'map_order'}{$zone_key2} || [] };
 
-    foreach my $map_key1 ( @{ $self->{'map_order'}{$slot_key1} || [] } ) {
+    foreach my $map_key1 ( @{ $self->{'map_order'}{$zone_key1} || [] } ) {
         foreach my $map_key2 (
             keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
         {
-            next unless ( $slot2_maps{$map_key2} );
+            next unless ( $zone2_maps{$map_key2} );
             $self->destroy_items(
                 items => $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
                     {'items'},
@@ -2537,30 +2579,30 @@ Clears a slot of correspondences and calls on the interface to remove the drawin
 }
 
 # ----------------------------------------------------
-sub add_slot_corrs {
+sub add_zone_corrs {
 
     #print STDERR "ADD_NEEDS_MODDED 43\n";
 
 =pod
 
-=head2 add_slot_corrs
+=head2 add_zone_corrs
 
-Adds a slot of correspondences
+Adds a zone of correspondences
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $slot_key1  = $args{'slot_key1'}  or return;
-    my $slot_key2  = $args{'slot_key2'}  or return;
+    my $zone_key1  = $args{'zone_key1'}  or return;
+    my $zone_key2  = $args{'zone_key2'}  or return;
 
-    $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
-    $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
+    $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 1;
+    $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 1;
 
     add_correspondences(
         window_key       => $window_key,
-        slot_key1        => $slot_key1,
-        slot_key2        => $slot_key2,
+        zone_key1        => $zone_key1,
+        zone_key2        => $zone_key2,
         app_display_data => $self,
     );
     $self->app_interface()->draw_corrs(
@@ -2572,36 +2614,70 @@ Adds a slot of correspondences
 }
 
 # ----------------------------------------------------
-sub reset_slot_corrs {
+sub cascade_reset_zone_corrs {
 
     #print STDERR "ADD_NEEDS_MODDED 44\n";
 
 =pod
 
-=head2 reset_slot_corrs
+=head2 cascade_reset_zone_corrs
 
-reset  a slot of correspondences
+Reset a zone's correspondences and it's childrens.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $slot_key1  = $args{'slot_key'}   or return;
+    my $zone_key   = $args{'zone_key'}   or return;
 
-    foreach my $slot_key2 (
-        keys %{ $self->{'correspondences_on'}{$slot_key1} || {} } )
+    $self->reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
+    print STDERR Dumper( $self->{'scaffold'}{$zone_key}{'children'} ) . "\n";
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
     {
-        next unless ( $self->{'correspondences_on'}{$slot_key1}{$slot_key2} );
-
-        $self->clear_slot_corrs(
+        $self->cascade_reset_zone_corrs(
             window_key => $window_key,
-            slot_key1  => $slot_key1,
-            slot_key2  => $slot_key2,
+            zone_key   => $child_zone_key,
         );
-        $self->add_slot_corrs(
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub reset_zone_corrs {
+
+    #print STDERR "ADD_NEEDS_MODDED 44\n";
+
+=pod
+
+=head2 reset_zone_corrs
+
+reset  a zone of correspondences
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key1  = $args{'zone_key'}   or return;
+
+    foreach my $zone_key2 (
+        keys %{ $self->{'correspondences_on'}{$zone_key1} || {} } )
+    {
+        next unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} );
+
+        $self->clear_zone_corrs(
             window_key => $window_key,
-            slot_key1  => $slot_key1,
-            slot_key2  => $slot_key2,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
+        );
+        $self->add_zone_corrs(
+            window_key => $window_key,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
         );
     }
 

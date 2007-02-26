@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.14 2007-01-09 22:50:42 mwz444 Exp $
+# $Id: AppData.pm,v 1.15 2007-02-26 18:57:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -362,11 +362,11 @@ features.  These do NOT include the sub-maps.
 }
 
 # ----------------------------------------------------
-sub slot_correspondences {
+sub zone_correspondences {
 
 =pod
 
-=head2 slot_correspondences
+=head2 zone_correspondences
 
 Given a map id, return the information required to draw the
 sub-maps.  These do NOT include the regular features;
@@ -378,23 +378,23 @@ Takes two slot_infos which are defined as:
         map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ],
     }
 
-Requires slot_key1 to be less than slot_key2.
+Requires zone_key1 to be less than zone_key2.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_key1  = $args{'slot_key1'}  or return undef;
-    my $slot_key2  = $args{'slot_key2'}  or return undef;
+    my $zone_key1  = $args{'zone_key1'}  or return undef;
+    my $zone_key2  = $args{'zone_key2'}  or return undef;
     my $slot_info1 = $args{'slot_info1'} or return undef;
     my $slot_info2 = $args{'slot_info2'} or return undef;
 
-    if ( $slot_key1 > $slot_key2 ) {
-        die "AppData->slot_correspondences called with slot1 > slot2\n";
+    if ( $zone_key1 > $zone_key2 ) {
+        die "AppData->zone_correspondences called with zone1 > zone2\n";
     }
     my $cache_key = md5_hex( Dumper( $slot_info1, $slot_info2 ) );
 
-    unless ($self->{'slot_corr_data'}{$slot_key1}{$slot_key2}
-        and $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'cache_key'} eq
+    unless ($self->{'zone_corr_data'}{$zone_key1}{$zone_key2}
+        and $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'cache_key'} eq
         $cache_key )
     {
 
@@ -403,12 +403,12 @@ Requires slot_key1 to be less than slot_key2.
             slot_info2 => $slot_info2,
             )
             || [];
-        $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'corrs'} = $corrs;
-        $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'cache_key'}
+        $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'corrs'} = $corrs;
+        $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'cache_key'}
             = $cache_key;
     }
 
-    return $self->{'slot_corr_data'}{$slot_key1}{$slot_key2}{'corrs'};
+    return $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'corrs'};
 }
 
 # ----------------------------------------------------

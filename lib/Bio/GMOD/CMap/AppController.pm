@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.24 2007-02-21 20:09:43 mwz444 Exp $
+# $Id: AppController.pm,v 1.25 2007-02-26 18:57:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -393,46 +393,46 @@ Handler for scrolling a zone.
 }
 
 # ----------------------------------------------------
-sub expand_slot {
+sub expand_zone {
 
 =pod
 
-=head2 expand_slot
+=head2 expand_zone
 
-Handler for expanding a slot.
+Handler for expanding a zone.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
 
-    $self->app_display_data()->expand_slot(
+    $self->app_display_data()->expand_zone(
         window_key => $window_key,
-        slot_key   => $slot_key,
+        zone_key   => $zone_key,
     );
 
     return;
 }
 
 # ----------------------------------------------------
-sub toggle_corrs_slot {
+sub toggle_corrs_zone {
 
 =pod
 
-=head2 toggle_corrs_slot
+=head2 toggle_corrs_zone
 
-Handler for toggling correspondences for a slot.
+Handler for toggling correspondences for a zone.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
 
-    $self->app_display_data()->toggle_corrs_slot(
+    $self->app_display_data()->toggle_corrs_zone(
         window_key => $window_key,
-        slot_key   => $slot_key,
+        zone_key   => $zone_key,
     );
 
     return;
