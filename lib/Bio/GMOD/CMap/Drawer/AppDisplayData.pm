@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.32 2007-03-05 18:30:24 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.33 2007-03-05 20:58:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -622,9 +622,11 @@ expand zones
         );
     }
 
+    # This probably should be more elegant but for now, just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
     layout_zone(
         window_key       => $window_key,
-        zone_key         => $zone_key,
+        zone_key         => $top_zone_key,    #$zone_key,
         app_display_data => $self,
         relayout         => 1,
         force_relayout   => 1,
