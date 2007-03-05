@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.31 2007-02-26 18:57:14 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.32 2007-03-05 18:30:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -62,7 +62,6 @@ use Bio::GMOD::CMap::Drawer::AppLayout qw[
     overview_selected_area
     layout_head_maps
     layout_sub_maps
-    layout_zone_with_current_maps
     add_correspondences
     add_zone_separator
     move_zone
@@ -454,7 +453,7 @@ Zoom zones
         zone_bounds      => $zone_bounds,
         move_offset_x    => $move_offset_x,
         move_offset_y    => 0,
-        zooming          => 1,
+        force_relayout   => 1,
     );
 
     # handle overview highlighting
@@ -509,7 +508,7 @@ Scroll slots based on the overview scrolling
 
     # Don't let the overview break attachment to parent
     if ( $self->{'scaffold'}{$slot_key}{'attached_to_parent'} ) {
-        $slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+        $slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
     }
 
     my $main_scroll_value = int( $scroll_value /
@@ -591,221 +590,52 @@ toggle the correspondences for a zone
 }
 
 # ----------------------------------------------------
-sub expand_slot {
+sub expand_zone {
 
     #print STDERR "ADD_NEEDS_MODDED 5\n";
 
 =pod
 
-=head2 expand_slot
+=head2 expand_zone
 
-expand slots
+expand zones
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key   = $args{'window_key'};
-    my $panel_key    = $args{'panel_key'};
-    my $old_slot_key = $args{'slot_key'};
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
 
-    my $old_slot_scaffold = $self->{'scaffold'}{$old_slot_key};
-    my $old_slot_layout   = $self->{'slot_layout'}{$old_slot_key};
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+    my $zone_layout   = $self->{'zone_layout'}{$zone_key};
 
-    return if $old_slot_scaffold->{'expanded'};
+    return if $zone_scaffold->{'expanded'};
+    $zone_scaffold->{'expanded'} = 1;
 
-    my $parent_slot_key = $old_slot_scaffold->{'parent_zone_key'};
-
-    my %row_index_maps;
-
-    foreach my $map_key ( @{ $self->{'map_order'}{$old_slot_key} || [] } ) {
-        push @{ $row_index_maps{ $self->{'map_layout'}{$map_key}
-                    {'row_index'} } }, $map_key;
-    }
-    my @slot_order_insert;
-
-    # Get Old slot order position
-    my $old_slot_order_pos = undef;
-    for (
-        my $i = 0;
-        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
-        $i++
-        )
-    {
-        if ( $old_slot_key == $self->{'slot_order'}{$panel_key}[$i] ) {
-            $old_slot_order_pos = $i;
-            last;
-        }
-    }
-
-    # Get the Slots where the old slot had corrs with
-    my @corresponding_slot_keys
-        = keys %{ $self->{'correspondences_on'}{$old_slot_key} };
-
-    unless ( defined $old_slot_order_pos ) {
-        die "Slot Order position not found for slot $old_slot_key\n";
-    }
-    my $old_slot_y1 = $old_slot_layout->{'bounds'}[1];
-    my $old_slot_y2 = $old_slot_layout->{'bounds'}[3];
-
-    my $start_min_y   = $old_slot_y1;
-    my $slot_buffer_y = 15;
-    my $slot_position = $old_slot_order_pos;
-    foreach my $row_index ( sort { $a <=> $b } keys %row_index_maps ) {
-
-        # Create Slot
-        my $new_slot_key = $self->next_internal_key('slot');
-        $self->initialize_slot_layout($new_slot_key);
-
-        #Copy important slot info
-        $self->copy_slot_scaffold(
-            old_slot_key => $old_slot_key,
-            new_slot_key => $new_slot_key,
-        );
-
-        # Add as child of parent
-        push @{ $self->{'scaffold'}{$parent_slot_key}{'children'} },
-            $new_slot_key;
-
-        # Add Slot to order
-        push @slot_order_insert, $new_slot_key;
-
-        # Move Maps to slot and adjust Y value
-        layout_slot_with_current_maps(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            old_slot_key     => $old_slot_key,
-            new_slot_key     => $new_slot_key,
-            row_index        => $row_index,
-            start_min_y      => $start_min_y,
-            map_keys         => $row_index_maps{$row_index},
-            app_display_data => $self,
-        );
-        $self->{'scaffold'}{$new_slot_key}{'expanded'} = 1;
-
-        # Move slot_info to new slot
-        # and add map_id_to_key_by_slot
-        foreach my $map_key ( @{ $row_index_maps{$row_index} } ) {
-            $self->{'map_key_to_slot_key'}{$map_key} = $new_slot_key;
-            $self->{'map_id_to_key_by_slot'}{$new_slot_key}
-                { $self->{'map_key_to_id'}{$map_key} } = $map_key;
-            my $map_id = $self->{'map_key_to_id'}{$map_key};
-            $self->{'slot_info'}{$new_slot_key}{$map_id}
-                = $self->{'slot_info'}{$old_slot_key}{$map_id};
-            $self->{'slot_info'}{$old_slot_key}{$map_id} = undef;
-        }
-
-        # Handle inherited correspondences
-        foreach my $slot_key2 (@corresponding_slot_keys) {
-            $self->clear_slot_corrs(
-                panel_key => $panel_key,
-                slot_key1 => $new_slot_key,
-                slot_key2 => $slot_key2,
-            );
-            $self->add_slot_corrs(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key1  => $new_slot_key,
-                slot_key2  => $slot_key2,
-            );
-        }
-
-        $start_min_y = $self->{'slot_layout'}{$new_slot_key}{'bounds'}[3]
-            + $slot_buffer_y;
+    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
 
         # Add Sub Slots
-        my $sub_slot_keys = $self->add_sub_maps(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            parent_slot_key  => $new_slot_key,
-            slot_order_array => \@slot_order_insert,
-        );
-
-        foreach my $sub_slot_key (@$sub_slot_keys) {
-            $slot_position++;
-            layout_new_slot(
-                window_key       => $window_key,
-                panel_key        => $panel_key,
-                slot_key         => $sub_slot_key,
-                slot_position    => $slot_position,
-                start_min_y      => $start_min_y,
-                app_display_data => $self,
-            );
-            $start_min_y = $self->{'slot_layout'}{$sub_slot_key}{'bounds'}[3]
-                + $slot_buffer_y;
-        }
-        $slot_position++;
-    }
-
-    # Insert new slots into slot_order in place of the old one.
-    splice @{ $self->{'slot_order'}{$panel_key} }, $old_slot_order_pos, 1,
-        @slot_order_insert;
-
-    # Wipe 'map_order' for this slot so removing slot doesn't kill the maps
-    delete $self->{'map_order'}{$old_slot_key};
-
-    # Remove Old Slot
-    $self->delete_slot(
-        panel_key => $panel_key,
-        slot_key  => $old_slot_key,
-    );
-    $self->app_interface()->destroy_slot_controls(
-        panel_key => $panel_key,
-        slot_key  => $old_slot_key,
-    );
-
-    my $height_change = $start_min_y - $old_slot_y2;
-
-    # Move Lower Slots and re-add their slot menu for recreation later
-    my $first_lower_slot_pos
-        = $old_slot_order_pos + scalar(@slot_order_insert);
-    for (
-        my $i = $first_lower_slot_pos;
-        $i <= $#{ $self->{'slot_order'}{$panel_key} || [] };
-        $i++
-        )
-    {
-        my $slot_key = $self->{'slot_order'}{$panel_key}[$i];
-        move_slot(
-            panel_key        => $panel_key,
-            slot_key         => $slot_key,
-            y                => $height_change,
-            app_display_data => $self,
-            app_interface    => $self->app_interface(),
-        );
-        $self->app_interface()->destroy_slot_controls(
-            panel_key => $panel_key,
-            slot_key  => $slot_key,
-        );
-        $self->app_interface()->add_slot_controls(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            slot_key         => $slot_key,
-            app_display_data => $self,
+        $self->add_sub_maps_to_map(
+            window_key      => $window_key,
+            parent_zone_key => $zone_key,
+            parent_map_key  => $map_key,
         );
     }
-    $self->{'panel_layout'}{$panel_key}{'bounds'}[3] += $height_change;
 
-    # Handle Overview
-    $self->recreate_overview(
-        window_key => $window_key,
-        panel_key  => $panel_key,
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
     );
 
-    # Add the New Slot Controls
-    foreach my $slot_key (@slot_order_insert) {
-        $self->app_interface()->add_slot_controls(
-            window_key       => $window_key,
-            panel_key        => $panel_key,
-            slot_key         => $slot_key,
-            app_display_data => $self,
-        );
-    }
+    # Maybe RELAYOUT OVERVIEW
 
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
     );
-
     return;
 }
 
@@ -1899,38 +1729,35 @@ Move a map from one place on a parent to another
     my ( $self, %args ) = @_;
     my $map_key         = $args{'map_key'};
     my $ghost_bounds    = $args{'ghost_bounds'};
-    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
-    my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
+    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
-    my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
 
-    # Get Parent
-    my $new_parent_map_key;
-    my $parent_coords;
-    foreach my $potential_parent_map_key (
-        @{ $self->{'map_order'}{$parent_slot_key} || [] } )
-    {
-        my $coords
-            = $self->{'map_layout'}{$potential_parent_map_key}{'coords'};
-        if (    $coords->[0] <= $ghost_bounds->[0]
-            and $coords->[2] >= $ghost_bounds->[2] )
-        {
-            $new_parent_map_key = $potential_parent_map_key;
-            $parent_coords      = $coords;
-            last;
-        }
-    }
+    # Get pixel location on parent map
+    my %ghost_location_data = $self->get_ghost_location_coords(
+        map_key      => $map_key,
+        zone_key     => $zone_key,
+        ghost_bounds => $ghost_bounds,
+    );
 
-    # Get location on parent
+    my $new_parent_map_key = $ghost_location_data{'parent_map_key'};
+    $parent_zone_key = $ghost_location_data{'parent_zone_key'};
+    my $new_location_coords = $ghost_location_data{'location_coords'};
+
+    my $parent_map_coords
+        = $self->{'map_layout'}{$new_parent_map_key}{'coords'};
+
     # Use start location as basis for locating
-    my $relative_pixel_start = $ghost_bounds->[0] - $parent_coords->[0];
+    my $relative_pixel_start
+        = $new_location_coords->[0] - $parent_map_coords->[0];
 
     my $relative_unit_start = $relative_pixel_start /
         (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
-            || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
+            || $self->{'scaffold'}{$parent_zone_key}{'pixels_per_unit'} );
     my $parent_map_data = $self->app_data_module()
-        ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+        ->map_data( map_id => $self->{'map_key_to_id'}{$new_parent_map_key},
+        );
 
     # Modify the relative unit start to round to the unit granularity
     my $parent_unit_granularity
@@ -1974,8 +1801,8 @@ Move a map from one place on a parent to another
     my $new_parent_map_key = $args{'new_parent_map_key'};
     my $new_feature_start  = $args{'new_feature_start'};
     my $new_feature_stop   = $args{'new_feature_stop'};
-    my $slot_key           = $self->{'map_key_to_slot_key'}{$map_key};
-    my $window_key         = $self->{'scaffold'}{$slot_key}{'window_key'};
+    my $zone_key           = $self->{'map_key_to_zone_key'}{$map_key};
+    my $window_key         = $self->{'scaffold'}{$zone_key}{'window_key'};
 
     my @action_data = (
         'move_map',
@@ -2000,85 +1827,19 @@ Move a map from one place on a parent to another
         feature_stop   => $new_feature_stop,
     );
 
-    return;
-
-}
-
-# ----------------------------------------------------
-sub move_map_old {
-
-    #print STDERR "ADD_NEEDS_MODDED 33\n";
-
-=pod
-
-=head2 move_map
-
-Move a map from one place on a parent to another
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $map_key         = $args{'map_key'};
-    my $ghost_bounds    = $args{'ghost_bounds'};
-    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
-    my $window_key      = $self->{'scaffold'}{$slot_key}{'window_key'};
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
-    my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
-    my $dx              = $ghost_bounds->[0] - $old_map_coords->[0];
-
-    # Get Parent
-    my $new_parent_map_key;
-    my $parent_coords;
-    foreach my $potential_parent_map_key (
-        @{ $self->{'map_order'}{$parent_slot_key} || [] } )
-    {
-        my $coords
-            = $self->{'map_layout'}{$potential_parent_map_key}{'coords'};
-        if (    $coords->[0] <= $ghost_bounds->[0]
-            and $coords->[2] >= $ghost_bounds->[2] )
-        {
-            $new_parent_map_key = $potential_parent_map_key;
-            $parent_coords      = $coords;
-            last;
-        }
-    }
-
-    # Get location on parent
-    # Use start location as basis for locating
-    my $relative_pixel_start = $ghost_bounds->[0] - $parent_coords->[0];
-
-    my $relative_unit_start = $relative_pixel_start /
-        (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
-            || $self->{'scaffold'}{$parent_slot_key}{'pixels_per_unit'} );
-    my $parent_map_data = $self->app_data_module()
-        ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
-    my $new_feature_start
-        = $relative_unit_start + $parent_map_data->{'map_start'};
-    my $new_feature_stop
-        = $new_feature_start - $self->{'sub_maps'}{$map_key}{'feature_start'}
-        + $self->{'sub_maps'}{$map_key}{'feature_stop'};
-
-    my @action_data = (
-        'move_map',
-        $map_key,
-        $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-        $self->{'sub_maps'}{$map_key}{'feature_start'},
-        $self->{'sub_maps'}{$map_key}{'feature_stop'},
-        $new_parent_map_key,
-        $new_feature_start,
-        $new_feature_stop,
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
     );
 
-    $self->add_action(
-        window_key  => $window_key,
-        action_data => \@action_data,
-    );
+    #RELAYOUT OVERVIEW
 
-    $self->move_sub_map_on_parents_in_memory(
-        sub_map_key    => $map_key,
-        parent_map_key => $new_parent_map_key,
-        feature_start  => $new_feature_start,
-        feature_stop   => $new_feature_stop,
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
     );
 
     return;
@@ -2105,69 +1866,17 @@ another (and possibly on a different parrent.
     my $feature_start  = $args{'feature_start'};
     my $feature_stop   = $args{'feature_stop'};
 
-    my $sub_slot_key = $self->{'map_key_to_slot_key'}{$sub_map_key};
-    my $window_key   = $self->{'scaffold'}{$sub_slot_key}{'window_key'};
-    my $parent_slot_key
-        = $self->{'scaffold'}{$sub_slot_key}{'parent_zone_key'};
+    # BF POSSIBLY MOVE ZONE TO BE ADDED HERE
+
+    my $sub_zone_key = $self->{'map_key_to_zone_key'}{$sub_map_key};
+    my $window_key   = $self->{'scaffold'}{$sub_zone_key}{'window_key'};
+    my $parent_zone_key
+        = $self->{'scaffold'}{$sub_zone_key}{'parent_zone_key'};
 
     # Modify Parent
     $self->{'sub_maps'}{$sub_map_key}{'parent_map_key'} = $parent_map_key;
     $self->{'sub_maps'}{$sub_map_key}{'feature_start'}  = $feature_start;
     $self->{'sub_maps'}{$sub_map_key}{'feature_stop'}   = $feature_stop;
-
-    $self->cascade_relayout_sub_map_slot(
-        window_key => $window_key,
-        slot_key   => $sub_slot_key,
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub cascade_relayout_sub_map_slot {
-
-    #print STDERR "ADD_NEEDS_MODDED 35\n";
-
-=pod
-
-=head2 relayout_sub_map_slot
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $slot_key   = $args{'slot_key'}   or return;
-    my $cascading = $args{'cascading'} || 0;
-
-    # relayout the sub map
-    $self->relayout_sub_map_slot(
-        window_key => $window_key,
-        slot_key   => $slot_key,
-    );
-
-    # cascade to attached children
-    foreach my $child_slot_key (
-        @{ $self->{'scaffold'}{$slot_key}{'children'} || [] } )
-    {
-        next
-            unless (
-            $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} );
-
-        $self->cascade_relayout_sub_map_slot(
-            window_key => $window_key,
-            slot_key   => $child_slot_key,
-            cascading  => 1,
-        );
-    }
-
-    # Finish by drawing the window
-    unless ($cascading) {
-        $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_window(
-            window_key       => $window_key,
-            app_display_data => $self,
-        );
-    }
 
     return;
 }
@@ -2430,7 +2139,7 @@ Given a zone, figure out the coordinates on the main window.
 #}
 
 # ----------------------------------------------------
-sub move_ghost_map {
+sub place_ghost_location_on_parent_map {
 
     #print STDERR "ADD_NEEDS_MODDED 41\n";
 
@@ -2443,89 +2152,345 @@ Controls how the ghost map moves.
 =cut
 
     my ( $self, %args ) = @_;
+    my $map_key = $args{'map_key'};
+
+    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+   # If no parent, don't bother
+   # allow movement when the sub-map and parent were at different zoom levels.
+    unless ($parent_zone_key
+        and $self->{'scaffold'}{$zone_key}{'attached_to_parent'} )
+    {
+        return;
+    }
+
+    my $parent_map_key     = $self->{'scaffold'}{$zone_key}{'parent_map_key'};
+    my $parent_zone_layout = $self->{'zone_layout'}{$parent_zone_key};
+    my $parent_map_layout  = $self->{'map_layout'}{$parent_map_key};
+    my $parent_map_id      = $self->{'map_key_to_id'}{$parent_map_key};
+    my $parent_data
+        = $self->app_data_module()->map_data( map_id => $parent_map_id, );
+    my $parent_start = $parent_data->{'map_start'};
+    my $parent_stop  = $parent_data->{'map_stop'};
+    my $parent_pixels_per_unit
+        = $self->{'map_pixels_per_unit'}{$parent_map_key}
+        || $self->{'scaffold'}{$parent_zone_key}{'pixels_per_unit'};
+
+    my $feature_start = $self->{'sub_maps'}{$map_key}{'feature_start'};
+    my $feature_stop  = $self->{'sub_maps'}{$map_key}{'feature_stop'};
+
+    my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
+
+    my $x1 = ( ( $feature_start - $parent_start ) * $parent_pixels_per_unit )
+        + $parent_map_layout->{'coords'}[0] + $parent_x_offset;
+    my $x2 = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
+        + $parent_map_layout->{'coords'}[0] + $parent_x_offset;
+
+    my $y1 = $parent_map_layout->{'coords'}[1];
+    my $y2 = $parent_map_layout->{'coords'}[3];
+
+    my $visible = 1;
+    if (   $x2 < $parent_zone_layout->{'viewable_internal_x1'}
+        or $x1 > $parent_zone_layout->{'viewable_internal_x2'} )
+    {
+        $visible = 0;
+    }
+
+    # save for later
+    $self->{'current_ghost_parent_map_key'} = $parent_map_key;
+
+    my %return_hash = (
+        visible         => $visible,
+        parent_zone_key => $parent_zone_key,
+        window_key      => $window_key,
+        location_coords => [ $x1, $y1, $x2, $y2 ]
+    );
+
+    return %return_hash;
+}
+
+# ----------------------------------------------------
+sub move_ghosts {
+
+    #print STDERR "ADD_NEEDS_MODDED 41\n";
+
+=pod
+
+=head2 move_ghosts
+
+Controls how the ghost map moves.
+
+=cut
+
+    my ( $self, %args ) = @_;
     my $map_key         = $args{'map_key'};
     my $mouse_x         = $args{'mouse_x'};
+    my $mouse_dx        = $args{'mouse_dx'};
+    my $mouse_y         = $args{'mouse_y'};
+    my $mouse_dy        = $args{'mouse_dy'};
     my $ghost_bounds    = $args{'ghost_bounds'};
     my $mouse_to_edge_x = $args{'mouse_to_edge_x'};
 
-    my $slot_key        = $self->{'map_key_to_slot_key'}{$map_key};
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    my $parent_map_set_id
+        = $self->{'scaffold'}{$parent_zone_key}{'map_set_id'};
 
    # If no parent, don't let it move. This is because it would be confusing to
    # allow movement when the sub-map and parent were at different zoom levels.
-    unless ($parent_slot_key
-        and $self->{'scaffold'}{$slot_key}{'attached_to_parent'} )
+    unless ($parent_zone_key
+        and $self->{'scaffold'}{$zone_key}{'attached_to_parent'} )
     {
-        return 0;
+        return;
+    }
+    my $ghost_parent_map_key = $self->find_ghost_parent_map(
+        ghost_zone_key    => $zone_key,
+        ghost_map_key     => $map_key,
+        parent_map_set_id => $parent_map_set_id,
+        mouse_x           => $mouse_x,
+        mouse_y           => $mouse_y,
+    );
+    my $ghost_parent_zone_key
+        = $self->{'map_key_to_zone_key'}{$ghost_parent_map_key};
+
+    my %ghost_location_data = $self->get_ghost_location_coords(
+        map_key               => $map_key,
+        zone_key              => $zone_key,
+        mouse_dx              => $mouse_dx,
+        mouse_dy              => $mouse_dy,
+        ghost_bounds          => $ghost_bounds,
+        ghost_parent_zone_key => $ghost_parent_zone_key,
+    );
+
+    my %return_hash = (
+        ghost_dx                  => $mouse_dx,
+        ghost_dy                  => $mouse_dy,
+        ghost_loc_visible         => $ghost_location_data{'visible'},
+        ghost_loc_parent_zone_key => $ghost_parent_zone_key,
+        window_key                => $window_key,
+        ghost_loc_location_coords => $ghost_location_data{'location_coords'},
+    );
+
+    return %return_hash;
+
+}
+
+# ----------------------------------------------------
+sub get_ghost_location_coords {
+
+    #print STDERR "ADD_NEEDS_MODDED 41\n";
+
+=pod
+
+=head2 get_ghost_location_coords
+
+Controls how the ghost map moves.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key      = $args{'map_key'};
+    my $mouse_dx     = $args{'mouse_dx'} || 0;
+    my $mouse_dy     = $args{'mouse_dy'} || 0;
+    my $ghost_bounds = $args{'ghost_bounds'};
+
+    my $zone_key = $args{'$zone_key'}
+        || $self->{'map_key_to_zone_key'}{$map_key};
+    my $ghost_parent_zone_key = $args{'$ghost_parent_zone_key'}
+        || $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    my $ghost_parent_map_key = $args{'ghost_parent_map_key'}
+        || $self->{'current_ghost_parent_map_key'};
+
+    my $ghost_parent_map_layout
+        = $self->{'map_layout'}{$ghost_parent_map_key};
+    my $ghost_parent_zone_layout
+        = $self->{'zone_layout'}{$ghost_parent_zone_key};
+    my $ghost_parent_x_offset
+        = $self->{'scaffold'}{$ghost_parent_zone_key}{'x_offset'};
+    my ( $ghost_parent_main_x_offset, $ghost_parent_main_y_offset )
+        = $self->get_main_zone_offsets( zone_key => $ghost_parent_zone_key, );
+
+    # Translate the ghost bounds into the parents coords
+    my $ghost_loc_x1
+        = $ghost_bounds->[0] + $mouse_dx - $ghost_parent_main_x_offset
+        + $ghost_parent_x_offset;
+    my $ghost_loc_x2
+        = $ghost_bounds->[2] + $mouse_dx - $ghost_parent_main_x_offset
+        + $ghost_parent_x_offset;
+    my $ghost_loc_y1 = $ghost_parent_map_layout->{'coords'}[1];
+    my $ghost_loc_y2 = $ghost_parent_map_layout->{'coords'}[3];
+
+    if ( $ghost_loc_x1 < $ghost_parent_map_layout->{'coords'}[0] ) {
+        my $diff = $ghost_parent_map_layout->{'coords'}[0] - $ghost_loc_x1;
+        $ghost_loc_x1 += $diff;
+        $ghost_loc_x2 += $diff;
+    }
+    elsif ( $ghost_loc_x2 > $ghost_parent_map_layout->{'coords'}[2] ) {
+        my $diff = $ghost_loc_x2 - $ghost_parent_map_layout->{'coords'}[2];
+        $ghost_loc_x1 -= $diff;
+        $ghost_loc_x2 -= $diff;
+    }
+    my $visible = 1;
+    if (   $ghost_loc_x2 < $ghost_parent_zone_layout->{'viewable_internal_x1'}
+        or $ghost_loc_x1
+        > $ghost_parent_zone_layout->{'viewable_internal_x2'} )
+    {
+        $visible = 0;
     }
 
-    my $new_x1 = $mouse_x - $mouse_to_edge_x;
-    my $new_x2 = $new_x1 + ( $ghost_bounds->[2] - $ghost_bounds->[0] + 1 );
-    my $dx     = ( $mouse_x - $mouse_to_edge_x ) - $ghost_bounds->[0];
-    my $slot_coverage = $self->{'slot_coverage'}{$parent_slot_key};
+    my %return_hash = (
+        visible         => $visible,
+        parent_zone_key => $ghost_parent_zone_key,
+        parent_map_key  => $ghost_parent_map_key,
+        location_coords =>
+            [ $ghost_loc_x1, $ghost_loc_y1, $ghost_loc_x2, $ghost_loc_y2, ],
+    );
 
-    my $ghost_is_before_index = 0;
-    my $ghost_is_after_index  = 0;
-    my $ghost_is_covered      = 0;
-    my $index                 = 0;
-COVERAGE_LOOP:
-    for ( my $i = 0; $i <= $#{$slot_coverage}; $i++ ) {
-        if ( $new_x1 < $slot_coverage->[$i][0] ) {
-            $ghost_is_before_index = 1;
-            $index                 = $i;
-            last COVERAGE_LOOP;
-        }
-        elsif ( $new_x2 < $slot_coverage->[$i][1] ) {
+    return %return_hash;
 
-            # Covered
-            $ghost_is_covered = 1;
-            last COVERAGE_LOOP;
-        }
-        elsif ( $new_x1 < $slot_coverage->[$i][1]
-            and $new_x2 > $slot_coverage->[$i][1] )
+}
+
+# ----------------------------------------------------
+sub find_ghost_parent_map {
+
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
+
+=pod
+
+=head2 find_ghost_parent_map
+
+Given a map_key and x and y coords, figure out if the mouse is in a new parent.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $ghost_zone_key    = $args{'ghost_zone_key'};
+    my $ghost_map_key     = $args{'ghost_map_key'};
+    my $parent_map_set_id = $args{'parent_map_set_id'};
+    my $mouse_x           = $args{'mouse_x'};
+    my $mouse_y           = $args{'mouse_y'};
+
+    my $ghost_parent_maps = $self->get_ghost_parent_maps(
+        parent_map_set_id => $parent_map_set_id,
+        ghost_zone_key    => $ghost_zone_key,
+    );
+
+   # If not still in the current parent, check to see if it has entered any of
+   # the other parents trigger space (their bounds).
+    foreach my $ghost_parent_map ( @{ $ghost_parent_maps || [] } ) {
+        if ($self->point_in_box(
+                x          => $mouse_x,
+                y          => $mouse_y,
+                box_coords => $ghost_parent_map->{'main_bounds'},
+            )
+            )
         {
-            $ghost_is_after_index = 1;
-            $index                = $i;
-            last COVERAGE_LOOP;
+            $self->{'current_ghost_parent_map_key'}
+                = $ghost_parent_map->{'map_key'};
+            return $self->{'current_ghost_parent_map_key'};
         }
     }
 
-    # each case is handled separately since the behaviors may be different in
-    # the future and I don't want to have to figure out how to separate the
-    # cases then.
+    return $self->{'current_ghost_parent_map_key'};
+}
 
-    if ($ghost_is_covered) {
+# ----------------------------------------------------
+sub get_ghost_parent_maps {
 
-        # Ghost is on a map
-        return $dx;
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
+
+=pod
+
+=head2 ghost_parent_maps
+
+Given a map_key and x and y coords, figure out if the mouse is in a new parent.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    unless ( $self->{'ghost_parent_maps'} ) {
+        my $parent_map_set_id = $args{'parent_map_set_id'};
+        my $ghost_zone_key    = $args{'ghost_zone_key'};
+        my $window_key = $self->{'scaffold'}{$ghost_zone_key}{'window_key'};
+
+        # Get only zones in this window and have the parent map set id
+        foreach my $zone_key (
+            grep {
+                        $self->{'scaffold'}{$_}
+                    and $self->{'scaffold'}{$_}{'window_key'} eq $window_key
+                    and $self->{'scaffold'}{$_}{'map_set_id'}
+                    == $parent_map_set_id
+            } keys %{ $self->{'scaffold'} || {} }
+            )
+        {
+            my ( $x_offset, $y_offset )
+                = $self->get_main_zone_offsets( zone_key => $zone_key, );
+            foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } )
+            {
+                my $map_bounds = $self->{'map_layout'}{$map_key}{'bounds'};
+                my $main_bounds;
+                $main_bounds->[0] = $x_offset + $map_bounds->[0];
+                $main_bounds->[1] = $y_offset + $map_bounds->[1];
+                $main_bounds->[2] = $x_offset + $map_bounds->[2];
+                $main_bounds->[3] = $y_offset + $map_bounds->[3];
+
+                push @{ $self->{'ghost_parent_maps'} },
+                    ( { map_key => $map_key, main_bounds => $main_bounds, } );
+            }
+        }
     }
-    elsif ( $ghost_is_before_index and $index == 0 ) {
 
-        # Before begining of all maps
-        return $slot_coverage->[$index][0] - $ghost_bounds->[0];
-    }
-    elsif ($ghost_is_before_index) {
+    return $self->{'ghost_parent_maps'};
+}
 
-        # Ghost is between maps
-        return $slot_coverage->[$index][0] - $ghost_bounds->[0];
-    }
-    elsif ( $ghost_is_after_index and $index == $#{$slot_coverage} ) {
+# ----------------------------------------------------
+sub end_drag_ghost {
 
-        # After end of all maps (but overlapping the last map)
-        return $slot_coverage->[$index][1] - $ghost_bounds->[2];
-    }
-    elsif ($ghost_is_after_index) {
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
 
-        # Ghost is between maps
-        return $slot_coverage->[$index][1] - $ghost_bounds->[2];
-    }
-    else {
+=pod
 
-        # After end of all maps
-        return $slot_coverage->[-1][1] - $ghost_bounds->[2];
-    }
+=head2 end_drag_ghost
 
-    return $dx;
+Clear all of the values used during the ghost dragging so they don't muck up
+the works next time.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    #$self->{'current_ghost_parent_map_key'} = undef;
+    $self->{'ghost_parent_maps'} = undef;
+
+    return;
+}
+
+# ----------------------------------------------------
+sub point_in_box {
+
+    #print STDERR "ADD_NEEDS_MODDED 40\n";
+
+=pod
+
+=head2 point_in_box
+
+Given box coords and x and y coords, figure out if the mouse is in a the box.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $x          = $args{'x'};
+    my $y          = $args{'y'};
+    my $box_coords = $args{'box_coords'};
+
+    return (    $x >= $box_coords->[0]
+            and $y >= $box_coords->[1]
+            and $x <= $box_coords->[2]
+            and $y <= $box_coords->[3] );
 }
 
 # ----------------------------------------------------
@@ -2634,7 +2599,6 @@ Reset a zone's correspondences and it's childrens.
         window_key => $window_key,
         zone_key   => $zone_key,
     );
-    print STDERR Dumper( $self->{'scaffold'}{$zone_key}{'children'} ) . "\n";
     foreach my $child_zone_key (
         @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
     {
@@ -2775,7 +2739,7 @@ Deletes the slot data and wipes them from the canvas
     }
 
     # Remove from parent
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent'};
+    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
     for (
         my $i = 0;
         $i <= $#{ $self->{'scaffold'}{$parent_slot_key}{'children'} || [] };

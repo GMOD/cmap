@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.33 2007-02-26 18:57:14 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.34 2007-03-05 18:30:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -728,8 +728,8 @@ Adds control buttons to the controls_pane.
         $zoom_button1,           $zoom_button2,
         $scroll_type_1,          $scroll_far_type_1,
 
-        # $expand_button,          $show_features_check_box,
-        # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
+        $expand_button,               # $show_features_check_box,
+            # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
 }
@@ -926,6 +926,7 @@ Draws and re-draws on the zinc
     my $overview_zone_layout = $args{'overview_zone_layout'};
 
     my $zone_group_id = $self->get_zone_group_id(
+        window_key       => $window_key,
         zone_key         => $zone_key,
         zinc             => $zinc,
         overview         => 1,
@@ -1010,6 +1011,7 @@ Draws and re-draws on the zinc
         : 0;
 
     my $zone_group_id = $self->get_zone_group_id(
+        window_key       => $window_key,
         zone_key         => $zone_key,
         zinc             => $zinc,
         app_display_data => $app_display_data,
@@ -1083,13 +1085,35 @@ Draws and re-draws on the zinc
             @{ $app_display_data->{'map_order'}{$zone_key} || {} } )
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
+
+            # Debug
+            #    $self->draw_items(
+            #        zinc     => $zinc,
+            #        x_offset => $zone_x_offset,
+            #        y_offset => $zone_y_offset,
+            #        items    => [
+            #            [   1, undef, 'rectangle',
+            #                $map_layout->{'bounds'},
+            #                { -linecolor => 'red', -linewidth => '3', }
+            #            ],
+            #        ],
+            #        group_id => $zone_group_id,
+            #        tags     => [ 'on_top', ],
+            #    );
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
                     zinc     => $zinc,
                     x_offset => $zone_x_offset,
                     y_offset => $zone_y_offset,
                     items    => $map_layout->{$drawing_section},
-                    tags     => [ 'middle_layer', 'display', 'map' ],
+                    tags     => [
+                        'middle_layer',
+                        'display',
+                        'map_'
+                            . $window_key . '_'
+                            . $zone_key . '_'
+                            . $map_key
+                    ],
                     group_id => $zone_group_id,
                 );
             }
@@ -1255,35 +1279,26 @@ This is an effort to reserve the text space for the app_display_data.
     return ( $item_id, [ $zinc->bbox($item_id) ] );
 }
 
-sub get_button_command {
+# ----------------------------------------------------
+sub get_zone_key_from_drawn_id {
 
     #print STDERR "AI_NEEDS_MODDED 13\n";
 
 =pod
 
-=head2 get_button_command
+=head2 get_zone_key_from_drawn_id
 
-Returns the subroutine to use for a button
+Given a zinc object ID, return the zone_key that it belongs to.
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $zone_key   = $args{'zone_key'};
-    my $type       = $args{'type'};
+    my $drawn_id   = $args{'drawn_id'};
+    my $zinc       = $args{'zinc'};
 
-    if ( $type eq 'zoom_in' ) {
-        return sub {
-            $self->app_controller()->zoom_zone(
-                window_key => $window_key,
-                zone_key   => $zone_key,
-                zoom_value => $args{'zoom_value'},
-            );
-        };
-    }
+    return;
 
-    return
-        sub { print STDERR "This Button Type, $type, is not yet defined\n"; };
 }
 
 # ----------------------------------------------------
@@ -1299,7 +1314,8 @@ group.
 =cut
 
     my ( $self, %args ) = @_;
-    my $zone_key = $args{'zone_key'}
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'}
         or die 'no zone key for draw';
     my $zinc = $args{'zinc'}
         || $self->zinc( window_key => $args{'window_key'}, );
@@ -1307,8 +1323,10 @@ group.
     my $app_display_data = $args{'app_display_data'};
 
     my $storage_key = $overview ? 'ov_zone_group_id' : 'zone_group_id';
+    my $rev_storage_key
+        = $overview ? 'ov_group_to_zone_key' : 'zone_group_to_zone_key';
 
-    unless ( $self->{$storage_key}{$zone_key} ) {
+    unless ( $self->{$storage_key}{$window_key}{$zone_key} ) {
         my $parent_group_id;
         if (    $overview
             and $app_display_data->{'overview'}
@@ -1321,6 +1339,7 @@ group.
             = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'} )
         {
             $parent_group_id = $self->get_zone_group_id(
+                window_key       => $window_key,
                 zone_key         => $parent_zone_key,
                 zinc             => $zinc,
                 overview         => $overview,
@@ -1330,12 +1349,12 @@ group.
         else {
             $parent_group_id = 1;
         }
-        $self->{$storage_key}{$zone_key}
-            = $zinc->add( "group", $parent_group_id, );
-
+        my $group_id = $zinc->add( "group", $parent_group_id, );
+        $self->{$storage_key}{$window_key}{$zone_key}     = $group_id;
+        $self->{$rev_storage_key}{$window_key}{$group_id} = $zone_key;
     }
 
-    return $self->{$storage_key}{$zone_key};
+    return $self->{$storage_key}{$window_key}{$zone_key};
 }
 
 # ----------------------------------------------------
@@ -1944,7 +1963,7 @@ sub popup_map_menu {
     my ( $self, %args ) = @_;
     my $drawn_id = $args{'drawn_id'};
     my $zinc     = $args{'zinc'};
-    my $dx       = $args{'dx'};
+    my $moved    = $args{'moved'};
     my $map_key  = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
     my $controller = $self->app_controller();
 
@@ -1952,13 +1971,18 @@ sub popup_map_menu {
     if ($map_key) {
 
         # Moved
-        if ($dx) {
+        if ($moved) {
 
             my $move_button = $map_menu_window->Button(
                 -text    => 'Move Map',
                 -command => sub {
+                    $self->{'moving_map'} = 1;
                     $map_menu_window->destroy();
-                    $self->move_map_popup( map_key => $map_key, );
+                    $self->{'movng_map'} = 0;
+                    $self->move_map_popup(
+                        map_key => $map_key,
+                        zinc    => $zinc,
+                    );
                 },
             )->pack( -side => 'top', -anchor => 'nw' );
         }
@@ -1990,7 +2014,7 @@ sub popup_map_menu {
     $map_menu_window->bind(
         '<Destroy>',
         sub {
-            $self->destroy_ghost($zinc);
+            $self->destroy_ghosts($zinc) unless ( $self->{'moving_map'} );
         },
     );
     $map_menu_window->bind(
@@ -2157,6 +2181,7 @@ sub move_map_popup {
 
     my ( $self, %args ) = @_;
     my $map_key    = $args{'map_key'};
+    my $zinc       = $args{'zinc'};
     my $controller = $self->app_controller();
 
     my $move_map_data = $controller->app_display_data->get_move_map_data(
@@ -2196,6 +2221,7 @@ sub move_map_popup {
             new_feature_stop   => $new_feature_stop,
         );
     }
+    $self->destroy_ghosts($zinc);
 
     return;
 }
@@ -2699,7 +2725,7 @@ Handle starting drag
     my ( $zinc, $x, $y, ) = @_;
 
     # Remove previous highlighting
-    $self->destroy_ghost($zinc);
+    $self->destroy_ghosts($zinc);
 
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
@@ -2707,54 +2733,32 @@ Handle starting drag
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
+    return unless ( $self->{'drag_ori_id'} );
+
     my @tags;
     my $ghost_color = 'red';
-    if ( grep /^map/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-        return unless ( $self->{'drag_ori_id'} );
+    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
+        $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_zone_key'}   = $2;
+        $self->{'drag_map_key'}    = $3;
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
 
-        # Create a ghost item for each item in the original feature glyph
-        foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
-            my @coords = $zinc->coords($ori_id);
-            my $type   = $zinc->type($ori_id);
-            next if ( $type eq 'text' );
-            my $ghost_id = $zinc->clone($ori_id);
-            push @{ $self->{'ghost_ids'} }, $ghost_id;
-
-            # Make ghost a different color.
-            $zinc->itemconfigure(
-                $ghost_id,
-                -linecolor => $ghost_color,
-                -fillcolor => $ghost_color,
-            );
-            $self->{ghost_bounds}
-                = $self->expand_bounds( $self->{ghost_bounds}, \@coords );
-        }
+        $self->create_ghost( zinc => $zinc, map_key => $map_key, );
+        $self->create_ghost_location_on_map(
+            zinc    => $zinc,
+            map_key => $map_key,
+        );
 
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
     }
     elsif ( grep /^feature/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-        return unless ( $self->{'drag_ori_id'} );
 
         my $feature_acc
             = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} );
 
-        # Create a ghost item for each item in the original feature glyph
-        foreach my $ori_id ( $self->feature_acc_to_drawn_ids($feature_acc) ) {
-            my @coords = $zinc->coords($ori_id);
-            my $type   = $zinc->type($ori_id);
-            next if ( $type eq 'text' );
-            my $ghost_id = $zinc->clone($ori_id);
-            push @{ $self->{'ghost_ids'} }, $ghost_id;
-
-            # Make ghost a different color.
-            $zinc->itemconfigure(
-                $ghost_id,
-                -linecolor => $ghost_color,
-                -fillcolor => $ghost_color,
-            );
-        }
+        $self->create_ghost( zinc => $zinc, feature_acc => $feature_acc, );
 
         $self->fill_feature_info_box( drawn_id => $self->{'drag_ori_id'}, );
     }
@@ -2799,7 +2803,7 @@ Handle starting drag
     my ( $zinc, $x, $y, ) = @_;
 
     # Remove previous highlighting
-    $self->destroy_ghost($zinc);
+    $self->destroy_ghosts($zinc);
 
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
@@ -2807,33 +2811,26 @@ Handle starting drag
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
+    return unless ( $self->{'drag_ori_id'} );
     my @tags;
     my $ghost_color = 'red';
-    if ( grep /^map/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-        return unless ( $self->{'drag_ori_id'} );
-        $self->{'drag_obj'} = 'map';
+    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
+        $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_window_key'} = $1;
+        $self->{'drag_zone_key'}   = $2;
+        $self->{'drag_map_key'}    = $3;
+        $self->{'drag_obj'}        = 'map';
 
         my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
 
-        # Create a ghost item for each item in the original feature glyph
-        foreach my $ori_id ( $self->map_key_to_drawn_ids($map_key) ) {
-            my @coords = $zinc->coords($ori_id);
-            my $type   = $zinc->type($ori_id);
-            next if ( $type eq 'text' );
-            my $ghost_id = $zinc->clone($ori_id);
-            push @{ $self->{'ghost_ids'} }, $ghost_id;
+        $self->create_ghost( zinc => $zinc, map_key => $map_key, );
+        $self->create_ghost_location_on_map(
+            zinc    => $zinc,
+            map_key => $map_key,
+        );
 
-            # Make ghost a different color.
-            $zinc->itemconfigure(
-                $ghost_id,
-                -linecolor => $ghost_color,
-                -fillcolor => $ghost_color,
-            );
-            $self->{ghost_bounds}
-                = $self->expand_bounds( $self->{ghost_bounds}, \@coords );
-        }
-        $self->{'drag_mouse_to_edge_x'} = $x - $self->{'ghost_bounds'}[0];
         $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
+        $self->{'drag_mouse_to_edge_x'} = $x - $self->{'ghost_bounds'}[0];
 
     }
     elsif ( @tags = grep /^background_/,
@@ -2891,6 +2888,11 @@ Stubbed out, not currently used.
     my $dx = $x - $self->{'drag_last_x'};
     my $dy = $y - $self->{'drag_last_y'};
 
+    #    my $new_zone_key = $self->get_zone_key_from_drawn_id(
+    #        window_key =>$window_key,
+    #        drawn_id =>$zinc->find( 'closest', $x,$y ),
+    #        zinc => $zinc,
+    #);
     if ( $self->{'drag_obj'} ) {
     }
 
@@ -2906,7 +2908,7 @@ sub drag_type_2 {
 
 =pod
 
-=head2 drag_type_1
+=head2 drag_type_2
 
 Handle the drag event
 
@@ -2921,8 +2923,9 @@ Handle the drag event
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
 
+            $self->{'ghost_map_moved'} = 1;
+
             # BF ADD THIS FEATURE BACK AT SOME POINT
-            return;
             $self->drag_ghost(
                 zinc => $zinc,
                 x    => $x,
@@ -2975,6 +2978,7 @@ Stubbed out, Not currently used.
 
     # Move original object
     if ( $self->{'drag_obj'} ) {
+        $self->app_controller()->app_display_data()->end_drag_ghost();
     }
 
     foreach (
@@ -3007,35 +3011,26 @@ Handle the stopping drag event
 
     return unless ( $self->{'drag_ori_id'} );
 
-    # BF ADD THIS BACK LATER
-    #
-    #    # Move original object
-    #    my $zinc_x = $zinc->zincx($x);
-    #    if ( $self->{'drag_obj'} ) {
-    #        if ( $self->{'drag_obj'} eq 'map' ) {
-    #
-    #            my $map_key
-    #                = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-    #
-    #            my $dx = int( $self->{'ghost_bounds'}[0]
-    #                    - $self->app_controller()->app_display_data()
-    #                    ->{'map_layout'}{$map_key}{'coords'}[0] );
-    #
-    #            $self->popup_map_menu(
-    #                zinc   => $zinc,
-    #                dx       => $dx,
-    #                drawn_id => ( $self->{'drag_ori_id'} ),
-    #            );
-    #        }
-    #        elsif ($self->{'drag_obj'} eq 'background'
-    #            or $self->{'drag_obj'} eq 'viewed_region' )
-    #        {
-    #            $self->app_controller()->unhide_corrs(
-    #                window_key => $self->{'drag_window_key'},
-    #                zone_key   => $self->{'drag_zone_key'},
-    #            );
-    #        }
-    #    }
+    # Move original object
+    if ( $self->{'drag_obj'} ) {
+        if ( $self->{'drag_obj'} eq 'map' ) {
+            my $map_key = $self->{'drag_map_key'};
+
+            $self->popup_map_menu(
+                zinc     => $zinc,
+                moved    => $self->{'ghost_map_moved'},
+                drawn_id => ( $self->{'drag_ori_id'} ),
+            );
+        }
+        elsif ($self->{'drag_obj'} eq 'background'
+            or $self->{'drag_obj'} eq 'viewed_region' )
+        {
+            $self->app_controller()->unhide_corrs(
+                window_key => $self->{'drag_window_key'},
+                zone_key   => $self->{'drag_zone_key'},
+            );
+        }
+    }
 
     foreach (
         qw{
@@ -3048,6 +3043,129 @@ Handle the stopping drag event
     }
 
 }    # end start_drag
+
+# ----------------------------------------------------
+sub create_ghost_location_on_map {
+
+    #print STDERR "AI_NEEDS_MODDED 54\n";
+
+=pod
+
+=head2 create_ghost_location_on_map
+
+Handle the ghost map dragging
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc    = $args{'zinc'};
+    my $map_key = $args{'map_key'};
+
+    my $ghost_color = 'red';
+
+    my %ghost_location_data = $self->app_controller()->app_display_data()
+        ->place_ghost_location_on_parent_map( map_key => $map_key, );
+
+    return unless (%ghost_location_data);
+
+    my $parent_group_id = $self->get_zone_group_id(
+        window_key       => $ghost_location_data{'window_key'},
+        zone_key         => $ghost_location_data{'parent_zone_key'},
+        zinc             => $zinc,
+        app_display_data => $self->app_controller()->app_display_data(),
+    );
+
+    $self->{'ghost_loc_id'} = $zinc->add(
+        'rectangle',
+        $parent_group_id,
+        $ghost_location_data{'location_coords'},
+        -linecolor => $ghost_color,
+        -linewidth => 2,
+        -filled    => 0,
+        -visible   => $ghost_location_data{'visible'},
+
+    );
+    $zinc->addtag( 'on_top', 'withtag', $self->{'ghost_loc_id'} );
+
+    $self->{'ghost_loc_parent_zone_key'}
+        = $ghost_location_data{'parent_zone_key'};
+
+    return;
+}
+
+# ----------------------------------------------------
+sub create_ghost {
+
+    #print STDERR "AI_NEEDS_MODDED 54\n";
+
+=pod
+
+=head2 create_ghost
+
+Handle the ghost map dragging
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc        = $args{'zinc'};
+    my $map_key     = $args{'map_key'};
+    my $feature_acc = $args{'feature_acc'};
+
+    my $ghost_color = 'red';
+
+    # Create a ghost item for each item in the original feature glyph
+    my @ori_ids;
+    if ($map_key) {
+        @ori_ids = $self->map_key_to_drawn_ids($map_key);
+    }
+    elsif ($feature_acc) {
+        @ori_ids = $self->feature_acc_to_drawn_ids($feature_acc);
+    }
+    else {
+        return;
+    }
+
+    my $app_display_data = $self->app_controller()->app_display_data();
+    $self->{'ghost_bounds'} = [];
+    my ( $main_x_offset, $main_y_offset );
+    if ($map_key) {
+        my $zone_key = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+        ( $main_x_offset, $main_y_offset )
+            = $app_display_data->get_main_zone_offsets( zone_key => $zone_key,
+            );
+    }
+
+    foreach my $ori_id (@ori_ids) {
+        my $type = $zinc->type($ori_id);
+        next if ( $type eq 'text' );
+        my $ghost_id = $zinc->clone($ori_id);
+        push @{ $self->{'ghost_ids'} }, $ghost_id;
+
+        # Make ghost a different color.
+        $zinc->itemconfigure(
+            $ghost_id,
+            -linecolor => $ghost_color,
+            -fillcolor => $ghost_color,
+        );
+        if ($map_key) {
+            $zinc->chggroup( $ghost_id, 1, 1, );
+
+            # modify the coords to be universial because chggroup won't.
+            my @coords = $zinc->coords($ghost_id);
+
+            # Flatten the coords array
+            @coords = map { ( ref($_) eq 'ARRAY' ) ? @$_ : $_ } @coords;
+            $coords[0] += $main_x_offset;
+            $coords[1] += $main_y_offset;
+            $coords[2] += $main_x_offset;
+            $coords[3] += $main_y_offset;
+            $self->{ghost_bounds}
+                = $self->expand_bounds( $self->{ghost_bounds}, \@coords );
+        }
+    }
+
+    return;
+}
 
 # ----------------------------------------------------
 sub drag_ghost {
@@ -3066,25 +3184,55 @@ Handle the ghost map dragging
     my $zinc = $args{'zinc'};
     my $x    = $args{'x'};
     my $dx   = $args{'dx'};
-    return unless ($dx);
+    my $y    = $args{'y'};
+    my $dy   = $args{'dy'};
+    return unless ( $dx or $dy );
 
-    my $new_dx = $self->app_controller()->move_ghost_map(
+    my %ghost_data = $self->app_controller()->app_display_data()->move_ghosts(
         map_key      => $self->drawn_id_to_map_key( $self->{'drag_ori_id'} ),
         mouse_x      => $x,
+        mouse_y      => $y,
+        mouse_dx     => $dx,
+        mouse_dy     => $dy,
         ghost_bounds => $self->{'ghost_bounds'},
         mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
     );
-    return unless $new_dx;
+    return unless (%ghost_data);
+
+    my $new_dx = $ghost_data{'ghost_dx'};
+    my $new_dy = $ghost_data{'ghost_dy'};
+    return unless ( $new_dx or $new_dy );
 
     # Move the ghost
     foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
-        $zinc->move( $ghost_id, $new_dx, 0, );
+        $zinc->translate( $ghost_id, $new_dx, $new_dy, );
     }
 
     #Move the ghost bounds
     $self->{'ghost_bounds'}[0] += $new_dx;
     $self->{'ghost_bounds'}[2] += $new_dx;
-    $zinc->configure( -scrollregion => [ $zinc->bbox('all') ] );
+
+    # Move the ghost loc
+    unless ( $ghost_data{'ghost_loc_parent_zone_key'}
+        == $self->{'ghost_loc_parent_zone_key'} )
+    {
+        $self->{'ghost_loc_parent_zone_key'}
+            = $ghost_data{'ghost_loc_parent_zone_key'};
+
+        my $parent_group_id = $self->get_zone_group_id(
+            window_key       => $ghost_data{'window_key'},
+            zone_key         => $ghost_data{'ghost_loc_parent_zone_key'},
+            zinc             => $zinc,
+            app_display_data => $self->app_controller()->app_display_data(),
+        );
+        $zinc->chggroup( $self->{'ghost_loc_id'}, $parent_group_id, 1, );
+    }
+    $zinc->coords(
+        $self->{'ghost_loc_id'},
+        $ghost_data{'ghost_loc_location_coords'},
+    );
+    $zinc->itemconfigure( $self->{'ghost_loc_id'},
+        -visible => $ghost_data{'ghost_loc_visible'}, );
 
 }    # end drag_ghost
 
@@ -3185,6 +3333,7 @@ Does what the interface needs to do to move the zone
 
     my $zinc = $self->zinc( window_key => $window_key, );
     my $zone_group_id = $self->get_zone_group_id(
+        window_key       => $window_key,
         zone_key         => $zone_key,
         zinc             => $zinc,
         app_display_data => $app_display_data,
@@ -3226,13 +3375,13 @@ Handle window resizing
 }
 
 # ----------------------------------------------------
-sub destroy_ghost {
+sub destroy_ghosts {
 
     #print STDERR "AI_NEEDS_MODDED 59\n";
 
 =pod
 
-=head2 destroy_ghost
+=head2 destroy_ghosts
 
 Destroy the ghost image
 
@@ -3244,7 +3393,15 @@ Destroy the ghost image
     foreach my $ghost_id ( @{ $self->{'ghost_ids'} || [] } ) {
         $zinc->remove($ghost_id);
     }
-    $self->{'ghost_ids'} = undef;
+
+    $self->{'ghost_ids'}       = undef;
+    $self->{'ghost_bounds'}    = [];
+    $self->{'ghost_map_moved'} = undef;
+
+    $zinc->remove( $self->{'ghost_loc_id'} ) if $self->{'ghost_loc_id'};
+    $self->{'ghost_loc_id'}              = undef;
+    $self->{'ghost_loc_parent_zone_key'} = undef;
+    $self->app_controller()->app_display_data()->end_drag_ghost();
 }
 
 # ----------------------------------------------------

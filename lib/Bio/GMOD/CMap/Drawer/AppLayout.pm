@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.29 2007-02-26 18:57:14 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.30 2007-03-05 18:30:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -50,7 +50,6 @@ my @subs = qw[
     overview_selected_area
     layout_head_maps
     layout_sub_maps
-    layout_zone_with_current_maps
     add_zone_separator
     add_correspondences
     set_zone_bgcolor
@@ -323,14 +322,21 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
     my $relayout         = $args{'relayout'} || 0;
     my $move_offset_x    = $args{'move_offset_x'} || 0;
     my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $zooming          = $args{'zooming'} || 0;
+    my $force_relayout   = $args{'force_relayout'} || 0;
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
     my $zone_width;
 
     if ($relayout) {
 
-        if ( $zooming and $depth <=> 0 ) {
+        unless ( @{ $new_zone_bounds || [] } ) {
+            $new_zone_bounds = $zone_layout->{'bounds'};
+        }
+
+        if (    $force_relayout
+            and $depth <=> 0
+            and @{ $new_zone_bounds || [] } )
+        {
             $zone_width = $new_zone_bounds->[2] - $new_zone_bounds->[0];
         }
         else {
@@ -350,7 +356,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
         else {
 
             # This is one of the first levels of children.
-            unless ($zooming) {
+            unless ($force_relayout) {
 
                 # Now check to see if the visibility of this slot has changed
                 # If not, we can just move the zone.
@@ -436,7 +442,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
             relayout         => $relayout,
             move_offset_x    => $move_offset_x,
             move_offset_y    => $move_offset_y,
-            zooming          => $zooming,
+            force_relayout   => $force_relayout,
             depth            => $depth,
         );
     }
@@ -451,7 +457,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
             relayout         => $relayout,
             move_offset_x    => $move_offset_x,
             move_offset_y    => $move_offset_y,
-            zooming          => $zooming,
+            force_relayout   => $force_relayout,
             depth            => $depth,
         );
     }
@@ -487,7 +493,7 @@ Lays out head maps in a zone
     my $relayout         = $args{'relayout'} || 0;
     my $move_offset_x    = $args{'move_offset_x'} || 0;
     my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $zooming          = $args{'zooming'} || 0;
+    my $force_relayout   = $args{'force_relayout'} || 0;
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
 
@@ -660,7 +666,7 @@ Lays out head maps in a zone
             relayout         => $relayout,
             move_offset_x    => $move_offset_x,
             move_offset_y    => $move_offset_y,
-            zooming          => $zooming,
+            force_relayout   => $force_relayout,
             depth            => $depth,
         );
         if ( $row_max_y < $tmp_map_max_y ) {
@@ -713,7 +719,7 @@ Lays out sub maps in a slot.
     my $relayout         = $args{'relayout'} || 0;
     my $move_offset_x    = $args{'move_offset_x'} || 0;
     my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $zooming          = $args{'zooming'} || 0;
+    my $force_relayout   = $args{'force_relayout'} || 0;
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
 
@@ -785,20 +791,19 @@ Lays out sub maps in a slot.
     my $parent_map_key
         = $app_display_data->{'scaffold'}{$zone_key}{'parent_map_key'};
     my $parent_map_layout
-        = $app_display_data->{'map_layout'}{$parent_zone_key};
+        = $app_display_data->{'map_layout'}{$parent_map_key};
     my $parent_map_id = $app_display_data->{'map_key_to_id'}{$parent_map_key};
     my $parent_data   = $app_display_data->app_data_module()
         ->map_data( map_id => $parent_map_id, );
     my $parent_start = $parent_data->{'map_start'};
-    my $parent_stop  = $parent_data->{'map_stop'};
     my $parent_pixels_per_unit
         = $app_display_data->{'map_pixels_per_unit'}{$parent_map_key}
         || $app_display_data->{'scaffold'}{$parent_zone_key}
         {'pixels_per_unit'};
 
     # Figure out where the parent start is in this zone's coordinate system
-    my $parent_x1 = $parent_map_layout->{'coords'}[0]
-        + $parent_zone_layout->{'bounds'}[0] - $zone_layout->{'bounds'}[0];
+    my $parent_x1
+        = $parent_map_layout->{'coords'}[0] - $zone_layout->{'bounds'}[0];
     my $parent_pixel_width = $parent_map_layout->{'coords'}[2]
         - $parent_map_layout->{'coords'}[0] + 1;
 
@@ -927,7 +932,7 @@ Lays out sub maps in a slot.
                 relayout         => $relayout,
                 move_offset_x    => $move_offset_x,
                 move_offset_y    => $move_offset_y,
-                zooming          => $zooming,
+                force_relayout   => $force_relayout,
                 depth            => $depth,
             );
 
@@ -1042,119 +1047,6 @@ Lays out reference maps in a new zone
 }
 
 # ----------------------------------------------------
-sub layout_zone_with_current_maps {
-
-    #print STDERR "AL_NEEDS_MODDED 8\n";
-
-=pod
-
-=head2 layout_zone_with_current_maps
-
-Lays out maps in a zone where they are already placed horizontally. 
-
-=cut
-
-    my %args             = @_;
-    my $window_key       = $args{'window_key'};
-    my $panel_key        = $args{'panel_key'};
-    my $old_slot_key     = $args{'old_slot_key'};
-    my $new_slot_key     = $args{'new_slot_key'};
-    my $row_index        = $args{'row_index'};
-    my $start_min_y      = $args{'start_min_y'};
-    my $map_keys         = $args{'map_keys'};
-    my $app_display_data = $args{'app_display_data'};
-
-    unless ( @{ $map_keys || [] } ) {
-        die "No map keys provided to layout_slot_with_current_maps\n";
-    }
-
-    my $old_slot_layout = $app_display_data->{'slot_layout'}{$old_slot_key};
-    my $new_slot_layout = $app_display_data->{'slot_layout'}{$new_slot_key};
-    my $panel_layout    = $app_display_data->{'panel_layout'}{$panel_key};
-
-    # DO ZONE STUFF
-
-    # Initialize bounds to the bounds of the panel
-    # But have a height of 0.
-    $new_slot_layout->{'bounds'} = [
-        $panel_layout->{'bounds'}[0], $start_min_y,
-        $panel_layout->{'bounds'}[2], $start_min_y,
-    ];
-
-    unless (
-        $app_display_data->{'scaffold'}{$new_slot_key}{'attached_to_parent'}
-        or $app_display_data->{'scaffold'}{$new_slot_key}{'is_top'} )
-    {
-        add_slot_separator( slot_layout => $new_slot_layout, );
-    }
-    unless ( $app_display_data->{'scaffold'}{$new_slot_key}{'is_top'} ) {
-
-        # Make room for border if it is possible to have one.
-        $new_slot_layout->{'bounds'}[3]
-            += ZONE_SEPARATOR_HEIGHT + SMALL_BUFFER;
-    }
-
-    # Move Maps
-
-    my $new_min_y = $new_slot_layout->{'bounds'}[3] + MAP_Y_BUFFER;
-
-    # Look at first map and work out vertical offset.
-
-    my $ori_min_y
-        = $app_display_data->{'map_layout'}{ $map_keys->[0] }{'bounds'}[1];
-
-    my $y_offset = $new_min_y - $ori_min_y;
-
-    my $max_y = $new_min_y;
-
-    my $app_interface = $app_display_data->app_interface();
-
-    foreach my $map_key ( @{ $map_keys || [] } ) {
-        push @{ $app_display_data->{'map_order'}{$new_slot_key} }, $map_key;
-        my $map_layout = $app_display_data->{'map_layout'}{$map_key};
-        if ( $map_layout->{'bounds'}[3] + $y_offset > $max_y ) {
-            $max_y = $map_layout->{'bounds'}[3] + $y_offset;
-        }
-
-        # Record max and min for overview
-        if ( ( not defined $new_slot_layout->{'maps_min_x'} )
-            or $new_slot_layout->{'maps_min_x'} > $map_layout->{'bounds'}[0] )
-        {
-            $new_slot_layout->{'maps_min_x'} = $map_layout->{'bounds'}[0];
-        }
-        if ( ( not defined $new_slot_layout->{'maps_max_x'} )
-            or $new_slot_layout->{'maps_max_x'} < $map_layout->{'bounds'}[2] )
-        {
-            $new_slot_layout->{'maps_max_x'} = $map_layout->{'bounds'}[2];
-        }
-
-        move_map(
-            app_display_data => $app_display_data,
-            app_interface    => $app_interface,
-            map_key          => $map_key,
-            panel_key        => $panel_key,
-            y                => $y_offset,
-        );
-    }
-
-    my $height_change = $max_y - $start_min_y + MAP_Y_BUFFER;
-    $app_display_data->modify_slot_bottom_bound(
-        slot_key      => $new_slot_key,
-        panel_key     => $panel_key,
-        bounds_change => $height_change,
-    );
-    $panel_layout->{'sub_changed'}    = 1;
-    $new_slot_layout->{'sub_changed'} = 1;
-    $new_slot_layout->{'changed'}     = 1;
-    $new_slot_layout->{'bounds'}[3]   = $max_y + MAP_Y_BUFFER;
-
-    $app_display_data->create_slot_coverage_array( slot_key => $new_slot_key,
-    );
-
-    return $max_y;
-}
-
-# ----------------------------------------------------
 sub _layout_contained_map {
 
 =pod
@@ -1180,7 +1072,7 @@ Lays out a maps in a contained area.
     my $relayout         = $args{'relayout'} || 0;
     my $move_offset_x    = $args{'move_offset_x'} || 0;
     my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $zooming          = $args{'zooming'} || 0;
+    my $force_relayout   = $args{'force_relayout'} || 0;
     my $depth            = $args{'depth'} || 0;
     my $font_height      = 15;
 
@@ -1189,9 +1081,9 @@ Lays out a maps in a contained area.
     if ($relayout) {
 
         # Check if we just need to move the map
-        # If the viewable region is the same and we aren't zooming
+        # If the viewable region is the same and we aren't force_relayout
         # simply move the map
-        if (    !$zooming
+        if (    !$force_relayout
             and @{ $map_layout->{'bounds'} || [] }
             and ( $map_layout->{'coords'}[0] - $map_layout->{'bounds'}[0]
                 == ( ( $min_x > $viewable_x1 ) ? $min_x : $viewable_x1 )
@@ -1292,7 +1184,7 @@ Lays out a maps in a contained area.
     );
     $min_y = $max_y = $map_coords->[3];
 
-    if ( $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {
+    if ( 1 or $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {
         $max_y = _layout_features(
             app_display_data => $app_display_data,
             zone_key         => $zone_key,
@@ -1326,7 +1218,7 @@ Lays out a maps in a contained area.
             relayout         => $relayout,
             move_offset_x    => 0,
             move_offset_y    => 0,
-            zooming          => $zooming,
+            force_relayout   => $force_relayout,
             depth            => $depth + 1,
         );
         $max_y
@@ -1430,7 +1322,6 @@ Lays out feautures
                     $adjusted_right = $map_width
                         if ( $adjusted_right > $map_width );
 
-                    #xxx
                     $column_index = simple_column_distribution(
                         low        => $adjusted_left,
                         high       => $adjusted_right,
@@ -1970,7 +1861,7 @@ Move a map
 
     my %args             = @_;
     my $map_key          = $args{'map_key'};
-    my $zone_key         = $args{'map_key'};
+    my $zone_key         = $args{'zone_key'};
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
     my $app_interface    = $args{'app_interface'};
