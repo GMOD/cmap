@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use base 'Class::Base';
 
@@ -703,7 +703,6 @@ sub heatmap {
     my $x_pos1           = $args{'x_pos1'};
     my $y_pos1           = $args{'y_pos1'};
     my $y_pos2           = $args{'y_pos2'};
-    my $color            = $args{'color'};
     my $name             = $args{'name'};
     my $feature          = $args{'feature'};
     my $calling_obj      = $args{'calling_obj'};
