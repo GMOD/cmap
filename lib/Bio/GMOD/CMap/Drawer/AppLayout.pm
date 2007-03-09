@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.30 2007-03-05 18:30:25 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.31 2007-03-09 16:41:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -275,7 +275,6 @@ sub layout_overview {
         $zone_max_y += $zone_buffer_y;
 
         # create selected region
-        # BF COME BACK TO THIS
         overview_selected_area(
             zone_key         => $child_zone_key,
             window_key       => $window_key,
@@ -326,6 +325,9 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
     my $zone_width;
+
+    # If the zone has never been layed out, set relayout to 0
+    $relayout = 0 unless ( $zone_layout->{'layed_out_once'} );
 
     if ($relayout) {
 
@@ -469,7 +471,9 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
         add_zone_separator( zone_layout => $zone_layout, );
     }
 
-    $zone_layout->{'sub_changed'} = 1;
+    $zone_layout->{'changed'}        = 1;
+    $zone_layout->{'sub_changed'}    = 1;
+    $zone_layout->{'layed_out_once'} = 1;
 
     return $zone_height_change;
 }
@@ -1184,7 +1188,7 @@ Lays out a maps in a contained area.
     );
     $min_y = $max_y = $map_coords->[3];
 
-    if ( 1 or $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {
+    if ( $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {
         $max_y = _layout_features(
             app_display_data => $app_display_data,
             zone_key         => $zone_key,
@@ -1495,16 +1499,16 @@ Lays out correspondences between two zones
             = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
         my $map2_x1
             = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[0];
-        my ( $corr_y1, $corr_y2 );
-        if ( $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1]
-            < $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1] )
-        {
+        my ( $corr_y1, $corr_y2, $draw_downward );
+        if ( $zone_key1 < $zone_key2 ) {
+            $draw_downward = 1;
             $corr_y1
                 = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[3];
             $corr_y2
                 = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
         }
         else {
+            $draw_downward = 0;
             $corr_y1
                 = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
             $corr_y2
@@ -1543,14 +1547,25 @@ Lays out correspondences between two zones
         }
         $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
             {'changed'} = 1;
+        my $end_line_height = 10;
+        my $x_end1          = $corr_x1 + $zone1_x_offset;
+        my $y_end1          = $corr_y1 + $zone1_y_offset;
+        my $x_end2          = $corr_x2 + $zone2_x_offset;
+        my $y_end2          = $corr_y2 + $zone2_y_offset;
+        my $x_mid1          = $x_end1;
+        my $y_mid1          = $draw_downward
+            ? $y_end1 + $end_line_height
+            : $y_end1 - $end_line_height;
+        my $x_mid2 = $x_end2;
+        my $y_mid2 = $draw_downward
+            ? $y_end2 - $end_line_height
+            : $y_end2 + $end_line_height;
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
                 {$map_key2}{'items'} },
             (
             [   1, undef, 'curve',
-                [   $corr_x1 + $zone1_x_offset,
-                    $corr_y1 + $zone1_y_offset,
-                    $corr_x2 + $zone2_x_offset,
-                    $corr_y2 + $zone2_y_offset,
+                [   $x_end1, $y_end1, $x_mid1, $y_mid1,
+                    $x_mid2, $y_mid2, $x_end2, $y_end2,
                 ],
                 { -linecolor => 'red', -linewidth => '1', }
             ]
@@ -1737,74 +1752,21 @@ Shows the selected region.
     my $bracket_width = 5;
 
     my $use_brackets = 0;
-    if ($use_brackets) {
 
-        # Left bracket
-        push @{ $overview_zone_layout->{'viewed_region'} },
-            (
-            [   1, undef, 'curve',
-                [   $bracket_x1 + $bracket_width, $bracket_y1,
-                    $bracket_x1,                  $bracket_y1,
-                    $bracket_x1,                  $bracket_y2,
-                    $bracket_x1 + $bracket_width, $bracket_y2,
-                ],
-                { -linecolor => 'orange', -linewidth => '3', }
-            ]
-            );
+    # rectangle
+    push @{ $overview_zone_layout->{'viewed_region'} },
+        (
+        [   1, undef,
+            'rectangle',
+            [ ( $bracket_x1, $bracket_y1 ), ( $bracket_x2, $bracket_y2 ), ],
+            {   -fillcolor => '#ffdd00',
+                -linecolor => '#ff6600',
+                -linewidth => 1,
+                -filled    => 1
+            }
+        ]
+        );
 
-        # Right bracket
-        push @{ $overview_zone_layout->{'viewed_region'} },
-            (
-            [   1, undef, 'curve',
-                [   $bracket_x2 - $bracket_width, $bracket_y1,
-                    $bracket_x2,                  $bracket_y1,
-                    $bracket_x2,                  $bracket_y2,
-                    $bracket_x2 - $bracket_width, $bracket_y2,
-                ],
-                { -linecolor => 'orange', -linewidth => '3', }
-            ]
-            );
-
-        # top line
-        push @{ $overview_zone_layout->{'viewed_region'} },
-            (
-            [   1,
-                undef,
-                'curve',
-                [ $bracket_x1, $bracket_y1, $bracket_x2, $bracket_y1, ],
-                { -linecolor => 'orange', -linewidth => '1', }
-            ]
-            );
-
-        # bottom line
-        push @{ $overview_zone_layout->{'viewed_region'} },
-            (
-            [   1,
-                undef,
-                'curve',
-                [ $bracket_x1, $bracket_y2, $bracket_x2, $bracket_y2, ],
-                { -linecolor => 'orange', -linewidth => '1', }
-            ]
-            );
-    }
-    else {
-
-        # rectangle
-        push @{ $overview_zone_layout->{'viewed_region'} },
-            (
-            [   1, undef,
-                'rectangle',
-                [   ( $bracket_x1, $bracket_y1 ),
-                    ( $bracket_x2, $bracket_y2 ),
-                ],
-                {   -fillcolor => '#ffdd00',
-                    -linecolor => '#ff6600',
-                    -linewidth => 1,
-                    -filled    => 1
-                }
-            ]
-            );
-    }
     $overview_layout->{'sub_changed'}  = 1;
     $overview_zone_layout->{'changed'} = 1;
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.33 2007-03-05 20:58:17 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.34 2007-03-09 16:41:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -622,7 +622,7 @@ expand zones
         );
     }
 
-    # This probably should be more elegant but for now, just layout the whole thing
+# This probably should be more elegant but for now, just layout the whole thing
     my $top_zone_key = $self->{'head_zone_key'}{$window_key};
     layout_zone(
         window_key       => $window_key,
@@ -1359,12 +1359,13 @@ Initializes zone_layout
     $self->{'zone_in_window'}{$window_key}{$zone_key} = 1;
 
     $self->{'zone_layout'}{$zone_key} = {
-        bounds      => [],
-        separator   => [],
-        background  => [],
-        buttons     => [],
-        changed     => 1,
-        sub_changed => 1,
+        bounds         => [],
+        separator      => [],
+        background     => [],
+        buttons        => [],
+        layed_out_once => 0,
+        changed        => 0,
+        sub_changed    => 0,
     };
 
     return;
@@ -1385,51 +1386,48 @@ Destroys then recreates the overview
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $panel_key  = $args{'panel_key'}  or return;
 
-    my $top_slot_key = $self->{'overview'}{$panel_key}{'slot_key'};
+    my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
-    # Destroy slot information and drawings
-    foreach my $slot_key ( $top_slot_key,
-        @{ $self->{'overview_layout'}{$panel_key}{'child_slot_order'} } )
+    # Destroy zone information and drawings
+    foreach my $zone_key ( $top_zone_key,
+        @{ $self->{'overview_layout'}{$window_key}{'child_zone_order'} } )
     {
         foreach my $map_key (
             keys %{
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
+                $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
                     {'maps'} || {}
             }
             )
         {
             $self->destroy_items(
-                panel_key => $panel_key,
-                items     =>
-                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                    {'maps'}{$map_key}{'items'},
+                window_key => $window_key,
+                items      => $self->{'overview_layout'}{$window_key}{'zones'}
+                    {$zone_key}{'maps'}{$map_key}{'items'},
                 is_overview => 1,
             );
         }
         foreach my $item_name (qw[ misc_items viewed_region ]) {
             $self->destroy_items(
-                panel_key => $panel_key,
-                items     =>
-                    $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                    {$item_name},
+                window_key => $window_key,
+                items      => $self->{'overview_layout'}{$window_key}{'zones'}
+                    {$zone_key}{$item_name},
                 is_overview => 1,
             );
         }
-        delete $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
+        delete $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key};
     }
 
     # Destroy overview itself
     $self->destroy_items(
-        panel_key   => $panel_key,
-        items       => $self->{'overview_layout'}{$panel_key}{'misc_items'},
+        window_key  => $window_key,
+        items       => $self->{'overview_layout'}{$window_key}{'misc_items'},
         is_overview => 1,
     );
-    delete $self->{'overview_layout'}{$panel_key};
+    delete $self->{'overview_layout'}{$window_key};
 
     # Recreate Overveiw
-    $self->initialize_overview_layout($panel_key);
+    $self->initialize_overview_layout($window_key);
 
     layout_overview(
         window_key       => $window_key,
@@ -1829,15 +1827,18 @@ Move a map from one place on a parent to another
         feature_stop   => $new_feature_stop,
     );
 
+# This probably should be more elegant but for now, just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
     layout_zone(
         window_key       => $window_key,
-        zone_key         => $zone_key,
+        zone_key         => $top_zone_key,    #$zone_key,
         app_display_data => $self,
         relayout         => 1,
         force_relayout   => 1,
     );
 
     #RELAYOUT OVERVIEW
+    $self->recreate_overview( window_key => $window_key, );
 
     $self->app_interface()->draw_window(
         window_key       => $window_key,

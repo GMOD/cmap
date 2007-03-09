@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.34 2007-03-05 18:30:24 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.35 2007-03-09 16:41:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -796,7 +796,7 @@ Draws and re-draws on the zinc
     if ( $window_layout->{'sub_changed'} ) {
 
         # SLOTS
-        foreach my $zone_key (
+        foreach my $zone_key ( sort { $a cmp $b }
             keys %{ $app_display_data->{'zone_in_window'}{$window_key}
                     || {} } )
         {
@@ -820,8 +820,6 @@ Draws and re-draws on the zinc
         -width        => $zinc_width,
     );
 
-    # Pack later in pack_panes()
-
     $self->draw_corrs(
         zinc             => $zinc,
         app_display_data => $app_display_data,
@@ -833,10 +831,6 @@ Draws and re-draws on the zinc
     );
 
     $self->layer_tagged_items( zinc => $zinc, );
-
-    # BF ADD BACK IN AT SOME POINT
-    $self->layer_tagged_items(
-        zinc => $self->overview_zinc( window_key => $window_key, ) );
 
     return;
 }
@@ -900,6 +894,9 @@ Draws and re-draws on the overview zinc
         -height       => $zinc_height,
         -width        => $zinc_width,
     );
+
+    $self->layer_tagged_items(
+        zinc => $self->overview_zinc( window_key => $window_key, ) );
 
     return;
 }
@@ -1148,6 +1145,9 @@ Draws and re-draws on the zinc
         }
         $zone_layout->{'sub_changed'} = 0;
     }
+
+    # Raise this zone above the earlier zones
+    $zinc->raise( $zone_group_id, );
 
     return;
 }
@@ -2644,11 +2644,8 @@ Handle the placement of tagged items in layers
     my ( $self, %args ) = @_;
     my $zinc = $args{'zinc'};
 
-    #my $real_zinc = $zinc->Subwidget("zinc");
-    my $real_zinc = $zinc;
-
-    $real_zinc->raise( 'on_top', 'all' );
-    $real_zinc->lower( 'on_bottom', 'all' );
+    $zinc->raise( 'on_top', );
+    $zinc->lower( 'on_bottom', );
 
     return;
 }
