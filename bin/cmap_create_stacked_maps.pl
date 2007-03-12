@@ -23,6 +23,7 @@ Options:
     -f|--feature_type_acc|--stack_feature_type_acc 
         The feature type for the features that denote the original relational
         maps. (Required)
+    -e|--evidence_type_accs
     -c|--correspondence_cutoff 
         The minimum number of correspondences a map needs to be placed 
         (default 0).
@@ -84,6 +85,12 @@ correspondences.
 
 If this file is imported, any stack maps that aren't in it, will be ignored.
 
+=item * Evidence Type Accessions (optional)
+
+To limit the correspondences used to specific evidence types, use the --evidence_type_accs flag followed by a comma or space delimited list of evidence type accessions.
+
+  --evidence_type_acc "ANB, BLAST"
+
 =back
 
 =head1 AFTER RUNNING
@@ -99,9 +106,10 @@ use Bio::GMOD::CMap::Admin;
 use Getopt::Long;
 use Pod::Usage;
 
-my ( $help, $datasource, $stack_map_set_acc, $ref_map_set_acc,
-    $new_map_set_acc, $stack_feature_type_acc, $corr_cutoff, 
-    $alignment_file, );
+my ($help,            $datasource,             $stack_map_set_acc,
+    $ref_map_set_acc, $new_map_set_acc,        $stack_feature_type_acc,
+    $corr_cutoff,     $evidence_type_accs_str, $alignment_file,
+);
 GetOptions(
     'help|h|?'                                    => \$help,
     'd:s'                                         => \$datasource,
@@ -109,6 +117,7 @@ GetOptions(
     'reference_map_set|ref_map_set_acc|r:s'       => \$ref_map_set_acc,
     'new_map_set|new_map_set_acc|n:s'             => \$new_map_set_acc,
     'feature_type_acc|stack_feature_type_acc|f:s' => \$stack_feature_type_acc,
+    'evidence_type_accs|e:s'                      => \$evidence_type_accs_str,
     'correspondence_cutoff|c:s'                   => \$corr_cutoff,
     'alignment_file|a:s'                          => \$alignment_file,
     )
@@ -121,6 +130,11 @@ $corr_cutoff ||= 0;
 my $cmap_admin = Bio::GMOD::CMap::Admin->new( data_source => $datasource, );
 my $sql_object = $cmap_admin->sql();
 
+my @evidence_type_accs = ();
+if ($evidence_type_accs_str) {
+    @evidence_type_accs = split( /[,\s]/, $evidence_type_accs_str );
+}
+
 unless (
     validate_params(
         cmap_object            => $cmap_admin,
@@ -129,6 +143,7 @@ unless (
         ref_map_set_acc        => $ref_map_set_acc,
         new_map_set_acc        => $new_map_set_acc,
         stack_feature_type_acc => $stack_feature_type_acc,
+        evidence_type_accs     => \@evidence_type_accs,
     )
     )
 {
@@ -165,8 +180,8 @@ my ( $ref_map_set, ) = @{
 my $ref_maps = $sql_object->get_maps_simple(
     cmap_object => $cmap_admin,
     map_set_id  => $ref_map_set_id,
-    );
-die "No maps in $ref_map_set_acc.\n" unless @{$ref_maps||[]};
+);
+die "No maps in $ref_map_set_acc.\n" unless @{ $ref_maps || [] };
 my %ref_map_lookup = map { $_->{'map_id'} => $_ } @$ref_maps;
 
 my $new_map_set_id = $sql_object->acc_id_to_internal_id(
@@ -179,25 +194,26 @@ my $new_map_set_id = $sql_object->acc_id_to_internal_id(
 my %best_ref_map_id;
 my %stacked_map_order_on_ref_map;
 my %ref_map_id_lookup;
-if ($alignment_file){
+if ($alignment_file) {
     my $fh;
     my $line;
     my @la;
-    open $fh, $alignment_file or die "couldn't open alignment file: $alignment_file\n";
-    while (<$fh>){
+    open $fh, $alignment_file
+        or die "couldn't open alignment file: $alignment_file\n";
+    while (<$fh>) {
         my $line = $_;
         chomp($line);
-        @la = split "\t",$line;
-        next unless ($la[0] and $la[1]);
+        @la = split "\t", $line;
+        next unless ( $la[0] and $la[1] );
         my $ref_map_id;
-        unless ($ref_map_id = $ref_map_id_lookup{$la[0]}){
+        unless ( $ref_map_id = $ref_map_id_lookup{ $la[0] } ) {
             $ref_map_id = $sql_object->acc_id_to_internal_id(
                 cmap_object => $cmap_admin,
                 acc_id      => $la[0],
                 object_type => 'map'
             );
             next unless ($ref_map_id);
-            $ref_map_id_lookup{$la[0]}=$ref_map_id;
+            $ref_map_id_lookup{ $la[0] } = $ref_map_id;
         }
         my $stack_map_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $cmap_admin,
@@ -205,7 +221,7 @@ if ($alignment_file){
             object_type => 'map'
         );
         $best_ref_map_id{$stack_map_id} = $ref_map_id;
-        push @{$stacked_map_order_on_ref_map{$ref_map_id}}, $stack_map_id;
+        push @{ $stacked_map_order_on_ref_map{$ref_map_id} }, $stack_map_id;
     }
     close $fh;
 }
@@ -223,20 +239,21 @@ my $report_count = 100;
 
 my %corrs_to_refs_for_map;
 
-STACK_MAP: 
+STACK_MAP:
 foreach my $stack_map ( @{ $stack_maps || [] } ) {
     my $stack_map_id = $stack_map->{'map_id'};
     $stack_start{$stack_map_id}    = $stack_map->{'map_start'};
     $stack_stop{$stack_map_id}     = $stack_map->{'map_stop'};
     $stack_map_name{$stack_map_id} = $stack_map->{'map_name'};
     $stack_map_acc{$stack_map_id}  = $stack_map->{'map_acc'};
-    if ($alignment_file and not $best_ref_map_id{$stack_map_id}){
+    if ( $alignment_file and not $best_ref_map_id{$stack_map_id} ) {
         next STACK_MAP;
     }
     my $corrs = $sql_object->get_feature_correspondence_for_counting(
         cmap_object => $cmap_admin,
         slot_info   => { $stack_map_id => [], },
         slot_info2  => { map { $_->{'map_id'} => [], } @$ref_maps },
+        included_evidence_type_accs => \@evidence_type_accs,
     );
 
     # Skips maps w/ no corrs
@@ -256,28 +273,30 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
     my $best_ref_map_id;
 
     if ($alignment_file) {
-        next STACK_MAP unless ( $best_ref_map_id = $best_ref_map_id{$stack_map_id} );
+        next STACK_MAP
+            unless ( $best_ref_map_id = $best_ref_map_id{$stack_map_id} );
         foreach my $ref_map_id ( keys %corr_locs_to_map ) {
             $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
                 = scalar @{ $corr_locs_to_map{$ref_map_id} };
         }
     }
-    else{
+    else {
         my $best_corr_num = 0;
 
         # the keys are sorted so that results will be reproducible.
         foreach my $ref_map_id ( sort { $a <=> $b } keys %corr_locs_to_map ) {
             $corrs_to_refs_for_map{$stack_map_id}{$ref_map_id}
                 = scalar @{ $corr_locs_to_map{$ref_map_id} };
-            if ( scalar @{ $corr_locs_to_map{$ref_map_id} } > $best_corr_num ) {
+            if ( scalar @{ $corr_locs_to_map{$ref_map_id} } > $best_corr_num )
+            {
                 $best_ref_map_id = $ref_map_id;
                 $best_corr_num   = scalar @{ $corr_locs_to_map{$ref_map_id} };
             }
         }
-        next STACK_MAP unless ($best_corr_num >= $corr_cutoff);
+        next STACK_MAP unless ( $best_corr_num >= $corr_cutoff );
     }
     my @sorted_by_ref_locs = sort { $a->[1] <=> $b->[1] }
-        @{ $corr_locs_to_map{$best_ref_map_id} ||[]};
+        @{ $corr_locs_to_map{$best_ref_map_id} || [] };
     my $locs_num = ( scalar @sorted_by_ref_locs );
     my $ref_median_loc;
     if ( $locs_num % 2 ) {
@@ -324,7 +343,8 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
         . " ($ref_map_id)\n";
     my @stack_map_ids;
     if ($alignment_file) {
-        @stack_map_ids = @{$stacked_map_order_on_ref_map{$ref_map_id}||[]};
+        @stack_map_ids
+            = @{ $stacked_map_order_on_ref_map{$ref_map_id} || [] };
     }
     else {
         @stack_map_ids = @{ $stack_maps_on_ref_map{$ref_map_id} };
@@ -493,6 +513,7 @@ sub validate_params {
     my $ref_map_set_acc        = $args{'ref_map_set_acc'};
     my $new_map_set_acc        = $args{'new_map_set_acc'};
     my $stack_feature_type_acc = $args{'stack_feature_type_acc'};
+    my $evidence_type_accs     = $args{'evidence_type_accs'};
 
     my @missing = ();
     if ( defined($stack_map_set_acc) ) {
@@ -549,6 +570,15 @@ sub validate_params {
     }
     else {
         push @missing, 'valid feature_type_acc';
+    }
+    if ( @{ $evidence_type_accs || [] } ) {
+        foreach my $evidence_type_acc ( @{ $evidence_type_accs || [] } ) {
+            unless ( $cmap_object->evidence_type_data($evidence_type_acc) ) {
+                print STDERR
+                    "The evidence_type_acc, '$evidence_type_acc' is not valid.\n";
+                push @missing, 'valid evidence_type_acc';
+            }
+        }
     }
     if (@missing) {
         print STDERR "Missing the following arguments:\n";
