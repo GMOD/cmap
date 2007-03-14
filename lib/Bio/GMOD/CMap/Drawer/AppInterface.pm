@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.35 2007-03-09 16:41:37 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.36 2007-03-14 15:09:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -90,13 +90,7 @@ This method will create the Application.
     );
 
     $self->menu_bar( window_key => $window_key, );
-    $self->populate_menu_bar(
-        window_key      => $window_key,
-        file_menu_items =>
-            $self->file_menu_items( window_key => $window_key, ),
-        edit_menu_items =>
-            $self->edit_menu_items( window_key => $window_key, ),
-    );
+    $self->populate_menu_bar( window_key => $window_key, );
     $self->top_pane( window_key => $window_key, );
     $self->bottom_pane( window_key => $window_key, );
     $self->middle_pane( window_key => $window_key, );
@@ -746,20 +740,25 @@ Populates the menu_bar object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key      = $args{'window_key'} or return undef;
-    my $file_menu_items = $args{'file_menu_items'};
-    my $edit_menu_items = $args{'edit_menu_items'};
+    my $window_key = $args{'window_key'} or return undef;
+
+    $self->{'menu_bar_order'}{$window_key} = [ 'file', 'edit', ];
+
+    $self->file_menu_items( window_key => $window_key, );
+    $self->edit_menu_items( window_key => $window_key, ),
+
+        $self->app_controller()->plugin_set()
+        ->modify_main_menu( window_key => $window_key, );
 
     my $menu_bar = $self->menu_bar( window_key => $window_key, );
 
-    $self->{'menu_buttons'}->{'file'} = $menu_bar->cascade(
-        -label     => '~file',
-        -menuitems => $file_menu_items,
-    );
-    $self->{'menu_buttons'}->{'edit'} = $menu_bar->cascade(
-        -label     => '~edit',
-        -menuitems => $edit_menu_items,
-    );
+    foreach my $menu_title ( @{ $self->{'menu_bar_order'}{$window_key} } ) {
+        $self->{'menu_buttons'}{$window_key}{$menu_title}
+            = $menu_bar->cascade(
+            -label     => '~' . $menu_title,
+            -menuitems => $self->{'menu_items'}{$window_key}{$menu_title},
+            );
+    }
 
     return;
 }
@@ -796,9 +795,10 @@ Draws and re-draws on the zinc
     if ( $window_layout->{'sub_changed'} ) {
 
         # SLOTS
-        foreach my $zone_key ( sort { $a cmp $b }
-            keys %{ $app_display_data->{'zone_in_window'}{$window_key}
-                    || {} } )
+        foreach my $zone_key (
+            sort { $a cmp $b }
+            keys %{ $app_display_data->{'zone_in_window'}{$window_key} || {} }
+            )
         {
             $self->draw_zone(
                 zone_key         => $zone_key,
@@ -1682,34 +1682,44 @@ Populates the file menu with menu_items
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'}
         or die 'no window key for file_menu_items';
-    return [
-        [   'command',
-            '~Load',
-            -accelerator => 'Ctrl-l',
-            -command     => sub {
-                $self->app_controller()
-                    ->new_reference_maps( window_key => $window_key, );
-            },
-        ],
-        [   'command',
-            '~Export Map Moves',
-            -accelerator => 'Ctrl-e',
-            -command     => sub {
-                $self->export_map_moves( window_key => $window_key, );
-            },
-        ],
-        [   'command',
-            '~Commit Map Moves',
-            -command => sub {
-                $self->commit_map_moves( window_key => $window_key, );
-            },
-        ],
-        [   'command',
-            '~Quit',
-            -accelerator => 'Ctrl-q',
-            -command     => sub {exit},
-        ],
-    ];
+    my $new_menu_item_list = $args{'new_menu_item_list'};
+    unless ( $self->{'menu_items'}{$window_key}{'file'} ) {
+        $self->{'menu_items'}{$window_key}{'file'} = [
+            [   'command',
+                '~Load',
+                -accelerator => 'Ctrl-l',
+                -command     => sub {
+                    $self->app_controller()
+                        ->new_reference_maps( window_key => $window_key, );
+                },
+            ],
+            [   'command',
+                '~Export Map Moves',
+                -accelerator => 'Ctrl-e',
+                -command     => sub {
+                    $self->export_map_moves( window_key => $window_key, );
+                },
+            ],
+            [   'command',
+                '~Commit Map Moves',
+                -command => sub {
+                    $self->commit_map_moves( window_key => $window_key, );
+                },
+            ],
+            [   'command',
+                '~Quit',
+                -accelerator => 'Ctrl-q',
+                -command     => sub {exit},
+            ],
+        ];
+    }
+
+    # If a new list is specified, overwrite the old list.
+    if ($new_menu_item_list) {
+        $self->{'menu_items'}{$window_key}{'file'} = $new_menu_item_list;
+    }
+
+    return $self->{'menu_items'}{$window_key}{'file'};
 }
 
 # ----------------------------------------------------
@@ -1726,26 +1736,36 @@ Populates the edit menu with menu_items
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'}
         or die 'no window key for edit_menu_items';
-    return [
-        [   'command',
-            '~Undo',
-            -accelerator => 'Ctrl-z',
-            -command     => sub {
-                $self->app_controller()
-                    ->app_display_data->undo_action(
-                    window_key => $window_key, );
-            },
-        ],
-        [   'command',
-            '~Redo',
-            -accelerator => 'Ctrl-y',
-            -command     => sub {
-                $self->app_controller()
-                    ->app_display_data->redo_action(
-                    window_key => $window_key, );
-            },
-        ],
-    ];
+    my $new_menu_item_list = $args{'new_menu_item_list'};
+    unless ( $self->{'menu_items'}{$window_key}{'edit'} ) {
+        $self->{'menu_items'}{$window_key}{'edit'} = [
+            [   'command',
+                '~Undo',
+                -accelerator => 'Ctrl-z',
+                -command     => sub {
+                    $self->app_controller()
+                        ->app_display_data->undo_action(
+                        window_key => $window_key, );
+                },
+            ],
+            [   'command',
+                '~Redo',
+                -accelerator => 'Ctrl-y',
+                -command     => sub {
+                    $self->app_controller()
+                        ->app_display_data->redo_action(
+                        window_key => $window_key, );
+                },
+            ],
+        ];
+    }
+
+    # If a new list is specified, overwrite the old list.
+    if ($new_menu_item_list) {
+        $self->{'menu_items'}{$window_key}{'edit'} = $new_menu_item_list;
+    }
+
+    return $self->{'menu_items'}{$window_key}{'edit'};
 }
 
 # ----------------------------------------------------

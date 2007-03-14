@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.25 2007-02-26 18:57:14 mwz444 Exp $
+# $Id: AppController.pm,v 1.26 2007-03-14 15:09:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -29,6 +29,7 @@ use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Data::AppData;
 use Bio::GMOD::CMap::Drawer::AppInterface;
 use Bio::GMOD::CMap::Drawer::AppDisplayData;
+use Bio::GMOD::CMap::AppPlugins::AppPluginSet;
 use Bio::GMOD::CMap::Constants;
 
 use base 'Bio::GMOD::CMap';
@@ -53,6 +54,10 @@ Initializes the object.
     $self->data_source( $self->{'data_source'} );
     my $window_key   = $self->start_application();
     my $developement = 0;
+
+    # Initiate AppPluginSet
+    $self->plugin_set();
+
     if ( $developement == 1 ) {
         $self->load_new_window(
             window_key               => $window_key,
@@ -70,6 +75,7 @@ Initializes the object.
     else {
         $self->new_reference_maps( window_key => $window_key, );
     }
+
     MainLoop();
     return $self;
 }
@@ -111,6 +117,35 @@ This method will create the Application.
     }
 
     return $window_key;
+}
+
+# ----------------------------------------------------
+sub plugin_set {
+
+=pod
+
+=head3 app_data_module
+
+Returns a handle to the data module.
+
+=cut
+
+    my $self = shift;
+
+    $self->{'plugin_set'} = shift if @_;
+
+    unless ( $self->{'plugin_set'} ) {
+        $self->{'plugin_set'}
+            = Bio::GMOD::CMap::AppPlugins::AppPluginSet->new(
+            config           => $self->config,
+            data_source      => $self->data_source,
+            app_data_module  => $self->app_data_module,
+            app_interface    => $self->app_interface,
+            app_display_data => $self->app_display_data,
+            );
+    }
+
+    return $self->{'plugin_set'};
 }
 
 # ----------------------------------------------------
