@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.134 2007-01-16 15:51:53 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.135 2007-03-16 23:19:10 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.134 $)[-1];
+$VERSION = (qw$Revision: 1.135 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -134,7 +134,7 @@ sub handler {
         my ( $extra_code, $extra_form );
 
         if ( @{ $parsed_url_options{'ref_map_accs'} || () } ) {
-            if ( $apr->param('dotplot') ) {
+            if ( $parsed_url_options{'dotplot'} ) {
                 $drawer = Bio::GMOD::CMap::Drawer::Dotplot->new(
                     apr => $apr,
                     %parsed_url_options,
@@ -369,6 +369,7 @@ sub handler {
                     || DEFAULT->{'menu_ref_bgcolor'},
                 web_image_cache_dir => $self->web_image_cache_dir(),
                 web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+                dotplot             => $parsed_url_options{'dotplot'},
 
             },
             \$html

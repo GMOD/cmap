@@ -419,15 +419,15 @@ function stringify_form(form) {
 </table>
 [%- IF apr.param('ref_map_accs') #OR form_data.ref_maps  -%]
   <form name="comparative_map_form" onSubmit="beforeSubmit();">
-    [%- IF apr.param('dotplot') -%]
-      <input type="hidden" name="dotplot" id="dotplot" value="[%- apr.param('dotplot') -%]">
+    [%- IF dotplot -%]
+      <input type="hidden" name="dotplot" id="dotplot" value="[%- dotplot -%]">
       <input type="submit" 
         onClick="document.comparative_map_form.dotplot.value='0'" 
         value="Map View" 
         name="sub"
       >
     [%- ELSE -%]
-      <input type="hidden" name="dotplot" id="dotplot" value="[%- apr.param('dotplot') -%]">
+      <input type="hidden" name="dotplot" id="dotplot" value="[%- dotplot -%]">
       <input type="submit" 
         onClick="document.comparative_map_form.dotplot.value='1'" 
         value="Dotplot" 

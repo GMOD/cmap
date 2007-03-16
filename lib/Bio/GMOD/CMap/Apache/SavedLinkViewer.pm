@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.9 2006-12-05 22:48:46 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.10 2007-03-16 23:19:10 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -160,8 +160,12 @@ sub saved_link_create {
     my $current_apr = $self->apr;
     my $url_to_save = $current_apr->param('url_to_save')
         or die 'No url to save';
+    my $url_to_apr = $url_to_save;
 
-    my $apr_to_save = new CGI($url_to_save)
+    # Strip off stuff that isn't the query string.
+    $url_to_apr =~ s/.+?\?//;
+
+    my $apr_to_save = new CGI($url_to_apr)
         or return $self->error("URL did not parse correctly.  $url_to_save");
 
     # GET USERNAME FROM COOKIE
