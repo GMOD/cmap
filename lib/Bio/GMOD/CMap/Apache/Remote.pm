@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.4 2006-11-16 18:35:25 mwz444 Exp $
+# $Id: Remote.pm,v 1.5 2007-03-20 18:20:10 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(freeze thaw);
@@ -43,12 +43,14 @@ sub handler {
         print freeze( $self->config() );
     }
     elsif ( $action eq 'get_maps' ) {
-        my $map_id  = $apr->param('map_id');
-        my @map_ids = $apr->param('map_ids');
-        my $data    = $self->sql()->get_maps(
+        my $map_id   = $apr->param('map_id');
+        my @map_ids  = $apr->param('map_ids');
+        my @map_accs = $apr->param('map_accs');
+        my $data     = $self->sql()->get_maps(
             cmap_object => $self,
             map_id      => $map_id,
             map_ids     => \@map_ids,
+            map_accs    => \@map_accs,
         );
         unless ( @{ $data || [] } ) {
             $data = undef;

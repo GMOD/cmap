@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.31 2007-03-09 16:41:37 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.32 2007-03-20 18:20:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -1389,12 +1389,6 @@ Lays out feautures
                     feature_type_acc => $feature_type_acc,
                     );
 
-#if ($feature->{'feature_name'} eq 'c0196M02'){
-#print STDERR "FEATURE ---------------------\n" if ($feature->{'feature_name'} eq 'c0196M02');
-#print STDERR "viewable $viewable_x1  $viewable_x2\n";
-#print STDERR Dumper($coords)."\n" if ($feature->{'feature_name'} eq 'c0196M02');
-#}
-
                 $feature_layout->{'changed'} = 1;
                 if ( $y2 > $max_y ) {
                     $max_y = $y2;
@@ -1553,11 +1547,13 @@ Lays out correspondences between two zones
         my $x_end2          = $corr_x2 + $zone2_x_offset;
         my $y_end2          = $corr_y2 + $zone2_y_offset;
         my $x_mid1          = $x_end1;
-        my $y_mid1          = $draw_downward
+        my $y_mid1          =
+              $draw_downward
             ? $y_end1 + $end_line_height
             : $y_end1 - $end_line_height;
         my $x_mid2 = $x_end2;
-        my $y_mid2 = $draw_downward
+        my $y_mid2 =
+              $draw_downward
             ? $y_end2 - $end_line_height
             : $y_end2 + $end_line_height;
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}

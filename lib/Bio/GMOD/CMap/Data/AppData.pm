@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.15 2007-02-26 18:57:14 mwz444 Exp $
+# $Id: AppData.pm,v 1.16 2007-03-20 18:20:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -115,15 +115,18 @@ sub map_data_array {
 
 =head2 map_data_array
 
-Given a list of map accessions, return the information required to draw the
+Given a list of map ids or accessions, return the information required to draw the
 map as an array.
+
+Note: the maps are stored by id so any map_accs will hit the database no matter what.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_ids = $args{'map_ids'} || [];
+    my $map_ids  = $args{'map_ids'}  || [];
+    my $map_accs = $args{'map_accs'} || [];
 
-    return undef unless (@$map_ids);
+    return undef unless ( @$map_ids or @$map_accs );
 
     my @map_data;
     my @new_map_ids;
@@ -136,8 +139,11 @@ map as an array.
         }
     }
 
-    if (@new_map_ids) {
-        my $new_maps = $self->sql_get_maps( map_ids => \@new_map_ids, )
+    if ( @new_map_ids || @$map_accs ) {
+        my $new_maps = $self->sql_get_maps(
+            map_ids  => \@new_map_ids,
+            map_accs => $map_accs,
+            )
             || [];
 
         foreach my $new_map (@$new_maps) {
@@ -675,8 +681,9 @@ Calls get_maps either locally or remotely
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_id  = $args{'map_id'};
-    my $map_ids = $args{'map_ids'};
+    my $map_id   = $args{'map_id'};
+    my $map_ids  = $args{'map_ids'};
+    my $map_accs = $args{'map_accs'};
 
     if ( my $url = $self->{'remote_url'} ) {
         $url .= ';action=get_maps';
@@ -688,6 +695,10 @@ Calls get_maps either locally or remotely
             $url .= ";map_id=$_" foreach @{$map_ids};
         }
 
+        if ( @{ $map_accs || [] } ) {
+            $url .= ";map_acc=$_" foreach @{$map_accs};
+        }
+
         return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
@@ -695,6 +706,7 @@ Calls get_maps either locally or remotely
             cmap_object => $self,
             map_id      => $map_id,
             map_ids     => $map_ids,
+            map_accs    => $map_accs,
             )
             || [];
     }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.26 2007-03-14 15:09:30 mwz444 Exp $
+# $Id: AppController.pm,v 1.27 2007-03-20 18:20:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,10 +21,12 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Data::Dumper;
 use Tk;
+use LWP;
+use XML::Simple;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Data::AppData;
 use Bio::GMOD::CMap::Drawer::AppInterface;
@@ -46,8 +48,20 @@ Initializes the object.
 =cut
 
     my ( $self, $config ) = @_;
-    $self->params( $config, qw[ config_dir data_source ] );
-    $self->{'remote_url'} = $config->{'remote_url'};
+
+    my $saved_view_data;
+    if ( $config->{'saved_view'} ) {
+        $saved_view_data
+            = $self->open_saved_view( saved_view => $config->{'saved_view'}, )
+            or die "Failed to open file: " . $config->{'saved_view'};
+        $self->{'remote_url'} = $saved_view_data->{'remot_url'};
+        $self->data_source( $saved_view_data->{'data_source'}
+                || $config->{'data_source'} );
+    }
+    else {
+        $self->params( $config, qw[ config_dir data_source ] );
+        $self->{'remote_url'} = $config->{'remote_url'};
+    }
 
     # The app_data_module will have the remote config if it is needed
     $self->config( $self->app_data_module()->config() );
@@ -58,7 +72,13 @@ Initializes the object.
     # Initiate AppPluginSet
     $self->plugin_set();
 
-    if ( $developement == 1 ) {
+    if ($saved_view_data) {
+        $self->app_display_data()->dd_load_save_in_new_window(
+            window_key      => $window_key,
+            saved_view_data => $saved_view_data,
+        );
+    }
+    elsif ( $developement == 1 ) {
         $self->load_new_window(
             window_key               => $window_key,
             'selections'             => ['0'],
@@ -78,6 +98,42 @@ Initializes the object.
 
     MainLoop();
     return $self;
+}
+
+# ----------------------------------------------------
+sub open_saved_view {
+
+=pod
+                                                                                                                             
+=head2 open_saved_view
+                                                                                                                             
+Read in the saved view
+                                                                                                                             
+=cut
+
+    my ( $self, %args ) = @_;
+    my $saved_view = $args{'saved_view'} or return;
+
+    unless ( $saved_view =~ /^http:\/\// ) {
+        $saved_view = "file:" . $saved_view;
+    }
+
+    my $ua  = LWP::UserAgent->new;
+    my $req = HTTP::Request->new( GET => $saved_view );
+    my $res = $ua->request($req);
+    if ( $res->is_success ) {
+        return XMLin(
+            $res->content,
+            NoAttr        => 1,
+            SuppressEmpty => 1,
+        );
+    }
+    else {
+        print STDERR $res->status_line, "\n";
+        return undef;
+    }
+
+    return undef;
 }
 
 # ----------------------------------------------------
@@ -705,6 +761,52 @@ Export the map moves to a file.
 
     $self->app_data_module->commit_sub_map_moves(
         features => \@moved_features, );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub save_view {
+
+=pod
+
+=head2 save_view
+
+Save the view information to a file.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $file       = $args{'file'}       or return;
+    my $app_display_data = $self->app_display_data();
+
+    unless ( -w $file ) {
+        $self->app_interface->popup_warning(
+            text => "Cannot write to file '$file'.\n", );
+        return;
+    }
+
+    my $fh;
+    if ( open $fh, ">" . $file ) {
+        my $data_hash = $app_display_data->save_view_data_hash(
+            window_key => $window_key, );
+        $data_hash->{'remote_url'}  = $self->{'remote_url'};
+        $data_hash->{'data_source'} = $self->data_source();
+        print $fh XMLout(
+            $data_hash,
+            RootName      => 'cmap_editor',
+            NoAttr        => 1,
+            SuppressEmpty => 1,
+            XMLDecl       => 0,
+        );
+        close $fh;
+    }
+    else {
+        $self->app_interface->popup_warning(
+            text => "Unable to open file '$file' for writing.\n", );
+        return;
+    }
 
     return;
 }

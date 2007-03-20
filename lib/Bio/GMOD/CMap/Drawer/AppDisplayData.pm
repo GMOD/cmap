@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.34 2007-03-09 16:41:37 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.35 2007-03-20 18:20:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -249,6 +249,269 @@ Adds the first slot
 }
 
 # ----------------------------------------------------
+sub create_head_zone_from_saved_view {
+
+=pod
+
+=head2 create_zone_from_saved_view
+
+Do a breadth first traversal of the structure to keep the zone keys ordered by
+hierarchy
+
+  # this contains the granular details.
+  $zone_hash = {
+    map_set_acc => $map_set_acc,
+    map=>[
+      {
+        map_acc=> $map_acc,
+        child_zone => [
+          {
+            recursive call;
+          },
+        ],
+      },
+    ],
+  };
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key     = $args{'window_key'};
+    my $zone_view_data = $args{'zone_view_data'};
+
+    my $zone_key = $self->next_internal_key('zone');
+
+    $self->{'head_zone_key'}{$window_key} = $zone_key;
+    $self->{'overview'}{$window_key}{'zone_key'} = $zone_key;
+
+    # Store the zone key in the view data
+    $self->{'scaffold'}{$zone_key} = {
+        window_key         => $window_key,
+        map_set_id         => undef,
+        parent_zone_key    => undef,
+        parent_map_key     => undef,
+        children           => [],
+        scale              => 1,
+        x_offset           => 0,
+        attached_to_parent => 0,
+        expanded           => 1,
+        is_top             => 1,
+        pixels_per_unit    => 0,
+        show_features      => 1,
+    };
+
+    $self->initialize_zone_layout( $zone_key, $window_key, );
+
+    my $zone_view_data_queue = [];
+
+    $zone_view_data_queue = $self->create_maps_from_saved_view(
+        zone_key             => $zone_key,
+        zone_view_data       => $zone_view_data,
+        zone_view_data_queue => $zone_view_data_queue,
+    );
+
+    while ( @{ $zone_view_data_queue || [] } ) {
+        $zone_view_data_queue = $self->create_sub_zone_from_saved_view(
+            window_key           => $window_key,
+            zone_view_data_queue => $zone_view_data_queue,
+        );
+    }
+
+    return $zone_key;
+}
+
+# ----------------------------------------------------
+sub create_sub_zone_from_saved_view {
+
+=pod
+
+=head2 add_sub_maps_to_map
+
+Adds sub-maps to the view.  Doesn't do any sanity checking.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key           = $args{'window_key'}           or return;
+    my $zone_view_data_queue = $args{'zone_view_data_queue'} or return;
+
+    my $zone_view_data = shift @{$zone_view_data_queue};
+    my @sub_map_keys;
+
+    my $parent_map_id   = $zone_view_data->{'parent_map_id'};
+    my $parent_map_key  = $zone_view_data->{'parent_map_key'};
+    my $parent_zone_key = $zone_view_data->{'parent_zone_key'};
+
+    # Collect Sub-Maps
+    my $sub_maps
+        = $self->app_data_module()->sub_maps( map_id => $parent_map_id, );
+
+    my %sub_maps_hash;
+
+    foreach my $sub_map ( @{ $sub_maps || [] } ) {
+        my $sub_map_id = $sub_map->{'sub_map_id'};
+
+        $sub_maps_hash{$sub_map_id} = {
+            parent_map_key => $parent_map_key,
+            feature_start  => $sub_map->{'feature_start'},
+            feature_stop   => $sub_map->{'feature_stop'},
+            feature_id     => $sub_map->{'feature_id'},
+        };
+    }
+
+    unless ( $zone_view_data->{'map'} ) {
+
+        # No Sub Maps
+        return;
+    }
+    my $zone_key = $self->next_internal_key('zone');
+
+    $self->initialize_zone_layout( $zone_key, $window_key, );
+    $self->{'scaffold'}{$zone_key} = {
+        window_key         => $window_key,
+        parent_zone_key    => $parent_zone_key,
+        parent_map_key     => $parent_map_key,
+        map_set_id         => undef,
+        children           => [],
+        scale              => 1,
+        x_offset           => 0,
+        attached_to_parent => 1,
+        expanded           => 0,
+        is_top             => 0,
+        pixels_per_unit    => 0,
+        show_features      => 0,
+    };
+    push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} }, $zone_key;
+
+    $zone_view_data_queue = $self->create_maps_from_saved_view(
+        zone_key             => $zone_key,
+        zone_view_data       => $zone_view_data,
+        zone_view_data_queue => $zone_view_data_queue,
+        sub_maps_hash        => \%sub_maps_hash,
+    );
+
+    return $zone_view_data_queue;
+}
+
+# ----------------------------------------------------
+sub create_maps_from_saved_view {
+
+=pod
+
+=head2 add_sub_maps_to_map
+
+Adds sub-maps to the view.  Doesn't do any sanity checking.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key             = $args{'zone_key'};
+    my $zone_view_data       = $args{'zone_view_data'};
+    my $zone_view_data_queue = $args{'zone_view_data_queue'} or return;
+    my $sub_maps_hash        = $args{'sub_maps_hash'} || {};
+
+    if ( ref( $zone_view_data->{'map'} ) eq 'HASH' ) {
+        $zone_view_data->{'map'} = [ $zone_view_data->{'map'} ];
+    }
+
+    my @map_accs
+        = map { $_->{'map_acc'} } @{ $zone_view_data->{'map'} || [] };
+    my $map_data
+        = $self->app_data_module()->map_data_array( map_accs => \@map_accs, );
+
+    foreach my $map ( @{ $map_data || [] } ) {
+        my $map_id  = $map->{'map_id'};
+        my $map_key = $self->next_internal_key('map');
+        push @{ $self->{'map_order'}{$zone_key} },    $map_key;
+        push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
+        $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id} = $map_key;
+        $self->{'map_key_to_id'}{$map_key}                   = $map_id;
+        $self->{'map_key_to_zone_key'}{$map_key}             = $zone_key;
+        $self->initialize_map_layout($map_key);
+
+        # set the sub_maps data
+        if ( $sub_maps_hash->{$map_id} ) {
+            $self->{'sub_maps'}{$map_key} = $sub_maps_hash->{$map_id};
+        }
+
+        foreach my $zone_view_map ( @{ $zone_view_data->{'map'} || [] } ) {
+            next unless ( $map->{'map_acc'} eq $zone_view_map->{'map_acc'} );
+            if ( ref( $zone_view_map->{'child_zone'} ) eq 'HASH' ) {
+                $zone_view_map->{'child_zone'}
+                    = [ $zone_view_map->{'child_zone'} ];
+            }
+            foreach
+                my $child_zone ( @{ $zone_view_map->{'child_zone'} || [] } )
+            {
+                $child_zone->{'parent_zone_key'} = $zone_key;
+                $child_zone->{'parent_map_key'}  = $map_key;
+                $child_zone->{'parent_map_id'}   = $map_id;
+                push @{$zone_view_data_queue}, $child_zone;
+            }
+        }
+    }
+    return $zone_view_data_queue;
+}
+
+# ----------------------------------------------------
+sub dd_load_save_in_new_window {
+
+=pod
+
+=head2 dd_load_save_in_new_window
+
+  # this contains the granular details.
+  $zone_hash = {
+    map_set_acc => $map_set_acc,
+    map=>[
+      {
+        map_acc=> $map_acc,
+        child_zone => [
+          {
+            recursive call;
+          },
+        ],
+      },
+    ],
+  };
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key      = $args{'window_key'};
+    my $saved_view_data = $args{'saved_view_data'};
+
+    # Remove old info if any
+    if ( $self->{'zone_in_window'}{$window_key} ) {
+        $self->clear_window( window_key => $window_key, );
+    }
+
+    $self->set_default_window_layout( window_key => $window_key, );
+
+    my $zone_key = $self->create_head_zone_from_saved_view(
+        window_key     => $window_key,
+        zone_view_data => $saved_view_data->{'head_zone'},
+    );
+
+    $self->initialize_overview_layout($window_key);
+
+    layout_new_window(
+        window_key       => $window_key,
+        head_zone_key    => $zone_key,
+        app_display_data => $self,
+    );
+    layout_overview(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    $self->change_selected_zone( zone_key => $zone_key, );
+
+}
+
+# ----------------------------------------------------
 sub add_sub_maps_to_map {
 
 =pod
@@ -304,7 +567,6 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         push @{ $maps_by_set{ $sub_map_data->{'map_set_id'} } }, $sub_map_key;
     }
 
-    my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
     my @new_zone_keys;
     foreach my $set_key ( keys %maps_by_set ) {
         my $child_zone_key = $self->next_internal_key('zone');
@@ -318,7 +580,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             map_set_id         => undef,
             children           => [],
             scale              => 1,
-            x_offset           => $parent_x_offset,
+            x_offset           => 0,
             attached_to_parent => 1,
             expanded           => 0,
             is_top             => 0,
@@ -2928,6 +3190,106 @@ Returns the number of remaining windows.
 }
 
 # ----------------------------------------------------
+sub save_view_data_hash {
+
+=pod
+
+=head2 save_view_data_hash
+
+Creates part of the hash that will be converted into XML that can be read in
+later to create this view again.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $head_zone_key = $self->{'head_zone_key'}{$window_key};
+    my $output_hash   = {
+        head_zone => $self->create_zone_output_hash(
+            window_key => $window_key,
+            zone_key   => $head_zone_key,
+        )
+    };
+
+    return $output_hash;
+}
+
+# ----------------------------------------------------
+sub create_zone_output_hash {
+
+=pod
+
+=head2 create_zone_output_hash
+
+Recursive method that creates a zone in the hash that will be converted into XML that can be read in
+later to create this view again.
+
+  # this contains the granular details.
+  $zone_hash = {
+    map_set_acc => $map_set_acc,
+    map=>[
+      {
+        map_acc=> $map_acc,
+        child_zone => [
+          {
+            recursive call;
+          },
+        ],
+      },
+    ],
+  };
+
+  # Contains map set info in case the individual maps are not listed above.
+  # Will add Later
+  $map_sets_hash = {
+    $map_set_acc => {
+      child_map_set_accs => [ $cmsa1, $cmsa2,],
+    },
+  };
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key    = $args{'window_key'};
+    my $zone_key      = $args{'zone_key'};
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    my %zone_hash = ();
+
+    # Get map_set_acc for this zone
+    my $map_set_data = $self->app_data_module()
+        ->get_map_set_data( map_set_id => $zone_scaffold->{'map_set_id'}, );
+    $zone_hash{'map_set_acc'} = $map_set_data->{'map_set_acc'};
+
+    my @map;
+    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+
+        my @child_zones;
+        foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } )
+        {
+            next
+                unless ( $map_key
+                == $self->{'scaffold'}{$child_zone_key}{'parent_map_key'} );
+            push @child_zones,
+                $self->create_zone_output_hash(
+                window_key => $window_key,
+                zone_key   => $child_zone_key
+                );
+        }
+
+        my $map_data = $self->app_data_module()
+            ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+        my $map_acc = $map_data->{'map_acc'};
+
+        push @map, { 'map_acc' => $map_acc, child_zone => \@child_zones, };
+    }
+    $zone_hash{'map'} = \@map;
+
+    return \%zone_hash;
+}
+
+# ----------------------------------------------------
 sub get_map_ids {
 
     #print STDERR "ADD_NEEDS_MODDED 50\n";
@@ -3021,6 +3383,8 @@ Test if the map is truncated (taken from Bio::GMOD::CMAP::Data ).
 
 =head3 Correspondences On
 
+Revisit 
+
 Set when correspondences are on on between two slots.  Both directions are
 stored.
 
@@ -3032,6 +3396,8 @@ stored.
 
 =head3 Pixels Per Unit for each map
 
+Revisit 
+
 This is a conversion factor to get from map units to pixels.
 
     $self->{'map_pixels_per_unit'} = {
@@ -3039,6 +3405,8 @@ This is a conversion factor to get from map units to pixels.
     }
 
 =head2 Map ID and Key Translators
+
+Revisit 
 
     $self->{'map_id_to_keys'} = { 
         $map_id => [ $map_key, ],
@@ -3062,11 +3430,17 @@ This is a conversion factor to get from map units to pixels.
 =head2 Order
 
 =head3 Map Order in Slot
+
+Revisit 
+
     $self->{'map_order'} = {
         $slot_key => [ $map_key, ]
     }
 
 =head3 Panel Order in Window
+
+Revisit 
+
     $self->{'panel_order'} = {
         $window_key => [ $panel_key, ]
     }
@@ -3074,6 +3448,8 @@ This is a conversion factor to get from map units to pixels.
 =head2 Scaffold Stuff
 
 =head3 Overview Slot Info
+
+Revisit 
 
     $self->{'overview'} = {
         $panel_key => {
@@ -3088,13 +3464,14 @@ This is a conversion factor to get from map units to pixels.
         $slot_key => {
             window_key         => $window_key,
             map_set_id         => undef,
-            parent             => $parent_slot_key,
+            parent_zone_key    => $parent_zone_key,
+            parent_map_key     => $parent_map_key,
             children           => [$child_slot_key, ],
             scale              => 1,
             x_offset           => 0,
-            attached_to_parent => 1,
-            expanded           => 0,
-            is_top             => 0,
+            attached_to_parent => 0,
+            expanded           => 1,
+            is_top             => 1,
             pixels_per_unit    => 0,
             show_features      => 1,
         }
@@ -3102,14 +3479,14 @@ This is a conversion factor to get from map units to pixels.
 
 =head2 Stored Bio Data
 
-=head3 Slot Info
+=head3 Zone Info
 
-Slot info is needed for correspondence finding.  It stores the visible region
-of each map in the slot and this gets passed to the slot_correspondences()
+Zone info is needed for correspondence finding.  It stores the visible region
+of each map in the zone and this gets passed to the slot_correspondences()
 method in AppData.
 
-    $self->{'slot_info'} = {
-        $slot_key => {
+    $self->{'zone_info'} = {
+        $zone_key => {
             map_id => [ 
                 current_start, 
                 current_stop, 
@@ -3139,6 +3516,8 @@ to drawing.
 
 =head3 Window Layout
 
+Revisit
+
     $self->{'window_layout'} = {
         $window_key => {
             title       => $title,
@@ -3153,6 +3532,8 @@ to drawing.
 
 =head3 Panel Layout
 
+Revisit
+
     $self->{'panel_layout'} = {
         $panel_key => {
             bounds      => [ 0, 0, 0, 0 ],
@@ -3164,6 +3545,8 @@ to drawing.
     }
 
 =head3 Slot Layout
+
+Revisit
 
     $self->{'slot_layout'} = {
         $slot_key => {
@@ -3179,6 +3562,8 @@ to drawing.
     }
 
 =head3 Map Layout
+
+Revisit
 
     $self->{'map_layout'} = {
         $map_key => {
@@ -3199,6 +3584,8 @@ to drawing.
     }
 
 =head3 Overview Layout
+
+Revisit
 
     $self->{'overview_layout'} = {
         $window_key => {
@@ -3229,6 +3616,8 @@ to drawing.
 
 =head3 Correspondence Layout
 
+Revisit
+
     $self->{'corr_layout'} = {
         changed = 1,
         maps => {
@@ -3247,6 +3636,8 @@ to drawing.
 
 =head3 window_actions
 
+Revisit
+
     $self->{'window_actions'} = {
         $window_key => {
             last_action_index => -1,
@@ -3255,6 +3646,8 @@ to drawing.
     }
 
 =head4 move_map
+
+Revisit
 
     @action_specific_data = [
         'move_map',         
@@ -3271,9 +3664,13 @@ to drawing.
 
 =head3 selected_slot_key
 
+Revisit
+
     $self->{'selected_slot_key'} = $slot_key;
 
 =head3 next_map_set_color_index
+
+Revisit
 
 The next index for the background color array.
 
@@ -3281,15 +3678,13 @@ The next index for the background color array.
 
 =head1 SEE ALSO
 
-L<perl>, L<GD>, L<GD::SVG>.
-
 =head1 AUTHOR
 
 Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-5 Cold Spring Harbor Laboratory
+Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

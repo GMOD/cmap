@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.36 2007-03-14 15:09:30 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.37 2007-03-20 18:20:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -105,6 +105,8 @@ This method will create the Application.
     );
     $self->{'windows'}{$window_key}
         ->bind( '<Control-Key-q>' => sub { exit; }, );
+    $self->{'windows'}{$window_key}->bind( '<Control-Key-s>' =>
+            sub { $self->save_view( window_key => $window_key ); }, );
 
 # BF RE ADD THESE
 #    $self->{'windows'}{$window_key}->bind(
@@ -1694,6 +1696,13 @@ Populates the file menu with menu_items
                 },
             ],
             [   'command',
+                '~Save View',
+                -accelerator => 'Ctrl-s',
+                -command     => sub {
+                    $self->save_view( window_key => $window_key, );
+                },
+            ],
+            [   'command',
                 '~Export Map Moves',
                 -accelerator => 'Ctrl-e',
                 -command     => sub {
@@ -2184,6 +2193,31 @@ sub commit_map_moves {
         $self->app_controller()
             ->commit_map_moves( window_key => $window_key, );
     }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub popup_warning {
+
+    #print STDERR "AI_NEEDS_MODDED 34\n";
+
+=pod
+
+=head2 commit_map_moves
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $text = $args{'text'};
+
+    $self->main_window()->Dialog(
+        -title          => 'Warning',
+        -text           => $text,
+        -default_button => 'OK',
+        -buttons        => [ 'OK', ],
+    )->Show();
 
     return;
 }
@@ -3419,6 +3453,33 @@ Destroy the ghost image
     $self->{'ghost_loc_id'}              = undef;
     $self->{'ghost_loc_parent_zone_key'} = undef;
     $self->app_controller()->app_display_data()->end_drag_ghost();
+}
+
+# ----------------------------------------------------
+sub save_view {
+
+    #print STDERR "AI_NEEDS_MODDED 59\n";
+
+=pod
+
+=head2 destroy_ghosts
+
+Destroy the ghost image
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $window_key       = $args{'window_key'};
+
+    my $file = $self->main_window()->getSaveFile();
+    if ($file) {
+        $self->app_controller()->save_view(
+            window_key => $window_key,
+            file       => $file,
+        );
+    }
+    return;
 }
 
 # ----------------------------------------------------

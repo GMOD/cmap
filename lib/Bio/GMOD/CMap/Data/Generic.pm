@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.158 2007-02-06 07:03:07 mwz444 Exp $
+# $Id: Generic.pm,v 1.159 2007-03-20 18:20:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.158 $)[-1];
+$VERSION = (qw$Revision: 1.159 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4107,7 +4107,9 @@ Using Cache
                f.feature_stop,
                f.feature_type_acc,
                f.default_rank,
-               f.direction ];
+               f.direction,
+               map.map_set_id           
+    ];
     my $from_str .= qq[
         from   cmap_map map, 
                cmap_feature f
@@ -4129,6 +4131,7 @@ Using Cache
         $where_sql .= "and !isNull(mtf.map_id) ";
     }
     if ($no_sub_maps) {
+
         #$where_sql .= "and isNull(mtf.map_id) ";
     }
     if ($feature_type_acc) {
@@ -4143,7 +4146,7 @@ Using Cache
     my $sql_str = $select_str
         . $from_str
         . $where_sql
-        . " order by feature_start, feature_stop";
+        . " order by map_set_id, feature_start, feature_stop";
 
     unless ( $return_object
         = $cmap_object->get_cached_results( 3, $sql_str ) )
