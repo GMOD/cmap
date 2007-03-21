@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.36 2007-03-21 20:20:52 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.37 2007-03-21 21:24:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -815,8 +815,6 @@ Crawl the scaffold to find the top zone that is attached.
 # ----------------------------------------------------
 sub toggle_corrs_zone {
 
-    #print STDERR "ADD_NEEDS_MODDED 4\n";
-
 =pod
 
 =head2 toggle_corrs_zone
@@ -852,8 +850,6 @@ toggle the correspondences for a zone
 
 # ----------------------------------------------------
 sub expand_zone {
-
-    #print STDERR "ADD_NEEDS_MODDED 5\n";
 
 =pod
 
@@ -1243,8 +1239,6 @@ MAP_KEY:
 # ----------------------------------------------------
 sub change_selected_zone {
 
-    #print STDERR "ADD_NEEDS_MODDED 12\n";
-
 =pod
 
 =head2 change_selected_zone
@@ -1341,8 +1335,6 @@ sub change_feature_status {
 # ----------------------------------------------------
 sub zone_bgcolor {
 
-    #print STDERR "ADD_NEEDS_MODDED 14\n";
-
 =pod
 
 =head2 zone_bgcolor
@@ -1429,8 +1421,6 @@ sub attach_slot_to_parent {
 # ----------------------------------------------------
 sub modify_window_bottom_bound {
 
-    #print STDERR "ADD_NEEDS_MODDED 17\n";
-
 =pod
 
 =head2 modify_window_bottom_bound
@@ -1453,8 +1443,6 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
 
 # ----------------------------------------------------
 sub modify_zone_bottom_bound {
-
-    #print STDERR "ADD_NEEDS_MODDED 18\n";
 
 =pod
 
@@ -1604,8 +1592,6 @@ Initializes map_layout
 # ----------------------------------------------------
 sub initialize_zone_layout {
 
-    #print STDERR "ADD_NEEDS_MODDED 22\n";
-
 =pod
 
 =head2 initialize_zone_layout
@@ -1634,8 +1620,6 @@ Initializes zone_layout
 
 # ----------------------------------------------------
 sub recreate_overview {
-
-    #print STDERR "ADD_NEEDS_MODDED 23\n";
 
 =pod
 
@@ -1700,8 +1684,6 @@ Destroys then recreates the overview
 
 # ----------------------------------------------------
 sub initialize_overview_layout {
-
-    #print STDERR "ADD_NEEDS_MODDED 24\n";
 
 =pod
 
@@ -1817,8 +1799,6 @@ Copies important info to a new slot.
 # ----------------------------------------------------
 sub set_default_window_layout {
 
-    #print STDERR "ADD_NEEDS_MODDED 27\n";
-
 =pod
 
 =head2 set_default_window_layout
@@ -1885,8 +1865,6 @@ Clears a zone of map data and calls on the interface to remove the drawings.
 # ----------------------------------------------------
 sub hide_corrs {
 
-    #print STDERR "ADD_NEEDS_MODDED 29\n";
-
 =pod
 
 =head2 hide_corrs
@@ -1931,8 +1909,6 @@ Hide Corrs for moving
 # ----------------------------------------------------
 sub unhide_corrs {
 
-    #print STDERR "ADD_NEEDS_MODDED 30\n";
-
 =pod
 
 =head2 hide_corrs
@@ -1976,8 +1952,6 @@ Hide Corrs for moving
 
 # ----------------------------------------------------
 sub get_move_map_data {
-
-    #print STDERR "ADD_NEEDS_MODDED 31\n";
 
 =pod
 
@@ -2047,8 +2021,6 @@ Move a map from one place on a parent to another
 # ----------------------------------------------------
 sub move_map {
 
-    #print STDERR "ADD_NEEDS_MODDED 32\n";
-
 =pod
 
 =head2 move_map
@@ -2113,8 +2085,6 @@ Move a map from one place on a parent to another
 # ----------------------------------------------------
 sub move_sub_map_on_parents_in_memory {
 
-    #print STDERR "ADD_NEEDS_MODDED 34\n";
-
 =pod
 
 =head2 move_sub_map_on_parents_in_memory
@@ -2147,8 +2117,6 @@ another (and possibly on a different parrent.
 
 # ----------------------------------------------------
 sub add_action {
-
-    #print STDERR "ADD_NEEDS_MODDED 36\n";
 
 =pod
 
@@ -2189,8 +2157,6 @@ be after this action (because of undoing).
 # ----------------------------------------------------
 sub undo_action {
 
-    #print STDERR "ADD_NEEDS_MODDED 37\n";
-
 =pod
 
 =head2 undo_action
@@ -2204,12 +2170,16 @@ Undo the action that was just performed.
 
     my $window_actions = $self->{'window_actions'}{$window_key};
 
-    unless ( @{ $self->{'window_actions'}{$window_key}{'actions'} || [] } ) {
+    my $last_action_index
+        = $self->{'window_actions'}{$window_key}{'last_action_index'};
+    if ( not @{ $self->{'window_actions'}{$window_key}{'actions'} || [] }
+        or $last_action_index < 0 )
+    {
+
+        # Can't go back any further
         return;
     }
 
-    my $last_action_index
-        = $self->{'window_actions'}{$window_key}{'last_action_index'};
     my $last_action = $window_actions->{'actions'}[$last_action_index];
 
     # Handle each action type
@@ -2224,13 +2194,28 @@ Undo the action that was just performed.
 
     $self->{'window_actions'}{$window_key}{'last_action_index'}--;
 
+# This probably should be more elegant but for now, just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $top_zone_key,    #$zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
+    );
+
+    #RELAYOUT OVERVIEW
+    $self->recreate_overview( window_key => $window_key, );
+
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
     return;
 }
 
 # ----------------------------------------------------
 sub redo_action {
-
-    #print STDERR "ADD_NEEDS_MODDED 38\n";
 
 =pod
 
@@ -2263,6 +2248,24 @@ Redo the action that was last undone.
     }
 
     $self->{'window_actions'}{$window_key}{'last_action_index'}++;
+
+# This probably should be more elegant but for now, just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $top_zone_key,    #$zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
+    );
+
+    #RELAYOUT OVERVIEW
+    $self->recreate_overview( window_key => $window_key, );
+
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
     return;
 }
@@ -2314,7 +2317,7 @@ Condence redundant window actions for commits and exporting.
 # ----------------------------------------------------
 sub window_actions {
 
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
+    #print STDERR "ADD_NEEDS_MODDED 76\n";
 
 =pod
 
@@ -2339,8 +2342,6 @@ Accessor method for window actions;
 
 # ----------------------------------------------------
 sub get_main_zone_offsets {
-
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
 
 =pod
 
@@ -2404,8 +2405,6 @@ Given a zone, figure out the coordinates on the main window.
 
 # ----------------------------------------------------
 sub place_ghost_location_on_parent_map {
-
-    #print STDERR "ADD_NEEDS_MODDED 41\n";
 
 =pod
 
@@ -2478,8 +2477,6 @@ Controls how the ghost map moves.
 # ----------------------------------------------------
 sub move_ghosts {
 
-    #print STDERR "ADD_NEEDS_MODDED 41\n";
-
 =pod
 
 =head2 move_ghosts
@@ -2544,8 +2541,6 @@ Controls how the ghost map moves.
 
 # ----------------------------------------------------
 sub get_ghost_location_coords {
-
-    #print STDERR "ADD_NEEDS_MODDED 41\n";
 
 =pod
 
@@ -2620,8 +2615,6 @@ Controls how the ghost map moves.
 # ----------------------------------------------------
 sub find_ghost_parent_map {
 
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
-
 =pod
 
 =head2 find_ghost_parent_map
@@ -2663,8 +2656,6 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
 
 # ----------------------------------------------------
 sub get_ghost_parent_maps {
-
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
 
 =pod
 
@@ -2714,8 +2705,6 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
 # ----------------------------------------------------
 sub end_drag_ghost {
 
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
-
 =pod
 
 =head2 end_drag_ghost
@@ -2735,8 +2724,6 @@ the works next time.
 
 # ----------------------------------------------------
 sub point_in_box {
-
-    #print STDERR "ADD_NEEDS_MODDED 40\n";
 
 =pod
 
@@ -2759,8 +2746,6 @@ Given box coords and x and y coords, figure out if the mouse is in a the box.
 
 # ----------------------------------------------------
 sub clear_zone_corrs {
-
-    #print STDERR "ADD_NEEDS_MODDED 42\n";
 
 =pod
 
@@ -2810,8 +2795,6 @@ Clears a zone of correspondences and calls on the interface to remove the drawin
 # ----------------------------------------------------
 sub add_zone_corrs {
 
-    #print STDERR "ADD_NEEDS_MODDED 43\n";
-
 =pod
 
 =head2 add_zone_corrs
@@ -2845,8 +2828,6 @@ Adds a zone of correspondences
 # ----------------------------------------------------
 sub cascade_reset_zone_corrs {
 
-    #print STDERR "ADD_NEEDS_MODDED 44\n";
-
 =pod
 
 =head2 cascade_reset_zone_corrs
@@ -2877,8 +2858,6 @@ Reset a zone's correspondences and it's childrens.
 
 # ----------------------------------------------------
 sub reset_zone_corrs {
-
-    #print STDERR "ADD_NEEDS_MODDED 44\n";
 
 =pod
 
@@ -3146,8 +3125,6 @@ AppInterface.
 
 # ----------------------------------------------------
 sub remove_window_data {
-
-    #print STDERR "ADD_NEEDS_MODDED 49\n";
 
 =pod
 
