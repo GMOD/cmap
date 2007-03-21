@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.27 2007-03-20 18:20:10 mwz444 Exp $
+# $Id: AppController.pm,v 1.28 2007-03-21 20:20:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -66,8 +66,7 @@ Initializes the object.
     # The app_data_module will have the remote config if it is needed
     $self->config( $self->app_data_module()->config() );
     $self->data_source( $self->{'data_source'} );
-    my $window_key   = $self->start_application();
-    my $developement = 0;
+    my $window_key = $self->start_application();
 
     # Initiate AppPluginSet
     $self->plugin_set();
@@ -76,20 +75,6 @@ Initializes the object.
         $self->app_display_data()->dd_load_save_in_new_window(
             window_key      => $window_key,
             saved_view_data => $saved_view_data,
-        );
-    }
-    elsif ( $developement == 1 ) {
-        $self->load_new_window(
-            window_key               => $window_key,
-            'selections'             => ['0'],
-            'selectable_ref_map_ids' => ['1'],
-        );
-    }
-    elsif ( $developement == 2 ) {
-        $self->load_new_window(
-            window_key               => $window_key,
-            'selections'             => ['0'],
-            'selectable_ref_map_ids' => ['2'],
         );
     }
     else {

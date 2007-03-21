@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.37 2007-03-20 18:20:11 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.38 2007-03-21 20:20:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -103,36 +103,71 @@ This method will create the Application.
             $self->app_controller->close_window( window_key => $window_key, );
         }
     );
+
+    $self->quick_keys( window_key => $window_key, );
+
+    return $window_key;
+}
+
+# ----------------------------------------------------
+sub quick_keys {
+
+=pod
+
+=head2 quick_keys
+
+Add the quck keys;
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+
+    # Quick Keys
+    # File:
+
+    # New View
     $self->{'windows'}{$window_key}
-        ->bind( '<Control-Key-q>' => sub { exit; }, );
+        ->bind( '<Control-Key-n>' => sub { $self->new_view(); }, );
+
+    # Open View
+    $self->{'windows'}{$window_key}
+        ->bind( '<Control-Key-o>' => sub { $self->open_saved_view(); }, );
+
+    # Save View
     $self->{'windows'}{$window_key}->bind( '<Control-Key-s>' =>
             sub { $self->save_view( window_key => $window_key ); }, );
 
-# BF RE ADD THESE
-#    $self->{'windows'}{$window_key}->bind(
-#        '<Control-Key-l>' => sub {
-#            $self->app_controller()
-#                ->new_reference_maps( window_key => $window_key, );
-#        },
-#    );
-#    $self->{'windows'}{$window_key}->bind(
-#        '<Control-Key-e>' => sub {
-#            $self->export_map_moves( window_key => $window_key, );
-#        },
-#    );
-#    $self->{'windows'}{$window_key}->bind(
-#        '<Control-Key-z>' => sub {
-#            $self->app_controller()
-#                ->app_display_data->undo_action( window_key => $window_key, );
-#        },
-#    );
-#    $self->{'windows'}{$window_key}->bind(
-#        '<Control-Key-y>' => sub {
-#            $self->app_controller()
-#                ->app_display_data->redo_action( window_key => $window_key, );
-#        },
-#    );
-    return $window_key;
+    # Export Moves
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-e>' => sub {
+            $self->export_map_moves( window_key => $window_key, );
+        },
+    );
+
+    # Quit
+    $self->{'windows'}{$window_key}
+        ->bind( '<Control-Key-q>' => sub { exit; }, );
+
+    # Edit:
+
+    # Undo
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-z>' => sub {
+            $self->app_controller()
+                ->app_display_data->undo_action( window_key => $window_key, );
+        },
+    );
+
+    # Redo
+    $self->{'windows'}{$window_key}->bind(
+        '<Control-Key-y>' => sub {
+            $self->app_controller()
+                ->app_display_data->redo_action( window_key => $window_key, );
+        },
+    );
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -1688,11 +1723,17 @@ Populates the file menu with menu_items
     unless ( $self->{'menu_items'}{$window_key}{'file'} ) {
         $self->{'menu_items'}{$window_key}{'file'} = [
             [   'command',
-                '~Load',
-                -accelerator => 'Ctrl-l',
+                '~New View',
+                -accelerator => 'Ctrl-n',
                 -command     => sub {
-                    $self->app_controller()
-                        ->new_reference_maps( window_key => $window_key, );
+                    $self->new_view();
+                },
+            ],
+            [   'command',
+                '~Open View',
+                -accelerator => 'Ctrl-o',
+                -command     => sub {
+                    $self->open_saved_view();
                 },
             ],
             [   'command',
@@ -3456,15 +3497,62 @@ Destroy the ghost image
 }
 
 # ----------------------------------------------------
-sub save_view {
-
-    #print STDERR "AI_NEEDS_MODDED 59\n";
+sub new_view {
 
 =pod
 
-=head2 destroy_ghosts
+=head2 new_view
 
-Destroy the ghost image
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    my $new_window_key = $self->app_controller()->create_window();
+    $self->app_controller()
+        ->new_reference_maps( window_key => $new_window_key, );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub open_saved_view {
+
+=pod
+
+=head2 open_saved_view
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    my $saved_view = $self->main_window()->getOpenFile();
+
+    my $saved_view_data = $self->app_controller()
+        ->open_saved_view( saved_view => $saved_view, );
+    if ($saved_view_data) {
+        my $new_window_key = $self->app_controller()->create_window();
+        $self->app_controller()->app_display_data()
+            ->dd_load_save_in_new_window(
+            window_key      => $new_window_key,
+            saved_view_data => $saved_view_data,
+            );
+    }
+    else {
+        $self->popup_warning( text => "Failed to open file: $saved_view", );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub save_view {
+
+=pod
+
+=head2 save_view
+
 
 =cut
 

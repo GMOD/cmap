@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.35 2007-03-20 18:20:10 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.36 2007-03-21 20:20:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -829,7 +829,6 @@ toggle the correspondences for a zone
     my $window_key = $args{'window_key'};
     my $zone_key1  = $args{'zone_key'};
 
-    print STDERR "Toggling $zone_key1\n";
     my $zone_key2 = $self->{'scaffold'}{$zone_key1}{'parent_zone_key'};
     return unless ($zone_key2);
 
