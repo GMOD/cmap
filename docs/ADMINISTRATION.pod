@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.33 $
+$Revision: 1.34 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -617,6 +617,19 @@ The rank of the evidence relative to the others
 How lines representing this evidence type will be drawn (not currently
 supported)
 
+=item * Evidence Default Display (evidence_default_display)
+
+This allows you to choose default display options for individual evidence types.
+This default overrides the global default.
+
+You cannot default to the greater than or less than score options.
+
+ Values:
+    display:      Display all correspondences with evidence of this type
+    ignore:       Completely ignore the evidence of this type when considering correspondences.  
+
+=back
+
 =item * <aggregated_correspondence_colors>
 
 This option dictates the color of aggregated correspondence lines for this
@@ -776,6 +789,8 @@ Set default, aggregate correspondences into one or two lines.
 
 Dictates the default choice of the evidence type display menu.  You cannot
 default to the greater than or less than score options.
+
+This default is overridden by the any individually defined defaults.
 
  Values:
     display:      Display all correspondences with evidence of this type

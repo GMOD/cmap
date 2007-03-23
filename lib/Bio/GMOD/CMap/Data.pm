@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.283 2007-03-23 13:14:29 mwz444 Exp $
+# $Id: Data.pm,v 1.284 2007-03-23 15:11:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.283 $)[-1];
+$VERSION = (qw$Revision: 1.284 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3811,19 +3811,34 @@ Given the slot_no and map_id
 
 =cut
 
-    my $self = shift;
+    my $self        = shift;
+    my $ev_type_acc = shift;
 
-    unless ( $self->{'evidence_default_display'} ) {
-        my $evidence_default_display
-            = $self->config_data('evidence_default_display');
-        $evidence_default_display = lc($evidence_default_display);
-        unless ( $evidence_default_display eq 'ignore' ) {
+    my %valid_values = ( 'default' => 1, 'ignore' => 1, );
+
+    unless ( $self->{'evidence_default_display'}{$ev_type_acc} ) {
+        my $evidence_default_display;
+        my $individual_default = lc $self->evidence_type_data( $ev_type_acc,
+            'evidence_default_display', );
+        if (    $ev_type_acc
+            and $individual_default
+            and $valid_values{$individual_default} )
+        {
+            $evidence_default_display = $individual_default;
+        }
+
+        $evidence_default_display
+            = lc $self->config_data('evidence_default_display')
+            unless ($evidence_default_display);
+
+        unless ( $valid_values{$evidence_default_display} ) {
             $evidence_default_display = 'display';    #Default value
         }
-        $self->{'evidence_default_display'} = $evidence_default_display;
+        $self->{'evidence_default_display'}{$ev_type_acc}
+            = $evidence_default_display;
     }
 
-    return $self->{'evidence_default_display'};
+    return $self->{'evidence_default_display'}{$ev_type_acc};
 }
 
 # ----------------------------------------------------
@@ -3980,7 +3995,6 @@ sub fill_type_arrays {
     }
 
     # Fill the default array with any evidence types not accounted for.
-    my $evidence_default_display = $self->evidence_default_display;
 
     my %found_evidence_type;
     foreach my $et (
@@ -3993,13 +4007,16 @@ sub fill_type_arrays {
     my $evidence_type_data = $self->evidence_type_data();
 
     foreach my $key ( keys(%$evidence_type_data) ) {
-        my $acc = $evidence_type_data->{$key}{'evidence_type_acc'};
-        unless ( $found_evidence_type{$acc} ) {
+        my $ev_type_acc = $evidence_type_data->{$key}{'evidence_type_acc'};
+        unless ( $found_evidence_type{$ev_type_acc} ) {
+
+            my $evidence_default_display
+                = $self->evidence_default_display($ev_type_acc);
             if ( $evidence_default_display eq 'ignore' ) {
-                push @$ignored_evidence_type_accs, $acc;
+                push @$ignored_evidence_type_accs, $ev_type_acc;
             }
             else {
-                push @$included_evidence_type_accs, $acc;
+                push @$included_evidence_type_accs, $ev_type_acc;
             }
         }
     }

@@ -5,6 +5,13 @@
 - Fixed a flaw in the tick mark logic.  Rather than rounding the location
   string of the tick mark, it now places the tick marks at reasonably rounded
   locations.
+- Added Dotplot button.
+- Modified the behavior when a map no longer has correspondences.  Now it will
+  keep the map unless the "Eliminate Orphans" button is pressed.
+- Modified the interface slightly to create a row of buttons for Dotplot,
+  Eliminate Orphans and New Reference Maps.
+- Added a display/ignore option for individual evidence types
+  (evidence_default_display).
 
 0.16 
 
