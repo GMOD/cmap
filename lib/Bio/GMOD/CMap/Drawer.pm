@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.136 2007-01-17 19:40:15 mwz444 Exp $
+# $Id: Drawer.pm,v 1.137 2007-03-23 13:14:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -57,6 +57,7 @@ The base map drawing module.
         clean_view => $clean_view,
         corrs_to_map => $corrs_to_map,
         scale_maps => $scale_maps,
+        eliminate_orphans => $eliminate_orphans,
         stack_maps => $stack_maps,
         ref_map_order => $ref_map_order,
         comp_menu_order => $comp_menu_order,
@@ -284,6 +285,10 @@ Set to 1 to have correspondence lines go to the map instead of the feature.
 
 Set to 1 scale the maps with the same unit.  Default is 1.
 
+=item * eliminate_orphans
+
+Set to 1 to remove maps that don't have any correspondences to a reference map.  Default is 0.
+
 =item * stack_maps
 
 Set to 1 stack the reference maps vertically.  Default is 0.
@@ -349,7 +354,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -363,19 +368,23 @@ use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
-    apr flip slots highlight font_size image_size image_type
-    label_features included_feature_types corr_only_feature_types
-    url_feature_default_display pixel_height
-    included_evidence_types ignored_evidence_types ignored_feature_types
-    less_evidence_types greater_evidence_types evidence_type_score
-    config data_source left_min_corrs right_min_corrs
-    general_min_corrs menu_min_corrs slot_min_corrs stack_slot
-    collapse_features cache_dir map_view data_module
-    aggregate show_intraslot_corr clean_view
-    scale_maps stack_maps ref_map_order comp_menu_order
-    omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
-    dotplot
-    corrs_to_map session_id next_step ignore_image_map_sanity skip_drawing
+    apr                     flip                        slots
+    highlight               font_size                   image_size
+    image_type              label_features              included_feature_types
+    corr_only_feature_types url_feature_default_display pixel_height
+    included_evidence_types ignored_evidence_types      ignored_feature_types
+    less_evidence_types     greater_evidence_types      evidence_type_score
+    config                  data_source                 left_min_corrs
+    right_min_corrs         general_min_corrs           menu_min_corrs
+    slot_min_corrs          stack_slot                  collapse_features
+    cache_dir               map_view                    data_module
+    aggregate               show_intraslot_corr         clean_view
+    scale_maps              stack_maps                  ref_map_order
+    comp_menu_order         omit_area_boxes             split_agg_ev
+    refMenu                 compMenu                    optionMenu
+    addOpMenu               dotplot                     eliminate_orphans
+    corrs_to_map            session_id                  next_step
+    ignore_image_map_sanity skip_drawing
 ];
 
 # ----------------------------------------------------
@@ -1802,6 +1811,7 @@ necessary data for drawing.
             slots                       => $self->{'slots'},
             slot_min_corrs              => $self->slot_min_corrs,
             stack_slot                  => $self->stack_slot,
+            eliminate_orphans           => $self->eliminate_orphans,
             included_feature_type_accs  => $self->included_feature_types,
             corr_only_feature_type_accs => $self->corr_only_feature_types,
             ignored_feature_type_accs   => $self->ignored_feature_types,

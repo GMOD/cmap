@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.282 2006-12-13 19:57:47 mwz444 Exp $
+# $Id: Data.pm,v 1.283 2007-03-23 13:14:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.282 $)[-1];
+$VERSION = (qw$Revision: 1.283 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -262,6 +262,7 @@ sub cmap_data {
     my $slots                      = $args{'slots'};
     my $slot_min_corrs             = $args{'slot_min_corrs'} || {};
     my $stack_slot                 = $args{'stack_slot'} || {};
+    my $eliminate_orphans          = $args{'eliminate_orphans'} || 0;
     my $included_feature_type_accs = $args{'included_feature_type_accs'}
         || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
@@ -299,7 +300,7 @@ sub cmap_data {
         $slots,                       $ignored_feature_type_accs,
         $included_evidence_type_accs, $less_evidence_type_accs,
         $greater_evidence_type_accs,  $evidence_type_score,
-        $slot_min_corrs,
+        $slot_min_corrs,              $eliminate_orphans,
         )
         or return;
     $self->update_slots( $slots, $slot_min_corrs, $stack_slot );
@@ -1864,7 +1865,7 @@ Given a feature acc. id, find out all the details on it.
     );
 
     my $last_corr_id = 0;
-    for (my $i =0; $i<=$#{$correspondences};$i++){
+    for ( my $i = 0; $i <= $#{$correspondences}; $i++ ) {
         my $corr = $correspondences->[$i];
         if ( $last_corr_id == $corr->{'feature_correspondence_id'} ) {
             splice @$correspondences, $i, 1;
@@ -4151,6 +4152,7 @@ original start and stop.
     my $greater_evidence_type_accs  = shift;
     my $evidence_type_score         = shift;
     my $slot_min_corrs              = shift;
+    my $eliminate_orphans           = shift;
     my $sql_object                  = $self->sql;
 
     # Return slot_info is not setting it.
@@ -4165,6 +4167,7 @@ original start and stop.
         greater_evidence_type_accs  => $greater_evidence_type_accs,
         evidence_type_score         => $evidence_type_score,
         slot_min_corrs              => $slot_min_corrs,
+        eliminate_orphans           => $eliminate_orphans,
         )
         or return $self->error( $sql_object->error() );
 

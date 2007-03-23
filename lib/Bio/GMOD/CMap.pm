@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.112 2007-01-17 19:40:14 mwz444 Exp $
+# $Id: CMap.pm,v 1.113 2007-03-23 13:14:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -566,6 +566,31 @@ The default is 1.
     $self->{'scale_maps'} = 1
         unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'};
+}
+
+# ----------------------------------------------------
+sub eliminate_orphans {
+
+=pod
+
+=head3 eliminate_orphans
+
+Returns the boolean eliminate_orphans variable.  This determines 
+if maps that don't have corresponences are removed.
+
+This is not a persistent value, so it does not need to check the config.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'eliminate_orphans'} = $val if defined $val;
+
+    $self->{'eliminate_orphans'} = 0
+        unless defined $self->{'eliminate_orphans'};
+    return $self->{'eliminate_orphans'};
 }
 
 # ----------------------------------------------------

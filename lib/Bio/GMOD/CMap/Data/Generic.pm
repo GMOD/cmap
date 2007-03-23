@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.160 2007-03-21 20:20:51 mwz444 Exp $
+# $Id: Generic.pm,v 1.161 2007-03-23 13:14:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.160 $)[-1];
+$VERSION = (qw$Revision: 1.161 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -680,6 +680,8 @@ It might be a good idea to follow the code follows.
 
 =item - Hash that holds the minimum number of correspondences for each slot (slot_min_corrs)
 
+=item - Set to true if the maps w/out corrs should be removed (eliminate_orphans)
+
 =back
 
 =item * Output
@@ -711,6 +713,7 @@ original start and stop.
         greater_evidence_type_accs  => 0,
         evidence_type_score         => 0,
         slot_min_corrs              => 0,
+        eliminate_orphans           => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -725,6 +728,7 @@ original start and stop.
         || [];
     my $evidence_type_score = $args{'evidence_type_score'} || {};
     my $slot_min_corrs      = $args{'slot_min_corrs'}      || {};
+    my $eliminate_orphans   = $args{'eliminate_orphans'}   || 0;
     my $db                  = $cmap_object->db;
     my $return_object       = {};
 
@@ -808,164 +812,181 @@ original start and stop.
                 $applied_min_corrs = $new_min_corrs;
             }
 
-            $from .= q[,
-              cmap_correspondence_lookup cl
-              ];
-            $where .= q[ m.map_id=cl.map_id1 
-                     and cl.map_id1!=cl.map_id2 ];
-
-            ### Add the information about the adjoinint slot
-            ### including info about the start and end.
-            $where .= " and (";
-            my @ref_map_strs = ();
-            my $ref_slot_id  = $slot_no + $slot_modifier;
-            my $slot_info    = $return_object->{$ref_slot_id};
-            next unless $slot_info;
-            foreach
-                my $m_id ( sort keys( %{ $return_object->{$ref_slot_id} } ) )
+            if (    $maps
+                and %{$maps}
+                and !$eliminate_orphans
+                and $corr_restrict <= 0 )
             {
-                my $r_m_str = " (cl.map_id2 = $m_id ";
-                if (    defined( $slot_info->{$m_id}->[0] )
-                    and defined( $slot_info->{$m_id}->[1] ) )
-                {
-                    $r_m_str .= " and (( cl.feature_start2>="
-                        . $slot_info->{$m_id}->[0]
-                        . " and cl.feature_start2<="
-                        . $slot_info->{$m_id}->[1]
-                        . " ) or ( cl.feature_stop2 is not null and "
-                        . "  cl.feature_start2<="
-                        . $slot_info->{$m_id}->[0]
-                        . " and cl.feature_stop2>="
-                        . $slot_info->{$m_id}->[0] . " ))) ";
-                }
-                elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
-                    $r_m_str .= " and (( cl.feature_start2>="
-                        . $slot_info->{$m_id}->[0]
-                        . " ) or ( cl.feature_stop2 is not null "
-                        . " and cl.feature_stop2>="
-                        . $slot_info->{$m_id}->[0] . " ))) ";
-                }
-                elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
-                    $r_m_str .= " and cl.feature_start2<="
-                        . $slot_info->{$m_id}->[1] . ") ";
-                }
-                else {
-                    $r_m_str .= ") ";
-                }
 
-                push @ref_map_strs, $r_m_str;
-            }
-            $where .= join( ' or ', @ref_map_strs ) . ") ";
-
-            ### Add in considerations for feature and evidence types
-            if ( $ignored_feature_type_accs and @$ignored_feature_type_accs )
-            {
-                $where .= " and cl.feature_type_acc1 not in ('"
-                    . join( "','", sort @$ignored_feature_type_accs ) . "') ";
-                $where .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
-                    . " or cl.feature_type_acc2 not in ('"
-                    . join( "','", sort @$ignored_feature_type_accs )
-                    . "') ) ";
-            }
-
-            if (   @$included_evidence_type_accs
-                or @$less_evidence_type_accs
-                or @$greater_evidence_type_accs )
-            {
-                $from  .= ", cmap_correspondence_evidence ce ";
-                $where .= " and ce.feature_correspondence_id = "
-                    . "cl.feature_correspondence_id ";
-                $where .= " and ( ";
-                my @join_array;
-                if (@$included_evidence_type_accs) {
-                    push @join_array,
-                        " ce.evidence_type_acc in ('"
-                        . join( "','", sort @$included_evidence_type_accs )
-                        . "')";
-                }
-                foreach my $et_acc ( sort @$less_evidence_type_accs ) {
-                    push @join_array,
-                        " ( ce.evidence_type_acc = '$et_acc' "
-                        . " and ce.score <= "
-                        . $evidence_type_score->{$et_acc} . " ) ";
-                }
-                foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
-                    push @join_array,
-                        " ( ce.evidence_type_acc = '$et_acc' "
-                        . " and ce.score >= "
-                        . $evidence_type_score->{$et_acc} . " ) ";
-                }
-                $where .= join( ' or ', @join_array ) . " ) ";
-            }
-            else {
-                $from  .= ", cmap_correspondence_evidence ce ";
-                $where .= " and ce.correspondence_evidence_id = -1 ";
-            }
-
-            # Get Map Sets
-            if (   ( $corr_restrict < 0 and $map_sets and %{$map_sets} )
-                or ( not( $maps and %{$maps} ) ) )
-            {
-                $use_corr_restriction = 1 if ($applied_min_corrs);
-                $from .= q[,
-                  cmap_map_set ms ];
-                $where .= " and m.map_set_id=ms.map_set_id ";
-
-                #Map set acc
-                $acc_where .= "(ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '",
-                    sort keys( %{$map_sets} ) )
-                    . "')";
-            }
-            else {
-                $use_corr_restriction = 1 if ( $corr_restrict > 0 );
-                $acc_where .= ' or ' if ($acc_where);
+                $acc_where .= ' and ' if ($acc_where);
                 $acc_where .= " m.map_acc in ('"
                     . join( "','", sort keys( %{$maps} ) ) . "')";
-                foreach my $map_acc ( keys %{$maps} ) {
-                    if (    defined( $maps->{$map_acc}{'start'} )
-                        and defined( $maps->{$map_acc}{'stop'} ) )
+            }
+            else {
+
+                $from .= q[,
+                  cmap_correspondence_lookup cl
+                  ];
+                $where .= q[ m.map_id=cl.map_id1 
+                     and cl.map_id1!=cl.map_id2 ];
+
+                ### Add the information about the adjoinint slot
+                ### including info about the start and end.
+                $where .= " and (";
+                my @ref_map_strs = ();
+                my $ref_slot_id  = $slot_no + $slot_modifier;
+                my $slot_info    = $return_object->{$ref_slot_id};
+                next unless $slot_info;
+                foreach my $m_id (
+                    sort keys( %{ $return_object->{$ref_slot_id} } ) )
+                {
+                    my $r_m_str = " (cl.map_id2 = $m_id ";
+                    if (    defined( $slot_info->{$m_id}->[0] )
+                        and defined( $slot_info->{$m_id}->[1] ) )
                     {
-                        $acc_where
-                            .= qq[ and ( not (m.map_acc = '$map_acc')  ]
-                            . " or (( cl.feature_start1>="
-                            . $maps->{$map_acc}{'start'}
-                            . " and cl.feature_start1<="
-                            . $maps->{$map_acc}{'stop'}
-                            . " ) or ( cl.feature_stop1 is not null and "
-                            . "  cl.feature_start1<="
-                            . $maps->{$map_acc}{'start'}
-                            . " and cl.feature_stop1>="
-                            . $maps->{$map_acc}{'start'} . " ))) ";
+                        $r_m_str .= " and (( cl.feature_start2>="
+                            . $slot_info->{$m_id}->[0]
+                            . " and cl.feature_start2<="
+                            . $slot_info->{$m_id}->[1]
+                            . " ) or ( cl.feature_stop2 is not null and "
+                            . "  cl.feature_start2<="
+                            . $slot_info->{$m_id}->[0]
+                            . " and cl.feature_stop2>="
+                            . $slot_info->{$m_id}->[0] . " ))) ";
                     }
-                    elsif ( defined( $maps->{$map_acc}{'start'} ) ) {
-                        $acc_where
-                            .= qq[ and ( not (m.map_acc = '$map_acc')  ]
-                            . " or (( cl.feature_start1>="
-                            . $maps->{$map_acc}{'start'}
-                            . " ) or ( cl.feature_stop1 is not null "
-                            . " and cl.feature_stop1>="
-                            . $maps->{$map_acc}{'start'} . " ))) ";
+                    elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
+                        $r_m_str .= " and (( cl.feature_start2>="
+                            . $slot_info->{$m_id}->[0]
+                            . " ) or ( cl.feature_stop2 is not null "
+                            . " and cl.feature_stop2>="
+                            . $slot_info->{$m_id}->[0] . " ))) ";
                     }
-                    elsif ( defined( $maps->{$map_acc}{'stop'} ) ) {
-                        $acc_where
-                            .= qq[ and ( not (m.map_acc = '$map_acc')  ]
-                            . " or cl.feature_start1<="
-                            . $maps->{$map_acc}{'stop'} . ") ";
+                    elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
+                        $r_m_str .= " and cl.feature_start2<="
+                            . $slot_info->{$m_id}->[1] . ") ";
+                    }
+                    else {
+                        $r_m_str .= ") ";
+                    }
+
+                    push @ref_map_strs, $r_m_str;
+                }
+                $where .= join( ' or ', @ref_map_strs ) . ") ";
+
+                ### Add in considerations for feature and evidence types
+                if (    $ignored_feature_type_accs
+                    and @$ignored_feature_type_accs )
+                {
+                    $where .= " and cl.feature_type_acc1 not in ('"
+                        . join( "','", sort @$ignored_feature_type_accs )
+                        . "') ";
+                    $where
+                        .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
+                        . " or cl.feature_type_acc2 not in ('"
+                        . join( "','", sort @$ignored_feature_type_accs )
+                        . "') ) ";
+                }
+
+                if (   @$included_evidence_type_accs
+                    or @$less_evidence_type_accs
+                    or @$greater_evidence_type_accs )
+                {
+                    $from  .= ", cmap_correspondence_evidence ce ";
+                    $where .= " and ce.feature_correspondence_id = "
+                        . "cl.feature_correspondence_id ";
+                    $where .= " and ( ";
+                    my @join_array;
+                    if (@$included_evidence_type_accs) {
+                        push @join_array,
+                            " ce.evidence_type_acc in ('"
+                            . join( "','",
+                            sort @$included_evidence_type_accs )
+                            . "')";
+                    }
+                    foreach my $et_acc ( sort @$less_evidence_type_accs ) {
+                        push @join_array,
+                            " ( ce.evidence_type_acc = '$et_acc' "
+                            . " and ce.score <= "
+                            . $evidence_type_score->{$et_acc} . " ) ";
+                    }
+                    foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
+                        push @join_array,
+                            " ( ce.evidence_type_acc = '$et_acc' "
+                            . " and ce.score >= "
+                            . $evidence_type_score->{$et_acc} . " ) ";
+                    }
+                    $where .= join( ' or ', @join_array ) . " ) ";
+                }
+                else {
+                    $from  .= ", cmap_correspondence_evidence ce ";
+                    $where .= " and ce.correspondence_evidence_id = -1 ";
+                }
+
+                # Get Map Sets
+                if (   ( $corr_restrict < 0 and $map_sets and %{$map_sets} )
+                    or ( not( $maps and %{$maps} ) ) )
+                {
+                    $use_corr_restriction = 1 if ($applied_min_corrs);
+                    $from .= q[,
+                      cmap_map_set ms ];
+                    $where .= " and m.map_set_id=ms.map_set_id ";
+
+                    #Map set acc
+                    $acc_where .= "(ms.map_set_acc = '"
+                        . join( "' or ms.map_set_acc = '",
+                        sort keys( %{$map_sets} ) )
+                        . "')";
+                }
+                else {
+                    $use_corr_restriction = 1 if ( $corr_restrict > 0 );
+                    $acc_where .= ' or ' if ($acc_where);
+                    $acc_where .= " m.map_acc in ('"
+                        . join( "','", sort keys( %{$maps} ) ) . "')";
+                    foreach my $map_acc ( keys %{$maps} ) {
+                        if (    defined( $maps->{$map_acc}{'start'} )
+                            and defined( $maps->{$map_acc}{'stop'} ) )
+                        {
+                            $acc_where
+                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                                . " or (( cl.feature_start1>="
+                                . $maps->{$map_acc}{'start'}
+                                . " and cl.feature_start1<="
+                                . $maps->{$map_acc}{'stop'}
+                                . " ) or ( cl.feature_stop1 is not null and "
+                                . "  cl.feature_start1<="
+                                . $maps->{$map_acc}{'start'}
+                                . " and cl.feature_stop1>="
+                                . $maps->{$map_acc}{'start'} . " ))) ";
+                        }
+                        elsif ( defined( $maps->{$map_acc}{'start'} ) ) {
+                            $acc_where
+                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                                . " or (( cl.feature_start1>="
+                                . $maps->{$map_acc}{'start'}
+                                . " ) or ( cl.feature_stop1 is not null "
+                                . " and cl.feature_stop1>="
+                                . $maps->{$map_acc}{'start'} . " ))) ";
+                        }
+                        elsif ( defined( $maps->{$map_acc}{'stop'} ) ) {
+                            $acc_where
+                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                                . " or cl.feature_start1<="
+                                . $maps->{$map_acc}{'stop'} . ") ";
+                        }
                     }
                 }
-            }
-            if ($use_corr_restriction) {
-                $group_by_sql = q[ 
-                    group by cl.map_id2,
+                if ($use_corr_restriction) {
+                    $group_by_sql = q[ 
+                        group by cl.map_id2,
                              m.map_start,
                              m.map_stop,
                              m.map_start,
                              m.map_stop,
                              m.map_acc
-                    ];
-                $having = " having count(cl.feature_correspondence_id) "
-                    . ">=$applied_min_corrs ";
+                        ];
+                    $having = " having count(cl.feature_correspondence_id) "
+                        . ">=$applied_min_corrs ";
+                }
             }
         }
         if ($where) {

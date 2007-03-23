@@ -434,6 +434,17 @@ function stringify_form(form) {
         name="sub"
       >
     [%- END -%]
+    <input type="hidden" name="eliminate_orphans" id="eliminate_orphans" value=0>
+    <input type="submit" 
+      onClick="document.comparative_map_form.eliminate_orphans.value='1'" 
+      value="Eliminate Orphans**" 
+      name="sub"
+    >
+    <input type=button value="New Reference Maps" onClick="location.href='[% apr.url %]/viewer'"><br>
+    <BR/>
+    **Eliminate Orphans - Remove comparison maps that don't have correspondences to a reference map.
+    <BR/>
+    
     <table>
       <tr>
         <td align=left valign=top>
@@ -735,7 +746,6 @@ function stringify_form(form) {
             </table>
 
             hint: To save time, select the desired options before redrawing the map.<br>
-            <input type=button value="New Reference Maps" onClick="location.href='[% apr.url %]/viewer'"><br>
             <input type="submit" value="Redraw" name="sub">
             <input type="reset"  value="Reset">
             <span  

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.80 2007-02-06 07:00:11 mwz444 Exp $
+# $Id: Utils.pm,v 1.81 2007-03-23 13:14:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1323,7 +1323,7 @@ sub _get_options_from_url {
         omit_area_boxes          mapMenu             featureMenu
         corrMenu                 displayMenu         advancedMenu
         session_id               saved_link_id       general_min_corrs
-        ignore_comp_maps
+        ignore_comp_maps         eliminate_orphans
         ]
         )
     {
@@ -1730,7 +1730,7 @@ sub parse_url {
     $apr->param( 'ft_FRONT_PAGE_DEFAULT', undef );
 
   # reset the some params only if you want the code to be able to change them.
-  # otherwise, simply initialize the avalue.
+  # otherwise, simply initialize a value.
     for my $param (
         qw[
         aggregate       show_intraslot_corr
