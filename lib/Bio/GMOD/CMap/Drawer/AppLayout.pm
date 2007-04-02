@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.32 2007-03-20 18:20:11 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.33 2007-04-02 03:54:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -1078,7 +1078,7 @@ Lays out a maps in a contained area.
     my $move_offset_y    = $args{'move_offset_y'} || 0;
     my $force_relayout   = $args{'force_relayout'} || 0;
     my $depth            = $args{'depth'} || 0;
-    my $font_height      = 15;
+    my $font_height      = 20;
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 

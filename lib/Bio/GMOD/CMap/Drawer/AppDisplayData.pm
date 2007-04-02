@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.37 2007-03-21 21:24:49 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.38 2007-04-02 03:54:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -238,12 +238,6 @@ Adds the first slot
     );
 
     $self->change_selected_zone( zone_key => $zone_key, );
-
-    # Redundant after change_selected_zone
-    #$self->app_interface()->draw_window(
-    #    window_key       => $window_key,
-    #    app_display_data => $self,
-    #);
 
     return;
 }
@@ -3638,11 +3632,9 @@ Revisit
 
 =head2 Other Values
 
-=head3 selected_slot_key
+=head3 selected_zone_key
 
-Revisit
-
-    $self->{'selected_slot_key'} = $slot_key;
+    $self->{'selected_zone_key'} = $zone_key;
 
 =head3 next_map_set_color_index
 
