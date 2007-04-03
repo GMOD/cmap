@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.39 2007-04-02 03:54:53 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.40 2007-04-03 06:32:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1905,7 +1905,7 @@ Bind events to a zinc
         '<1>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->start_drag_type_1( $zinc, $e->x, $e->y, 0, );
+            $self->start_drag_left_mouse( $zinc, $e->x, $e->y, 0, );
         }
     );
 
@@ -1913,14 +1913,14 @@ Bind events to a zinc
         '<3>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->start_drag_type_2( $zinc, $e->x, $e->y, 0, );
+            $self->start_drag_right_mouse( $zinc, $e->x, $e->y, 0, );
         }
     );
     $zinc->Tk::bind(
         '<Control-1>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->start_drag_type_1( $zinc, $e->x, $e->y, 1, );
+            $self->start_drag_left_mouse( $zinc, $e->x, $e->y, 1, );
         }
     );
 
@@ -1928,31 +1928,31 @@ Bind events to a zinc
         '<Control-3>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->start_drag_type_2( $zinc, $e->x, $e->y, 1, );
+            $self->start_drag_right_mouse( $zinc, $e->x, $e->y, 1, );
         }
     );
     $zinc->Tk::bind(
         '<B1-ButtonRelease>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->stop_drag_type_1( $zinc, $e->x, $e->y, );
+            $self->stop_drag_left_mouse( $zinc, $e->x, $e->y, );
         }
     );
     $zinc->Tk::bind(
         '<B3-ButtonRelease>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
+            $self->stop_drag_right_mouse( $zinc, $e->x, $e->y, );
         }
     );
     $zinc->Tk::bind(
         '<B1-Motion>' => sub {
-            $self->drag_type_1( shift, $Tk::event->x, $Tk::event->y, );
+            $self->drag_left_mouse( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
     $zinc->Tk::bind(
         '<B3-Motion>' => sub {
-            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
+            $self->drag_right_mouse( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
 
@@ -2026,19 +2026,19 @@ Bind events to the overview zinc
         '<1>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->start_drag_type_2( $zinc, $e->x, $e->y, );
+            $self->start_drag_right_mouse( $zinc, $e->x, $e->y, );
         }
     );
     $zinc->CanvasBind(
         '<B1-ButtonRelease>' => sub {
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
-            $self->stop_drag_type_2( $zinc, $e->x, $e->y, );
+            $self->stop_drag_right_mouse( $zinc, $e->x, $e->y, );
         }
     );
     $zinc->CanvasBind(
         '<B1-Motion>' => sub {
-            $self->drag_type_2( shift, $Tk::event->x, $Tk::event->y, );
+            $self->drag_right_mouse( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
 
@@ -2090,10 +2090,9 @@ sub popup_map_menu {
 =cut
 
     my ( $self, %args ) = @_;
-    my $drawn_id = $args{'drawn_id'};
-    my $zinc     = $args{'zinc'};
-    my $moved    = $args{'moved'};
-    my $map_key  = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id);
+    my $zinc       = $args{'zinc'};
+    my $moved      = $args{'moved'};
+    my $map_key    = $args{'map_key'};
     my $controller = $self->app_controller();
 
     my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
@@ -2110,8 +2109,9 @@ sub popup_map_menu {
                     $map_menu_window->destroy();
                     $self->{'movng_map'} = 0;
                     $self->move_map_popup(
-                        map_key => $map_key,
-                        zinc    => $zinc,
+                        map_key    => $map_key,
+                        window_key => $window_key,
+                        zinc       => $zinc,
                     );
                 },
             )->pack( -side => 'top', -anchor => 'nw' );
@@ -2407,13 +2407,16 @@ sub move_map_popup {
 
     my ( $self, %args ) = @_;
     my $map_key    = $args{'map_key'};
+    my $window_key = $args{'window_key'};
     my $zinc       = $args{'zinc'};
     my $controller = $self->app_controller();
 
-    my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
     my $move_map_data = $controller->app_display_data->get_move_map_data(
         map_key      => $map_key,
-        ghost_bounds => $self->{'ghost_bounds'}{$window_key},
+        ghost_bounds => $self->highlight_bounds(
+            window_key => $window_key,
+            object_key => $map_key,
+        ),
     );
 
     my $new_parent_map_key = $move_map_data->{'new_parent_map_key'};
@@ -2448,7 +2451,10 @@ sub move_map_popup {
             new_feature_stop   => $new_feature_stop,
         );
     }
-    $self->destroy_ghosts( zinc => $zinc, window_key => $window_key, );
+    $self->reset_object_selections(
+        zinc       => $zinc,
+        window_key => $window_key,
+    );
 
     return;
 }
@@ -2908,7 +2914,7 @@ Remove the interface buttons for a zone.
 
 =head1 Drag and Drop Methods
 
-head2 Type 1
+head2 Type Left
 
 =over 4 
 
@@ -2918,7 +2924,7 @@ head2 Type 1
 
 =back
 
-head2 Type 2
+head2 Type Right
 
 =over 4 
 
@@ -2933,378 +2939,13 @@ head2 Type 2
 =cut
 
 # ----------------------------------------------------
-sub xstart_drag_type_1 {
-
-    #print STDERR "AI_NEEDS_MODDED 48\n";
+sub start_drag_left_mouse {
 
 =pod
 
-=head2 start_drag_type_1
+=head2 start_drag_left_mouse
 
-Handle starting drag
-
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-
-    $self->{'drag_window_key'}
-        = $self->get_window_key_from_zinc( zinc => $zinc, );
-
-    # Remove previous highlighting
-    $self->destroy_ghosts(
-        zinc       => $zinc,
-        window_key => $self->{'drag_window_key'},
-    );
-
-    $self->{'drag_last_x'} = $x;
-    $self->{'drag_last_y'} = $y;
-    $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
-    if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
-        $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
-    }
-    return unless ( $self->{'drag_ori_id'} );
-
-    my @tags;
-    my $ghost_color = 'red';
-    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-        $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
-        $self->{'drag_zone_key'} = $2;
-        $self->{'drag_map_key'}  = $3;
-
-        my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-
-        $self->create_ghost(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
-        );
-        $self->create_ghost_location_on_map(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
-        );
-
-        $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
-    }
-    elsif ( grep /^feature/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-
-        my $feature_acc
-            = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} );
-
-        $self->create_ghost(
-            zinc        => $zinc,
-            feature_acc => $feature_acc,
-            window_key  => $self->{'drag_window_key'},
-        );
-
-        $self->fill_feature_info_box( drawn_id => $self->{'drag_ori_id'}, );
-    }
-    elsif ( @tags = grep /^background_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
-        $tags[0] =~ /^background_(\S+)_(\S+)/;
-        $self->{'drag_window_key'} = $1;
-        $self->{'drag_zone_key'}   = $2;
-    }
-
-    # BF ADD THIS BACK LATER
-    #    elsif ( @tags = grep /^viewed_region_/,
-    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    #    {
-    #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
-    #        $self->{'drag_window_key'} = $1;
-    #        $self->{'drag_zone_key'}   = $2;
-    #    }
-    #
-    if ( $self->{'drag_zone_key'} ) {
-        $self->app_controller()
-            ->new_selected_zone( zone_key => $self->{'drag_zone_key'}, );
-    }
-
-}    # end start_drag
-
-# ----------------------------------------------------
-sub xstart_drag_type_2 {
-
-    #print STDERR "AI_NEEDS_MODDED 49\n";
-
-=pod
-
-=head2 start_drag_type_2
-
-Handle starting drag
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-
-    # Remove previous highlighting
-    $self->destroy_ghosts(
-        zinc       => $zinc,
-        window_key => $self->{'drag_window_key'},
-    );
-    $self->{'drag_window_key'}
-        = $self->get_window_key_from_zinc( zinc => $zinc, );
-
-    $self->{'drag_last_x'} = $x;
-    $self->{'drag_last_y'} = $y;
-    $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
-    if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
-        $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
-    }
-    return unless ( $self->{'drag_ori_id'} );
-    my @tags;
-    my $ghost_color = 'red';
-    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
-        $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
-        $self->{'drag_zone_key'} = $2;
-        $self->{'drag_map_key'}  = $3;
-        $self->{'drag_obj'}      = 'map';
-
-        my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
-
-        $self->create_ghost(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
-        );
-        $self->create_ghost_location_on_map(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
-        );
-
-        $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
-        $self->{'drag_mouse_to_edge_x'}
-            = $x - $self->{'ghost_bounds'}{ $self->{'drag_window_key'} }[0];
-
-    }
-    elsif ( @tags = grep /^background_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
-        $tags[0] =~ /^background_(\S+)_(\S+)/;
-        $self->{'drag_window_key'} = $1;
-        $self->{'drag_zone_key'}   = $2;
-        $self->{'drag_obj'}        = 'background';
-        $self->app_controller()->hide_corrs(
-            window_key => $self->{'drag_window_key'},
-            zone_key   => $self->{'drag_zone_key'},
-        );
-    }
-
-    # BF ADD THIS BACK LATER
-    #    elsif ( @tags = grep /^viewed_region_/,
-    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    #    {
-    #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
-    #        $self->{'drag_window_key'} = $1;
-    #        $self->{'drag_zone_key'}   = $2;
-    #        $self->{'drag_obj'}        = 'viewed_region';
-    #        $self->app_controller()->hide_corrs(
-    #            window_key => $self->{'drag_window_key'},
-    #            zone_key   => $self->{'drag_zone_key'},
-    #        );
-    #    }
-    #
-    if ( $self->{'drag_zone_key'} ) {
-        $self->app_controller()
-            ->new_selected_zone( zone_key => $self->{'drag_zone_key'}, );
-    }
-
-}    # end start_drag
-
-# ----------------------------------------------------
-sub xdrag_type_1 {
-
-    #print STDERR "AI_NEEDS_MODDED 50\n";
-
-=pod
-
-=head2 drag_type_1
-
-Handle the drag event
-
-Stubbed out, not currently used.
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-    return unless ( $self->{'drag_ori_id'} );
-    my $dx = $x - $self->{'drag_last_x'};
-    my $dy = $y - $self->{'drag_last_y'};
-
-    #    my $new_zone_key = $self->get_zone_key_from_drawn_id(
-    #        window_key =>$window_key,
-    #        drawn_id =>$zinc->find( 'closest', $x,$y ),
-    #        zinc => $zinc,
-    #);
-    if ( $self->{'drag_obj'} ) {
-    }
-
-    $self->{drag_last_x} = $x;
-    $self->{drag_last_y} = $y;
-
-}
-
-# ----------------------------------------------------
-sub xdrag_type_2 {
-
-    #print STDERR "AI_NEEDS_MODDED 51\n";
-
-=pod
-
-=head2 drag_type_2
-
-Handle the drag event
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-    return unless ( $self->{'drag_ori_id'} );
-    my $dx = $x - $self->{'drag_last_x'};
-    my $dy = $y - $self->{'drag_last_y'};
-
-    if ( $self->{'drag_obj'} ) {
-        if ( $self->{'drag_obj'} eq 'map' ) {
-
-            $self->{'ghost_map_moved'}{ $self->{'drag_window_key'} } = 1;
-
-            # BF ADD THIS FEATURE BACK AT SOME POINT
-            $self->drag_ghost(
-                zinc => $zinc,
-                x    => $x,
-                y    => $y,
-                dx   => $dx,
-                dy   => $dy,
-            );
-        }
-        elsif ( $self->{'drag_obj'} eq 'background' ) {
-            $self->app_controller()->scroll_zone(
-                window_key   => $self->{'drag_window_key'},
-                zone_key     => $self->{'drag_zone_key'},
-                scroll_value => $dx,
-            );
-        }
-        elsif ( $self->{'drag_obj'} eq 'viewed_region' ) {
-
-            # BF ADD THIS FEATURE BACK AT SOME POINT
-            return;
-            $self->app_controller()->overview_scroll_zone(
-                window_key   => $self->{'drag_window_key'},
-                zone_key     => $self->{'drag_zone_key'},
-                scroll_value => $dx * 1,
-            );
-        }
-    }
-
-    $self->{drag_last_x} = $x;
-    $self->{drag_last_y} = $y;
-
-}
-
-# ----------------------------------------------------
-sub xstop_drag_type_1 {
-
-=pod
-
-=head2 stop_drag_type_1
-
-Handle the stopping drag event
-
-Stubbed out, Not currently used.
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-
-    return unless ( $self->{'drag_ori_id'} );
-
-    # Move original object
-    if ( $self->{'drag_obj'} ) {
-        $self->app_controller()->app_display_data()->end_drag_ghost();
-    }
-
-    foreach (
-        qw{
-        drag_ori_id
-        drag_obj    drag_window_key drag_zone_key
-        }
-        )
-    {
-        $self->{$_} = '';
-    }
-
-}    # end start_drag
-
-# ----------------------------------------------------
-sub xstop_drag_type_2 {
-
-    #print STDERR "AI_NEEDS_MODDED 53\n";
-
-=pod
-
-=head2 stop_drag_type_2
-
-Handle the stopping drag event
-
-=cut
-
-    my $self = shift;
-    my ( $zinc, $x, $y, ) = @_;
-
-    return unless ( $self->{'drag_ori_id'} );
-
-    # Move original object
-    if ( $self->{'drag_obj'} ) {
-        if ( $self->{'drag_obj'} eq 'map' ) {
-            my $map_key = $self->{'drag_map_key'};
-
-            $self->popup_map_menu(
-                zinc  => $zinc,
-                moved =>
-                    $self->{'ghost_map_moved'}{ $self->{'drag_window_key'} },
-                drawn_id => ( $self->{'drag_ori_id'} ),
-            );
-        }
-        elsif ($self->{'drag_obj'} eq 'background'
-            or $self->{'drag_obj'} eq 'viewed_region' )
-        {
-            $self->app_controller()->unhide_corrs(
-                window_key => $self->{'drag_window_key'},
-                zone_key   => $self->{'drag_zone_key'},
-            );
-        }
-    }
-
-    foreach (
-        qw{
-        drag_ori_id
-        drag_obj    drag_window_key drag_zone_key
-        }
-        )
-    {
-        $self->{$_} = '';
-    }
-
-}    # end start_drag
-
-# ----------------------------------------------------
-sub start_drag_type_1 {
-
-    #print STDERR "AI_NEEDS_MODDED 48\n";
-
-=pod
-
-=head2 start_drag_type_1
-
-Handle starting drag
-
+Handle down click of the left mouse button
 
 =cut
 
@@ -3332,7 +2973,6 @@ Handle starting drag
     }
 
     my @tags;
-    my $ghost_color = 'red';
     if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
@@ -3463,31 +3103,23 @@ Handle starting drag
 }
 
 # ----------------------------------------------------
-sub start_drag_type_2 {
-
-    #print STDERR "AI_NEEDS_MODDED 49\n";
+sub start_drag_right_mouse {
 
 =pod
 
-=head2 start_drag_type_2
+=head2 start_drag_right_mouse
 
-Handle starting drag
+Handle down click of the right mouse button
 
 =cut
 
     my $self = shift;
     my ( $zinc, $x, $y, $control, ) = @_;
 
-    return;
-
-    # Remove previous highlighting
-    $self->destroy_ghosts(
-        zinc       => $zinc,
-        window_key => $self->{'drag_window_key'},
-    );
-    $self->{'drag_window_key'}
+    my $window_key = $self->{'drag_window_key'}
         = $self->get_window_key_from_zinc( zinc => $zinc, );
 
+    $self->{'draggable'}   = 0;
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
     $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
@@ -3495,39 +3127,86 @@ Handle starting drag
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
     }
     return unless ( $self->{'drag_ori_id'} );
+
+    # If this object is a highlight, modify so the code uses the original id
+    if ( $self->{'highlight_id_to_ori_id'}{$window_key}
+        { $self->{'drag_ori_id'} } )
+    {
+        $self->{'drag_ori_id'}
+            = $self->{'highlight_id_to_ori_id'}{$window_key}
+            { $self->{'drag_ori_id'} };
+    }
+
     my @tags;
-    my $ghost_color = 'red';
     if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
         $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         $self->{'drag_map_key'}  = $3;
         $self->{'drag_obj'}      = 'map';
 
-        my $map_key = $self->drawn_id_to_map_key( $self->{'drag_ori_id'} );
+        my $map_key = $self->{'drag_map_key'};
 
-        $self->create_ghost(
-            zinc       => $zinc,
+        my $object_selected_type
+            = $self->object_selected_type( window_key => $window_key );
+
+# User is trying to combine features and maps.  We can't have that.  If control is not pressed, wipe the selections and keep going.
+        if (    $object_selected_type
+            and $object_selected_type ne 'map' )
+        {
+            if ($control) {
+                return;
+            }
+            else {
+                $self->reset_object_selections(
+                    zinc       => $zinc,
+                    window_key => $window_key,
+                );
+            }
+        }
+
+        my $object_selected = $self->object_selected(
+            window_key => $window_key,
             map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
-        );
-        $self->create_ghost_location_on_map(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
         );
 
-        $self->fill_map_info_box( drawn_id => $self->{'drag_ori_id'}, );
-        $self->{'drag_mouse_to_edge_x'}
-            = $x - $self->{'ghost_bounds'}{ $self->{'drag_window_key'} }[0];
+        # Clicking on a new map w/out control
+        # Reset the selections
+        if ( !$control and !$object_selected ) {
+            $self->reset_object_selections(
+                zinc       => $zinc,
+                window_key => $window_key,
+            );
+        }
 
+        # Add to the object_selection list if it isn't already selected
+        if ( !$object_selected ) {
+            $self->add_object_selection(
+                zinc       => $zinc,
+                zone_key   => $self->{'drag_zone_key'},
+                map_key    => $map_key,
+                window_key => $window_key,
+            );
+        }
+
+        # Only allow dragging the map if a single map is selected
+        if ( $self->number_of_object_selections( $window_key, ) == 1 ) {
+            $self->{'draggable'} = 1;
+        }
+
+        $self->fill_info_box( window_key => $window_key, );
+
+        my $highlight_bounds = $self->highlight_bounds(
+            window_key => $window_key,
+            object_key => $map_key,
+        );
+        $self->{'drag_mouse_to_edge_x'} = $x - $highlight_bounds->[0];
     }
     elsif ( @tags = grep /^background_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
-        $self->{'drag_window_key'} = $1;
-        $self->{'drag_zone_key'}   = $2;
-        $self->{'drag_obj'}        = 'background';
+        $self->{'drag_zone_key'} = $2;
+        $self->{'drag_obj'}      = 'background';
         $self->app_controller()->hide_corrs(
             window_key => $self->{'drag_window_key'},
             zone_key   => $self->{'drag_zone_key'},
@@ -3556,21 +3235,19 @@ Handle starting drag
 }
 
 # ----------------------------------------------------
-sub drag_type_1 {
+sub drag_left_mouse {
 
     #print STDERR "AI_NEEDS_MODDED 50\n";
 
 =pod
 
-=head2 drag_type_1
+=head2 drag_left_mouse
 
 Handle the drag event
 
 Stubbed out, not currently used.
 
 =cut
-
-    return;
 
     my $self = shift;
     my ( $zinc, $x, $y, ) = @_;
@@ -3592,19 +3269,18 @@ Stubbed out, not currently used.
 }
 
 # ----------------------------------------------------
-sub drag_type_2 {
+sub drag_right_mouse {
 
     #print STDERR "AI_NEEDS_MODDED 51\n";
 
 =pod
 
-=head2 drag_type_2
+=head2 drag_right_mouse
 
 Handle the drag event
 
 =cut
 
-    return;
     my $self = shift;
     my ( $zinc, $x, $y, ) = @_;
     return unless ( $self->{'drag_ori_id'} );
@@ -3613,11 +3289,13 @@ Handle the drag event
 
     if ( $self->{'drag_obj'} ) {
         if ( $self->{'drag_obj'} eq 'map' ) {
+            unless ( $self->{'draggable'} ) {
+                return;
+            }
 
-            $self->{'ghost_map_moved'}{ $self->{'drag_window_key'} } = 1;
+            $self->{'highlight_map_moved'}{ $self->{'drag_window_key'} } = 1;
 
-            # BF ADD THIS FEATURE BACK AT SOME POINT
-            $self->drag_ghost(
+            $self->drag_highlight(
                 zinc => $zinc,
                 x    => $x,
                 y    => $y,
@@ -3650,11 +3328,11 @@ Handle the drag event
 }
 
 # ----------------------------------------------------
-sub stop_drag_type_1 {
+sub stop_drag_left_mouse {
 
 =pod
 
-=head2 stop_drag_type_1
+=head2 stop_drag_left_mouse
 
 Handle the stopping drag event
 
@@ -3685,19 +3363,18 @@ Stubbed out, Not currently used.
 }
 
 # ----------------------------------------------------
-sub stop_drag_type_2 {
+sub stop_drag_right_mouse {
 
     #print STDERR "AI_NEEDS_MODDED 53\n";
 
 =pod
 
-=head2 stop_drag_type_2
+=head2 stop_drag_right_mouse
 
 Handle the stopping drag event
 
 =cut
 
-    return;
     my $self = shift;
     my ( $zinc, $x, $y, ) = @_;
 
@@ -3710,9 +3387,9 @@ Handle the stopping drag event
 
             $self->popup_map_menu(
                 zinc  => $zinc,
-                moved =>
-                    $self->{'ghost_map_moved'}{ $self->{'drag_window_key'} },
-                drawn_id => ( $self->{'drag_ori_id'} ),
+                moved => $self->{'highlight_map_moved'}
+                    { $self->{'drag_window_key'} },
+                map_key => $map_key,
             );
         }
         elsif ($self->{'drag_obj'} eq 'background'
@@ -3940,6 +3617,7 @@ Remove selected object from the selection list
 
     # If there are no more selections, return things to normal.
     unless ( keys %{ $self->{'object_selections'}{$window_key} || {} } ) {
+        $self->{'highlight_map_moved'}{$window_key}  = undef;
         $self->{'object_selected_type'}{$window_key} = undef;
     }
 
@@ -4080,7 +3758,7 @@ sub highlight_object_selected {
 
 =head2 highlight_object_selected
 
-Draw a hightligt over the object
+Draw a highlight over the object
 
 =cut
 
@@ -4140,6 +3818,80 @@ Draw a hightligt over the object
     }
 
     return ( $highlight_bounds, \@highlight_ids );
+}
+
+# ----------------------------------------------------
+sub highlight_loc {
+
+=pod
+
+=head2 highlight_loc
+
+Access the highlight location object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $object_key = $args{'object_key'};
+    my $window_key = $args{'window_key'};
+
+    return $self->{'object_selections'}{$window_key}{$object_key}
+        {'highlight_loc'};
+}
+
+# ----------------------------------------------------
+sub highlight_bounds {
+
+=pod
+
+=head2 highlight_bounds
+
+Access the highlight bounds.
+
+Also, move the bounds if given a dx or dy
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $object_key = $args{'object_key'};
+    my $window_key = $args{'window_key'};
+    my $dx         = $args{'dx'};
+    my $dy         = $args{'dy'};
+
+    if ($dx) {
+        $self->{'object_selections'}{$window_key}{$object_key}
+            {'highlight_bounds'}[0] += $dx;
+        $self->{'object_selections'}{$window_key}{$object_key}
+            {'highlight_bounds'}[2] += $dx;
+    }
+    if ($dy) {
+        $self->{'object_selections'}{$window_key}{$object_key}
+            {'highlight_bounds'}[1] += $dy;
+        $self->{'object_selections'}{$window_key}{$object_key}
+            {'highlight_bounds'}[3] += $dy;
+    }
+
+    return $self->{'object_selections'}{$window_key}{$object_key}
+        {'highlight_bounds'};
+}
+
+# ----------------------------------------------------
+sub highlight_ids {
+
+=pod
+
+=head2 highlight_ids
+
+Access the highlight bounds.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $object_key = $args{'object_key'};
+    my $window_key = $args{'window_key'};
+
+    return $self->{'object_selections'}{$window_key}{$object_key}
+        {'highlight_ids'};
 }
 
 # ----------------------------------------------------
@@ -4220,6 +3972,96 @@ Handle the ghost map dragging
     }
 
     return;
+}
+
+# ----------------------------------------------------
+sub drag_highlight {
+
+=pod
+
+=head2 drag_highlight
+
+Handle the highlight map dragging
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc = $args{'zinc'};
+    my $x    = $args{'x'};
+    my $dx   = $args{'dx'};
+    my $y    = $args{'y'};
+    my $dy   = $args{'dy'};
+    return unless ( $dx or $dy );
+
+    my $window_key       = $self->{'drag_window_key'};
+    my $map_key          = $self->{'drag_map_key'};
+    my $highlight_bounds = $self->highlight_bounds(
+        window_key => $window_key,
+        object_key => $map_key,
+    );
+    my %highlight_data
+        = $self->app_controller()->app_display_data()->move_ghosts(
+        map_key         => $map_key,
+        mouse_x         => $x,
+        mouse_y         => $y,
+        mouse_dx        => $dx,
+        mouse_dy        => $dy,
+        ghost_bounds    => $highlight_bounds,
+        mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
+        );
+    return unless (%highlight_data);
+
+    my $new_dx = $highlight_data{'ghost_dx'};
+    my $new_dy = $highlight_data{'ghost_dy'};
+    return unless ( $new_dx or $new_dy );
+
+    # Move the highlight
+    foreach my $highlight_id (
+        @{  $self->highlight_ids(
+                window_key => $window_key,
+                object_key => $map_key,
+                )
+                || []
+        }
+        )
+    {
+        $zinc->translate( $highlight_id, $new_dx, $new_dy, );
+    }
+
+    #Move the bounds
+    $self->highlight_bounds(
+        window_key => $window_key,
+        object_key => $map_key,
+        dx         => $new_dx,
+    );
+
+    # Move the highlight loc
+    my $highlight_loc = $self->highlight_loc(
+        window_key => $window_key,
+        object_key => $map_key,
+    );
+    unless ( $highlight_data{'ghost_loc_parent_zone_key'}
+        == $highlight_loc->{'parent_zone_key'} )
+    {
+        $highlight_loc->{'parent_zone_key'}
+            = $highlight_data{'ghost_loc_parent_zone_key'};
+
+        my $parent_group_id = $self->get_zone_group_id(
+            window_key       => $window_key,
+            zone_key         => $highlight_data{'ghost_loc_parent_zone_key'},
+            zinc             => $zinc,
+            app_display_data => $self->app_controller()->app_display_data(),
+        );
+        $zinc->chggroup( $highlight_loc->{'highlight_loc_id'},
+            $parent_group_id, 1, );
+    }
+    $zinc->coords(
+        $highlight_loc->{'highlight_loc_id'},
+        $highlight_data{'ghost_loc_location_coords'},
+    );
+    $zinc->itemconfigure( $highlight_loc->{'highlight_loc_id'},
+        -visible => $highlight_data{'ghost_loc_visible'}, );
+
 }
 
 # ----------------------------------------------------
