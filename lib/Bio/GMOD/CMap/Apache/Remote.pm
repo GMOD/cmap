@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.6 2007-03-21 20:20:51 mwz444 Exp $
+# $Id: Remote.pm,v 1.7 2007-04-04 14:18:10 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(freeze thaw);
@@ -40,7 +40,20 @@ sub handler {
 
     print $apr->header( -type => 'text/plain', );
     if ( $action eq 'get_config' ) {
-        print freeze( $self->config() );
+
+        # Remove sensitive data
+        my $config = clone $self->config();
+        foreach
+            my $data_source_name ( keys %{ $config->{'config_data'} || {} } )
+        {
+            $config->{'config_data'}{$data_source_name}{'database'}
+                {'datasource'} = undef;
+            $config->{'config_data'}{$data_source_name}{'database'}{'user'}
+                = undef;
+            $config->{'config_data'}{$data_source_name}{'database'}
+                {'password'} = undef;
+        }
+        print freeze($config);
     }
     elsif ( $action eq 'get_maps' ) {
         my $map_id   = $apr->param('map_id');
