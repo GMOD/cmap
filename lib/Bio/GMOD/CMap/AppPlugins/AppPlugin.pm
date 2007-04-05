@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.1 2007-03-14 15:09:30 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.2 2007-04-05 15:20:20 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME
@@ -37,6 +37,8 @@ CMap currently recognizes 1 distinct types of plugins:
 =over 4
 
 =item 1) modify_main_menu
+
+=item 2) modify_right_click_menu
 
 
 =back
@@ -79,7 +81,7 @@ button.
 =item $type = $self->type()
 
 This tells gbrowse what the plugin's type is.  It must return one of
-the scripts "modify_main_menu," as described in the
+the types "modify_main_menu" or "modify_right_click_menu"  as described in the
 introduction to this documentation.  If the method is not overridden,
 type() will return "generic."
 
@@ -108,13 +110,23 @@ should not be overwritten.
 
 =head2 METHODS TO BE IMPLEMENTED IN Main Menu Adders 
 
-All plugins that modify_main_menu should override one or more of
-the methods described in this section.
+All plugins that modify_main_menu should override one or more of the methods
+described in this section.
 
 =over 4
 
 =item $self->modify_main_menu()
 
+=back
+
+=head2 METHODS TO BE IMPLEMENTED IN Right Click Menu Adders 
+
+All plugins that modify_right_click_menu should override one or more of the
+methods described in this section.
+
+=over 4
+
+=item $self->modify_right_click_menu()
 
 =back
 
@@ -214,6 +226,13 @@ sub type {
 sub modify_main_menu {
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
+    return;
+}
+
+sub modify_right_click_menu {
+    my ( $self, %args ) = @_;
+    my $window_key  = $args{'window_key'};
+    my $menu_window = $args{'menu_window'};
     return;
 }
 

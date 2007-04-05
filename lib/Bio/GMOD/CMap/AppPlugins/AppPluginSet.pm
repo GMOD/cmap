@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.2 2007-04-05 02:30:42 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.3 2007-04-05 15:20:20 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -145,9 +145,20 @@ sub modify_main_menu {
     for my $p ( $self->plugins ) {
         next unless $p->type eq 'modify_main_menu';
         $p->modify_main_menu( window_key => $window_key, );
+    }
+}
 
-        # Do something
-        #  my $features = $p->annotate($segment,$coordinate_mapper) or next;
+sub modify_right_click_menu {
+    my ( $self, %args ) = @_;
+    my $window_key  = $args{'window_key'};
+    my $menu_window = $args{'menu_window'};
+
+    for my $p ( $self->plugins ) {
+        next unless $p->type eq 'modify_right_click_menu';
+        $p->modify_right_click_menu(
+            window_key  => $window_key,
+            menu_window => $menu_window,
+        );
     }
 }
 

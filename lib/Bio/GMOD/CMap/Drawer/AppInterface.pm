@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.40 2007-04-03 06:32:08 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.41 2007-04-05 15:20:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -784,9 +784,9 @@ Populates the menu_bar object.
     $self->{'menu_bar_order'}{$window_key} = [ 'file', 'edit', ];
 
     $self->file_menu_items( window_key => $window_key, );
-    $self->edit_menu_items( window_key => $window_key, ),
+    $self->edit_menu_items( window_key => $window_key, );
 
-        $self->app_controller()->plugin_set()
+    $self->app_controller()->plugin_set()
         ->modify_main_menu( window_key => $window_key, );
 
     my $menu_bar = $self->menu_bar( window_key => $window_key, );
@@ -2127,6 +2127,11 @@ sub popup_map_menu {
         )->pack( -side => 'top', -anchor => 'nw' );
 
     }
+
+    $self->app_controller()->plugin_set()->modify_right_click_menu(
+        window_key  => $window_key,
+        menu_window => $map_menu_window,
+    );
 
     my $cancel_button = $map_menu_window->Button(
         -text    => 'Cancel',
@@ -3564,6 +3569,23 @@ Test if a map or feautre is selected
 }
 
 # ----------------------------------------------------
+sub object_selection_keys {
+
+=pod
+
+=head2 object_selection_keys
+
+Returns a list of the object selection keys
+
+=cut
+
+    my $self       = shift;
+    my $window_key = shift;
+
+    return keys %{ $self->{'object_selections'}{$window_key} || {} };
+}
+
+# ----------------------------------------------------
 sub number_of_object_selections {
 
 =pod
@@ -3577,7 +3599,8 @@ Test if a map or feautre is selected
     my $self       = shift;
     my $window_key = shift;
 
-    return scalar( keys %{ $self->{'object_selections'}{$window_key} } );
+    return
+        scalar( keys %{ $self->{'object_selections'}{$window_key} || {} } );
 }
 
 # ----------------------------------------------------
