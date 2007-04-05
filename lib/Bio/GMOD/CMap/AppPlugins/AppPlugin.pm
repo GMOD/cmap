@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.2 2007-04-05 15:20:20 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.3 2007-04-05 20:29:35 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME

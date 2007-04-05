@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.3 2007-04-05 15:20:20 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.4 2007-04-05 20:29:35 mwz444 Exp $
 
 use Data::Dumper;
 

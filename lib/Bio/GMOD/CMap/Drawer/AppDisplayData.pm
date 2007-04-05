@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.38 2007-04-02 03:54:53 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.39 2007-04-05 20:29:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -3514,20 +3514,17 @@ Revisit
         }
     }
 
-=head3 Slot Layout
+=head3 Zone Layout
 
-Revisit
-
-    $self->{'slot_layout'} = {
-        $slot_key => {
-            bounds      => [ 0, 0, 0, 0 ],
-            separator   => [],
-            background  => [],
-            buttons     => [],
-            changed     => 1,
-            sub_changed => 1,
-            maps_min_x  => $maps_min_x,
-            maps_max_x  => $maps_max_x,
+    $self->{'zone_layout'} = {
+        $zone_key => {
+            bounds         => [],
+            separator      => [],
+            background     => [],
+            buttons        => [],
+            layed_out_once => 0,
+            changed        => 0,
+            sub_changed    => 0,
         }
     }
 

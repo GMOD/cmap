@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.33 2007-04-02 03:54:54 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.34 2007-04-05 20:29:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -632,6 +632,7 @@ Lays out head maps in a zone
                 app_display_data => $app_display_data,
                 map_key          => $map_key,
                 window_key       => $window_key,
+                cascade          => 1,
             );
             next;
         }
@@ -902,6 +903,7 @@ Lays out sub maps in a slot.
                     app_display_data => $app_display_data,
                     map_key          => $sub_map_key,
                     window_key       => $window_key,
+                    cascade          => 1,
                 );
                 next;
             }
@@ -1401,6 +1403,51 @@ Lays out feautures
 }
 
 # ----------------------------------------------------
+sub destroy_zone {
+
+=pod
+
+=head2 destroy_zone
+
+Destroys the drawing items for a zone because it isn't on the screen anymore .
+
+=cut
+
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $zone_key         = $args{'zone_key'};
+    my $window_key       = $args{'window_key'};
+
+    my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
+
+    # Remove the maps
+    foreach
+        my $map_key ( @{ $app_display_data->{'map_order'}{$zone_key} || [] } )
+    {
+        destroy_map_for_relayout(
+            app_display_data => $app_display_data,
+            map_key          => $map_key,
+            window_key       => $window_key,
+            cascade          => 1,
+        );
+    }
+
+    # Remove the map
+    $app_display_data->destroy_items(
+        items      => $zone_layout->{'background'},
+        window_key => $window_key,
+    );
+    $zone_layout->{'background'} = [];
+    $app_display_data->destroy_items(
+        items      => $zone_layout->{'separator'},
+        window_key => $window_key,
+    );
+    $zone_layout->{'separator'} = [];
+
+    return;
+}
+
+# ----------------------------------------------------
 sub destroy_map_for_relayout {
 
 =pod
@@ -1417,6 +1464,7 @@ Also, destroys the features.
     my $app_display_data = $args{'app_display_data'};
     my $map_key          = $args{'map_key'};
     my $window_key       = $args{'window_key'};
+    my $cascade          = $args{'cascade'};
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
@@ -1437,6 +1485,26 @@ Also, destroys the features.
         window_key => $window_key,
     );
     $map_layout->{'items'} = [];
+
+    if ($cascade) {
+        my $zone_key = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+
+        # Crawl down the tree
+        foreach my $child_zone_key (
+            @{ $app_display_data->{'scaffold'}{$zone_key}{'children'}
+                    || [] } )
+        {
+            next
+                unless (
+                $map_key == $app_display_data->{'scaffold'}{$child_zone_key}
+                {'parent_map_key'} );
+            destroy_zone(
+                app_display_data => $app_display_data,
+                zone_key         => $child_zone_key,
+                window_key       => $window_key,
+            );
+        }
+    }
 
     return;
 }
