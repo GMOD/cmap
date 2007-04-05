@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.28 2007-03-21 20:20:50 mwz444 Exp $
+# $Id: AppController.pm,v 1.29 2007-04-05 02:30:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -65,11 +65,12 @@ Initializes the object.
 
     # The app_data_module will have the remote config if it is needed
     $self->config( $self->app_data_module()->config() );
-    $self->data_source( $self->{'data_source'} );
-    my $window_key = $self->start_application();
 
     # Initiate AppPluginSet
-    $self->plugin_set();
+    $self->plugin_set( $config->{'plugins'}, );
+
+    $self->data_source( $self->{'data_source'} );
+    my $window_key = $self->start_application();
 
     if ($saved_view_data) {
         $self->app_display_data()->dd_load_save_in_new_window(
@@ -173,7 +174,7 @@ Returns a handle to the data module.
 
     my $self = shift;
 
-    $self->{'plugin_set'} = shift if @_;
+    my $plugins = shift if @_;
 
     unless ( $self->{'plugin_set'} ) {
         $self->{'plugin_set'}
@@ -183,6 +184,7 @@ Returns a handle to the data module.
             app_data_module  => $self->app_data_module,
             app_interface    => $self->app_interface,
             app_display_data => $self->app_display_data,
+            plugins          => $plugins,
             );
     }
 

@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.1 2007-03-14 15:09:30 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.2 2007-04-05 02:30:42 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -27,19 +27,25 @@ Initializes the drawing object.
     my ( $self, $config ) = @_;
 
     for my $param (
-        qw[ config data_source app_interface app_data_module app_display_data ]
+        qw[ config      data_source      app_interface
+        app_data_module app_display_data
+        ]
         )
     {
         $self->$param( $config->{$param} )
             or die "Failed to pass $param to AppDisplayData\n";
     }
 
+    my $additional_plugins = $config->{'plugins'};
     $self->{'plugins'} = {};
 
     my @plugins;
-    for my $line ( $self->config_data('editor_plugins') ) {
+    for my $line (
+        $self->config_data('editor_plugins'),
+        @{ $additional_plugins || [] }
+        )
+    {
         push @plugins, split /\s+/, $line;
-
     }
 
 PLUGIN:
