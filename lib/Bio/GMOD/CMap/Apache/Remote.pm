@@ -2,14 +2,14 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.7 2007-04-04 14:18:10 mwz444 Exp $
+# $Id: Remote.pm,v 1.8 2007-04-09 16:39:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 use Data::Dumper;
 use base 'Bio::GMOD::CMap::Apache';
 
@@ -53,7 +53,7 @@ sub handler {
             $config->{'config_data'}{$data_source_name}{'database'}
                 {'password'} = undef;
         }
-        print freeze($config);
+        print nfreeze($config);
     }
     elsif ( $action eq 'get_maps' ) {
         my $map_id   = $apr->param('map_id');
@@ -68,7 +68,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'get_species' ) {
         my $is_relational_map = $apr->param('is_relational_map');
@@ -81,7 +81,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'get_map_sets' ) {
         my $is_relational_map = $apr->param('is_relational_map');
@@ -96,7 +96,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'get_maps_from_map_set' ) {
         my $map_set_id = $apr->param('map_set_id');
@@ -107,7 +107,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'get_features_sub_maps_version' ) {
         my $map_id       = $apr->param('map_id');
@@ -122,7 +122,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'get_feature_correspondence_for_counting' ) {
         my $slot_info = $self->unstringify_slot_info(
@@ -137,7 +137,7 @@ sub handler {
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
-        print freeze($data);
+        print nfreeze($data);
     }
     elsif ( $action eq 'update_features' ) {
 
