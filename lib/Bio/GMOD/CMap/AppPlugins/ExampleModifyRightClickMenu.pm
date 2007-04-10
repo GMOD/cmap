@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.2 2007-04-05 20:29:35 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.3 2007-04-10 14:54:56 mwz444 Exp $
 
 =head1 NAME
 

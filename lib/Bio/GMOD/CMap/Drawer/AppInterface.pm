@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.42 2007-04-05 20:29:35 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.43 2007-04-10 14:54:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -873,6 +873,7 @@ Draws and re-draws on the zinc
     );
 
     $self->draw_corrs(
+        window_key       => $window_key,
         zinc             => $zinc,
         app_display_data => $app_display_data,
     );
@@ -1216,13 +1217,17 @@ corr can be different.
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc = $args{'zinc'}
-        || $self->zinc( window_key => $args{'window_key'}, );
+    my $window_key = $args{'window_key'};
+    my $zinc       = $args{'zinc'}
+        || $self->zinc( window_key => $window_key, );
     my $app_display_data = $args{'app_display_data'};
 
-    # The group id will be 1 because we are drawing this right on the zinc
-    # surface.
-    my $group_id = 1;
+    # The group id will be the top layer so that it can span zones
+    my $group_id = $self->get_zone_group_id(
+        window_key => $window_key,
+        zone_key   => TOP_LAYER_ZONE_KEY,
+        zinc       => $zinc,
+    );
 
     my $corr_layout = $app_display_data->{'corr_layout'};
 
@@ -1260,7 +1265,9 @@ MAP1:
                 my $options = $item->[4];
 
                 $coords[0] += $x_offset1;
-                $coords[2] += $x_offset2;
+                $coords[2] += $x_offset1;
+                $coords[4] += $x_offset2;
+                $coords[6] += $x_offset2;
 
                 if ( defined($item_id) ) {
                     $zinc->coords( $item_id, \@coords );
@@ -2960,6 +2967,12 @@ Handle down click of the left mouse button
     my $window_key = $self->{'drag_window_key'}
         = $self->get_window_key_from_zinc( zinc => $zinc, );
 
+    unless ($control) {
+        $self->reset_object_selections(
+            zinc       => $zinc,
+            window_key => $window_key,
+        );
+    }
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
     $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
@@ -3000,32 +3013,25 @@ Handle down click of the left mouse button
             map_key    => $map_key,
         );
 
-        # Remove previous highlighting
-        if ($control) {
-            if ($object_selected) {
-                $self->remove_object_selection(
-                    zinc       => $zinc,
-                    object_key => $map_key,
-                    window_key => $window_key,
-                );
-                $self->fill_info_box( window_key => $window_key, );
-                return;
-            }
+        # If it was previously highlighted, remove it
+        if ($object_selected) {
+            $self->remove_object_selection(
+                zinc       => $zinc,
+                object_key => $map_key,
+                window_key => $window_key,
+            );
+            $self->fill_info_box( window_key => $window_key, );
         }
         else {
-            $self->reset_object_selections(
+
+            # Add to the object_selection list
+            $self->add_object_selection(
                 zinc       => $zinc,
+                zone_key   => $self->{'drag_zone_key'},
+                map_key    => $map_key,
                 window_key => $window_key,
             );
         }
-
-        # Add to the object_selection list
-        $self->add_object_selection(
-            zinc       => $zinc,
-            zone_key   => $self->{'drag_zone_key'},
-            map_key    => $map_key,
-            window_key => $window_key,
-        );
 
         $self->fill_info_box( window_key => $window_key, );
     }
@@ -3056,32 +3062,25 @@ Handle down click of the left mouse button
             feature_acc => $feature_acc,
         );
 
-        # Remove previous highlighting
-        if ($control) {
-            if ($object_selected) {
-                $self->remove_object_selection(
-                    zinc       => $zinc,
-                    object_key => $feature_acc,
-                    window_key => $window_key,
-                );
-                $self->fill_info_box( window_key => $window_key, );
-                return;
-            }
-        }
-        else {
-            $self->reset_object_selections(
+        # If it was previously highlighted, remove it
+        if ($object_selected) {
+            $self->remove_object_selection(
                 zinc       => $zinc,
+                object_key => $feature_acc,
                 window_key => $window_key,
             );
+            $self->fill_info_box( window_key => $window_key, );
         }
+        else {
 
-        # Add to the object_selection list
-        $self->add_object_selection(
-            zinc        => $zinc,
-            zone_key    => $self->{'drag_zone_key'},
-            feature_acc => $feature_acc,
-            window_key  => $window_key,
-        );
+            # Add to the object_selection list
+            $self->add_object_selection(
+                zinc        => $zinc,
+                zone_key    => $self->{'drag_zone_key'},
+                feature_acc => $feature_acc,
+                window_key  => $window_key,
+            );
+        }
 
         $self->fill_info_box( window_key => $window_key, );
     }
@@ -3209,6 +3208,12 @@ Handle down click of the right mouse button
     elsif ( @tags = grep /^background_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
+        unless ($control) {
+            $self->reset_object_selections(
+                zinc       => $zinc,
+                window_key => $window_key,
+            );
+        }
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         $self->{'drag_obj'}      = 'background';
@@ -3216,6 +3221,14 @@ Handle down click of the right mouse button
             window_key => $self->{'drag_window_key'},
             zone_key   => $self->{'drag_zone_key'},
         );
+    }
+    else {
+        unless ($control) {
+            $self->reset_object_selections(
+                zinc       => $zinc,
+                window_key => $window_key,
+            );
+        }
     }
 
     # BF ADD THIS BACK LATER

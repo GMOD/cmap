@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.29 2007-04-05 02:30:42 mwz444 Exp $
+# $Id: AppController.pm,v 1.30 2007-04-10 14:54:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -54,7 +54,7 @@ Initializes the object.
         $saved_view_data
             = $self->open_saved_view( saved_view => $config->{'saved_view'}, )
             or die "Failed to open file: " . $config->{'saved_view'};
-        $self->{'remote_url'} = $saved_view_data->{'remot_url'};
+        $self->{'remote_url'} = $saved_view_data->{'remote_url'};
         $self->data_source( $saved_view_data->{'data_source'}
                 || $config->{'data_source'} );
     }
@@ -768,11 +768,11 @@ Save the view information to a file.
     my $file       = $args{'file'}       or return;
     my $app_display_data = $self->app_display_data();
 
-    unless ( -w $file ) {
-        $self->app_interface->popup_warning(
-            text => "Cannot write to file '$file'.\n", );
-        return;
-    }
+    #unless ( -w $file ) {
+        #$self->app_interface->popup_warning(
+            #text => "Cannot write to file '$file'.\n", );
+        #return;
+    #}
 
     my $fh;
     if ( open $fh, ">" . $file ) {

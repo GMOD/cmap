@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.17 2007-03-21 20:20:51 mwz444 Exp $
+# $Id: AppData.pm,v 1.18 2007-04-10 14:54:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -696,7 +696,7 @@ Calls get_maps either locally or remotely
         }
 
         if ( @{ $map_accs || [] } ) {
-            $url .= ";map_acc=$_" foreach @{$map_accs};
+            $url .= ";map_accs=$_" foreach @{$map_accs};
         }
 
         return $self->request_remote_data( url => $url, thaw => 1, );
