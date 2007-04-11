@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.161 2007-03-23 13:14:30 mwz444 Exp $
+# $Id: Generic.pm,v 1.162 2007-04-11 21:32:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.161 $)[-1];
+$VERSION = (qw$Revision: 1.162 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2068,6 +2068,8 @@ Array of Hashes:
 
   Keys:
     map_set_id
+    map_set_acc
+    species_acc
     map_set_short_name
     species_common_name
 
@@ -2096,6 +2098,7 @@ Not using cache because this query is quicker.
         select distinct ms.map_set_id,
                ms.map_set_short_name,
                s.species_common_name,
+               s.species_acc,
                ms.map_set_acc
         from   cmap_map_set ms,
                cmap_species s,
@@ -9329,6 +9332,230 @@ If you don't want CMap to delete from your database, make this a dummy method.
         push @delete_args, $xref_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " xref_id = ? ";
+    }
+
+    $delete_sql .= $where_sql;
+    $db->do( $delete_sql, {}, (@delete_args) );
+
+    return 1;
+}
+
+=pod
+
+=head1 map_to_feature Methods
+
+=cut 
+
+#-----------------------------------------------
+sub insert_map_to_feature {
+
+=pod
+
+=head2 insert_map_to_feature()
+
+=over 4
+
+=item * Description
+
+Insert the map_to_feature information into the database.
+
+=item * Adaptor Writing Info
+
+The required inputs are only the ones that the database requires.
+
+If you don't want CMap to insert into your database, make this a dummy method.
+
+=item * Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=item - Map ID (map_id) (required unless map_acc is defined)
+
+=item - Map Accession (map_acc)
+
+=item - Feature ID (feature_id) (required unless feature_acc is defined)
+
+=item - Feature Accession (feature_acc)
+
+=back
+
+=item * Output
+
+1
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 0,
+        map_acc       => 0,
+        feature_id    => 0,
+        feature_acc   => 0,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+    my $map_id      = $args{'map_id'};
+    my $feature_id  = $args{'feature_id'};
+    my $map_acc     = $args{'map_acc'};
+    my $feature_acc = $args{'feature_acc'};
+
+    if (   not( defined $map_acc or defined $map_id )
+        or not( defined $feature_acc or defined $feature_id ) )
+    {
+        die "Missing map or feature in insert_map_to_feature";
+    }
+
+    if ( not defined $map_acc ) {
+        $map_acc = $self->internal_id_to_acc_id(
+            cmap_object => $cmap_object,
+            id          => $map_id,
+            object_type => 'map',
+        );
+    }
+    elsif ( not defined $map_id ) {
+        $map_id = $self->acc_id_to_internal_id(
+            cmap_object => $cmap_object,
+            acc_id      => $map_acc,
+            object_type => 'map',
+        );
+    }
+
+    if ( not defined $feature_acc ) {
+        $feature_acc = $self->internal_id_to_acc_id(
+            cmap_object => $cmap_object,
+            id          => $feature_id,
+            object_type => 'feature',
+        );
+    }
+    elsif ( not defined $feature_id ) {
+        $feature_id = $self->acc_id_to_internal_id(
+            cmap_object => $cmap_object,
+            acc_id      => $feature_acc,
+            object_type => 'feature',
+        );
+    }
+
+    unless (defined $map_acc
+        and defined $map_id
+        and defined $feature_acc
+        and defined $feature_id )
+    {
+        die "Missing map or feature in insert_map_to_feature";
+    }
+
+    my @insert_args = ( $map_id, $map_acc, $feature_id, $feature_acc );
+
+    $db->do(
+        qq[
+        insert into cmap_map_to_feature
+        ( map_id, map_acc, feature_id, feature_acc )
+         values ( ?,?,?,? )
+        ],
+        {},
+        (@insert_args)
+    );
+
+    return 1;
+}
+
+#-----------------------------------------------
+sub delete_map_to_feature {
+
+=pod
+
+=head2 delete_map_to_feature()
+
+=over 4
+
+=item * Description
+
+Delete the rows that match all of the identifiers given.  Supplying just a
+feature ID will delete all rows that have that feature ID.
+
+=item * Adaptor Writing Info
+
+If you don't want CMap to delete from your database, make this a dummy method.
+
+=item * Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=item - Map ID (map_id)
+
+=item - Map Accession (map_acc)
+
+=item - Feature ID (feature_id)
+
+=item - Feature Accession (feature_acc)
+
+
+=back
+
+=item * Output
+
+1
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 0,
+        map_acc       => 0,
+        feature_id    => 0,
+        feature_acc   => 0,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+    my $map_id      = $args{'map_id'};
+    my $feature_id  = $args{'feature_id'};
+    my $map_acc     = $args{'map_acc'};
+    my $feature_acc = $args{'feature_acc'};
+    unless ( $map_id or $feature_id or $map_acc or $feature_acc ) {
+        return $self->error('No identifiers given to delete ');
+    }
+    my @delete_args = ();
+    my $delete_sql  = qq[
+        delete from cmap_map_to_feature
+    ];
+    my $where_sql = '';
+
+    if ($map_id) {
+        push @delete_args, $map_id;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " map_id = ? ";
+    }
+    if ($map_acc) {
+        push @delete_args, $map_acc;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " map_acc = ? ";
+    }
+    if ($feature_id) {
+        push @delete_args, $feature_id;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_id = ? ";
+    }
+    if ($feature_acc) {
+        push @delete_args, $feature_acc;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " feature_acc = ? ";
     }
 
     $delete_sql .= $where_sql;
