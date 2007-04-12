@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.43 2007-04-10 14:54:56 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.44 2007-04-12 18:54:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -781,7 +781,7 @@ Populates the menu_bar object.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
 
-    $self->{'menu_bar_order'}{$window_key} = [ 'file', 'edit', ];
+    $self->{'menu_bar_order'}{$window_key} = [ 'File', 'Edit', ];
 
     $self->file_menu_items( window_key => $window_key, );
     $self->edit_menu_items( window_key => $window_key, );
@@ -1745,8 +1745,8 @@ Populates the file menu with menu_items
     my $window_key = $args{'window_key'}
         or die 'no window key for file_menu_items';
     my $new_menu_item_list = $args{'new_menu_item_list'};
-    unless ( $self->{'menu_items'}{$window_key}{'file'} ) {
-        $self->{'menu_items'}{$window_key}{'file'} = [
+    unless ( $self->{'menu_items'}{$window_key}{'File'} ) {
+        $self->{'menu_items'}{$window_key}{'File'} = [
             [   'command',
                 '~New View',
                 -accelerator => 'Ctrl-n',
@@ -1791,10 +1791,10 @@ Populates the file menu with menu_items
 
     # If a new list is specified, overwrite the old list.
     if ($new_menu_item_list) {
-        $self->{'menu_items'}{$window_key}{'file'} = $new_menu_item_list;
+        $self->{'menu_items'}{$window_key}{'File'} = $new_menu_item_list;
     }
 
-    return $self->{'menu_items'}{$window_key}{'file'};
+    return $self->{'menu_items'}{$window_key}{'File'};
 }
 
 # ----------------------------------------------------
@@ -1812,8 +1812,8 @@ Populates the edit menu with menu_items
     my $window_key = $args{'window_key'}
         or die 'no window key for edit_menu_items';
     my $new_menu_item_list = $args{'new_menu_item_list'};
-    unless ( $self->{'menu_items'}{$window_key}{'edit'} ) {
-        $self->{'menu_items'}{$window_key}{'edit'} = [
+    unless ( $self->{'menu_items'}{$window_key}{'Edit'} ) {
+        $self->{'menu_items'}{$window_key}{'Edit'} = [
             [   'command',
                 '~Undo',
                 -accelerator => 'Ctrl-z',
@@ -1837,10 +1837,10 @@ Populates the edit menu with menu_items
 
     # If a new list is specified, overwrite the old list.
     if ($new_menu_item_list) {
-        $self->{'menu_items'}{$window_key}{'edit'} = $new_menu_item_list;
+        $self->{'menu_items'}{$window_key}{'Edit'} = $new_menu_item_list;
     }
 
-    return $self->{'menu_items'}{$window_key}{'edit'};
+    return $self->{'menu_items'}{$window_key}{'Edit'};
 }
 
 # ----------------------------------------------------
