@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.45 2007-04-12 20:07:45 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.46 2007-04-12 21:13:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2087,8 +2087,6 @@ Returns the overview_zinc object.
 # ----------------------------------------------------
 sub popup_map_menu {
 
-    #print STDERR "AI_NEEDS_MODDED 30\n";
-
 =pod
 
 =head2 popup_map_menu
@@ -2103,79 +2101,63 @@ sub popup_map_menu {
     my $controller = $self->app_controller();
 
     my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
-    my $map_menu_window = $self->main_window()->Toplevel( -takefocus => 1 );
+    my $menu_items = [];
     if ($map_key) {
 
         # Moved
         if ($moved) {
 
-            my $move_button = $map_menu_window->Button(
-                -text    => 'Move Map',
+            push @$menu_items, [
+                Button => 'Move Map',
                 -command => sub {
-                    $self->{'moving_map'} = 1;
-                    $map_menu_window->destroy();
-                    $self->{'movng_map'} = 0;
                     $self->move_map_popup(
                         map_key    => $map_key,
                         window_key => $window_key,
                         zinc       => $zinc,
                     );
                 },
-            )->pack( -side => 'top', -anchor => 'nw' );
+            ];
         }
-        my $new_window_button = $map_menu_window->Button(
-            -text    => 'New Window',
+        push @$menu_items, [
+            Button => 'New Window',
             -command => sub {
-                $map_menu_window->destroy();
                 $controller->open_new_window( selected_map_keys => [$map_key],
                 );
 
             },
-        )->pack( -side => 'top', -anchor => 'nw' );
+        ];
 
     }
 
     $self->app_controller()->plugin_set()->modify_right_click_menu(
-        window_key  => $window_key,
-        menu_window => $map_menu_window,
+        window_key => $window_key,
+        menu_items => $menu_items,
     );
 
-    my $cancel_button = $map_menu_window->Button(
-        -text    => 'Cancel',
+    push @$menu_items, [
+        Button => 'Cancel',
         -command => sub {
-            $map_menu_window->destroy();
+            return;
         },
-    )->pack( -side => 'bottom', -anchor => 'sw' );
+    ];
 
-    $map_menu_window->bind(
+    my $menu = $self->main_window()->Menu(
+        -tearoff   => 0,
+        -menuitems => $menu_items,
+    );
+
+    $menu->bind(
         '<FocusOut>',
         sub {
-            $map_menu_window->destroy();
-        },
-    );
-    $map_menu_window->bind(
-        '<Destroy>',
-        sub {
-            $self->destroy_ghosts(
+            $self->reset_object_selections(
                 zinc       => $zinc,
                 window_key => $window_key,
                 )
-                unless ( $self->{'moving_map'} );
+                if ($moved);
+            $menu->destroy();
         },
     );
-    $map_menu_window->bind(
-        '<Map>',
-        sub {
-            my $width  = $map_menu_window->reqwidth();
-            my $height = $map_menu_window->reqheight();
-            my $x      = $map_menu_window->pointerx();
-            my $y      = $map_menu_window->pointery();
-            my $new_geometry_string
-                = $width . "x" . $height . "+" . $x . "+" . $y;
-            $map_menu_window->geometry($new_geometry_string);
-
-        },
-    );
+    $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
 
     return;
 }

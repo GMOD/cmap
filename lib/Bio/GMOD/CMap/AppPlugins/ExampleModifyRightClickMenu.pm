@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.3 2007-04-10 14:54:56 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.4 2007-04-12 21:13:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -37,15 +37,16 @@ sub type {
 sub modify_right_click_menu {
     my ( $self, %args ) = @_;
     my $window_key       = $args{'window_key'};
-    my $menu_window      = $args{'menu_window'};
+    my $menu_items       = $args{'menu_items'};
     my $app_interface    = $self->app_interface();
     my $app_display_data = $self->app_display_data();
 
     return
         unless (
         $app_interface->number_of_object_selections( $window_key, ) );
-    $menu_window->Button(
-        -text    => 'Selected Items',
+
+    push @{$menu_items}, [
+        Button => 'Selected Items',
         -command => sub {
             my $selected_type = $app_interface->object_selected_type(
                 window_key => $window_key, );
@@ -70,10 +71,8 @@ sub modify_right_click_menu {
                     print STDERR "$feature_acc\n";
                 }
             }
-
-            $menu_window->destroy();
         },
-    )->pack( -side => 'top', -anchor => 'nw' );
+    ];
 
     return;
 }

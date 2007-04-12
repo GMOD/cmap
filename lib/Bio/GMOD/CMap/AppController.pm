@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.30 2007-04-10 14:54:55 mwz444 Exp $
+# $Id: AppController.pm,v 1.31 2007-04-12 21:13:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -769,9 +769,9 @@ Save the view information to a file.
     my $app_display_data = $self->app_display_data();
 
     #unless ( -w $file ) {
-        #$self->app_interface->popup_warning(
-            #text => "Cannot write to file '$file'.\n", );
-        #return;
+    #$self->app_interface->popup_warning(
+    #text => "Cannot write to file '$file'.\n", );
+    #return;
     #}
 
     my $fh;
