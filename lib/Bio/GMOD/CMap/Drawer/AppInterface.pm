@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.44 2007-04-12 18:54:03 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.45 2007-04-12 20:07:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2589,10 +2589,8 @@ sub select_reference_maps {
     $ref_selection_window->Button(
         -text    => 'Cancel',
         -command => sub {
-            $self->return_to_last_window(
-                current_window => $ref_selection_window,
-                last_window    => $window,
-            );
+            $self->app_controller->close_window( window_key => $window_key, );
+            $ref_selection_window->destroy();
         },
     )->pack( -side => 'bottom', -anchor => 's' );
     my $map_button_frame = $map_frame->Frame(
