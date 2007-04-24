@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.137 2007-03-23 13:14:30 mwz444 Exp $
+# $Id: Drawer.pm,v 1.138 2007-04-24 16:31:21 briano Exp $
 
 =head1 NAME
 
@@ -85,7 +85,7 @@ It is a hash reference with the information for the maps in each slot.
 Breakdown of the data structure (variables represent changeable data):
 
 =over 4
-    
+
 =item - $slot->{$slot_number}{'maps'} 
 
 If there are individually selected maps, this is the hash where they 
@@ -97,7 +97,7 @@ below) of info is the value.  Either 'maps' or 'map_sets' must be defined.
         'stop'  => $stop  || undef, # the stop of the map to be displayed.  Can be undef.
         'mag'   => $mag   || undef, # the magnification of the map to be displayed.  Can be undef.
     ):
-   
+
 =item - $slot->{$slot_number}{'map_sets'} 
 
 If a whole map set is to be displayed it is in this hash with the 
@@ -354,7 +354,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1161,9 +1161,9 @@ sub corr_only_feature_types {
 =pod
                                                                                 
 =head2 corr_only_feature_types
-                                                                                
+
 Gets/sets which feature type (accession IDs) to corr_only.
-                                                                                
+
 =cut
 
     my $self = shift;
@@ -1184,9 +1184,9 @@ sub ignored_feature_types {
 =pod
                                                                                 
 =head2 ignored_feature_types
-                                                                                
+
 Gets/sets which feature type (accession IDs) to ignore.
-                                                                                
+
 =cut
 
     my $self = shift;

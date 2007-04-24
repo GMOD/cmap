@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.49 2007-03-09 16:41:37 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.50 2007-04-24 16:31:21 briano Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -755,7 +755,6 @@ Bio::GMOD::CMap::Constants - constants module
 =head1 SYNOPSIS
 
   use Bio::GMOD::CMap::Constants;
-  blah blah blah
 
 =head1 DESCRIPTION
 

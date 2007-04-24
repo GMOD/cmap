@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.31 2007-04-12 21:13:14 mwz444 Exp $
+# $Id: AppController.pm,v 1.32 2007-04-24 16:31:20 briano Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -92,9 +92,9 @@ sub open_saved_view {
 =pod
                                                                                                                              
 =head2 open_saved_view
-                                                                                                                             
+
 Read in the saved view
-                                                                                                                             
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -126,11 +126,11 @@ Read in the saved view
 sub start_application {
 
 =pod
-                                                                                                                             
+
 =head2 start_application
-                                                                                                                             
+
 This method will create the Application.
-                                                                                                                             
+
 =cut
 
     my $self = shift;
@@ -143,11 +143,11 @@ This method will create the Application.
 sub create_window {
 
 =pod
-                                                                                                                             
+
 =head2 create_application
-                                                                                                                             
+
 This method will create the Application.
-                                                                                                                             
+
 =cut
 
     my $self       = shift;
