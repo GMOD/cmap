@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.20 $
+$Revision: 1.21 $
 
 =head1 QUICK START
 
@@ -204,13 +204,13 @@ is recommended).  To inspect your version of Perl, type:
 On my current system, the output looks like this:
 
   This is perl, v5.8.0 built for i686-linux
-  
+
   Copyright 1987-2002, Larry Wall
-    
+
   Perl may be copied only under the terms of either the Artistic 
   License or the GNU General Public License, which may be found 
   in the Perl 5 source kit.
-    
+
   Complete documentation for Perl, including FAQ lists, should be
   found on this system using `man perl' or `perldoc perl'. If you have
   access to the Internet, point your browser at http://www.perl.com/,
