@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use base 'Class::Base';
 
@@ -53,14 +53,6 @@ Boolean that returns whether or not this glyph is allowed to overlap.
 # ------------------------------------
 sub line {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items   = $args{'items'};
     my $x_pos2  = $args{'x_pos2'};
@@ -86,14 +78,6 @@ sub line {
 
 # ------------------------------------
 sub span {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $items      = $args{'items'};
@@ -152,7 +136,7 @@ sub up_arrow {
 
 =pod
 
-=head2
+=head2 up_arrow
 
 Up is left in the app.
 
@@ -196,7 +180,7 @@ sub down_arrow {
 
 =pod
 
-=head2
+=head2 down_arrow
 
 Down is right in the app
 
@@ -240,7 +224,7 @@ sub right_facing_arrow {
 
 =pod
 
-=head2
+=head2 right_facing_arrow
 
 This is going to point up in the app
 
@@ -293,14 +277,6 @@ This is going to point up in the app
 # ------------------------------------
 sub double_arrow {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items      = $args{'items'};
     my $x_pos2     = $args{'x_pos2'};
@@ -345,14 +321,6 @@ sub double_arrow {
 # ------------------------------------
 sub dumbbell {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items            = $args{'items'};
     my $x_pos2           = $args{'x_pos2'};
@@ -396,14 +364,6 @@ sub dumbbell {
 # ------------------------------------
 sub i_beam {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items            = $args{'items'};
     my $x_pos2           = $args{'x_pos2'};
@@ -443,14 +403,6 @@ sub i_beam {
 # ------------------------------------
 sub box {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items      = $args{'items'};
     my $x_pos2     = $args{'x_pos2'};
@@ -478,14 +430,6 @@ sub box {
 # ------------------------------------
 sub filled_box {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items      = $args{'items'};
     my $x_pos2     = $args{'x_pos2'};
@@ -512,14 +456,6 @@ sub filled_box {
 
 # ------------------------------------
 sub banding {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $items            = $args{'items'};
@@ -561,14 +497,6 @@ sub banding {
 
 # ------------------------------------
 sub bar {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $items            = $args{'items'};
@@ -614,7 +542,7 @@ sub left_facing_triangle {
 
 =pod
 
-=head2
+=head2 left_facing_triangle
 
 Left is up in the app.
 
@@ -655,7 +583,7 @@ sub right_facing_triangle {
 
 =pod
 
-=head2 
+=head2 right_facing_triangle
 
 Right is down in the app.
 
@@ -696,14 +624,6 @@ sub read_depth {
 
     #NOT UPDATED
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $items      = $args{'items'};
     my $x_pos2     = $args{'x_pos2'};
@@ -738,14 +658,6 @@ sub read_depth {
 
 # ------------------------------------
 sub heatmap {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $items            = $args{'items'};

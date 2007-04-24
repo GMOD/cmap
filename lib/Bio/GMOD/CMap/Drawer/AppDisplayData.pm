@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.40 2007-04-10 14:54:56 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.41 2007-04-24 16:24:46 briano Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -3395,7 +3395,6 @@ Revisit
     $self->{'map_key_to_slot_key'} = {
         $map_key => $slot_key,
     }
-    
 
 =head2 Order
 

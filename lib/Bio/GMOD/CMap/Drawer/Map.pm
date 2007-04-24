@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.203 2007-03-23 13:14:31 mwz444 Exp $
+# $Id: Map.pm,v 1.204 2007-04-24 16:24:47 briano Exp $
 
 =pod
 
@@ -13,11 +13,10 @@ Bio::GMOD::CMap::Drawer::Map - draw a map
 =head1 SYNOPSIS
 
   use Bio::GMOD::CMap::Drawer::Map;
-  blah blah blah
 
 =head1 DESCRIPTION
 
-You'll never directly use this module.
+You will never directly use this module.
 
 =head1 METHODS
 
@@ -25,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.203 $)[-1];
+$VERSION = (qw$Revision: 1.204 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -818,9 +817,9 @@ sub draw_truncation_arrows {
 =pod
                                                                                                                              
 =head2 draw_truncation_arrows
-                                                                                                                             
+
 Draws the truncation arrows
-                                                                                                                             
+
 =cut
 
     my $self          = shift;

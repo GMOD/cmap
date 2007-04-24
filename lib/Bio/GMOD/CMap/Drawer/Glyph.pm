@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use base 'Class::Base';
 
@@ -53,14 +53,6 @@ Boolean that returns whether or not this glyph is allowed to overlap.
 # ------------------------------------
 sub line {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -82,14 +74,6 @@ sub line {
 
 # ------------------------------------
 sub span {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -152,13 +136,6 @@ sub direction_arrow {
 # ------------------------------------
 sub up_arrow {
 
-=pod
-
-=head2
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -185,14 +162,6 @@ sub up_arrow {
 
 # ------------------------------------
 sub down_arrow {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -221,14 +190,6 @@ sub down_arrow {
 # ------------------------------------
 sub right_facing_arrow {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -256,14 +217,6 @@ sub right_facing_arrow {
 
 # ------------------------------------
 sub double_arrow {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -296,14 +249,6 @@ sub double_arrow {
 
 # ------------------------------------
 sub dumbbell {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -340,14 +285,6 @@ sub dumbbell {
 # ------------------------------------
 sub i_beam {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -380,14 +317,6 @@ sub i_beam {
 # ------------------------------------
 sub box {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -408,14 +337,6 @@ sub box {
 
 # ------------------------------------
 sub filled_box {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -443,14 +364,6 @@ sub filled_box {
 
 # ------------------------------------
 sub banding {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data     = $args{'drawing_data'};
@@ -488,14 +401,6 @@ sub banding {
 
 # ------------------------------------
 sub bar {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -550,14 +455,6 @@ sub out_triangle {
 # ------------------------------------
 sub right_facing_triangle {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -594,12 +491,6 @@ sub right_facing_triangle {
 
 # ------------------------------------
 sub left_facing_triangle {
-
-=pod
-                                                                                =head2 
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
@@ -645,14 +536,6 @@ sub left_facing_triangle {
 # ------------------------------------
 sub read_depth {
 
-=pod
-
-=head2
-
-
-
-=cut
-
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2       = $args{'x_pos2'};
@@ -688,14 +571,6 @@ sub read_depth {
 
 # ------------------------------------
 sub heatmap {
-
-=pod
-
-=head2
-
-
-
-=cut
 
     my ( $self, %args ) = @_;
     my $drawing_data     = $args{'drawing_data'};
