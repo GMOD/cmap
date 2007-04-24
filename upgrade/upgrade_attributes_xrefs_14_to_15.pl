@@ -112,7 +112,6 @@ else {
 print STDERR "Checking Xrefs in Datasource: $data_source\n" unless ($quiet);
 my $xrefs = $sql_object->get_xrefs(
     cmap_object => $cmap_object,
-    get_all     => 1
 );
 
 if ( @{ $xrefs || [] } ) {
