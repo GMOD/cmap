@@ -46,7 +46,7 @@ illustrates both of these methods.
                   xref_url  => "http://www.google.com/?q=".
                       $map_set->{'map_set_short_name'}
               };
-          
+
               push @{ $map_set->{'attributes'} }, {
                   attribute_name  => 'Favorite Color',
                   attribute_value => 'Blue. No, red! Ahhhhh!',
@@ -128,14 +128,14 @@ different config files.
 Here is an example of the "Gramene::Marker::Marker2CMap" module:
 
   package Gramene::Marker::Marker2CMap;
-  
+
   use strict;
   use Gramene::Marker::DB;
-  
+
   sub new {
       my $feature = shift;
       my $mdb     = Gramene::Marker::DB->new;
-  
+
       my @markers;
       for my $name ( 
           $feature->{'feature_name'}, 
@@ -146,7 +146,7 @@ Here is an example of the "Gramene::Marker::Marker2CMap" module:
           ) or next;
           push @markers, @$found;
       }
-  
+
       my $xref_url = '/db/markers/marker_view?marker_id=';
       for my $m ( @markers ) {
           push @{ $feature->{'xrefs'} }, {

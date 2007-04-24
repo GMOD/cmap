@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.34 $
+$Revision: 1.35 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -15,7 +15,7 @@ The configuration file is used to create and customize the look of map,
 feature and evidence types as well as customizing the CMap experience.  
 
 The "cmap_admin.pl" program is used for all long-running processes that 
-aren't practical to address over the HTTP protocol.  It employs a 
+are not practical to address over the HTTP protocol.  It employs a 
 "wizard"-like approach to accomplishing various tasks by asking the 
 curator a series of questions and performing the desired action using 
 the answers provided.  cmap_admin.pl can also be driven via command 
@@ -29,7 +29,7 @@ All of this is discussed in further detail in this document.
 
 =head1 STARTING OUT
 
-If you've just installed CMap, then your database is probably
+If you have just installed CMap, then your database is probably
 completely empty.  (Of course, a small but complete dataset is
 provided in the "data" directory, but the database for your own data
 will be empty.)  So let's start by discussing what you need to do to
@@ -628,8 +628,6 @@ You cannot default to the greater than or less than score options.
     display:      Display all correspondences with evidence of this type
     ignore:       Completely ignore the evidence of this type when considering correspondences.  
 
-=back
-
 =item * <aggregated_correspondence_colors>
 
 This option dictates the color of aggregated correspondence lines for this
@@ -709,7 +707,7 @@ The values are defined as name, value pairs, where the name is the feature_type 
 
 =head4 Map Menu Options
 
-=over4
+=over 4
 
 =item * stack_maps [ default: 0 ]
 
@@ -743,7 +741,7 @@ Values: color
 
 =head4 Feature Menu Options
 
-=over4
+=over 4
 
 =item * label_features [ default: all ]
 
@@ -774,7 +772,7 @@ feature_type definitions.
 
 =head4 Correspondence Menu Options
 
-=over4
+=over 4
 
 =item * aggregate_correspondences [ default: 1 ]
 
@@ -817,7 +815,7 @@ each other.
 
 =head4 Display Menu Options
 
-=over4
+=over 4
 
 =item * font_size [ default: small ]
 
@@ -847,7 +845,7 @@ taking images for publication.
 
 =head4 Advanced Menu Options
 
-=over4
+=over 4
 
 =item * scale_maps [ default: 1 ]
 
@@ -2244,14 +2242,11 @@ cmap_reduce_cache_size.pl will help limit the growth of the query cache files.
 This script cycles through each CMap data_source and (using the
 Cache::SizeAwareFileCache functionality) reduces the size of the query cache to
 the value given as 'max_query_cache_size' in the config file.
-                                                                                                                             
-It first removes any expired entries and then if it is still over the limit, it
+                                                                                                    It first removes any expired entries and then if it is still over the limit, it
 moves to last accessed entries.
-                                                                                                                             
-If 'max_query_cache_size' is not set, it will use the default value in
+                                                                                                    If 'max_query_cache_size' is not set, it will use the default value in
 Bio::GMOD::CMap::Constants.
-                                                                                                                             
-It is suggested that this script is run periodically as a cron job.
+                                                                                                    It is suggested that this script is run periodically as a cron job.
 
 =head1 VALIDATE CONFIG FILES
 
