@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.32 2007-04-24 16:31:20 briano Exp $
+# $Id: AppController.pm,v 1.33 2007-04-27 13:40:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -92,9 +92,9 @@ sub open_saved_view {
 =pod
                                                                                                                              
 =head2 open_saved_view
-
+                                                                                                                             
 Read in the saved view
-
+                                                                                                                             
 =cut
 
     my ( $self, %args ) = @_;
@@ -126,11 +126,11 @@ Read in the saved view
 sub start_application {
 
 =pod
-
+                                                                                                                             
 =head2 start_application
-
+                                                                                                                             
 This method will create the Application.
-
+                                                                                                                             
 =cut
 
     my $self = shift;
@@ -143,11 +143,11 @@ This method will create the Application.
 sub create_window {
 
 =pod
-
+                                                                                                                             
 =head2 create_application
-
+                                                                                                                             
 This method will create the Application.
-
+                                                                                                                             
 =cut
 
     my $self       = shift;
@@ -530,7 +530,7 @@ Create the text to go into the info box when a map is clicked.
     my ( $self, %args ) = @_;
     my $map_key          = $args{'map_key'};
     my $app_display_data = $self->app_display_data();
-    my $map_id           = $app_display_data->{'map_key_to_id'}{$map_key};
+    my $map_id           = $app_display_data->map_key_to_id($map_key);
 
     my $map_data = $self->app_data_module()->map_data( map_id => $map_id, );
 
@@ -694,11 +694,11 @@ Export the map moves to a file.
         if ( $action->[0] eq 'move_map' ) {
             my @print_array = (
                 $action->[0],
-                $app_display_data->{'map_key_to_id'}{ $action->[1] },
-                $app_display_data->{'map_key_to_id'}{ $action->[2] },
+                $app_display_data->map_key_to_id( $action->[1] ),
+                $app_display_data->map_key_to_id( $action->[2] ),
                 $action->[3],
                 $action->[4],
-                $app_display_data->{'map_key_to_id'}{ $action->[5] },
+                $app_display_data->map_key_to_id( $action->[5] ),
                 $action->[6],
                 $action->[7],
             );
@@ -735,11 +735,10 @@ Export the map moves to a file.
                 {
                 feature_id =>
                     $app_display_data->{'sub_maps'}{$map_key}{'feature_id'},
-                sub_map_id => $app_display_data->{'map_key_to_id'}{$map_key},
+                sub_map_id => $app_display_data->map_key_to_id($map_key),
                 original_parent_map_id =>
-                    $app_display_data->{'map_key_to_id'}{ $action->[2] },
-                map_id =>
-                    $app_display_data->{'map_key_to_id'}{ $action->[5] },
+                    $app_display_data->map_key_to_id( $action->[2] ),
+                map_id => $app_display_data->map_key_to_id( $action->[5] ),
                 feature_start => $action->[6],
                 feature_stop  => $action->[7],
                 };

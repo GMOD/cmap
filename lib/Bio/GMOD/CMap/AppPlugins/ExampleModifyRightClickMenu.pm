@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.4 2007-04-12 21:13:15 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.5 2007-04-27 13:40:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -56,8 +56,8 @@ sub modify_right_click_menu {
                 foreach my $map_key (
                     $app_interface->object_selection_keys( $window_key, ) )
                 {
-                    print STDERR $app_display_data->{'map_key_to_id'}
-                        {$map_key} . "\n";
+                    print STDERR $app_display_data->map_key_to_id($map_key)
+                        . "\n";
                 }
             }
             elsif ( $selected_type eq 'feature' ) {

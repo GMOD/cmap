@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.46 2007-04-12 21:13:15 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.47 2007-04-27 13:40:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2246,7 +2246,7 @@ sub fill_map_info_box {
         or return;
     my $controller       = $self->app_controller();
     my $app_display_data = $controller->app_display_data();
-    my $zone_key   = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+    my $zone_key         = $app_display_data->map_key_to_zone_key($map_key);
     my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
 
     my $text_box = $self->{'information_text'}{$window_key};
@@ -3949,7 +3949,7 @@ Handle the ghost map dragging
     }
     my ( $main_x_offset, $main_y_offset );
     if ($map_key) {
-        my $zone_key = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+        my $zone_key = $app_display_data->map_key_to_zone_key($map_key);
         ( $main_x_offset, $main_y_offset )
             = $app_display_data->get_main_zone_offsets( zone_key => $zone_key,
             );

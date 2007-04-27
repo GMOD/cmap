@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.35 2007-04-10 14:54:56 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.36 2007-04-27 13:40:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -329,8 +329,12 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
     # If the zone has never been layed out, set relayout to 0
     $relayout = 0 unless ( $zone_layout->{'layed_out_once'} );
 
+    # Store the previous bounds.  This might be useful
+    my $prior_zone_bounds = $zone_layout->{'bounds'};
+
     if ($relayout) {
 
+        # Relayout in the same place if no zone_bounds are given
         unless ( @{ $new_zone_bounds || [] } ) {
             $new_zone_bounds = $zone_layout->{'bounds'};
         }
@@ -538,7 +542,7 @@ Lays out head maps in a zone
     return 0 unless ($active_zone_width);
 
     # Get map data for the zone
-    my @ordered_map_ids = map { $app_display_data->{'map_key_to_id'}{$_} }
+    my @ordered_map_ids = map { $app_display_data->map_key_to_id($_) }
         @{ $app_display_data->{'map_order'}{$zone_key} || [] };
     my $map_data_hash = $app_display_data->app_data_module()
         ->map_data_hash( map_ids => \@ordered_map_ids, );
@@ -576,9 +580,9 @@ Lays out head maps in a zone
     foreach
         my $map_key ( @{ $app_display_data->{'map_order'}{$zone_key} || [] } )
     {
-        my $map_id          = $app_display_data->{'map_key_to_id'}{$map_key};
-        my $map             = $map_data_hash->{$map_id};
-        my $length_in_units = $map->{'map_stop'} - $map->{'map_start'};
+        my $map_id              = $app_display_data->map_key_to_id($map_key);
+        my $map                 = $map_data_hash->{$map_id};
+        my $length_in_units     = $map->{'map_stop'} - $map->{'map_start'};
         my $map_container_width = $length_in_units * $pixels_per_unit;
 
         # If the map is the minimum width,
@@ -780,8 +784,8 @@ Lays out sub maps in a slot.
     # If needed, get the map set id
     unless ( $app_display_data->{'scaffold'}{$zone_key}{'map_set_id'} ) {
         my $first_map_data = $app_display_data->app_data_module()
-            ->map_data( map_id =>
-                $app_display_data->{'map_key_to_id'}{ $sub_map_keys[0] }, );
+            ->map_data(
+            map_id => $app_display_data->map_key_to_id( $sub_map_keys[0] ), );
         $app_display_data->{'scaffold'}{$zone_key}{'map_set_id'}
             = $first_map_data->{'map_set_id'};
     }
@@ -797,7 +801,7 @@ Lays out sub maps in a slot.
         = $app_display_data->{'scaffold'}{$zone_key}{'parent_map_key'};
     my $parent_map_layout
         = $app_display_data->{'map_layout'}{$parent_map_key};
-    my $parent_map_id = $app_display_data->{'map_key_to_id'}{$parent_map_key};
+    my $parent_map_id = $app_display_data->map_key_to_id($parent_map_key);
     my $parent_data   = $app_display_data->app_data_module()
         ->map_data( map_id => $parent_map_id, );
     my $parent_start = $parent_data->{'map_start'};
@@ -850,11 +854,10 @@ Lays out sub maps in a slot.
     # Layout each row of maps
     foreach my $row (@rows) {
         foreach my $row_sub_map ( @{ $row || [] } ) {
-            my $sub_map_key = $row_sub_map->[0];
-            my $x1          = $row_sub_map->[1];
-            my $x2          = $row_sub_map->[2];
-            my $sub_map_id
-                = $app_display_data->{'map_key_to_id'}{$sub_map_key};
+            my $sub_map_key  = $row_sub_map->[0];
+            my $x1           = $row_sub_map->[1];
+            my $x2           = $row_sub_map->[2];
+            my $sub_map_id   = $app_display_data->map_key_to_id($sub_map_key);
             my $sub_map_data = $app_display_data->app_data_module()
                 ->map_data( map_id => $sub_map_id, );
 
@@ -1206,12 +1209,12 @@ Lays out a maps in a contained area.
     }
 
     foreach my $child_zone_key (
-        @{ $app_display_data->{'scaffold'}{$zone_key}{'children'} || [] } )
+        $app_display_data->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
     {
-        next
-            unless (
-            $map_key == $app_display_data->{'scaffold'}{$child_zone_key}
-            {'parent_map_key'} );
         my $zone_bounds = [ $min_x, $max_y + BETWEEN_ZONE_BUFFER, $max_x, ];
 
         # The x and y offsets are not needed in the next zone since the zone
@@ -1487,17 +1490,16 @@ Also, destroys the features.
     $map_layout->{'items'} = [];
 
     if ($cascade) {
-        my $zone_key = $app_display_data->{'map_key_to_zone_key'}{$map_key};
+        my $zone_key = $app_display_data->map_key_to_zone_key($map_key);
 
         # Crawl down the tree
         foreach my $child_zone_key (
-            @{ $app_display_data->{'scaffold'}{$zone_key}{'children'}
-                    || [] } )
+            $app_display_data->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            )
+            )
         {
-            next
-                unless (
-                $map_key == $app_display_data->{'scaffold'}{$child_zone_key}
-                {'parent_map_key'} );
             destroy_zone(
                 app_display_data => $app_display_data,
                 zone_key         => $child_zone_key,
@@ -1552,11 +1554,11 @@ Lays out correspondences between two zones
 
     foreach my $corr ( @{ $corrs || [] } ) {
         my $map_key1
-            = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key1}
-            { $corr->{'map_id1'} };
+            = $app_display_data->map_id_to_key_by_zone( $corr->{'map_id1'},
+            $zone_key1 );
         my $map_key2
-            = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key2}
-            { $corr->{'map_id2'} };
+            = $app_display_data->map_id_to_key_by_zone( $corr->{'map_id2'},
+            $zone_key2 );
         my $map1_x1
             = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
         my $map2_x1
@@ -1917,12 +1919,12 @@ Move a map
 
     # Crawl down the tree
     foreach my $child_zone_key (
-        @{ $app_display_data->{'scaffold'}{$zone_key}{'children'} || [] } )
+        $app_display_data->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
     {
-        next
-            unless (
-            $map_key == $app_display_data->{'scaffold'}{$child_zone_key}
-            {'parent_map_key'} );
         move_zone(
             zone_key         => $child_zone_key,
             window_key       => $window_key,
@@ -2073,8 +2075,8 @@ Adds tick marks to a map.
     my $x_offset = $app_display_data->{'scaffold'}{$zone_key}{'x_offset'}
         || 0;
 
-    my $map_key = $app_display_data->{'map_id_to_key_by_zone'}{$zone_key}
-        { $map->{'map_id'} };
+    my $map_key = $app_display_data->map_id_to_key_by_zone( $map->{'map_id'},
+        $zone_key );
     my $pixels_per_unit = $app_display_data->{'map_pixels_per_unit'}{$map_key}
         || $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'};
 

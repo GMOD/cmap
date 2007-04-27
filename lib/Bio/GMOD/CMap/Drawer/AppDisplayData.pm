@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.41 2007-04-24 16:24:46 briano Exp $
+# $Id: AppDisplayData.pm,v 1.42 2007-04-27 13:40:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -206,13 +206,10 @@ Adds the first slot
     $self->initialize_zone_layout( $zone_key, $window_key, );
 
     foreach my $map_id ( @{ $map_ids || [] } ) {
-        my $map_key = $self->next_internal_key('map');
-        push @{ $self->{'map_order'}{$zone_key} },    $map_key;
-        push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
-        $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id} = $map_key;
-        $self->{'map_key_to_id'}{$map_key}                   = $map_id;
-        $self->{'map_key_to_zone_key'}{$map_key}             = $zone_key;
-        $self->initialize_map_layout($map_key);
+        my $map_key = $self->initialize_map(
+            map_id   => $map_id,
+            zone_key => $zone_key,
+        );
 
         $self->add_sub_maps_to_map(
             window_key      => $window_key,
@@ -416,13 +413,10 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
     foreach my $map ( @{ $map_data || [] } ) {
         my $map_id  = $map->{'map_id'};
-        my $map_key = $self->next_internal_key('map');
-        push @{ $self->{'map_order'}{$zone_key} },    $map_key;
-        push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
-        $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id} = $map_key;
-        $self->{'map_key_to_id'}{$map_key}                   = $map_id;
-        $self->{'map_key_to_zone_key'}{$map_key}             = $zone_key;
-        $self->initialize_map_layout($map_key);
+        my $map_key = $self->initialize_map(
+            map_id   => $map_id,
+            zone_key => $zone_key,
+        );
 
         # set the sub_maps data
         if ( $sub_maps_hash->{$map_id} ) {
@@ -523,46 +517,32 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
     my @sub_map_keys;
 
-    my $parent_map_id = $self->{'map_key_to_id'}{$parent_map_key};
+    my $parent_map_id = $self->map_key_to_id($parent_map_key);
 
     # Collect Sub-Maps
     my $sub_maps
         = $self->app_data_module()->sub_maps( map_id => $parent_map_id, );
 
-    foreach my $sub_map ( @{ $sub_maps || [] } ) {
-        my $sub_map_id  = $sub_map->{'sub_map_id'};
-        my $sub_map_key = $self->next_internal_key('map');
-
-        push @{ $self->{'map_id_to_keys'}{$sub_map_id} }, $sub_map_key;
-        $self->{'map_key_to_id'}{$sub_map_key} = $sub_map_id;
-
-        $self->{'sub_maps'}{$sub_map_key} = {
-            parent_map_key => $parent_map_key,
-            feature_start  => $sub_map->{'feature_start'},
-            feature_stop   => $sub_map->{'feature_stop'},
-            feature_id     => $sub_map->{'feature_id'},
-        };
-        push @sub_map_keys, $sub_map_key;
-
-    }
-
-    unless (@sub_map_keys) {
+    unless ( @{ $sub_maps || [] } ) {
 
         # No Sub Maps
         return;
     }
 
     # Split maps into zones based on their map set
-    my %maps_by_set;
-    foreach my $sub_map_key (@sub_map_keys) {
-        my $sub_map_id = $self->{'map_key_to_id'}{$sub_map_key};
+    my %map_ids_by_set;
+    my %sub_map_hash;
+    foreach my $sub_map ( @{ $sub_maps || [] } ) {
+        my $sub_map_id = $sub_map->{'sub_map_id'};
         my $sub_map_data
             = $self->app_data_module()->map_data( map_id => $sub_map_id, );
-        push @{ $maps_by_set{ $sub_map_data->{'map_set_id'} } }, $sub_map_key;
+        push @{ $map_ids_by_set{ $sub_map_data->{'map_set_id'} } },
+            $sub_map_id;
+        $sub_map_hash{$sub_map_id} = $sub_map;
     }
 
     my @new_zone_keys;
-    foreach my $set_key ( keys %maps_by_set ) {
+    foreach my $set_key ( keys %map_ids_by_set ) {
         my $child_zone_key = $self->next_internal_key('zone');
         push @new_zone_keys, $child_zone_key;
 
@@ -584,12 +564,20 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} },
             $child_zone_key;
 
-        foreach my $map_key ( @{ $maps_by_set{$set_key} || [] } ) {
-            push @{ $self->{'map_order'}{$child_zone_key} }, $map_key;
-            $self->{'map_key_to_zone_key'}{$map_key} = $child_zone_key;
-            $self->{'map_id_to_key_by_zone'}{$child_zone_key}
-                { $self->{'map_key_to_id'}{$map_key} } = $map_key;
-            $self->initialize_map_layout($map_key);
+        foreach my $sub_map_id ( @{ $map_ids_by_set{$set_key} || [] } ) {
+            my $sub_map_key = $self->initialize_map(
+                map_id   => $sub_map_id,
+                zone_key => $child_zone_key,
+            );
+
+            my $sub_map = $sub_map_hash{$sub_map_id};
+            $self->{'sub_maps'}{$sub_map_key} = {
+                parent_map_key => $parent_map_key,
+                feature_start  => $sub_map->{'feature_start'},
+                feature_stop   => $sub_map->{'feature_stop'},
+                feature_id     => $sub_map->{'feature_id'},
+            };
+
         }
     }
     return \@new_zone_keys;
@@ -863,7 +851,7 @@ expand zones
     return if $zone_scaffold->{'expanded'};
     $zone_scaffold->{'expanded'} = 1;
 
-    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+    foreach my $map_key ( @{ $self->map_order($zone_key) || [] } ) {
 
         # Add Sub Slots
         $self->add_sub_maps_to_map(
@@ -1958,7 +1946,7 @@ Move a map from one place on a parent to another
     my ( $self, %args ) = @_;
     my $map_key         = $args{'map_key'};
     my $ghost_bounds    = $args{'ghost_bounds'};
-    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $zone_key        = $self->map_key_to_zone_key($map_key);
     my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
     my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
@@ -1985,8 +1973,7 @@ Move a map from one place on a parent to another
         (      $self->{'map_pixels_per_unit'}{$new_parent_map_key}
             || $self->{'scaffold'}{$parent_zone_key}{'pixels_per_unit'} );
     my $parent_map_data = $self->app_data_module()
-        ->map_data( map_id => $self->{'map_key_to_id'}{$new_parent_map_key},
-        );
+        ->map_data( map_id => $self->map_key_to_id($new_parent_map_key), );
 
     # Modify the relative unit start to round to the unit granularity
     my $parent_unit_granularity
@@ -2028,7 +2015,7 @@ Move a map from one place on a parent to another
     my $new_parent_map_key = $args{'new_parent_map_key'};
     my $new_feature_start  = $args{'new_feature_start'};
     my $new_feature_stop   = $args{'new_feature_stop'};
-    my $zone_key           = $self->{'map_key_to_zone_key'}{$map_key};
+    my $zone_key           = $self->map_key_to_zone_key($map_key);
     my $window_key         = $self->{'scaffold'}{$zone_key}{'window_key'};
 
     my @action_data = (
@@ -2084,25 +2071,87 @@ sub move_sub_map_on_parents_in_memory {
 =head2 move_sub_map_on_parents_in_memory
 
 Do the actual in memory part of moving a map from one place on a parent to
-another (and possibly on a different parrent.
+another (and possibly on a different parent).
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $sub_map_key    = $args{'sub_map_key'};
-    my $parent_map_key = $args{'parent_map_key'};
-    my $feature_start  = $args{'feature_start'};
-    my $feature_stop   = $args{'feature_stop'};
+    my $sub_map_key        = $args{'sub_map_key'};
+    my $new_parent_map_key = $args{'parent_map_key'};
+    my $feature_start      = $args{'feature_start'};
+    my $feature_stop       = $args{'feature_stop'};
 
     # BF POSSIBLY MOVE ZONE TO BE ADDED HERE
 
-    my $sub_zone_key = $self->{'map_key_to_zone_key'}{$sub_map_key};
-    my $window_key   = $self->{'scaffold'}{$sub_zone_key}{'window_key'};
-    my $parent_zone_key
-        = $self->{'scaffold'}{$sub_zone_key}{'parent_zone_key'};
+    my $old_sub_zone_key    = $self->map_key_to_zone_key($sub_map_key);
+    my $new_sub_zone_key    = $old_sub_zone_key;
+    my $new_parent_zone_key = $self->map_key_to_zone_key($new_parent_map_key);
+    my $window_key = $self->{'scaffold'}{$old_sub_zone_key}{'window_key'};
+
+    my $old_sub_zone_scaffold = $self->{'scaffold'}{$old_sub_zone_key};
+    my $old_parent_map_key    = $old_sub_zone_scaffold->{'parent_map_key'};
+
+    # If it's in a new zone, change the sub map's zone
+    unless ( $new_parent_map_key == $old_parent_map_key ) {
+        my $map_set_id = $old_sub_zone_scaffold->{'map_set_id'};
+        $new_sub_zone_key = undef;
+        foreach my $child_zone_key (
+            $self->get_children_zones_of_map(
+                map_key  => $new_parent_map_key,
+                zone_key => $new_parent_zone_key,
+            )
+            )
+        {
+            if ( $map_set_id
+                == $self->{'scaffold'}{$child_zone_key}{'map_set_id'} )
+            {
+                $new_sub_zone_key = $child_zone_key;
+                last;
+            }
+        }
+
+        unless ($new_sub_zone_key) {
+
+            # BF Create new zone
+            print STDERR "NOT IMPLEMENTED YET\n";
+            return;
+        }
+
+        # Remove from old zone map order
+        for (
+            my $i = 0;
+            $i <= $#{ $self->{'map_order'}{$old_sub_zone_key} || [] };
+            $i++
+            )
+        {
+            if ( $sub_map_key == $self->{'map_order'}{$old_sub_zone_key}[$i] )
+            {
+                splice @{ $self->{'map_order'}{$old_sub_zone_key} }, $i, 1;
+                $i--;
+            }
+        }
+
+        # Remove Zone if no more maps
+        unless (
+            scalar( @{ $self->{'map_order'}{$old_sub_zone_key} || [] } ) )
+        {
+            $self->delete_zone(
+                window_key => $window_key,
+                zone_key   => $old_sub_zone_key,
+            );
+        }
+
+        # Add to new parent zone map order
+        push @{ $self->{'map_order'}{$new_sub_zone_key} }, $sub_map_key;
+
+        my $sub_map_id = $self->map_key_to_id($sub_map_key);
+        $self->map_id_to_key_by_zone( $sub_map_id, $new_sub_zone_key,
+            $sub_map_key );
+        $self->map_key_to_zone_key( $sub_map_key, $new_sub_zone_key );
+    }
 
     # Modify Parent
-    $self->{'sub_maps'}{$sub_map_key}{'parent_map_key'} = $parent_map_key;
+    $self->{'sub_maps'}{$sub_map_key}{'parent_map_key'} = $new_parent_map_key;
     $self->{'sub_maps'}{$sub_map_key}{'feature_start'}  = $feature_start;
     $self->{'sub_maps'}{$sub_map_key}{'feature_stop'}   = $feature_stop;
 
@@ -2411,7 +2460,7 @@ Controls how the ghost map moves.
     my ( $self, %args ) = @_;
     my $map_key = $args{'map_key'};
 
-    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $zone_key        = $self->map_key_to_zone_key($map_key);
     my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
 
@@ -2426,7 +2475,7 @@ Controls how the ghost map moves.
     my $parent_map_key     = $self->{'scaffold'}{$zone_key}{'parent_map_key'};
     my $parent_zone_layout = $self->{'zone_layout'}{$parent_zone_key};
     my $parent_map_layout  = $self->{'map_layout'}{$parent_map_key};
-    my $parent_map_id      = $self->{'map_key_to_id'}{$parent_map_key};
+    my $parent_map_id      = $self->map_key_to_id($parent_map_key);
     my $parent_data
         = $self->app_data_module()->map_data( map_id => $parent_map_id, );
     my $parent_start = $parent_data->{'map_start'};
@@ -2488,7 +2537,7 @@ Controls how the ghost map moves.
     my $ghost_bounds    = $args{'ghost_bounds'};
     my $mouse_to_edge_x = $args{'mouse_to_edge_x'};
 
-    my $zone_key        = $self->{'map_key_to_zone_key'}{$map_key};
+    my $zone_key        = $self->map_key_to_zone_key($map_key);
     my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
     my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $parent_map_set_id
@@ -2509,7 +2558,7 @@ Controls how the ghost map moves.
         mouse_y           => $mouse_y,
     );
     my $ghost_parent_zone_key
-        = $self->{'map_key_to_zone_key'}{$ghost_parent_map_key};
+        = $self->map_key_to_zone_key($ghost_parent_map_key);
 
     my %ghost_location_data = $self->get_ghost_location_coords(
         map_key               => $map_key,
@@ -2551,7 +2600,7 @@ Controls how the ghost map moves.
     my $ghost_bounds = $args{'ghost_bounds'};
 
     my $zone_key = $args{'$zone_key'}
-        || $self->{'map_key_to_zone_key'}{$map_key};
+        || $self->map_key_to_zone_key($map_key);
     my $ghost_parent_zone_key = $args{'$ghost_parent_zone_key'}
         || $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $ghost_parent_map_key = $args{'ghost_parent_map_key'}
@@ -2934,32 +2983,30 @@ Destroys items that were drawn
 }
 
 # ----------------------------------------------------
-sub delete_slot {
-
-    #print STDERR "ADD_NEEDS_MODDED 47\n";
+sub delete_zone {
 
 =pod
 
-=head2 delete_slot
+=head2 delete_zone
 
-Deletes the slot data and wipes them from the canvas
+Deletes the zone data and wipes them from the canvas
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
-    my $slot_key   = $args{'slot_key'};
+    my $zone_key   = $args{'zone_key'};
 
-    my $slot_layout = $self->{'slot_layout'}{$slot_key};
+    my $zone_layout = $self->{'zone_layout'}{$zone_key};
 
     # Remove correspondences
     foreach
-        my $slot_key2 ( keys %{ $self->{'correspondences_on'}{$slot_key} } )
+        my $zone_key2 ( keys %{ $self->{'correspondences_on'}{$zone_key} } )
     {
-        $self->clear_slot_corrs(
+        $self->clear_zone_corrs(
             window_key => $window_key,
-            slot_key1  => $slot_key,
-            slot_key2  => $slot_key2,
+            zone_key1  => $zone_key,
+            zone_key2  => $zone_key2,
         );
     }
 
@@ -2967,36 +3014,39 @@ Deletes the slot data and wipes them from the canvas
     foreach my $drawing_item_name (qw[ separator background ]) {
         $self->destroy_items(
             window_key => $window_key,
-            items      => $slot_layout->{$drawing_item_name},
+            items      => $zone_layout->{$drawing_item_name},
         );
     }
 
-    foreach my $map_key ( @{ $self->{'map_order'}{$slot_key} || [] } ) {
-        ### Someday Add a delet_map method
+    # Remove zone from window
+    delete $self->{'zone_in_window'}{$window_key}{$zone_key};
+
+    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+        ### BF Someday Add a delet_map method
     }
 
     # Remove from parent
-    my $parent_slot_key = $self->{'scaffold'}{$slot_key}{'parent_zone_key'};
+    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     for (
         my $i = 0;
-        $i <= $#{ $self->{'scaffold'}{$parent_slot_key}{'children'} || [] };
+        $i <= $#{ $self->{'scaffold'}{$parent_zone_key}{'children'} || [] };
         $i++
         )
     {
-        if ( $slot_key
-            == $self->{'scaffold'}{$parent_slot_key}{'children'}[$i] )
+        if ( $zone_key
+            == $self->{'scaffold'}{$parent_zone_key}{'children'}[$i] )
         {
-            splice @{ $self->{'scaffold'}{$parent_slot_key}{'children'} }, $i,
+            splice @{ $self->{'scaffold'}{$parent_zone_key}{'children'} }, $i,
                 1;
             last;
         }
     }
 
-    delete $self->{'slot_layout'}{$slot_key};
-    delete $self->{'scaffold'}{$slot_key};
-    delete $self->{'map_order'}{$slot_key};
-    delete $self->{'slot_info'}{$slot_key};
-    delete $self->{'map_id_to_key_by_slot'}{$slot_key};
+    delete $self->{'zone_layout'}{$zone_key};
+    delete $self->{'scaffold'}{$zone_key};
+    delete $self->{'map_order'}{$zone_key};
+    delete $self->{'slot_info'}{$zone_key};
+    delete $self->{'map_id_to_key_by_zone'}{$zone_key};
 
     return;
 }
@@ -3236,11 +3286,13 @@ later to create this view again.
     foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
 
         my @child_zones;
-        foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } )
+        foreach my $child_zone_key (
+            $self->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            )
+            )
         {
-            next
-                unless ( $map_key
-                == $self->{'scaffold'}{$child_zone_key}{'parent_map_key'} );
             push @child_zones,
                 $self->create_zone_output_hash(
                 window_key => $window_key,
@@ -3249,7 +3301,7 @@ later to create this view again.
         }
 
         my $map_data = $self->app_data_module()
-            ->map_data( map_id => $self->{'map_key_to_id'}{$map_key}, );
+            ->map_data( map_id => $self->map_key_to_id($map_key), );
         my $map_acc = $map_data->{'map_acc'};
 
         push @map, { 'map_acc' => $map_acc, child_zone => \@child_zones, };
@@ -3257,6 +3309,37 @@ later to create this view again.
     $zone_hash{'map'} = \@map;
 
     return \%zone_hash;
+}
+
+# ----------------------------------------------------
+sub get_children_zones_of_map {
+
+    #print STDERR "ADD_NEEDS_MODDED 50\n";
+
+=pod
+
+=head2 get_map_ids
+
+returns
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key  = $args{'map_key'};
+    my $zone_key = $args{'zone_key'};
+
+    my @child_zone_keys;
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
+    {
+        if ( $map_key
+            == $self->{'scaffold'}{$child_zone_key}{'parent_map_key'} )
+        {
+            push @child_zone_keys, $child_zone_key;
+        }
+    }
+
+    return @child_zone_keys;
 }
 
 # ----------------------------------------------------
@@ -3273,13 +3356,9 @@ returns
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key  = $args{'map_key'};
     my $map_keys = $args{'map_keys'} || [];
 
-    if ($map_key) {
-        return $self->{'map_key_to_id'}{$map_key};
-    }
-    elsif (@$map_keys) {
+    if (@$map_keys) {
         return [ map { $self->{'map_key_to_id'}{$_} } @$map_keys ];
     }
 
@@ -3326,6 +3405,171 @@ Test if the map is truncated (taken from Bio::GMOD::CMAP::Data ).
         return 0;
     }
     return undef;
+}
+
+# ----------------------------------------------------
+sub initialize_map {
+
+=pod
+
+=head2 initialize_map
+
+Initializes map
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_id   = $args{'map_id'};
+    my $zone_key = $args{'zone_key'};
+    my $map_key  = $args{'map_key'} || $self->next_internal_key('map');
+
+    push @{ $self->{'map_order'}{$zone_key} }, $map_key;
+    $self->map_id_to_keys( $map_id, $map_key );
+    $self->map_id_to_key_by_zone( $map_id, $zone_key, $map_key );
+    $self->map_key_to_id( $map_key, $map_id );
+    $self->map_key_to_zone_key( $map_key, $zone_key );
+    $self->initialize_map_layout($map_key);
+
+    return $map_key;
+}
+
+# --------------------------------
+
+=pod
+
+=head1 Accessor Methods 
+
+returns
+
+=cut
+
+# ----------------------------------------------------
+sub map_key_to_id {
+
+=pod
+
+=head2 map_key_to_id
+
+Gets/sets map id 
+
+=cut
+
+    my $self    = shift;
+    my $map_key = shift;
+    my $map_id  = shift;
+
+    if ($map_id) {
+        $self->{'map_key_to_id'}{$map_key} = $map_id;
+    }
+
+    return $self->{'map_key_to_id'}{$map_key};
+}
+
+# ----------------------------------------------------
+sub map_key_to_zone_key {
+
+=pod
+
+=head2 map_key_to_zone_key
+
+Gets/sets zone_key 
+
+=cut
+
+    my $self     = shift;
+    my $map_key  = shift;
+    my $zone_key = shift;
+
+    if ($zone_key) {
+        $self->{'map_key_to_zone_key'}{$map_key} = $zone_key;
+    }
+
+    return $self->{'map_key_to_zone_key'}{$map_key};
+}
+
+# ----------------------------------------------------
+sub map_id_to_keys {
+
+=pod
+
+=head2 map_id_to_keys
+
+Gets/sets map keys 
+
+=cut
+
+    my $self    = shift;
+    my $map_id  = shift;
+    my $map_key = shift;
+
+    if ($map_key) {
+        my $found = 0;
+        foreach my $key ( @{ $self->{'map_id_to_keys'}{$map_id} || [] } ) {
+            if ( $key == $map_key ) {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            push @{ $self->{'map_id_to_keys'}{$map_id} }, $map_key;
+        }
+    }
+
+    return $self->{'map_id_to_keys'}{$map_id};
+}
+
+# ----------------------------------------------------
+sub map_id_to_key_by_zone {
+
+=pod
+
+=head2 map_id_to_key_by_zone
+
+Gets/sets map keys 
+
+=cut
+
+    my $self     = shift;
+    my $map_id   = shift or return;
+    my $zone_key = shift or return;
+    my $map_key  = shift;
+
+    if ($map_key) {
+        $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id} = $map_key;
+    }
+
+    return $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id};
+}
+
+# ----------------------------------------------------
+sub map_order {
+
+=pod
+
+=head2 map_order
+
+Gets/sets map_order
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift;
+    my $map_key  = shift;
+
+    if ($map_key) {
+        my $found = 0;
+        foreach my $key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+            if ( $key == $map_key ) {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            push @{ $self->{'map_order'}{$zone_key} }, $map_key;
+        }
+    }
+
+    return $self->{'map_order'}{$zone_key};
 }
 
 1;
@@ -3395,6 +3639,7 @@ Revisit
     $self->{'map_key_to_slot_key'} = {
         $map_key => $slot_key,
     }
+    
 
 =head2 Order
 
@@ -3435,7 +3680,7 @@ Revisit
             map_set_id         => undef,
             parent_zone_key    => $parent_zone_key,
             parent_map_key     => $parent_map_key,
-            children           => [$child_slot_key, ],
+            children           => [$child_zone_key, ],
             scale              => 1,
             x_offset           => 0,
             attached_to_parent => 0,
