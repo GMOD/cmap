@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.47 2007-04-27 13:40:21 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.48 2007-04-30 14:33:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -3495,9 +3495,12 @@ Add map or feature selection
     if ($map_key) {
         $self->{'object_selections'}{$window_key}{$object_key}
             {'highlight_loc'} = $self->create_highlight_location_on_map(
-            zinc       => $zinc,
-            map_key    => $map_key,
-            window_key => $self->{'drag_window_key'},
+            zinc             => $zinc,
+            map_key          => $map_key,
+            window_key       => $self->{'drag_window_key'},
+            highlight_bounds =>
+                $self->{'object_selections'}{$window_key}{$object_key}
+                {'highlight_bounds'},
             );
     }
 
@@ -3680,14 +3683,19 @@ Create the highlight box on the parent map
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
-    my $map_key    = $args{'map_key'};
-    my $window_key = $args{'window_key'};
+    my $zinc             = $args{'zinc'};
+    my $map_key          = $args{'map_key'};
+    my $window_key       = $args{'window_key'};
+    my $highlight_bounds = $args{'highlight_bounds'};
 
     my $highlight_color = 'red';
 
     my %highlight_location_data = $self->app_controller()->app_display_data()
-        ->place_ghost_location_on_parent_map( map_key => $map_key, );
+        ->place_ghost_location_on_parent_map(
+        map_key          => $map_key,
+        highlight_bounds => $highlight_bounds,
+        initiate         => 1,
+        );
 
     return unless (%highlight_location_data);
 

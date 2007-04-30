@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.42 2007-04-27 13:40:21 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.43 2007-04-30 14:33:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -334,6 +334,13 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $parent_map_key  = $zone_view_data->{'parent_map_key'};
     my $parent_zone_key = $zone_view_data->{'parent_zone_key'};
 
+    my $parent_map_data = $self->app_data_module()
+        ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
+    my $parent_unit_granularity
+        = $self->map_type_data( $parent_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || 0;
+
     # Collect Sub-Maps
     my $sub_maps
         = $self->app_data_module()->sub_maps( map_id => $parent_map_id, );
@@ -348,6 +355,10 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             feature_start  => $sub_map->{'feature_start'},
             feature_stop   => $sub_map->{'feature_stop'},
             feature_id     => $sub_map->{'feature_id'},
+            feature_length => (
+                $sub_map->{'feature_stop'} - $sub_map->{'feature_start'}
+                    + $parent_unit_granularity
+            ),
         };
     }
 
@@ -515,6 +526,13 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $parent_zone_key = $args{'parent_zone_key'} or return;
     my $parent_map_key  = $args{'parent_map_key'}  or return;
 
+    my $parent_map_data = $self->app_data_module()
+        ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
+    my $parent_unit_granularity
+        = $self->map_type_data( $parent_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || 0;
+
     my @sub_map_keys;
 
     my $parent_map_id = $self->map_key_to_id($parent_map_key);
@@ -576,6 +594,10 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
                 feature_start  => $sub_map->{'feature_start'},
                 feature_stop   => $sub_map->{'feature_stop'},
                 feature_id     => $sub_map->{'feature_id'},
+                feature_length => (
+                    $sub_map->{'feature_stop'} - $sub_map->{'feature_start'}
+                        + $parent_unit_granularity
+                ),
             };
 
         }
@@ -1952,10 +1974,10 @@ Move a map from one place on a parent to another
     my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
 
     # Get pixel location on parent map
-    my %ghost_location_data = $self->get_ghost_location_coords(
-        map_key      => $map_key,
-        zone_key     => $zone_key,
-        ghost_bounds => $ghost_bounds,
+    my %ghost_location_data = $self->place_ghost_location_on_parent_map(
+        map_key          => $map_key,
+        zone_key         => $zone_key,
+        highlight_bounds => $ghost_bounds,
     );
 
     my $new_parent_map_key = $ghost_location_data{'parent_map_key'};
@@ -1985,9 +2007,26 @@ Move a map from one place on a parent to another
 
     my $new_feature_start
         = $relative_unit_start + $parent_map_data->{'map_start'};
-    my $new_feature_stop
-        = $new_feature_start - $self->{'sub_maps'}{$map_key}{'feature_start'}
-        + $self->{'sub_maps'}{$map_key}{'feature_stop'};
+    my $new_feature_stop = $new_feature_start
+        + $self->{'sub_maps'}{$map_key}{'feature_length'};
+
+# If the feature end is at the end of the map, simply make the feature end the map end
+    if (    $new_location_coords->[0] == $parent_map_coords->[0]
+        and $new_location_coords->[2] == $parent_map_coords->[2] )
+    {
+        $new_feature_start = $parent_map_data->{'map_start'};
+        $new_feature_stop  = $parent_map_data->{'map_stop'};
+    }
+    elsif ( $new_location_coords->[0] == $parent_map_coords->[0] ) {
+        $new_feature_start = $parent_map_data->{'map_start'};
+        $new_feature_stop  = $new_feature_start
+            + $self->{'sub_maps'}{$map_key}{'feature_length'};
+    }
+    elsif ( $new_location_coords->[2] == $parent_map_coords->[2] ) {
+        $new_feature_stop  = $parent_map_data->{'map_stop'};
+        $new_feature_start = $new_feature_stop
+            - $self->{'sub_maps'}{$map_key}{'feature_length'};
+    }
 
     my %return_hash = (
         map_key            => $map_key,
@@ -2451,18 +2490,31 @@ sub place_ghost_location_on_parent_map {
 
 =pod
 
-=head2 move_ghost
+=head2 place_ghost_location_on_parent_map
 
-Controls how the ghost map moves.
+Controls how the parent map is highlighted
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key = $args{'map_key'};
+    my $map_key          = $args{'map_key'};
+    my $highlight_bounds = $args{'highlight_bounds'};
+    my $mouse_dx         = $args{'mouse_dx'} || 0;
+    my $mouse_dy         = $args{'mouse_dy'} || 0;
+    my $initiate         = $args{'initiate'} || 0;
+    my $zone_key         = $args{'$zone_key'}
+        || $self->map_key_to_zone_key($map_key);
+    my $parent_map_key = $initiate
+        ? $self->{'scaffold'}{$zone_key}{'parent_map_key'}
+        : $args{'parent_map_key'}
+        || $self->{'current_ghost_parent_map_key'}
+        || $self->{'scaffold'}{$zone_key}{'parent_map_key'};
+    my $parent_zone_key = $args{'$parent_zone_key'}
+        || $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
 
-    my $zone_key        = $self->map_key_to_zone_key($map_key);
-    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
-    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $parent_map_layout  = $self->{'map_layout'}{$parent_map_key};
+    my $parent_zone_layout = $self->{'zone_layout'}{$parent_zone_key};
 
    # If no parent, don't bother
    # allow movement when the sub-map and parent were at different zoom levels.
@@ -2472,28 +2524,54 @@ Controls how the ghost map moves.
         return;
     }
 
-    my $parent_map_key     = $self->{'scaffold'}{$zone_key}{'parent_map_key'};
-    my $parent_zone_layout = $self->{'zone_layout'}{$parent_zone_key};
-    my $parent_map_layout  = $self->{'map_layout'}{$parent_map_key};
-    my $parent_map_id      = $self->map_key_to_id($parent_map_key);
-    my $parent_data
-        = $self->app_data_module()->map_data( map_id => $parent_map_id, );
-    my $parent_start = $parent_data->{'map_start'};
-    my $parent_stop  = $parent_data->{'map_stop'};
+    # Center highlight on center of ghost map but using the corrds on the
+    # parent map
+    my $feature_length = $self->{'sub_maps'}{$map_key}{'feature_length'};
+
     my $parent_pixels_per_unit
         = $self->{'map_pixels_per_unit'}{$parent_map_key}
         || $self->{'scaffold'}{$parent_zone_key}{'pixels_per_unit'};
+    my $feature_pixel_length = $parent_pixels_per_unit * $feature_length;
 
-    my $feature_start = $self->{'sub_maps'}{$map_key}{'feature_start'};
-    my $feature_stop  = $self->{'sub_maps'}{$map_key}{'feature_stop'};
-
+    # Get parent offsets
+    my ( $parent_main_x_offset, $parent_main_y_offset )
+        = $self->get_main_zone_offsets( zone_key => $parent_zone_key, );
     my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
 
-    my $x1 = ( ( $feature_start - $parent_start ) * $parent_pixels_per_unit )
-        + $parent_map_layout->{'coords'}[0] + $parent_x_offset;
-    my $x2 = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
-        + $parent_map_layout->{'coords'}[0] + $parent_x_offset;
+    # Get the center x of the ghost bounds and translate into the parents
+    # coords
+    my $center_x
+        = int( ( $highlight_bounds->[2] + $highlight_bounds->[0] ) / 2 + 0.5 )
+        - $parent_main_x_offset + $parent_x_offset;
 
+    # Work out x coords
+    my $x1 = $center_x - int( $feature_pixel_length / 2 ) + $mouse_dx;
+    my $x2 = $x1 + $feature_pixel_length;
+
+    if (    $parent_map_layout->{'coords'}[0] > $x1
+        and $parent_map_layout->{'coords'}[2] < $x2 )
+    {
+
+        # Feature bigger than the map, shrink the feature to the map length.
+        $x1 = $parent_map_layout->{'coords'}[0];
+        $x2 = $parent_map_layout->{'coords'}[2];
+    }
+    elsif ( $parent_map_layout->{'coords'}[0] > $x1 ) {
+
+        # Not on the map to the right, push to the left
+        my $offset = $parent_map_layout->{'coords'}[0] - $x1;
+        $x1 += $offset;
+        $x2 += $offset;
+    }
+    elsif ( $parent_map_layout->{'coords'}[2] < $x2 ) {
+
+        # Not on the map to the left, push to the right
+        my $offset = $x2 - $parent_map_layout->{'coords'}[2];
+        $x1 -= $offset;
+        $x2 -= $offset;
+    }
+
+    # Get y coords
     my $y1 = $parent_map_layout->{'coords'}[1];
     my $y2 = $parent_map_layout->{'coords'}[3];
 
@@ -2511,6 +2589,7 @@ Controls how the ghost map moves.
         visible         => $visible,
         parent_zone_key => $parent_zone_key,
         window_key      => $window_key,
+        parent_map_key  => $parent_map_key,
         location_coords => [ $x1, $y1, $x2, $y2 ]
     );
 
@@ -2560,13 +2639,13 @@ Controls how the ghost map moves.
     my $ghost_parent_zone_key
         = $self->map_key_to_zone_key($ghost_parent_map_key);
 
-    my %ghost_location_data = $self->get_ghost_location_coords(
-        map_key               => $map_key,
-        zone_key              => $zone_key,
-        mouse_dx              => $mouse_dx,
-        mouse_dy              => $mouse_dy,
-        ghost_bounds          => $ghost_bounds,
-        ghost_parent_zone_key => $ghost_parent_zone_key,
+    my %ghost_location_data = $self->place_ghost_location_on_parent_map(
+        map_key          => $map_key,
+        zone_key         => $zone_key,
+        mouse_dx         => $mouse_dx,
+        mouse_dy         => $mouse_dy,
+        highlight_bounds => $ghost_bounds,
+        parent_zone_key  => $ghost_parent_zone_key,
     );
 
     my %return_hash = (
@@ -3720,6 +3799,8 @@ This stores the location of a sub map on the parent.
             parent_key    => $parent_map_key,
             feature_start => $feature_start,
             feature_stop  => $feature_stop,
+            feature_id  => $feature_id,
+            feature_length  => $feature_length,
         }
     }
 
