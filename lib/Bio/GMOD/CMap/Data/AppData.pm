@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.18 2007-04-10 14:54:56 mwz444 Exp $
+# $Id: AppData.pm,v 1.19 2007-05-05 05:25:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -32,6 +32,7 @@ use LWP::UserAgent;
 use Storable qw(freeze thaw);
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
+use Clone qw(clone);
 use base 'Bio::GMOD::CMap::Data';
 
 # ----------------------------------------------------
@@ -106,6 +107,53 @@ map.
     }
 
     return $self->{'map_data'}{$map_id};
+}
+
+# ----------------------------------------------------
+sub remove_map_data {
+
+=pod
+
+=head2 map_data
+
+Remove map data from memory;
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'} or return undef;
+
+    delete $self->{'map_data'}{$map_id};
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub generate_map_data {
+
+=pod
+
+=head2 map_data
+
+Given a map accessions, return the information required to draw the
+map.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $old_map_id = $args{'old_map_id'} or return undef;
+    my $new_map_id = $args{'new_map_id'} or return undef;
+    my $map_acc   = $args{'map_acc'} || $new_map_id;
+    my $map_start = $args{'map_start'};
+    my $map_stop  = $args{'map_stop'};
+
+    $self->{'map_data'}{$new_map_id} = clone $self->{'map_data'}{$old_map_id};
+    $self->{'map_data'}{$new_map_id}{'map_id'}    = $new_map_id;
+    $self->{'map_data'}{$new_map_id}{'map_acc'}   = $map_acc;
+    $self->{'map_data'}{$new_map_id}{'map_start'} = $map_start;
+    $self->{'map_data'}{$new_map_id}{'map_stop'}  = $map_stop;
+
+    return $self->{'map_data'}{$new_map_id};
 }
 
 # ----------------------------------------------------
@@ -236,6 +284,69 @@ features.  These do NOT include the sub-maps.
     }
 
     return $self->{'feature_data_by_map'}{$map_id};
+}
+
+# ----------------------------------------------------
+sub copy_feature_data_to_new_map {
+
+=pod
+
+=head2 copy_feature_data
+
+Given a list of feature_accs, copy them in memory to a new map_id 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $old_map_id       = $args{'old_map_id'};
+    my $new_map_id       = $args{'new_map_id'};
+    my $feature_acc_hash = $args{'feature_acc_hash'};
+
+    foreach (
+        my $i = 0;
+        $i <= $#{ $self->{'feature_data_by_map'}{$old_map_id} || [] };
+        $i++
+        )
+    {
+        if ($feature_acc_hash->{ $self->{'feature_data_by_map'}{$old_map_id}
+                    [$i] } )
+        {
+            push @{ $self->{'feature_data_by_map'}{$new_map_id} },
+                $self->{'feature_data_by_map'}{$old_map_id}[$i];
+
+           # uncomment the following to make this a move instead of a copy.
+           #splice( @{ $self->{'feature_data_by_map'}{$old_map_id} }, $i, 1,);
+           #$i--;
+        }
+    }
+    $self->{'sorted_feature_data'}{$old_map_id} = undef;
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub move_feature_data_on_map {
+
+=pod
+
+=head2 move_feature_data_on_map
+
+Given a list of feature_accs, move them in memory 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_acc_array = $args{'feature_acc_array'} || [];
+    my $offset            = $args{'offset'};
+
+    foreach my $feature_acc (@$feature_acc_array) {
+        $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'}
+            += $offset;
+        $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'}
+            += $offset;
+    }
+
+    return 1;
 }
 
 # ----------------------------------------------------

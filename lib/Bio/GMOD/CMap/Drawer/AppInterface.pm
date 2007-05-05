@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.48 2007-04-30 14:33:55 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.49 2007-05-05 05:25:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2098,6 +2098,8 @@ sub popup_map_menu {
     my $zinc       = $args{'zinc'};
     my $moved      = $args{'moved'};
     my $map_key    = $args{'map_key'};
+    my $mouse_x    = $args{'mouse_x'};
+    my $mouse_y    = $args{'mouse_y'};
     my $controller = $self->app_controller();
 
     my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
@@ -2106,7 +2108,6 @@ sub popup_map_menu {
 
         # Moved
         if ($moved) {
-
             push @$menu_items, [
                 Button => 'Move Map',
                 -command => sub {
@@ -2126,6 +2127,20 @@ sub popup_map_menu {
 
             },
         ];
+        if ( !$moved ) {
+            push @$menu_items, [
+                Button => 'Split Map',
+                -command => sub {
+                    $self->split_map_popup(
+                        map_key    => $map_key,
+                        window_key => $window_key,
+                        zinc       => $zinc,
+                        mouse_x    => $mouse_x,
+                    );
+                },
+            ];
+
+        }
 
     }
 
@@ -2391,8 +2406,6 @@ sub popup_warning {
 # ----------------------------------------------------
 sub move_map_popup {
 
-    #print STDERR "AI_NEEDS_MODDED 35\n";
-
 =pod
 
 =head2 move_map_popup
@@ -2443,6 +2456,55 @@ sub move_map_popup {
             new_parent_map_key => $new_parent_map_key,
             new_feature_start  => $new_feature_start,
             new_feature_stop   => $new_feature_stop,
+        );
+    }
+    $self->reset_object_selections(
+        zinc       => $zinc,
+        window_key => $window_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub split_map_popup {
+
+=pod
+
+=head2 split_map_popup
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key    = $args{'map_key'};
+    my $window_key = $args{'window_key'};
+    my $zinc       = $args{'zinc'};
+    my $mouse_x    = $args{'mouse_x'};
+    my $controller = $self->app_controller();
+
+    my $position_on_map = $controller->app_display_data->get_position_on_map(
+        map_key => $map_key,
+        mouse_x => $mouse_x,
+    );
+
+    my $popup = $self->main_window()->Dialog(
+        -title          => 'Split Map',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+    );
+    $popup->add(
+        'LabEntry',
+        -textvariable => \$position_on_map,
+        -width        => 10,
+        -label        => 'Position',
+        -labelPack    => [ -side => 'left' ],
+    )->pack();
+    my $answer = $popup->Show();
+
+    if ( $answer eq 'OK' ) {
+        $controller->app_display_data->split_map(
+            map_key         => $map_key,
+            position_on_map => $position_on_map,
         );
     }
     $self->reset_object_selections(
@@ -3388,6 +3450,8 @@ Handle the stopping drag event
                 moved => $self->{'highlight_map_moved'}
                     { $self->{'drag_window_key'} },
                 map_key => $map_key,
+                mouse_x => $x,
+                mouse_y => $y,
             );
         }
         elsif ($self->{'drag_obj'} eq 'background'

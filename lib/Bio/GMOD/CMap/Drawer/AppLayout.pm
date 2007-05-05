@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.36 2007-04-27 13:40:21 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.37 2007-05-05 05:25:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -55,6 +55,7 @@ my @subs = qw[
     set_zone_bgcolor
     move_zone
     move_map
+    destroy_map_for_relayout
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
