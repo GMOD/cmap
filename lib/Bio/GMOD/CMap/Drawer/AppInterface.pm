@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.49 2007-05-05 05:25:04 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.50 2007-05-11 15:26:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1075,6 +1075,8 @@ Draws and re-draws on the zinc
                 $zone_layout->{'bounds'}[1]
             ]
         );
+
+        #print STDERR "$zone_key\n";
         $self->set_zone_clip(
             zone_key      => $zone_key,
             zone_group_id => $zone_group_id,
@@ -1143,7 +1145,8 @@ Draws and re-draws on the zinc
             #        y_offset => $zone_y_offset,
             #        items    => [
             #            [   1, undef, 'rectangle',
-            #                $map_layout->{'bounds'},
+            #                [1,1,200,200],
+            #                #$map_layout->{'bounds'},
             #                { -linecolor => 'red', -linewidth => '3', }
             #            ],
             #        ],
@@ -1439,18 +1442,18 @@ Sets the group clip object
         || $self->zinc( window_key => $args{'window_key'}, );
     my $zone_layout = $args{'zone_layout'};
 
-    #my $fillcolor = ( $zone_key == 1 ) ? 'green' : 'red';
+    #my $fillcolor = ( $zone_key == 1 ) ? 'blue' : 'red';
     my $clip_bounds = [
-
-        #$zone_layout->{'viewable_internal_x1'},
         $zone_layout->{'internal_bounds'}[0],
         $zone_layout->{'internal_bounds'}[1],
         $zone_layout->{'internal_bounds'}[2],
-
-        #$zone_layout->{'viewable_internal_x2'},
         $zone_layout->{'internal_bounds'}[3]
     ];
-    unless ( $self->{'zone_group_clip_id'}{$zone_key} ) {
+    if ( $self->{'zone_group_clip_id'}{$zone_key} ) {
+        $zinc->coords( $self->{'zone_group_clip_id'}{$zone_key}, $clip_bounds,
+        );
+    }
+    else {
         $self->{'zone_group_clip_id'}{$zone_key} = $zinc->add(
             'rectangle', $zone_group_id,
             $clip_bounds,
@@ -1459,12 +1462,10 @@ Sets the group clip object
             #-filled    => 1,
             #-fillcolor => $fillcolor,
         );
+        $zinc->addtag( 'on_top', 'withtag',
+            $self->{'zone_group_clip_id'}{$zone_key} );
         $zinc->itemconfigure( $zone_group_id,
             -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
-    }
-    else {
-        $zinc->coords( $self->{'zone_group_clip_id'}{$zone_key}, $clip_bounds,
-        );
     }
     $zinc->itemconfigure( $zone_group_id,
         -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
@@ -2095,19 +2096,24 @@ sub popup_map_menu {
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
-    my $moved      = $args{'moved'};
-    my $map_key    = $args{'map_key'};
-    my $mouse_x    = $args{'mouse_x'};
-    my $mouse_y    = $args{'mouse_y'};
-    my $controller = $self->app_controller();
+    my $zinc             = $args{'zinc'};
+    my $moved            = $args{'moved'};
+    my $map_key          = $args{'map_key'};
+    my $mouse_x          = $args{'mouse_x'};
+    my $mouse_y          = $args{'mouse_y'};
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
 
     my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
     my $menu_items = [];
     if ($map_key) {
+        my $zone_key = $app_display_data->map_key_to_zone_key($map_key);
+        my $map_num  = $self->number_of_object_selections( $window_key, );
 
-        # Moved
-        if ($moved) {
+        # Map has been moved
+        if ( $moved
+            and not $app_display_data->{'scaffold'}{$zone_key}{'is_top'} )
+        {
             push @$menu_items, [
                 Button => 'Move Map',
                 -command => sub {
@@ -2128,17 +2134,34 @@ sub popup_map_menu {
             },
         ];
         if ( !$moved ) {
-            push @$menu_items, [
-                Button => 'Split Map',
-                -command => sub {
-                    $self->split_map_popup(
-                        map_key    => $map_key,
-                        window_key => $window_key,
-                        zinc       => $zinc,
-                        mouse_x    => $mouse_x,
-                    );
-                },
-            ];
+            if ( $map_num == 1 ) {
+                push @$menu_items, [
+                    Button => 'Split Map',
+                    -command => sub {
+                        $self->split_map_popup(
+                            map_key    => $map_key,
+                            window_key => $window_key,
+                            zinc       => $zinc,
+                            mouse_x    => $mouse_x,
+                        );
+                    },
+                ];
+            }
+            elsif ( $map_num == 2 ) {
+                my @object_selection_keys
+                    = $self->object_selection_keys($window_key);
+                push @$menu_items, [
+                    Button => 'Merge Maps',
+                    -command => sub {
+                        $self->merge_maps_popup(
+                            map_key1   => $object_selection_keys[0],
+                            map_key2   => $object_selection_keys[1],
+                            window_key => $window_key,
+                            zinc       => $zinc,
+                        );
+                    },
+                ];
+            }
 
         }
 
@@ -2513,6 +2536,110 @@ sub split_map_popup {
     );
 
     return;
+}
+
+# ----------------------------------------------------
+sub merge_maps_popup {
+
+=pod
+
+=head2 merge_maps_popup
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key1 = $args{'map_key1'};
+    my $map_key2 = $args{'map_key2'};
+
+    # Keep the order consistent.
+    if ( $map_key1 > $map_key2 ) {
+        ( $map_key1, $map_key2 ) = ( $map_key2, $map_key1 );
+    }
+    my $window_key       = $args{'window_key'};
+    my $zinc             = $args{'zinc'};
+    my $overlap_amount   = $args{'overlap_amount'} || 0;
+    my $order            = $args{'order'} || 0;
+    my $app_display_data = $self->app_controller()->app_display_data();
+
+    my $map_id1       = $app_display_data->map_key_to_id($map_key1);
+    my $map_id2       = $app_display_data->map_key_to_id($map_key2);
+    my $zone_key1     = $app_display_data->map_key_to_zone_key($map_key1);
+    my $zone_key2     = $app_display_data->map_key_to_zone_key($map_key2);
+    my @map_ids       = ( $map_id1, $map_id2 );
+    my $map_data_hash = $app_display_data->app_data_module()
+        ->map_data_hash( map_ids => \@map_ids, );
+    unless ( $map_data_hash->{$map_key1}{'map_set_id'}
+        == $map_data_hash->{$map_key2}{'map_set_id'} )
+    {
+        $self->popup_warning(
+            text => "Cannot merge maps that are not in the same map set.", );
+        return;
+    }
+    unless ( $zone_key1 == $zone_key2 ) {
+        $self->popup_warning( text =>
+                "This program does not allow merges between maps with different parents.  Please move one map first.",
+        );
+        return;
+    }
+
+    my $popup = $self->main_window()->Dialog(
+        -title          => 'Merge Maps',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+    );
+    $popup->add(
+        'LabEntry',
+        -textvariable => \$overlap_amount,
+        -width        => 10,
+        -label        => 'Overlap',
+        -labelPack    => [ -side => 'left' ],
+    )->pack();
+    $popup->add(
+        'Radiobutton',
+        -variable => \$order,
+        -value    => 1,
+        -text     => $map_data_hash->{$map_key1}{'map_name'} . "-"
+            . $map_data_hash->{$map_key2}{'map_name'},
+    )->pack();
+    $popup->add(
+        'Radiobutton',
+        -variable => \$order,
+        -value    => -1,
+        -text     => $map_data_hash->{$map_key2}{'map_name'} . "-"
+            . $map_data_hash->{$map_key1}{'map_name'},
+    )->pack();
+    my $answer = $popup->Show();
+
+    if ( $answer eq 'OK' ) {
+        if ( !$order ) {
+            $self->popup_warning( text => "Please select an order of maps.",
+            );
+            return $self->merge_maps_popup(
+                map_key1       => $map_key1,
+                map_key2       => $map_key2,
+                window_key     => $window_key,
+                zinc           => $zinc,
+                order          => $order,
+                overlap_amount => $overlap_amount,
+            );
+        }
+        elsif ( $order == -1 ) {
+            ( $map_key1, $map_key2 ) = ( $map_key2, $map_key1 );
+            ( $map_id1,  $map_id2 )  = ( $map_id2,  $map_id1 );
+        }
+
+        $app_display_data->merge_maps(
+            overlap_amount => $overlap_amount,
+            first_map_key  => $map_key1,
+            second_map_key => $map_key2,
+        );
+    }
+    $self->reset_object_selections(
+        zinc       => $zinc,
+        window_key => $window_key,
+    );
+
+    return 1;
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.19 2007-05-05 05:25:04 mwz444 Exp $
+# $Id: AppData.pm,v 1.20 2007-05-11 15:26:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -92,18 +92,27 @@ map.
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_id = $args{'map_id'} or return undef;
+    my $map_id  = $args{'map_id'};
+    my $map_acc = $args{'map_acc'};
 
-    unless ( $self->{'map_data'}{$map_id} ) {
+    if (   ( $map_id and not $self->{'map_data'}{$map_id} )
+        or ( $map_acc and not $map_id ) )
+    {
 
-        my $maps = $self->sql_get_maps( map_id => $map_id, )
-            || [];
-        if (@$maps) {
-            $self->{'map_data'}{$map_id} = $maps->[0];
+        my $maps;
+        if ($map_id) {
+            $maps = $self->sql_get_maps( map_id => $map_id, )
+                || [];
+            return undef unless (@$maps);
         }
         else {
-            return undef;
+            $maps = $self->sql_get_maps( map_accs => [ $map_acc, ], )
+                || [];
+            return undef unless (@$maps);
+            $map_id = $maps->[0]{'map_id'};
         }
+
+        $self->{'map_data'}{$map_id} = $maps->[0];
     }
 
     return $self->{'map_data'}{$map_id};
@@ -146,12 +155,14 @@ map.
     my $map_acc   = $args{'map_acc'} || $new_map_id;
     my $map_start = $args{'map_start'};
     my $map_stop  = $args{'map_stop'};
+    my $map_name  = $args{'map_name'};
 
     $self->{'map_data'}{$new_map_id} = clone $self->{'map_data'}{$old_map_id};
     $self->{'map_data'}{$new_map_id}{'map_id'}    = $new_map_id;
     $self->{'map_data'}{$new_map_id}{'map_acc'}   = $map_acc;
     $self->{'map_data'}{$new_map_id}{'map_start'} = $map_start;
     $self->{'map_data'}{$new_map_id}{'map_stop'}  = $map_stop;
+    $self->{'map_data'}{$new_map_id}{'map_name'}  = $map_name if ($map_name);
 
     return $self->{'map_data'}{$new_map_id};
 }
@@ -293,7 +304,7 @@ sub copy_feature_data_to_new_map {
 
 =head2 copy_feature_data
 
-Given a list of feature_accs, copy them in memory to a new map_id 
+Given a hash of feature_accs, copy them in memory to a new map_id 
 
 =cut
 

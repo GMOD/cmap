@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.44 2007-05-05 05:25:04 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.45 2007-05-11 15:26:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -180,7 +180,8 @@ Adds the first slot
     }
 
     my $zone_key = $self->initialize_zone(
-        window_key         => $window_key,
+        window_key => $window_key,
+        map_set_id => $self->get_map_set_id_from_map_id( $map_ids->[0] ),
         attached_to_parent => 0,
         expanded           => 1,
         is_top             => 1,
@@ -198,11 +199,13 @@ Adds the first slot
             zone_key => $zone_key,
         );
 
-        $self->add_sub_maps_to_map(
-            window_key      => $window_key,
-            parent_zone_key => $zone_key,
-            parent_map_key  => $map_key,
-        );
+        if (0) {    # DEV
+            $self->add_sub_maps_to_map(
+                window_key      => $window_key,
+                parent_zone_key => $zone_key,
+                parent_map_key  => $map_key,
+            );
+        }
     }
 
     # Handle overview after the regular zones, so we can use that info
@@ -258,8 +261,19 @@ hierarchy
     my $window_key     = $args{'window_key'};
     my $zone_view_data = $args{'zone_view_data'};
 
+    if ( ref( $zone_view_data->{'map'} ) eq 'HASH' ) {
+        $zone_view_data->{'map'} = [ $zone_view_data->{'map'} ];
+    }
+    return unless ( @{ $zone_view_data->{'map'} || [] } );
+
+    my $representative_map_acc = $zone_view_data->{'map'}[0]{'map_acc'};
+    my $map_data               = $self->app_data_module()
+        ->map_data( map_acc => $representative_map_acc, );
+    return unless ( %{ $map_data || {} } );
+
     my $zone_key = $self->initialize_zone(
         window_key         => $window_key,
+        map_set_id         => $map_data->{'map_set_id'},
         attached_to_parent => 0,
         expanded           => 1,
         is_top             => 1,
@@ -319,10 +333,11 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     # Collect Sub-Maps
     my $sub_maps
         = $self->app_data_module()->sub_maps( map_id => $parent_map_id, );
+    return unless ( @{ $sub_maps || [] } );
 
     my %sub_maps_hash;
 
-    foreach my $sub_map ( @{ $sub_maps || [] } ) {
+    foreach my $sub_map (@$sub_maps) {
         my $sub_map_id = $sub_map->{'sub_map_id'};
 
         $sub_maps_hash{$sub_map_id} = {
@@ -343,7 +358,9 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         return;
     }
     my $zone_key = $self->initialize_zone(
-        window_key         => $window_key,
+        window_key => $window_key,
+        map_set_id =>
+            $self->get_map_set_id_from_map_id( $sub_maps->[0]{'sub_map_id'} ),
         parent_zone_key    => $parent_zone_key,
         parent_map_key     => $parent_map_key,
         attached_to_parent => 1,
@@ -529,7 +546,10 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     foreach my $set_key ( keys %map_ids_by_set ) {
 
         my $child_zone_key = $self->initialize_zone(
-            window_key         => $window_key,
+            window_key => $window_key,
+            map_set_id => $self->get_map_set_id_from_map_id(
+                $sub_maps->[0]{'sub_map_id'}
+            ),
             parent_zone_key    => $parent_zone_key,
             parent_map_key     => $parent_map_key,
             attached_to_parent => 1,
@@ -2124,8 +2144,10 @@ Create two new maps and hide the original
 
     # Figure out the break points, the two maps will probably overlap some.
     # Simultaniously, place the features on one or the other.
+    my $first_map_name   = $ori_map_data->{'map_name'} . ".1";
     my $first_map_start  = $ori_map_data->{'map_start'};
     my $first_map_stop   = $position_on_map;
+    my $second_map_name  = $ori_map_data->{'map_name'} . ".2";
     my $second_map_start = $position_on_map;
     my $second_map_stop  = $ori_map_data->{'map_stop'};
     my %feature_accs_for_first_map;
@@ -2201,9 +2223,6 @@ Create two new maps and hide the original
         map_id   => $second_map_id,
         zone_key => $zone_key,
     );
-    my $ori_map_layout    = $self->{'map_layout'}{$ori_map_key};
-    my $first_map_layout  = $self->{'map_layout'}{$ori_map_key};
-    my $second_map_layout = $self->{'map_layout'}{$second_map_key};
 
 # Always save the action and wipe any later changes.  A split will kill the redo path.
 #unless ($undo_or_redo){
@@ -2277,8 +2296,8 @@ Create two new maps and hide the original
     );
     foreach my $sub_map_id ( keys %sub_map_ids_for_first_map ) {
         my @sub_map_keys = $self->get_map_keys_from_id_and_a_list_of_zones(
-            sub_map_id => $sub_map_id,
-            zone_keys  => \@possible_zone_keys,
+            map_id    => $sub_map_id,
+            zone_keys => \@possible_zone_keys,
         );
         foreach my $sub_map_key (@sub_map_keys) {
             my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
@@ -2293,8 +2312,8 @@ Create two new maps and hide the original
     }
     foreach my $sub_map_id ( keys %sub_map_ids_for_second_map ) {
         my @sub_map_keys = $self->get_map_keys_from_id_and_a_list_of_zones(
-            sub_map_id => $sub_map_id,
-            zone_keys  => \@possible_zone_keys,
+            map_id    => $sub_map_id,
+            zone_keys => \@possible_zone_keys,
         );
         foreach my $sub_map_key (@sub_map_keys) {
             my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
@@ -2314,12 +2333,14 @@ Create two new maps and hide the original
         new_map_id => $first_map_id,
         map_start  => $first_map_start,
         map_stop   => $first_map_stop,
+        map_name   => $first_map_name,
     );
     $self->app_data_module()->generate_map_data(
         old_map_id => $ori_map_id,
         new_map_id => $second_map_id,
         map_start  => $second_map_start,
         map_stop   => $second_map_stop,
+        map_name   => $second_map_name,
     );
 
     # Remove the drawing data for the old map and cut its ties with the other
@@ -2377,7 +2398,7 @@ Destroy the two new maps and show the original
     my $first_map_key  = $args{'first_map_key'};
     my $second_map_key = $args{'second_map_key'};
 
-    my $zone_key   = $self->map_key_to_zone_key($ori_map_key);
+    my $zone_key   = $self->map_key_to_zone_key($first_map_key);
     my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
 
     # Reattach original map to the zone
@@ -2393,8 +2414,8 @@ Destroy the two new maps and show the original
             )
             )
         {
-            foreach my $sub_map_key ( @{ $self->map_order($zone_key) || [] } )
-            {
+            my @map_order = @{ $self->map_order($child_zone_key) || [] };
+            foreach my $sub_map_key (@map_order) {
                 my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
                 next unless ($sub_map_info);
                 $self->move_sub_map_on_parents_in_memory(
@@ -2433,6 +2454,251 @@ Destroy the two new maps and show the original
 }
 
 # ----------------------------------------------------
+sub merge_maps {
+
+=pod
+
+=head2 merge_maps
+
+Merge two maps
+
+Create one new map and hide the original maps
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $first_map_key  = $args{'first_map_key'};
+    my $second_map_key = $args{'second_map_key'};
+    my $overlap_amount = $args{'overlap_amount'};
+    my $undo_or_redo   = $args{'undo_or_redo'} || 0;
+    my $zone_key       = $self->map_key_to_zone_key($first_map_key);
+    my $window_key     = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+    my $first_map_id  = $self->map_key_to_id($first_map_key);
+    my $second_map_id = $self->map_key_to_id($second_map_key);
+    my $first_map_data
+        = $self->app_data_module()->map_data( map_id => $first_map_id );
+    my $second_map_data
+        = $self->app_data_module()->map_data( map_id => $second_map_id );
+
+    my $second_map_offset = $first_map_data->{'map_stop'} - $overlap_amount;
+    if ( $second_map_offset < $first_map_data->{'map_start'} ) {
+        $self->app_interface()
+            ->popup_warning( window_key => 'Overlap is too big.', );
+        return;
+    }
+
+    my $unit_granularity
+        = $self->map_type_data( $first_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || DEFAULT->{'unit_granularity'};
+    my $merged_map_start = $first_map_data->{'map_start'};
+    my $merged_map_stop = $second_map_data->{'map_stop'} + $second_map_offset;
+    if ( $merged_map_stop < $first_map_data->{'map_stop'} ) {
+        $merged_map_stop = $first_map_data->{'map_stop'};
+    }
+    my $merged_map_id  = $self->create_temp_id();
+    my $merged_map_key = $self->initialize_map(
+        map_id   => $merged_map_id,
+        zone_key => $zone_key,
+    );
+
+    # Reassign Features
+    # First get the feature accs for each map
+    my @first_map_feature_accs;
+    my $first_feature_data = $self->app_data_module()
+        ->feature_data_by_map( map_id => $first_map_id, ) || [];
+    foreach my $feature (@$first_feature_data) {
+        push @first_map_feature_accs, $feature->{'feature_acc'};
+    }
+    my @second_map_feature_accs;
+    my $second_feature_data = $self->app_data_module()
+        ->feature_data_by_map( map_id => $second_map_id, ) || [];
+    foreach my $feature (@$second_feature_data) {
+        push @second_map_feature_accs, $feature->{'feature_acc'};
+    }
+
+    # Then copy the features onto the new map
+    $self->app_data_module()->copy_feature_data_to_new_map(
+        old_map_id       => $first_map_id,
+        new_map_id       => $merged_map_id,
+        feature_acc_hash => { map { ( $_ => 1 ) } @first_map_feature_accs },
+    );
+    $self->app_data_module()->copy_feature_data_to_new_map(
+        old_map_id       => $second_map_id,
+        new_map_id       => $merged_map_id,
+        feature_acc_hash => { map { ( $_ => 1 ) } @second_map_feature_accs },
+    );
+
+    # Finally move the second map's features by the offset
+    $self->app_data_module()->move_feature_data_on_map(
+        feature_acc_array => \@second_map_feature_accs,
+        offset            => $second_map_offset,
+    );
+
+    # Handle sub map information if they are sub_maps
+    if ( $self->{'sub_maps'}{$first_map_key} ) {
+        my $first_feature_start
+            = $self->{'sub_maps'}{$first_map_key}{'feature_start'};
+        my $first_feature_stop
+            = $self->{'sub_maps'}{$first_map_key}{'feature_stop'};
+        my $second_feature_start
+            = $self->{'sub_maps'}{$second_map_key}{'feature_start'};
+        my $second_feature_stop
+            = $self->{'sub_maps'}{$second_map_key}{'feature_stop'};
+        my $merged_feature_start =
+            ( $first_feature_start < $second_feature_start )
+            ? $first_feature_start
+            : $second_feature_start;
+        my $merged_feature_stop =
+            ( $first_feature_stop > $second_feature_stop )
+            ? $first_feature_stop
+            : $second_feature_stop;
+
+        my $merged_feature_id = $self->create_temp_id();
+
+        $self->{'sub_maps'}{$merged_map_key} = {
+            parent_map_key =>
+                $self->{'sub_maps'}{$first_map_key}{'parent_map_key'},
+            feature_start  => $merged_feature_start,
+            feature_stop   => $merged_feature_stop,
+            feature_id     => $merged_feature_id,
+            feature_length => (
+                $merged_feature_stop - $merged_feature_start
+                    + $unit_granularity
+            ),
+        };
+
+        # BF Potentially Merge the feature as well
+    }
+
+    # Move the sub maps over to the new merged map
+    #First create lists of sub maps
+    my @first_sub_map_keys;
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $first_map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        foreach my $sub_map_key (
+            @{ $self->{'map_order'}{$child_zone_key} || [] } )
+        {
+            push @first_sub_map_keys, $sub_map_key;
+        }
+    }
+    my @second_sub_map_keys;
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $second_map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        foreach my $sub_map_key (
+            @{ $self->{'map_order'}{$child_zone_key} || [] } )
+        {
+            push @second_sub_map_keys, $sub_map_key;
+        }
+    }
+
+    # Then actually move the sub maps
+    foreach my $sub_map_key (@first_sub_map_keys) {
+        my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
+        next unless ($sub_map_info);
+        $self->move_sub_map_on_parents_in_memory(
+            sub_map_key    => $sub_map_key,
+            parent_map_key => $merged_map_key,
+            feature_start  => $sub_map_info->{'feature_start'},
+            feature_stop   => $sub_map_info->{'feature_stop'},
+        );
+    }
+    foreach my $sub_map_key (@second_sub_map_keys) {
+        my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
+        next unless ($sub_map_info);
+        $self->move_sub_map_on_parents_in_memory(
+            sub_map_key    => $sub_map_key,
+            parent_map_key => $merged_map_key,
+            feature_start  => $second_map_offset
+                + $sub_map_info->{'feature_start'},
+            feature_stop => $second_map_offset
+                + $sub_map_info->{'feature_stop'},
+        );
+    }
+
+   # Always save the action and wipe any later changes.  A merge will kill the
+   # redo path.
+    my @action_data = (
+        'merge_maps',              $first_map_key,
+        $second_map_key,           $overlap_amount,
+        $merged_map_key,           \@first_map_feature_accs,
+        \@second_map_feature_accs, \@first_sub_map_keys,
+        \@second_sub_map_keys,
+    );
+    $self->add_action(
+        window_key  => $window_key,
+        action_data => \@action_data,
+    );
+
+    # Create the new map data
+    $self->app_data_module()->generate_map_data(
+        old_map_id => $first_map_id,
+        new_map_id => $merged_map_id,
+        map_start  => $merged_map_start,
+        map_stop   => $merged_map_stop,
+        map_name   => $first_map_data->{'map_name'} . "-"
+            . $second_map_data->{'map_name'},
+    );
+
+  # Remove the drawing data for the old maps and cut their ties with the other
+  # zones so they don't get re-drawn
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $first_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $second_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
+
+    # Remove from old zone map order
+    $self->remove_from_move_map(
+        map_key  => $first_map_key,
+        zone_key => $zone_key,
+    );
+    $self->remove_from_move_map(
+        map_key  => $second_map_key,
+        zone_key => $zone_key,
+    );
+
+# This probably should be more elegant but for now, just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $top_zone_key,    #$zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
+    );
+
+    #RELAYOUT OVERVIEW
+    $self->recreate_overview( window_key => $window_key, );
+
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    return;
+
+}
+
+# ----------------------------------------------------
 sub get_map_keys_from_id_and_a_list_of_zones {
 
 =pod
@@ -2447,12 +2713,8 @@ sub get_map_keys_from_id_and_a_list_of_zones {
 
     my @map_keys;
     foreach my $zone_key (@$zone_keys) {
-        if (my $map_key,
-            $self->map_id_to_key_by_zone(
-                map_id   => $map_id,
-                zone_key => $zone_key,
-            )
-            )
+        if ( my $map_key
+            = $self->map_id_to_key_by_zone( $map_id, $zone_key, ) )
         {
             push @map_keys, $map_key;
         }
@@ -2510,6 +2772,7 @@ another (and possibly on a different parent).
 
             $new_sub_zone_key = $self->initialize_zone(
                 window_key         => $window_key,
+                map_set_id         => $map_set_id,
                 parent_zone_key    => $new_parent_zone_key,
                 parent_map_key     => $new_parent_map_key,
                 attached_to_parent => 1,
@@ -2610,6 +2873,9 @@ Undo the action that was just performed.
 
     my $last_action_index
         = $self->{'window_actions'}{$window_key}{'last_action_index'};
+    return
+        unless (
+        defined $self->{'window_actions'}{$window_key}{'last_action_index'} );
     if ( not @{ $self->{'window_actions'}{$window_key}{'actions'} || [] }
         or $last_action_index < 0 )
     {
@@ -2636,6 +2902,14 @@ Undo the action that was just performed.
             first_map_key  => $last_action->[2],
             second_map_key => $last_action->[3],
         );
+    }
+    elsif ( $last_action->[0] eq 'merge_maps' ) {
+
+        #$self->undo_merge_maps(
+        #    ori_map_key    => $last_action->[1],
+        #    first_map_key  => $last_action->[2],
+        #    second_map_key => $last_action->[3],
+        #);
     }
 
     $self->{'window_actions'}{$window_key}{'last_action_index'}--;
@@ -2676,6 +2950,9 @@ Redo the action that was last undone.
 
     my $window_actions = $self->{'window_actions'}{$window_key};
 
+    return
+        unless (
+        defined $self->{'window_actions'}{$window_key}{'last_action_index'} );
     my $next_action_index
         = $self->{'window_actions'}{$window_key}{'last_action_index'} + 1;
     my $next_action = $window_actions->{'actions'}[$next_action_index];
@@ -2692,6 +2969,7 @@ Redo the action that was last undone.
             feature_stop   => $next_action->[7],
             undo_or_redo   => 1,
         );
+        $self->{'window_actions'}{$window_key}{'last_action_index'}++;
     }
     elsif ( $next_action->[0] eq 'split_map' ) {
         $self->split_map(
@@ -2700,8 +2978,13 @@ Redo the action that was last undone.
             undo_or_redo    => 1,
         );
     }
-
-    $self->{'window_actions'}{$window_key}{'last_action_index'}++;
+    elsif ( $next_action->[0] eq 'merge_maps' ) {
+        $self->merge_maps(
+            first_map_key  => $next_action->[1],
+            second_map_key => $next_action->[2],
+            overlap_amount => $next_action->[3],
+        );
+    }
 
 # This probably should be more elegant but for now, just layout the whole thing
     my $top_zone_key = $self->{'head_zone_key'}{$window_key};
@@ -2909,6 +3192,7 @@ Controls how the parent map is highlighted
         : $args{'parent_map_key'}
         || $self->{'current_ghost_parent_map_key'}
         || $self->{'scaffold'}{$zone_key}{'parent_map_key'};
+    return unless ($parent_map_key);
     my $parent_zone_key = $args{'$parent_zone_key'}
         || $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
     my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
@@ -3019,6 +3303,7 @@ Controls how the ghost map moves.
     my $zone_key        = $self->map_key_to_zone_key($map_key);
     my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
     my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    return unless ($parent_zone_key);
     my $parent_map_set_id
         = $self->{'scaffold'}{$parent_zone_key}{'map_set_id'};
 
@@ -3862,6 +4147,26 @@ returns
 }
 
 # ----------------------------------------------------
+sub get_map_set_id_from_map_id {
+
+=pod
+
+=head2 get_map_set_id_from_map_id
+
+returns
+
+=cut
+
+    my $self   = shift;
+    my $map_id = shift or return undef;
+
+    my $map_data = $self->app_data_module()->map_data( map_id => $map_id, );
+    return undef unless ( %{ $map_data || {} } );
+
+    return $map_data->{'map_set_id'};
+}
+
+# ----------------------------------------------------
 sub get_map_ids {
 
     #print STDERR "ADD_NEEDS_MODDED 50\n";
@@ -3951,6 +4256,7 @@ Initializes zone
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
     my $zone_key = $args{'zone_key'} || $self->next_internal_key('zone');
+    my $map_set_id = $args{'map_set_id'};
     my $parent_zone_key    = $args{'parent_zone_key'};          # Can be undef
     my $parent_map_key     = $args{'parent_map_key'};           # Can be undef
     my $attached_to_parent = $args{'attached_to_parent'} || 0;
@@ -3960,7 +4266,7 @@ Initializes zone
 
     $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,
-        map_set_id         => undef,
+        map_set_id         => $map_set_id,
         parent_zone_key    => $parent_zone_key,
         parent_map_key     => $parent_map_key,
         children           => [],
