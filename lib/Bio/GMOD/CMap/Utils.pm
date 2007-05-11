@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.81 2007-03-23 13:14:30 mwz444 Exp $
+# $Id: Utils.pm,v 1.82 2007-05-11 15:40:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -680,6 +680,16 @@ sub simple_column_distribution {
     }
 
     $map_height += $buffer;
+
+    # Check if this is going to crash and give a useful output
+    if ( $low < 0 or $high > $map_height ) {
+        print STDERR
+            "Item is out of distribution range.  This is a fatal error.\n";
+        print STDERR "Low: $low, High: $high \n";
+        print STDERR "Max: $map_height\n";
+        print STDERR Dumper( caller() ) . "\n";
+        exit;
+    }
 
     if ( scalar @$columns == 0 ) {
         my $col = Bit::Vector->new($map_height);
