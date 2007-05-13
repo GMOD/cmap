@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.45 2007-05-11 15:26:48 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.46 2007-05-13 21:12:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2142,6 +2142,15 @@ Create two new maps and hide the original
         'unit_granularity' )
         || DEFAULT->{'unit_granularity'};
 
+    # Remove the drawing data for the old map, do this now so that it will
+    # affect sub-maps before they are re-assigned.
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $ori_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
+
     # Figure out the break points, the two maps will probably overlap some.
     # Simultaniously, place the features on one or the other.
     my $first_map_name   = $ori_map_data->{'map_name'} . ".1";
@@ -2343,16 +2352,7 @@ Create two new maps and hide the original
         map_name   => $second_map_name,
     );
 
-    # Remove the drawing data for the old map and cut its ties with the other
-    # zones so it doesn't get re-drawn
-    destroy_map_for_relayout(
-        app_display_data => $self,
-        map_key          => $ori_map_key,
-        window_key       => $window_key,
-        cascade          => 1,
-    );
-
-    # Remove from old zone map order
+    # Cut the maps ties with the other zones so it doesn't get re-drawn
     $self->remove_from_move_map(
         map_key  => $ori_map_key,
         zone_key => $zone_key,
@@ -2406,6 +2406,13 @@ Destroy the two new maps and show the original
 
     foreach my $tmp_map_key ( $first_map_key, $second_map_key ) {
 
+        destroy_map_for_relayout(
+            app_display_data => $self,
+            map_key          => $tmp_map_key,
+            window_key       => $window_key,
+            cascade          => 1,
+        );
+
         # Move sub maps back
         foreach my $child_zone_key (
             $self->get_children_zones_of_map(
@@ -2430,13 +2437,6 @@ Destroy the two new maps and show the original
         if ( $self->{'sub_maps'}{$tmp_map_key} ) {
             delete $self->{'sub_maps'}{$tmp_map_key};
         }
-
-        destroy_map_for_relayout(
-            app_display_data => $self,
-            map_key          => $tmp_map_key,
-            window_key       => $window_key,
-            cascade          => 1,
-        );
 
         # Delete temporary Biological data for the new maps
         $self->app_data_module()
@@ -2488,6 +2488,20 @@ Create one new map and hide the original maps
         return;
     }
 
+    # Remove the drawing data for the old maps, do this now so that it will
+    # affect sub-maps before they are re-assigned.
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $first_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $second_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
     my $unit_granularity
         = $self->map_type_data( $first_map_data->{'map_type_acc'},
         'unit_granularity' )
@@ -2651,22 +2665,7 @@ Create one new map and hide the original maps
             . $second_map_data->{'map_name'},
     );
 
-  # Remove the drawing data for the old maps and cut their ties with the other
-  # zones so they don't get re-drawn
-    destroy_map_for_relayout(
-        app_display_data => $self,
-        map_key          => $first_map_key,
-        window_key       => $window_key,
-        cascade          => 1,
-    );
-    destroy_map_for_relayout(
-        app_display_data => $self,
-        map_key          => $second_map_key,
-        window_key       => $window_key,
-        cascade          => 1,
-    );
-
-    # Remove from old zone map order
+    # Cut the ties with the other zones so the maps don't get re-drawn
     $self->remove_from_move_map(
         map_key  => $first_map_key,
         zone_key => $zone_key,
