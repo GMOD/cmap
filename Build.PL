@@ -1,9 +1,11 @@
-# $Id: Build.PL,v 1.65 2007-01-30 17:19:55 mwz444 Exp $
+# $Id: Build.PL,v 1.66 2007-05-14 21:09:16 mwz444 Exp $
 
 use strict;
+use lib './install_util';
 use CMapBuilder;
 use Cwd;
 use File::Spec::Functions;
+use GuessDirectories;
 eval { require Module::Build };
 if ( $@ =~ /Can't locate/ ) {
     print qq[Please install "Module::Build" before continuing.\n];
@@ -139,7 +141,7 @@ if ( !%OPTIONS ) {
 #
 # Make sure we have usable options.
 #
-my $prefix = $OPTIONS{'PREFIX'} || $ARGS{'PREFIX'}{'default'};
+my $prefix = $OPTIONS{'PREFIX'};
 
 # Backwards compatiple for if "cmap.conf" is specified at end of CONF
 if ($OPTIONS{'CONF'}){
@@ -147,18 +149,26 @@ if ($OPTIONS{'CONF'}){
     $OPTIONS{'CONF'} = catdir( $OPTIONS{'CONF'}, 'cmap.conf' );
 }
 
-for my $option (@OPTION_LIST) {
-        
-    if ( $option eq 'HTDOCS' ) {
-        $OPTIONS{$option} ||= catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{$option}{'default'} );
-    }
-    elsif ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
-        $OPTIONS{$option} ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{$option}{'default'} );
-    }
-    else {
-        $OPTIONS{$option} ||= catdir( $prefix, $ARGS{$option}{'default'} );
-    }
+if ($prefix) {
+    $OPTIONS{'CONF'}   ||= catdir( $prefix, $ARGS{'CONF'}{'default'} );
+    $OPTIONS{'CGIBIN'} ||= catdir( $prefix, $ARGS{'CGIBIN'}{'default'} );
+    $OPTIONS{'TEMPLATES'}
+        ||= catdir( $prefix, $ARGS{'TEMPLATES'}{'default'} );
+    $OPTIONS{'WEB_DOCUMENT_ROOT'}
+        ||= catdir( $prefix, $ARGS{'WEB_DOCUMENT_ROOT'}{'default'} );
 }
+
+$OPTIONS{'CONF'}   ||= GuessDirectories->conf();
+$OPTIONS{'CGIBIN'} ||= GuessDirectories->cgibin(); 
+$OPTIONS{'TEMPLATES'} ||= GuessDirectories->templates();
+$OPTIONS{'WEB_DOCUMENT_ROOT'} ||= GuessDirectories->web_document_root();
+
+
+# These options are dependent on other options
+$OPTIONS{'HTDOCS'} ||= catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{'HTDOCS'}{'default'} );
+$OPTIONS{'CACHE'} ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} );
+$OPTIONS{'SESSIONS'} ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} );
+
 
 print "The following options will be used to install CMap:\n", join(
     "\n", '',
