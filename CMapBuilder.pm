@@ -112,9 +112,10 @@ sub ACTION_install {
     print join( "\n\n",
         '',
         'CMap has been installed.',
-        "Be sure to edit the config files with database info!",
-        "Remember to purge the cache with cmap_admin.pl after changing the config file or changing the data.",
-        qq[Then go to "http://$host/cmap"], '' );
+        "Be sure to read http://$host/cmap/ADMINISTRATION.html "
+            . "to learn how to configure CMap, load data "."and purge the cache.!",
+        qq[Then go to "http://$host/cmap"],
+        '' );
 }
 
 # ----------------------------------------------------
