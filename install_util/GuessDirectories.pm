@@ -4,84 +4,95 @@ package GuessDirectories;
 sub conf {
     if ( $^O =~ /mswin/i ) {    # windows system
         for (
-            'C:/Program Files/Apache Group/Apache2/conf',
-            'C:/Program Files/Apache Group/Apache/conf',
-            'C:/Apache/conf',
-            'C:/Apache2/conf'
+            [   'C:/Program Files/Apache Group/Apache2/conf',
+                'C:/Program Files/Apache Group/Apache2/conf/cmap.conf'
+            ],
+            [   'C:/Program Files/Apache Group/Apache/conf',
+                'C:/Program Files/Apache Group/Apache/conf/cmap.conf'
+            ],
+            [ 'C:/Apache/conf',  'C:/Apache/conf/cmap.conf' ],
+            [ 'C:/Apache2/conf', 'C:/Apache2/conf/cmap.conf' ],
             )
         {
-            return $_ if -d $_;
-        }
-    }
-    else {
-        for (
-            '/usr/local/apache/conf',     # standard apache install
-            '/usr/local/apache2/conf',    # standard apache2 install
-            '/etc/httpd/conf',            # RedHat linux
-            '/etc/apache',                # Slackware linux
-            '/etc/apache2',               # Slackware linux
-            '/etc/httpd',                 # MacOSX
-            )
-        {
-            return $_ if -d $_;
-        }
-    }
-    return;
-}
-
-sub templates {
-    if ( $^O =~ /mswin/i ) {              # windows system
-        for (
-            [   'C:/Program Files/Apache Group/Apache2/templates',
-                'C:/Program Files/Apache Group/Apache2/templates'
-            ],
-            [   'C:/Program Files/Apache Group/Apache2',
-                'C:/Program Files/Apache Group/Apache2/templates'
-            ],
-            [   'C:/Program Files/Apache Group/Apache/templates',
-                'C:/Program Files/Apache Group/Apache/templates'
-            ],
-            [   'C:/Program Files/Apache Group/Apache',
-                'C:/Program Files/Apache Group/Apache/templates'
-            ],
-            [ 'C:/Apache/templates',  'C:/Apache/templates' ],
-            [ 'C:/Apache',            'C:/Apache/templates' ],
-            [ 'C:/Apache2/templates', 'C:/Apache2/templates' ],
-            [ 'C:/Apache2',           'C:/Apache2/templates' ],
-            )
-        {
-            return $_->[0] if -d $_->[1];
+            return $_->[1] if -d $_->[0];
         }
     }
     else {
         for (
 
             # standard apache install
-            [ '/usr/local/apache/templates', '/usr/local/apache/templates' ],
-            [ '/usr/local/apache',           '/usr/local/apache/templates' ],
+            [ '/usr/local/apache/conf', '/usr/local/apache/conf/cmap.conf' ],
 
             # standard apache2 install
-            [   '/usr/local/apache2/templates',
-                '/usr/local/apache2/templates',
+            [   '/usr/local/apache2/conf', '/usr/local/apache2/conf/cmap.conf'
             ],
-            [ '/usr/local/apache2', '/usr/local/apache2/templates', ],
 
             # RedHat linux
-            [ '/etc/httpd/templates', '/etc/httpd/templates' ],
-            [ '/etc/httpd',           '/etc/httpd/templates' ],
+            [ '/etc/httpd/conf', '/etc/httpd/conf/cmap.conf' ],
 
             # Slackware linux
-            [ '/etc/apache/templates',  '/etc/apache/templates' ],
-            [ '/etc/apache',            '/etc/apache/templates' ],
-            [ '/etc/apache2/templates', '/etc/apache2/templates' ],
-            [ '/etc/apache2',           '/etc/apache2/templates' ],
+            [ '/etc/apache',  '/etc/apache/cmap.conf' ],
+            [ '/etc/apache2', '/etc/apache2/cmap.conf' ],
 
             # MacOSX
-            [ '/etc/httpd/templates', '/etc/httpd/templates' ],
-            [ '/etc/httpd',           '/etc/httpd/templates' ],
+            [ '/etc/httpd', '/etc/httpd/cmap.conf' ],
             )
         {
-            return $_->[0] if -d $_->[1];
+            return $_->[1] if -d $_->[0];
+        }
+    }
+    return;
+}
+
+sub templates {
+print STDERR "TEMPLATES\n";
+    if ( $^O =~ /mswin/i ) {              # windows system
+        for (
+            [   'C:/Program Files/Apache Group/Apache2/templates', 'C:/Program Files/Apache Group/Apache2/templates/cmap'
+            ],
+            [   'C:/Program Files/Apache Group/Apache2', 'C:/Program Files/Apache Group/Apache2/templates/cmap'
+            ],
+            [   'C:/Program Files/Apache Group/Apache/templates', 'C:/Program Files/Apache Group/Apache/templates/cmap'
+            ],
+            [   'C:/Program Files/Apache Group/Apache', 'C:/Program Files/Apache Group/Apache/templates/cmap'
+            ],
+            [ 'C:/Apache/templates',  'C:/Apache/templates/cmap' ],
+            [ 'C:/Apache',            'C:/Apache/templates/cmap' ],
+            [ 'C:/Apache2/templates', 'C:/Apache2/templates/cmap' ],
+            [ 'C:/Apache2',           'C:/Apache2/templates/cmap' ],
+            )
+        {
+            return $_->[1] if -d $_->[0];
+        }
+    }
+    else {
+        for (
+
+            # standard apache install
+            [ '/usr/local/apache/templates', '/usr/local/apache/templates/cmap' ],
+            [ '/usr/local/apache',           '/usr/local/apache/templates/cmap' ],
+
+            # standard apache2 install
+            [   '/usr/local/apache2/templates', '/usr/local/apache2/templates/cmap',
+            ],
+            [ '/usr/local/apache2', '/usr/local/apache2/templates/cmap', ],
+
+            # RedHat linux
+            [ '/etc/httpd/templates', '/etc/httpd/templates/cmap' ],
+            [ '/etc/httpd',           '/etc/httpd/templates/cmap' ],
+
+            # Slackware linux
+            [ '/etc/apache/templates',  '/etc/apache/templates/cmap' ],
+            [ '/etc/apache',            '/etc/apache/templates/cmap' ],
+            [ '/etc/apache2/templates', '/etc/apache2/templates/cmap' ],
+            [ '/etc/apache2',           '/etc/apache2/templates/cmap' ],
+
+            # MacOSX
+            [ '/etc/httpd/templates', '/etc/httpd/templates/cmap' ],
+            [ '/etc/httpd',           '/etc/httpd/templates/cmap' ],
+            )
+        {
+            return $_->[1] if -d $_->[0];
         }
     }
     return;
