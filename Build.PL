@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.67 2007-05-15 18:55:00 mwz444 Exp $
+# $Id: Build.PL,v 1.68 2007-05-18 20:27:41 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -268,12 +268,6 @@ my $builder = CMapBuilder->new(
         'XML::Simple'                  => 0,
     },
     recommends => { 'Apache' => 0, },
-    PL_files   => {
-        'cgi-bin/cmap.PL'                   => 'cgi-bin/cmap',
-        'conf/global.conf.PL'               => 'conf/cmap.conf/global.conf',
-        'lib/Bio/GMOD/CMap/Constants.pm.PL' =>
-            'lib/Bio/GMOD/CMap/Constants.pm',
-    },
 );
 
 $builder->notes( $_, $OPTIONS{$_} ) for @OPTION_LIST;

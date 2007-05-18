@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.139 2007-01-30 17:19:58 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.140 2007-05-18 20:27:41 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.139 $)[-1];
+$VERSION = (qw$Revision: 1.140 $)[-1];
 
 #
 # Get command-line options
@@ -130,6 +130,9 @@ my $cli = Bio::GMOD::CMap::CLI::Admin->new(
     file       => shift,
     config_dir => $config_dir,
 );
+
+die "$datasource is not a valid data source.\n"
+    if ( $ACTION and $datasource ne $cli->data_source() );
 
 my %command_line_actions = (
     create_species                   => 1,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.80 2006-04-28 15:12:21 mwz444 Exp $
+# $Id: Import.pm,v 1.81 2007-05-18 20:27:41 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -320,7 +320,11 @@ appended to the list of xrefs.
         fh              => $fh,
         field_separator => FIELD_SEP,
         header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
-        field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+        field_filter => sub {
+            $_ = shift;
+            if ($_) { s/^\s+|\s+$//g; }
+            $_;
+            },
     );
     $parser->field_compute( 'feature_aliases',
         sub { [ parse_line( ',', 0, shift() ) ] } );
@@ -891,7 +895,11 @@ File handle of the log file (default is STDOUT).
         fh              => $fh,
         field_separator => FIELD_SEP,
         header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
-        field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+        field_filter => sub {
+            $_ = shift;
+            if ($_) { s/^\s+|\s+$//g; }
+            $_;
+            },
     );
     $parser->field_compute( 'feature_aliases',
         sub { [ parse_line( ',', 0, shift() ) ] } );
