@@ -121,16 +121,6 @@ sub ACTION_install {
 
     $self->SUPER::ACTION_install;
 
-    chomp( my $host = `hostname` || 'localhost' );
-    print join( "\n\n",
-        '',
-        'CMap has been installed.',
-        "Be sure to read http://$host/cmap/ADMINISTRATION.html "
-            . "to learn how to configure CMap, load data "
-            . "and purge the cache.!",
-        qq[Then go to "http://$host/cmap"],
-        '' );
-
     if ($self->y_n(
             "Would you like to set up a demo datasource?  This will require you to have access to a database system.",
             'n'
@@ -145,6 +135,16 @@ sub ACTION_install {
             . q["./Build demo" with aministrator privileges.\n];
     }
 
+    chomp( my $host = `hostname` || 'localhost' );
+    print join( "\n\n",
+        '',
+        'CMap has been installed at http://$host/cmap',
+        "Please, read http://$host/cmap/INSTALL.html to find out how to complete the installation process.",
+        "Then refer to http://$host/cmap/ADMINISTRATION.html "
+            . "for information on how to configure CMap, load data "
+            . "and purge the cache.!",
+        '' );
+    return;
 }
 
 # ----------------------------------------------------
@@ -569,10 +569,6 @@ sub ACTION_demo {
         '',
         'The demo installation is complete.\n',
         qq[You can now go to "http://$host/cmap" to start learning about CMap.],
-        "Please, after getting familiar with CMap, "
-            . "take a look at http://$host/cmap/ADMINISTRATION.html "
-            . "to learn how to configure CMap, load your own data "
-            . "and purge the cache.!",
         '' );
 }
 
