@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.50 2007-05-11 15:26:48 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.51 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1777,9 +1777,9 @@ Populates the file menu with menu_items
                 },
             ],
             [   'command',
-                '~Commit Map Moves',
+                '~Commit Changes',
                 -command => sub {
-                    $self->commit_map_moves( window_key => $window_key, );
+                    $self->commit_changes( window_key => $window_key, );
                 },
             ],
             [   'command',
@@ -2367,6 +2367,34 @@ exporting the map moves.
         window_key       => $window_key,
         export_file_name => $export_file_name,
     );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub commit_changes {
+
+=pod
+
+=head2 commit_map_moves
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    my $answer = $self->main_window()->Dialog(
+        -title => 'Commit Changes?',
+        -text  =>
+            'Would you like to commit the changes you have made to the database?  This cannot be undone.',
+        -default_button => 'Cancel',
+        -buttons        => [ 'OK', 'Cancel', ],
+    )->Show();
+
+    if ( $answer eq 'OK' ) {
+        $self->app_controller()->commit_changes( window_key => $window_key, );
+    }
 
     return;
 }

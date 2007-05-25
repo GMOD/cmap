@@ -2,13 +2,14 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.8 2007-04-09 16:39:33 mwz444 Exp $
+# $Id: Remote.pm,v 1.9 2007-05-25 20:58:22 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Admin;
 use Storable qw(nfreeze thaw);
 use Data::Dumper;
 use base 'Bio::GMOD::CMap::Apache';
@@ -32,7 +33,9 @@ sub handler {
         return 1;
     }
 
-    if ( $action =~ /^update/ and not $data_manipulation ) {
+    if ( ( $action =~ /^commit/ or $action =~ /^update/ )
+        and not $data_manipulation )
+    {
         print STDERR "Remote Commit Attempted\n";
         print "Data Source Not Remotely Modifyable\n";
         return 1;
@@ -193,6 +196,14 @@ sub handler {
 
             );
         }
+        print 1;
+    }
+    elsif ( $action eq 'commit_changes' ) {
+        return 1 unless ($data_manipulation);
+        my $change_actions = thaw $apr->param('change_actions');
+        my $admin          = Bio::GMOD::CMap::Admin->new(
+            data_source => $self->data_source() );
+        $admin->commit_changes($change_actions);
         print 1;
     }
 

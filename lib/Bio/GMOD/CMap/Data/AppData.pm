@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.20 2007-05-11 15:26:48 mwz444 Exp $
+# $Id: AppData.pm,v 1.21 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,12 +24,13 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Admin;
 use LWP::UserAgent;
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
 use Clone qw(clone);
@@ -1037,6 +1038,35 @@ Calls get_maps_from_map_set either locally or remotely
 }
 
 # ----------------------------------------------------
+sub sql_commit_changes {
+
+=pod
+
+=head2 sql_update_features
+
+Update the db.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $actions = $args{'actions'} or return;
+
+    if ( my $url = $self->{'remote_url'} ) {
+        $url .= ';action=commit_changes';
+
+        $url .= ';change_actions=' . nfreeze($actions);
+
+        return $self->request_remote_data( url => $url, thaw => 0, );
+    }
+    else {
+        my $admin = Bio::GMOD::CMap::Admin->new(
+            data_source => $self->data_source() );
+        $admin->commit_changes($actions);
+    }
+
+}
+
+# ----------------------------------------------------
 sub sql_update_features {
 
 =pod
@@ -1142,6 +1172,23 @@ Data Structures:
         }
     }
 
+}
+
+# ----------------------------------------------------
+sub commit_changes {
+
+=pod
+
+=head2 commit_changes
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $actions = $args{'actions'} or return;
+
+    $self->sql_commit_changes( actions => $actions, );
+
+    return;
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.33 2007-04-27 13:40:19 mwz444 Exp $
+# $Id: AppController.pm,v 1.34 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -706,6 +706,33 @@ Export the map moves to a file.
     }
 
     close $fh;
+    return;
+}
+
+# ----------------------------------------------------
+sub commit_changes {
+
+=pod
+
+=head2 commit_changes
+
+Commit the changes made to the cmap db.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'} or return;
+    my $app_display_data = $self->app_display_data();
+
+    my $window_actions
+        = $app_display_data->window_actions( window_key => $window_key, );
+    unless ( $window_actions and %$window_actions ) {
+        return;
+    }
+    my $actions = $window_actions->{'actions'};
+
+    $self->app_data_module->commit_changes( actions => $actions, );
+
     return;
 }
 

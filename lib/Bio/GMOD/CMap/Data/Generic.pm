@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.162 2007-04-11 21:32:38 mwz444 Exp $
+# $Id: Generic.pm,v 1.163 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.162 $)[-1];
+$VERSION = (qw$Revision: 1.163 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3931,6 +3931,7 @@ Array of Hashes:
   Keys:
     feature_id
     feature_acc
+    map_id
     min_feature_id
     max_feature_id
     feature_name
@@ -3982,6 +3983,7 @@ Not using cache because this query is quicker.
          select feature_id,
                feature_acc,
                feature_name,
+               map_id,
                is_landmark,
                feature_start,
                feature_stop,
@@ -6078,7 +6080,8 @@ Not using cache because this query is quicker.
                  fc.feature_correspondence_id,
                  fc.feature_correspondence_acc,
                  fc.is_enabled,
-                 ce.evidence_type_acc
+                 ce.evidence_type_acc,
+                 ce.score
         from     cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
@@ -6159,7 +6162,8 @@ Not using cache because this query is quicker.
     $sql_str .= q[
             order by s2.display_order, s2.species_common_name, 
             ms2.display_order, ms2.map_set_short_name, map2.display_order,
-            map2.map_name, f2.feature_start, f2.feature_name
+            map2.map_name, f2.feature_start, f2.feature_name, f2.feature_id,
+            fc.feature_correspondence_id
     ];
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -9347,6 +9351,106 @@ If you don't want CMap to delete from your database, make this a dummy method.
 =cut 
 
 #-----------------------------------------------
+sub get_map_to_feature {
+
+=pod
+
+=head2 get_map_to_feature()
+
+=over 4
+
+=item * Description
+
+Get the map_to_feature information into the database.
+
+=item * Adaptor Writing Info
+
+=item * Input
+
+=over 4
+
+=item - Object that inherits from CMap.pm (cmap_object)
+
+=item - Map ID (map_id) 
+
+=item - Map Accession (map_acc)
+
+=item - Feature ID (feature_id)
+
+=item - Feature Accession (feature_acc)
+
+=back
+
+=item * Output
+
+1
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 0,
+        map_acc       => 0,
+        feature_id    => 0,
+        feature_acc   => 0,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+    my $map_id      = $args{'map_id'};
+    my $feature_id  = $args{'feature_id'};
+    my $map_acc     = $args{'map_acc'};
+    my $feature_acc = $args{'feature_acc'};
+
+    my @identifiers;
+    my $select_sql = qq[
+        select  mtf.map_id,
+                mtf.map_acc,
+                mtf.feature_id,
+                mtf.feature_acc
+    ];
+    my $from_sql = qq[
+        from    cmap_map_to_feature mtf
+    ];
+    my $where_sql = q{};
+
+    my @where_list;
+    if ( defined $map_id ) {
+        push @where_list,  " map_id = ? ";
+        push @identifiers, $map_id;
+    }
+    elsif ( defined $map_acc ) {
+        push @where_list,  " map_acc = ? ";
+        push @identifiers, $map_acc;
+    }
+    if ( defined $feature_id ) {
+        push @where_list,  " feature_id = ? ";
+        push @identifiers, $feature_id;
+    }
+    elsif ( defined $feature_acc ) {
+        push @where_list,  " feature_acc = ? ";
+        push @identifiers, $feature_acc;
+    }
+
+    if (@where_list) {
+        $where_sql = ' where ' . join " and ", @where_list;
+    }
+
+    my $sql_str = $select_sql . $from_sql . $where_sql;
+
+    my $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
+        @identifiers );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
 sub insert_map_to_feature {
 
 =pod
@@ -11210,6 +11314,40 @@ Not using cache because this query is quicker.
         $sql_str .= " $start_column<=" . $map_stop . " ";
     }
     return $sql_str;
+}
+
+sub start_transaction {
+    my $self        = shift;
+    my %args        = @_;
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+    $db->{AutoCommit} = 0;
+
+    return;
+}
+
+sub rollback_transaction {
+    my $self        = shift;
+    my %args        = @_;
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+
+    $db->rollback;
+    $db->{AutoCommit} = 1;
+
+    return;
+}
+
+sub commit_transaction {
+    my $self        = shift;
+    my %args        = @_;
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $db          = $cmap_object->db;
+
+    $db->commit;
+    $db->{AutoCommit} = 1;
+
+    return;
 }
 
 =pod

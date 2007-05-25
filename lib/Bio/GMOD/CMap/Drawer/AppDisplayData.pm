@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.46 2007-05-13 21:12:36 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.47 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -199,13 +199,11 @@ Adds the first slot
             zone_key => $zone_key,
         );
 
-        if (0) {    # DEV
-            $self->add_sub_maps_to_map(
-                window_key      => $window_key,
-                parent_zone_key => $zone_key,
-                parent_map_key  => $map_key,
-            );
-        }
+        $self->add_sub_maps_to_map(
+            window_key      => $window_key,
+            parent_zone_key => $zone_key,
+            parent_map_key  => $map_key,
+        );
     }
 
     # Handle overview after the regular zones, so we can use that info
@@ -2068,20 +2066,28 @@ Move a map from one place on a parent to another
     my $window_key         = $self->{'scaffold'}{$zone_key}{'window_key'};
 
     unless ($undo_or_redo) {
-        my @action_data = (
-            'move_map',
-            $map_key,
-            $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-            $self->{'sub_maps'}{$map_key}{'feature_start'},
-            $self->{'sub_maps'}{$map_key}{'feature_stop'},
-            $new_parent_map_key,
-            $new_feature_start,
-            $new_feature_stop,
+        my %action_data = (
+            action             => 'move_map',
+            map_key            => $map_key,
+            map_id             => $self->map_key_to_id($map_key),
+            feature_id         => $self->{'sub_maps'}{$map_key}{'feature_id'},
+            old_parent_map_key =>
+                $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+            old_parent_map_id => $self->map_key_to_id(
+                $self->{'sub_maps'}{$map_key}{'parent_map_key'}
+            ),
+            old_feature_start =>
+                $self->{'sub_maps'}{$map_key}{'feature_start'},
+            feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+            new_parent_map_key => $new_parent_map_key,
+            new_parent_map_id  => $self->map_key_to_id($new_parent_map_key),
+            new_feature_start  => $new_feature_start,
+            new_feature_stop   => $new_feature_stop,
         );
 
         $self->add_action(
             window_key  => $window_key,
-            action_data => \@action_data,
+            action_data => \%action_data,
         );
     }
 
@@ -2233,20 +2239,11 @@ Create two new maps and hide the original
         zone_key => $zone_key,
     );
 
-# Always save the action and wipe any later changes.  A split will kill the redo path.
-#unless ($undo_or_redo){
-    my @action_data = (
-        'split_map',     $ori_map_key, $first_map_key,
-        $second_map_key, $position_on_map,
-    );
-    $self->add_action(
-        window_key  => $window_key,
-        action_data => \@action_data,
-    );
-
-    #}
-
     # Handle sub map information if it is a sub map
+    my $first_feature_start;
+    my $first_feature_stop;
+    my $second_feature_start;
+    my $second_feature_stop;
     if ( $self->{'sub_maps'}{$ori_map_key} ) {
         my $ori_feature_start
             = $self->{'sub_maps'}{$ori_map_key}{'feature_start'};
@@ -2255,15 +2252,17 @@ Create two new maps and hide the original
         my $ori_feature_length = $ori_feature_stop - $ori_feature_start;
         my $first_feature_id   = $self->create_temp_id();
         my $second_feature_id  = $self->create_temp_id();
-        my $first_feature_stop = $ori_feature_start + (
+        $first_feature_start = $ori_feature_start;
+        $first_feature_stop = $ori_feature_start + (
             $ori_feature_length * ( $first_map_length / $ori_map_length ) );
-        my $second_feature_start = $ori_feature_stop - (
+        $second_feature_start = $ori_feature_stop - (
             $ori_feature_length * ( $second_map_length / $ori_map_length ) );
+        $second_feature_stop = $ori_feature_stop;
 
         $self->{'sub_maps'}{$first_map_key} = {
             parent_map_key =>
                 $self->{'sub_maps'}{$ori_map_key}{'parent_map_key'},
-            feature_start  => $ori_feature_start,
+            feature_start  => $first_feature_start,
             feature_stop   => $first_feature_stop,
             feature_id     => $first_feature_id,
             feature_length => (
@@ -2274,7 +2273,7 @@ Create two new maps and hide the original
             parent_map_key =>
                 $self->{'sub_maps'}{$ori_map_key}{'parent_map_key'},
             feature_start  => $second_feature_start,
-            feature_stop   => $ori_feature_stop,
+            feature_stop   => $second_feature_stop,
             feature_id     => $second_feature_id,
             feature_length => (
                 $ori_feature_stop - $second_feature_start + $unit_granularity
@@ -2283,6 +2282,37 @@ Create two new maps and hide the original
 
         # BF Potentially Split the feature as well
     }
+
+# Always save the action and wipe any later changes.  A split will kill the redo path.
+#unless ($undo_or_redo){
+    my %action_data = (
+        action                  => 'split_map',
+        ori_map_key             => $ori_map_key,
+        ori_map_id              => $self->map_key_to_id($ori_map_key),
+        first_map_key           => $first_map_key,
+        first_map_id            => $self->map_key_to_id($first_map_key),
+        first_map_name          => $first_map_name,
+        first_map_start         => $first_map_start,
+        first_map_stop          => $first_map_stop,
+        first_feature_start     => $first_feature_start,
+        first_feature_stop      => $first_feature_stop,
+        second_map_key          => $second_map_key,
+        second_map_id           => $self->map_key_to_id($second_map_key),
+        second_map_name         => $second_map_name,
+        second_map_start        => $second_map_start,
+        second_map_stop         => $second_map_stop,
+        second_feature_start    => $second_feature_start,
+        second_feature_stop     => $second_feature_stop,
+        position_on_map         => $position_on_map,
+        first_map_feature_accs  => [ keys %feature_accs_for_first_map ],
+        second_map_feature_accs => [ keys %feature_accs_for_second_map ],
+    );
+    $self->add_action(
+        window_key  => $window_key,
+        action_data => \%action_data,
+    );
+
+    #}
 
     # Move the features to the new map in Memory
     # We don't need to change the locations of these features because the maps
@@ -2508,6 +2538,8 @@ Create one new map and hide the original maps
         || DEFAULT->{'unit_granularity'};
     my $merged_map_start = $first_map_data->{'map_start'};
     my $merged_map_stop = $second_map_data->{'map_stop'} + $second_map_offset;
+    my $merged_map_name = $first_map_data->{'map_name'} . "-"
+        . $second_map_data->{'map_name'};
     if ( $merged_map_stop < $first_map_data->{'map_stop'} ) {
         $merged_map_stop = $first_map_data->{'map_stop'};
     }
@@ -2551,6 +2583,8 @@ Create one new map and hide the original maps
     );
 
     # Handle sub map information if they are sub_maps
+    my $merged_feature_start;
+    my $merged_feature_stop;
     if ( $self->{'sub_maps'}{$first_map_key} ) {
         my $first_feature_start
             = $self->{'sub_maps'}{$first_map_key}{'feature_start'};
@@ -2560,11 +2594,11 @@ Create one new map and hide the original maps
             = $self->{'sub_maps'}{$second_map_key}{'feature_start'};
         my $second_feature_stop
             = $self->{'sub_maps'}{$second_map_key}{'feature_stop'};
-        my $merged_feature_start =
+        $merged_feature_start =
             ( $first_feature_start < $second_feature_start )
             ? $first_feature_start
             : $second_feature_start;
-        my $merged_feature_stop =
+        $merged_feature_stop =
             ( $first_feature_stop > $second_feature_stop )
             ? $first_feature_stop
             : $second_feature_stop;
@@ -2589,6 +2623,7 @@ Create one new map and hide the original maps
     # Move the sub maps over to the new merged map
     #First create lists of sub maps
     my @first_sub_map_keys;
+    my @first_sub_map_ids;
     foreach my $child_zone_key (
         $self->get_children_zones_of_map(
             map_key  => $first_map_key,
@@ -2600,9 +2635,11 @@ Create one new map and hide the original maps
             @{ $self->{'map_order'}{$child_zone_key} || [] } )
         {
             push @first_sub_map_keys, $sub_map_key;
+            push @first_sub_map_ids,  $self->map_key_to_id($sub_map_key);
         }
     }
     my @second_sub_map_keys;
+    my @second_sub_map_ids;
     foreach my $child_zone_key (
         $self->get_children_zones_of_map(
             map_key  => $second_map_key,
@@ -2614,6 +2651,7 @@ Create one new map and hide the original maps
             @{ $self->{'map_order'}{$child_zone_key} || [] } )
         {
             push @second_sub_map_keys, $sub_map_key;
+            push @second_sub_map_ids,  $self->map_key_to_id($sub_map_key);
         }
     }
 
@@ -2643,16 +2681,30 @@ Create one new map and hide the original maps
 
    # Always save the action and wipe any later changes.  A merge will kill the
    # redo path.
-    my @action_data = (
-        'merge_maps',              $first_map_key,
-        $second_map_key,           $overlap_amount,
-        $merged_map_key,           \@first_map_feature_accs,
-        \@second_map_feature_accs, \@first_sub_map_keys,
-        \@second_sub_map_keys,
+    my %action_data = (
+        action                  => 'merge_maps',
+        first_map_key           => $first_map_key,
+        first_map_id            => $self->map_key_to_id($first_map_key),
+        second_map_key          => $second_map_key,
+        second_map_id           => $self->map_key_to_id($second_map_key),
+        merged_map_key          => $merged_map_key,
+        merged_map_id           => $self->map_key_to_id($merged_map_key),
+        merged_map_name         => $merged_map_name,
+        merged_map_start        => $merged_map_start,
+        merged_map_stop         => $merged_map_stop,
+        merged_feature_start    => $merged_feature_start,
+        merged_feature_stop     => $merged_feature_stop,
+        overlap_amount          => $overlap_amount,
+        second_map_offset       => $second_map_offset,
+        first_map_feature_accs  => \@first_map_feature_accs,
+        second_map_feature_accs => \@second_map_feature_accs,
+        first_sub_map_keys      => \@first_sub_map_keys,
+        first_sub_map_ids       => \@first_sub_map_ids,
+        second_sub_map_ids      => \@second_sub_map_ids,
     );
     $self->add_action(
         window_key  => $window_key,
-        action_data => \@action_data,
+        action_data => \%action_data,
     );
 
     # Create the new map data
@@ -2661,8 +2713,7 @@ Create one new map and hide the original maps
         new_map_id => $merged_map_id,
         map_start  => $merged_map_start,
         map_stop   => $merged_map_stop,
-        map_name   => $first_map_data->{'map_name'} . "-"
-            . $second_map_data->{'map_name'},
+        map_name   => $merged_map_name,
     );
 
     # Cut the ties with the other zones so the maps don't get re-drawn
@@ -2695,6 +2746,80 @@ Create one new map and hide the original maps
 
     return;
 
+}
+
+# ----------------------------------------------------
+sub undo_merge_maps {
+
+=pod
+
+=head2 undo_merge_maps
+
+Undo the merging of two maps into one.
+
+Destroy the new map and show the original
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $merged_map_key      = $args{'merged_map_key'};
+    my $first_map_key       = $args{'first_map_key'};
+    my $second_map_key      = $args{'second_map_key'};
+    my $second_map_offset   = $args{'second_map_offset'};
+    my $first_sub_map_keys  = $args{'first_sub_map_keys'};
+    my $second_sub_map_keys = $args{'second_sub_map_keys'};
+
+    my $zone_key   = $self->map_key_to_zone_key($merged_map_key);
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+    # Reattach original maps to the zone
+    push @{ $self->{'map_order'}{$zone_key} }, $first_map_key;
+    push @{ $self->{'map_order'}{$zone_key} }, $second_map_key;
+
+    destroy_map_for_relayout(
+        app_display_data => $self,
+        map_key          => $merged_map_key,
+        window_key       => $window_key,
+        cascade          => 1,
+    );
+
+    foreach my $loop_array (
+        [ $first_sub_map_keys,  $first_map_key,  0, ],
+        [ $second_sub_map_keys, $second_map_key, $second_map_offset, ],
+        )
+    {
+
+        # Move sub maps back to their original maps
+        my $sub_map_keys   = $loop_array->[0];
+        my $parent_map_key = $loop_array->[1];
+        my $offset         = $loop_array->[2];
+        foreach my $sub_map_key ( @{ $sub_map_keys || [] } ) {
+            my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
+            next unless ($sub_map_info);
+            $self->move_sub_map_on_parents_in_memory(
+                sub_map_key    => $sub_map_key,
+                parent_map_key => $parent_map_key,
+                feature_start  => $sub_map_info->{'feature_start'} - $offset,
+                feature_stop   => $sub_map_info->{'feature_stop'} - $offset,
+            );
+        }
+    }
+
+    if ( $self->{'sub_maps'}{$merged_map_key} ) {
+        delete $self->{'sub_maps'}{$merged_map_key};
+    }
+
+    # Delete temporary Biological data for the new map
+    $self->app_data_module()
+        ->remove_map_data( map_id => $self->map_key_to_id($merged_map_key), );
+
+    # Detach new map from the zone
+    $self->uninitialize_map(
+        map_key  => $merged_map_key,
+        zone_key => $zone_key,
+    );
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -2886,29 +3011,32 @@ Undo the action that was just performed.
     my $last_action = $window_actions->{'actions'}[$last_action_index];
 
     # Handle each action type
-    if ( $last_action->[0] eq 'move_map' ) {
+    if ( $last_action->{'action'} eq 'move_map' ) {
         $self->move_sub_map_on_parents_in_memory(
-            sub_map_key    => $last_action->[1],
-            parent_map_key => $last_action->[2],
-            feature_start  => $last_action->[3],
-            feature_stop   => $last_action->[4],
+            sub_map_key    => $last_action->{'map_key'},
+            parent_map_key => $last_action->{'old_parent_map_key'},
+            feature_start  => $last_action->{'old_feature_start'},
+            feature_stop   => $last_action->{'old_feature_stop'},
             undo_or_redo   => 1,
         );
     }
-    elsif ( $last_action->[0] eq 'split_map' ) {
+    elsif ( $last_action->{'action'} eq 'split_map' ) {
         $self->undo_split_map(
-            ori_map_key    => $last_action->[1],
-            first_map_key  => $last_action->[2],
-            second_map_key => $last_action->[3],
+            ori_map_key    => $last_action->{'ori_map_key'},
+            first_map_key  => $last_action->{'first_map_key'},
+            second_map_key => $last_action->{'second_map_key'},
         );
     }
-    elsif ( $last_action->[0] eq 'merge_maps' ) {
+    elsif ( $last_action->{'action'} eq 'merge_maps' ) {
 
-        #$self->undo_merge_maps(
-        #    ori_map_key    => $last_action->[1],
-        #    first_map_key  => $last_action->[2],
-        #    second_map_key => $last_action->[3],
-        #);
+        $self->undo_merge_maps(
+            first_map_key       => $last_action->{'first_map_key'},
+            second_map_key      => $last_action->{'second_map_key'},
+            merged_map_key      => $last_action->{'merged_map_key'},
+            second_map_offset   => $last_action->{'second_map_offset'},
+            first_sub_map_keys  => $last_action->{'first_sub_map_keys'},
+            second_sub_map_keys => $last_action->{'second_sub_map_keys'},
+        );
     }
 
     $self->{'window_actions'}{$window_key}{'last_action_index'}--;
@@ -2960,28 +3088,28 @@ Redo the action that was last undone.
     }
 
     # Handle each action type
-    if ( $next_action->[0] eq 'move_map' ) {
+    if ( $next_action->{'action'} eq 'move_map' ) {
         $self->move_sub_map_on_parents_in_memory(
-            sub_map_key    => $next_action->[1],
-            parent_map_key => $next_action->[5],
-            feature_start  => $next_action->[6],
-            feature_stop   => $next_action->[7],
+            sub_map_key    => $next_action->{'map_key'},
+            parent_map_key => $next_action->{'new_parent_map_key'},
+            feature_start  => $next_action->{'new_feature_start'},
+            feature_stop   => $next_action->{'new_feature_stop'},
             undo_or_redo   => 1,
         );
         $self->{'window_actions'}{$window_key}{'last_action_index'}++;
     }
-    elsif ( $next_action->[0] eq 'split_map' ) {
+    elsif ( $next_action->{'action'} eq 'split_map' ) {
         $self->split_map(
-            map_key         => $next_action->[1],
-            position_on_map => $next_action->[4],
+            map_key         => $next_action->{'ori_map_key'},
+            position_on_map => $next_action->{'position_on_map'},
             undo_or_redo    => 1,
         );
     }
-    elsif ( $next_action->[0] eq 'merge_maps' ) {
+    elsif ( $next_action->{'action'} eq 'merge_maps' ) {
         $self->merge_maps(
-            first_map_key  => $next_action->[1],
-            second_map_key => $next_action->[2],
-            overlap_amount => $next_action->[3],
+            first_map_key  => $next_action->{'first_map_key'},
+            second_map_key => $next_action->{'second_map_key'},
+            overlap_amount => $next_action->{'overlap_amount'},
         );
     }
 
@@ -3009,8 +3137,6 @@ Redo the action that was last undone.
 # ----------------------------------------------------
 sub condenced_window_actions {
 
-    #print STDERR "ADD_NEEDS_MODDED 39\n";
-
 =pod
 
 =head2 condenced_window_actions
@@ -3027,14 +3153,19 @@ Condence redundant window actions for commits and exporting.
     my $window_actions = $self->{'window_actions'}{$window_key};
     for ( my $i = 0; $i <= $window_actions->{'last_action_index'}; $i++ ) {
         my $action = $window_actions->{'actions'}[$i];
-        if ( $action->[0] eq 'move_map' ) {
-            my $map_key = $action->[1];
+        if ( $action->{'action'} eq 'move_map' ) {
+            my $map_key = $action->{'map_key'};
             if ( $moves{$map_key} ) {
 
                 # leave the original loc alone but change the end
-                $moves{$map_key}->[5] = $action->[5];
-                $moves{$map_key}->[6] = $action->[6];
-                $moves{$map_key}->[7] = $action->[7];
+                $moves{$map_key}->{'new_parent_map_key'}
+                    = $action->{'new_parent_map_key'};
+                $moves{$map_key}->{'new_parent_map_id'}
+                    = $action->{'new_parent_map_id'};
+                $moves{$map_key}->{'new_feature_start'}
+                    = $action->{'new_feature_start'};
+                $moves{$map_key}->{'new_feature_stop'}
+                    = $action->{'new_feature_stop'};
             }
             else {
                 $moves{$map_key} = $action;
@@ -4779,16 +4910,73 @@ Revisit
 
 =head4 move_map
 
-    @action_specific_data = [
-        'move_map',         
-        $sub_map_key, 
-        $ori_parent_map_key,
-        $ori_feature_start, 
-        $ori_feature_stop,
-        $new_parent_map_key,
-        $new_feature_start, 
-        $new_feature_stop,
-    ];
+    my %action_data = (
+        action             => 'move_map',
+        map_key            => $map_key,
+        map_id             => $self->map_key_to_id($map_key),
+        feature_id         => $self->{'sub_maps'}{$map_key}{'feature_id'},
+        old_parent_map_key =>
+            $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+        old_parent_map_id => $self->map_key_to_id(
+            $self->{'sub_maps'}{$map_key}{'parent_map_key'}
+        ),
+        old_feature_start =>
+            $self->{'sub_maps'}{$map_key}{'feature_start'},
+        feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+        new_parent_map_key => $new_parent_map_key,
+        new_parent_map_id  => $self->map_key_to_id($new_parent_map_key),
+        new_feature_start  => $new_feature_start,
+        new_feature_stop   => $new_feature_stop,
+    );
+
+=head4 split_map
+
+    my %action_data = (
+        action                  => 'split_map',
+        ori_map_key             => $ori_map_key,
+        ori_map_id              => $self->map_key_to_id($ori_map_key),
+        first_map_key           => $first_map_key,
+        first_map_id            => $self->map_key_to_id($first_map_key),
+        first_map_name          => $first_map_name,
+        first_map_start         => $first_map_start,
+        first_map_stop          => $first_map_stop,
+        first_feature_start     => $first_feature_start,
+        first_feature_stop      => $first_feature_stop,
+        second_map_key          => $second_map_key,
+        second_map_id           => $self->map_key_to_id($second_map_key),
+        second_map_name         => $second_map_name,
+        second_map_start        => $second_map_start,
+        second_map_stop         => $second_map_stop,
+        second_feature_start    => $second_feature_start,
+        second_feature_stop     => $second_feature_stop,
+        position_on_map         => $position_on_map,
+        first_map_feature_accs  => [ keys %feature_accs_for_first_map ],
+        second_map_feature_accs => [ keys %feature_accs_for_second_map ],
+    );
+
+=head4 merge_maps
+
+    my %action_data = (
+        action                  => 'merge_maps',
+        first_map_key           => $first_map_key,
+        first_map_id            => $self->map_key_to_id($first_map_key),
+        second_map_key          => $second_map_key,
+        second_map_id           => $self->map_key_to_id($second_map_key),
+        merged_map_key          => $merged_map_key,
+        merged_map_id           => $self->map_key_to_id($merged_map_key),
+        merged_map_name         => $merged_map_name,
+        merged_map_start        => $merged_map_start,
+        merged_map_stop         => $merged_map_stop,
+        merged_feature_start    => $merged_feature_start,
+        merged_feature_stop     => $merged_feature_stop,
+        overlap_amount          => $overlap_amount,
+        second_map_offset       => $second_map_offset,
+        first_map_feature_accs  => \@first_map_feature_accs,
+        second_map_feature_accs => \@second_map_feature_accs,
+        first_sub_map_keys      => \@first_sub_map_keys,
+        first_sub_map_ids       => \@first_sub_map_ids,
+        second_sub_map_ids      => \@second_sub_map_ids,
+    );
 
 =head2 Other Values
 

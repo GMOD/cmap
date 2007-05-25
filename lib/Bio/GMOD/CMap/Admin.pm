@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.96 2006-12-08 17:13:10 mwz444 Exp $
+# $Id: Admin.pm,v 1.97 2007-05-25 20:58:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -166,6 +166,421 @@ Nothing
 }
 
 # ----------------------------------------------------
+sub feature_copy {
+
+=pod
+
+=head2 feature_copy
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Create a new feature from an old one.  Copy all
+correspondences/attributes/xrefs to the new feature.
+
+=item * Usage
+
+    $admin->feature_copy(
+        ori_feature_id => $ori_feature_id,
+        map_id => $map_id,
+        feature_name => $feature_name,
+        feature_acc => $feature_acc,
+        feature_start => $feature_start,
+        feature_stop => $feature_stop,
+        is_landmark => $is_landmark,
+        feature_type_acc => $feature_type_acc,
+        direction => $direction,
+    );
+
+=item * Returns
+
+Feature ID
+
+=item * Required Fields
+
+=over 4
+
+=item - ori_feature_id
+
+Identifier of the original feature that will be copied
+
+=back
+
+=item * Optional Fields
+
+=over 4
+
+=item - new_feature_id
+
+Optional identifier of the feature that will have information copied to it.  If
+this is not given, a new feature will be created
+
+=back
+
+=item * Feature Creation Fields
+
+These are only used to create a new feature when "new_feature_id" is not given.
+Any options not given will be copied from the original feature (exept
+feature_acc).
+
+=over 4
+
+=item - map_id
+
+Identifier of the map that this is on.
+
+=item - feature_name
+
+=item - feature_acc
+
+Identifier that is used to access this object.  Can be alpha-numeric.  
+If not defined, the object_id will be assigned to it.
+
+=item - feature_start
+
+Location on the map where this feature begins.
+
+=item - feature_stop
+
+Location on the map where this feature ends. (not required)
+
+=item - is_landmark
+
+Declares the feature to be a landmark.
+
+=item - feature_type_acc
+
+The accession id of a feature type that is defined in the config file.
+
+=item - direction
+
+The direction the feature points in relation to the map.
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @missing          = ();
+    my $ori_feature_id   = $args{'ori_feature_id'};
+    my $new_feature_id   = $args{'new_feature_id'};
+    my $map_id           = $args{'map_id'};
+    my $feature_acc      = $args{'feature_acc'};
+    my $feature_name     = $args{'feature_name'};
+    my $feature_type_acc = $args{'feature_type_acc'};
+    my $feature_start    = $args{'feature_start'};
+    my $feature_stop     = $args{'feature_stop'};
+    my $is_landmark      = $args{'is_landmark'};
+    my $direction        = $args{'direction'};
+    my $sql_object       = $self->sql or return $self->error;
+
+    my $ori_features = $sql_object->get_features_simple(
+        cmap_object => $self,
+        feature_id  => $ori_feature_id,
+    );
+    return unless ( $ori_features and @$ori_features );
+    my $ori_feature = $ori_features->[0];
+    $map_id = $ori_feature->{'map_id'} unless ( defined $map_id );
+    $feature_name = $ori_feature->{'feature_name'}
+        unless ( defined $feature_name );
+    $feature_type_acc = $ori_feature->{'feature_type_acc'}
+        unless ( defined $feature_type_acc );
+    $feature_start = $ori_feature->{'feature_start'}
+        unless ( defined $feature_start );
+    $feature_stop = $ori_feature->{'feature_stop'}
+        unless ( defined $feature_stop );
+    $is_landmark = $ori_feature->{'is_landmark'}
+        unless ( defined $is_landmark );
+    $direction = $ori_feature->{'direction'} unless ( defined $direction );
+
+    my $default_rank = $ori_feature->{'default_rank'};
+
+    unless ($new_feature_id) {
+        $new_feature_id = $self->feature_create(
+            map_id           => $map_id,
+            feature_name     => $feature_name,
+            feature_acc      => $feature_acc,
+            feature_type_acc => $feature_type_acc,
+            feature_start    => $feature_start,
+            feature_stop     => $feature_stop,
+            is_landmark      => $is_landmark,
+            direction        => $direction,
+            default_rank     => $default_rank,
+        );
+    }
+
+    # Copy DBXrefs and Attributes
+    $self->copy_attributes(
+        ori_object_id => $ori_feature_id,
+        new_object_id => $new_feature_id,
+        object_type   => 'feature',
+    );
+    $self->copy_xrefs(
+        ori_object_id => $ori_feature_id,
+        new_object_id => $new_feature_id,
+        object_type   => 'feature',
+    );
+
+    # Copy Correspondences
+    $self->copy_correspondences(
+        ori_object_id => $ori_feature_id,
+        new_object_id => $new_feature_id,
+    );
+
+    return $new_feature_id;
+}
+
+# ----------------------------------------------------
+sub copy_attributes {
+
+=pod
+
+=head2 copy_attributes
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Copy attributes from one object to another.
+
+=item * Usage
+
+    $admin->copy_attribute(
+        ori_object_id => $ori_object_id,
+        new_object_id => $new_object_id,
+        object_type    => $object_type,
+    );
+
+=item * Returns
+
+1
+
+=item * Required Fields
+
+=over 4
+
+=item - ori_object_id
+
+Identifier of the original object that will be copied
+
+=item - new_object_id
+
+Identifier of the object that will have information copied to it.
+
+=item - object_type
+
+The type of item that is being copied to.
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @missing       = ();
+    my $ori_object_id = $args{'ori_object_id'} or return 0;
+    my $new_object_id = $args{'new_object_id'} or return 0;
+    my $object_type   = $args{'object_type'} or return 0;
+    my $sql_object    = $self->sql or return $self->error;
+
+    my $ori_attributes = $sql_object->get_attributes(
+        cmap_object => $self,
+        object_id   => $ori_object_id,
+        object_type => $object_type,
+    );
+    foreach my $ori_attribute ( @{ $ori_attributes || [] } ) {
+        $self->attribute_create(
+            object_id       => $new_object_id,
+            attribute_name  => $ori_attribute->{'attribute_name'},
+            attribute_value => $ori_attribute->{'attribute_value'},
+            object_type     => $object_type,
+            display_order   => $ori_attribute->{'display_order'},
+        );
+
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub copy_xrefs {
+
+=pod
+
+=head2 copy_xrefs
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Copy xrefs from one object to another.
+
+=item * Usage
+
+    $admin->copy_xref(
+        ori_object_id => $ori_object_id,
+        new_object_id => $new_object_id,
+        object_type    => $object_type,
+    );
+
+=item * Returns
+
+1
+
+=item * Required Fields
+
+=over 4
+
+=item - ori_object_id
+
+Identifier of the original object that will be copied
+
+=item - new_object_id
+
+Identifier of the object that will have information copied to it.
+
+=item - object_type
+
+The type of item that is being copied to.
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @missing       = ();
+    my $ori_object_id = $args{'ori_object_id'} or return 0;
+    my $new_object_id = $args{'new_object_id'} or return 0;
+    my $object_type   = $args{'object_type'} or return 0;
+    my $sql_object    = $self->sql or return $self->error;
+
+    my $ori_xrefs = $sql_object->get_xrefs(
+        cmap_object => $self,
+        object_id   => $ori_object_id,
+        object_type => $object_type,
+    );
+    foreach my $ori_xref ( @{ $ori_xrefs || [] } ) {
+        $self->xref_create(
+            object_id     => $new_object_id,
+            xref_name     => $ori_xref->{'xref_name'},
+            xref_url      => $ori_xref->{'xref_url'},
+            object_type   => $object_type,
+            display_order => $ori_xref->{'display_order'},
+        );
+
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub copy_correspondences {
+
+=pod
+
+=head2 copy_correspondences
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Copy correspondences from one feature to another.
+
+=item * Usage
+
+    $admin->copy_correspondence(
+        ori_feature_id => $ori_feature_id,
+        new_feature_id => $new_feature_id,
+    );
+
+=item * Returns
+
+1
+
+=item * Required Fields
+
+=over 4
+
+=item - ori_feature_id
+
+Identifier of the original feature that will be copied
+
+=item - new_feature_id
+
+Identifier of the feature that will have information copied to it.
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @missing        = ();
+    my $ori_feature_id = $args{'ori_feature_id'} or return 0;
+    my $new_feature_id = $args{'new_feature_id'} or return 0;
+    my $sql_object     = $self->sql or return $self->error;
+
+    my $ori_correspondences = $sql_object->get_feature_correspondence_details(
+        cmap_object => $self,
+        feature_id1 => $ori_feature_id,
+    );
+    my $last_corr_id;
+    my @evidence    = ();
+    my %last_params = ();
+    foreach my $ori_correspondence ( @{ $ori_correspondences || [] } ) {
+        if ( defined($last_corr_id)
+            and $last_corr_id ne
+            $ori_correspondence->{'feature_correspondence_id'} )
+        {
+            $self->feature_correspondence_create(
+                correspondence_evidence => \@evidence,
+                %last_params,
+            );
+            @evidence    = ();
+            %last_params = ();
+        }
+
+        $last_corr_id = $ori_correspondence->{'feature_correspondence_id'};
+
+        %last_params = (
+            feature_id1  => $new_feature_id,
+            feature_id2  => $ori_correspondence->{'feature_id2'},
+            feature_acc1 => $ori_correspondence->{'feature_acc1'},
+            feature_acc2 => $ori_correspondence->{'feature_acc2'},
+            is_enabled   => $ori_correspondence->{'is_enabled'},
+        );
+        push @evidence,
+            {
+            evidence_type_acc => $ori_correspondence->{'evidence_type_acc'},
+            score             => $ori_correspondence->{'score'},
+            };
+    }
+    if ( defined($last_corr_id) ) {
+        $self->feature_correspondence_create(
+            correspondence_evidence => \@evidence,
+            %last_params,
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
 sub feature_create {
 
 =pod
@@ -265,9 +680,8 @@ integrated with GBrowse and should not be used otherwise.
         = $self->feature_type_data( $feature_type_acc, 'default_rank' ) || 1;
 
     if (@missing) {
-        return $self->error(
-            'Feature create failed.  Missing required fields: ',
-            join( ', ', @missing ) );
+        return die 'Feature create failed.  Missing required fields: ',
+            join( ', ', @missing );
     }
 
     my $feature_id = $sql_object->insert_feature(
@@ -2143,6 +2557,376 @@ The primary key of the object.
     );
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub commit_changes {
+
+=pod
+
+=head2 commit_changes
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Commit changes from the editor
+
+=item * Usage
+
+    $admin->commit_changes( change_actions => $change_actions, );
+
+=item * Returns
+
+Nothing
+
+=item * Fields
+
+=over 4
+
+=item - change_actions
+
+A list of the changes that are to be made.
+
+=item - object_id
+
+The primary key of the object.
+
+=back
+
+=back
+
+=cut
+
+    my $self           = shift;
+    my $change_actions = shift or return;
+    my $sql_object     = $self->sql or return;
+
+    my $temp_to_real_map_id = {};
+    $sql_object->start_transaction( cmap_object => $self, );
+    foreach my $action ( @{ $change_actions || [] } ) {
+        if ( $action->{'action'} eq 'move_map' ) {
+            my $feature_id = $action->{'feature_id'} or next;
+
+            my $map_id
+                = $self->_translate_map_id( $action->{'new_parent_map_id'},
+                $temp_to_real_map_id );
+
+            my $direction     = $action->{'direction'} || undef;
+            my $feature_start = $action->{'new_feature_start'};
+            my $feature_stop  = $action->{'new_feature_stop'};
+
+            $sql_object->update_feature(
+                cmap_object   => $self,
+                feature_id    => $feature_id,
+                map_id        => $map_id,
+                feature_start => $feature_start,
+                feature_stop  => $feature_stop,
+                direction     => $direction,
+            );
+        }
+        elsif ( $action->{'action'} eq 'split_map' ) {
+
+            # Get the info for the old map
+            my $ori_map_id
+                = $self->_translate_map_id( $action->{'ori_map_id'},
+                $temp_to_real_map_id );
+            my $ori_map_data = $sql_object->get_maps(
+                cmap_object => $self,
+                map_id      => $ori_map_id,
+            );
+            next unless $ori_map_data;
+            $ori_map_data = $ori_map_data->[0];
+
+            # Create new maps
+            my $first_map_id = $sql_object->insert_map(
+                cmap_object   => $self,
+                map_set_id    => $ori_map_data->{'map_set_id'},
+                map_name      => $action->{'first_map_name'},
+                display_order => $ori_map_data->{'display_order'},
+                map_start     => $action->{'first_map_start'},
+                map_stop      => $action->{'first_map_stop'},
+            );
+
+            my $second_map_id = $sql_object->insert_map(
+                cmap_object   => $self,
+                map_set_id    => $ori_map_data->{'map_set_id'},
+                map_name      => $action->{'second_map_name'},
+                display_order => $ori_map_data->{'display_order'},
+                map_start     => $action->{'second_map_start'},
+                map_stop      => $action->{'second_map_stop'},
+            );
+
+            # Add the new IDs to the hash for later lookup
+            $temp_to_real_map_id->{ $action->{'first_map_id'} }
+                = $first_map_id;
+            $temp_to_real_map_id->{ $action->{'second_map_id'} }
+                = $second_map_id;
+
+            # Move features
+            foreach my $feature_acc (
+                @{ $action->{'first_map_feature_accs'} || [] } )
+            {
+                my $feature_data = $sql_object->get_features_simple(
+                    cmap_object => $self,
+                    feature_acc => $feature_acc,
+                );
+                next unless $feature_data;
+                $feature_data = $feature_data->[0];
+                my $feature_id = $feature_data->{'feature_id'};
+                $sql_object->update_feature(
+                    cmap_object => $self,
+                    feature_id  => $feature_id,
+                    map_id      => $first_map_id,
+                );
+            }
+            foreach my $feature_acc (
+                @{ $action->{'second_map_feature_accs'} || [] } )
+            {
+                my $feature_data = $sql_object->get_features_simple(
+                    cmap_object => $self,
+                    feature_acc => $feature_acc,
+                );
+                next unless $feature_data;
+                $feature_data = $feature_data->[0];
+                my $feature_id = $feature_data->{'feature_id'};
+                $sql_object->update_feature(
+                    cmap_object => $self,
+                    feature_id  => $feature_id,
+                    map_id      => $second_map_id,
+                );
+            }
+
+            # Maybe Move any features that were missed.
+
+            # Validate the start and stop of each new map
+            $self->validate_update_map_start_stop($first_map_id);
+            $self->validate_update_map_start_stop($second_map_id);
+
+            # If the map was a sub map
+            if ( defined $action->{'first_feature_start'} ) {
+                my $ori_map_to_features = $sql_object->get_map_to_feature(
+                    cmap_object => $self,
+                    map_id      => $ori_map_id,
+                );
+                if (    $ori_map_to_features
+                    and @$ori_map_to_features
+                    and my $ori_feature_id
+                    = $ori_map_to_features->[0]{'feature_id'} )
+                {
+
+                    # Create and Copy feature info to new features
+                    my $first_feature_id = $self->feature_copy(
+                        feature_name   => $action->{'first_map_name'},
+                        feature_start  => $action->{'first_feature_start'},
+                        feature_stop   => $action->{'first_feature_stop'},
+                        ori_feature_id => $ori_feature_id,
+                    );
+                    $sql_object->insert_map_to_feature(
+                        cmap_object => $self,
+                        feature_id  => $first_feature_id,
+                        map_id      => $first_map_id,
+                    );
+
+                    my $second_feature_id = $self->feature_copy(
+                        feature_name   => $action->{'second_map_name'},
+                        feature_start  => $action->{'second_feature_start'},
+                        feature_stop   => $action->{'second_feature_stop'},
+                        ori_feature_id => $ori_feature_id,
+                    );
+                    $sql_object->insert_map_to_feature(
+                        cmap_object => $self,
+                        feature_id  => $second_feature_id,
+                        map_id      => $second_map_id,
+                    );
+
+                    # Delete original sub-map feature
+                    $self->feature_delete( feature_id => $ori_feature_id, );
+                }
+            }
+
+            # Copy Map Attributes/DBXrefs
+            $self->copy_attributes(
+                ori_object_id => $ori_map_id,
+                new_object_id => $first_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_xrefs(
+                ori_object_id => $ori_map_id,
+                new_object_id => $first_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_attributes(
+                ori_object_id => $ori_map_id,
+                new_object_id => $second_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_xrefs(
+                ori_object_id => $ori_map_id,
+                new_object_id => $second_map_id,
+                object_type   => 'map',
+            );
+
+            # Delete original map
+            $self->map_delete( map_id => $ori_map_id, );
+
+        }
+        elsif ( $action->{'action'} eq 'merge_maps' ) {
+
+            # Get map data for one of the maps
+            my $first_map_id
+                = $self->_translate_map_id( $action->{'first_map_id'},
+                $temp_to_real_map_id );
+            my $first_map_data = $sql_object->get_maps(
+                cmap_object => $self,
+                map_id      => $first_map_id,
+            );
+            next unless $first_map_data;
+            $first_map_data = $first_map_data->[0];
+
+            # Translate the second map id too.
+            my $second_map_id
+                = $self->_translate_map_id( $action->{'second_map_id'},
+                $temp_to_real_map_id );
+
+            # Create new map
+            my $merged_map_id = $sql_object->insert_map(
+                cmap_object   => $self,
+                map_set_id    => $first_map_data->{'map_set_id'},
+                map_name      => $action->{'merged_map_name'},
+                display_order => $first_map_data->{'display_order'},
+                map_start     => $action->{'merged_map_start'},
+                map_stop      => $action->{'merged_map_stop'},
+            );
+            $temp_to_real_map_id->{ $action->{'merged_map_id'} }
+                = $merged_map_id;
+
+            # Move features
+            my $first_feature_data = $sql_object->get_features_simple(
+                cmap_object => $self,
+                map_id      => $first_map_id,
+            );
+            foreach my $feature ( @{ $first_feature_data || [] } ) {
+                $sql_object->update_feature(
+                    cmap_object => $self,
+                    feature_id  => $feature->{'feature_id'},
+                    map_id      => $merged_map_id,
+                );
+            }
+
+            my $second_map_offset = $action->{'second_map_offset'} || 0;
+            my $second_feature_data = $sql_object->get_features_simple(
+                cmap_object => $self,
+                map_id      => $second_map_id,
+            );
+            foreach my $feature ( @{ $second_feature_data || [] } ) {
+                $sql_object->update_feature(
+                    cmap_object   => $self,
+                    feature_id    => $feature->{'feature_id'},
+                    map_id        => $merged_map_id,
+                    feature_start => $feature->{'feature_start'}
+                        + $second_map_offset,
+                    feature_stop => $feature->{'feature_stop'}
+                        + $second_map_offset,
+                );
+            }
+
+            # Validate the start and stop of the new map
+            $self->validate_update_map_start_stop($merged_map_id);
+
+            # If the maps were a sub map
+            if ( defined $action->{'merged_feature_start'} ) {
+                my $first_map_to_features = $sql_object->get_map_to_feature(
+                    cmap_object => $self,
+                    map_id      => $first_map_id,
+                );
+                my $second_map_to_features = $sql_object->get_map_to_feature(
+                    cmap_object => $self,
+                    map_id      => $second_map_id,
+                );
+                if (    $first_map_to_features
+                    and @$first_map_to_features
+                    and $second_map_to_features
+                    and @$second_map_to_features
+                    and my $first_feature_id
+                    = $first_map_to_features->[0]{'feature_id'}
+                    and my $second_feature_id
+                    = $second_map_to_features->[0]{'feature_id'} )
+                {
+
+                    # Create/Copy feature info to new feature
+                    my $merged_feature_id = $self->feature_copy(
+                        feature_name   => $action->{'merged_map_name'},
+                        feature_start  => $action->{'merged_feature_start'},
+                        feature_stop   => $action->{'merged_feature_stop'},
+                        ori_feature_id => $first_feature_id,
+                    );
+                    $self->feature_copy(
+                        new_feature_id => $merged_feature_id,
+                        ori_feature_id => $second_feature_id,
+                    );
+
+                    $sql_object->insert_map_to_feature(
+                        cmap_object => $self,
+                        feature_id  => $merged_feature_id,
+                        map_id      => $merged_map_id,
+                    );
+
+                    # Delete original sub-map features
+                    $self->feature_delete( feature_id => $first_feature_id, );
+                    $self->feature_delete( feature_id => $second_feature_id,
+                    );
+
+                }
+            }
+
+            # Copy Map Attributes/DBXrefs
+            $self->copy_attributes(
+                ori_object_id => $first_map_id,
+                new_object_id => $merged_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_xrefs(
+                ori_object_id => $first_map_id,
+                new_object_id => $merged_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_attributes(
+                ori_object_id => $second_map_id,
+                new_object_id => $merged_map_id,
+                object_type   => 'map',
+            );
+            $self->copy_xrefs(
+                ori_object_id => $second_map_id,
+                new_object_id => $merged_map_id,
+                object_type   => 'map',
+            );
+
+            # Delete original maps
+            $self->map_delete( map_id => $first_map_id, );
+            $self->map_delete( map_id => $second_map_id, );
+
+        }
+    }
+    $sql_object->commit_transaction( cmap_object => $self, );
+
+    return 1;
+}
+
+sub _translate_map_id {
+
+    my $self                = shift;
+    my $map_id              = shift;
+    my $temp_to_real_map_id = shift;
+
+    # Translate map id if a temp was used.
+    if ( $map_id and $map_id < 0 ) {
+        $map_id = $temp_to_real_map_id->{$map_id};
+    }
+
+    return $map_id;
 }
 
 # ----------------------------------------------------
