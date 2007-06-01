@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.140 2007-05-18 20:27:41 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.141 2007-06-01 14:49:01 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.140 $)[-1];
+$VERSION = (qw$Revision: 1.141 $)[-1];
 
 #
 # Get command-line options
@@ -2568,7 +2568,7 @@ sub import_correspondences {
             @map_set_ids = map { $_->{'map_set_id'} } @$map_sets;
         }
         else {
-            push @missing, 'map_set_acc';
+            push @missing, 'map_set_accs';
         }
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
