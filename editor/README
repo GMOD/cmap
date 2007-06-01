@@ -13,6 +13,7 @@ Currently, the application has very little functionality.
       $ ../bin/cmap_admin.pl -d App --action import_tab_data --map_set_acc G1 --overwrite --allow_update editor_test_data
       $ ../bin/cmap_admin.pl -d App --action import_tab_data --map_set_acc fpc_contigs --overwrite --allow_update editor_test_data2
       $ ../bin/cmap_admin.pl -d App --action import_tab_data --map_set_acc B1 --overwrite --allow_update editor_test_data3
+      $ ../bin/cmap_admin.pl -d APP --action import_correspondences --map_set_accs 'B1 fpc_contigs G1' editor_test_data_corrs
 
 3. Populate the cmap_map_to_feature table with connections between features
 that are also maps.  

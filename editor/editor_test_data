@@ -3,7 +3,13 @@ gen_1	fpc_contig_1	fpc_contig_1	1	1000	contig
 gen_1	fpc_contig_2	fpc_contig_2	500	1700	contig	
 gen_1	fpc_contig_3	fpc_contig_3	700	2700	contig	
 gen_1	fpc_contig_4	fpc_contig_4	2500	3400	contig	
-gen_1	M1	M1	300	300	marker	
-gen_1	M2	M2	500	500	marker	
-gen_1	M3	M3	1700	1700	marker	
-gen_1	M4	M4	2900	2900	marker	
+gen_1	M1.1	M1.1	300	300	marker	
+gen_1	M1.2	M1.2	400	400	marker	
+gen_1	M1.3	M1.3	100	100	marker	
+gen_1	M1.4	M1.4	200	200	marker	
+gen_1	M2.1	M2.1	500	500	marker	
+gen_1	M2.2	M2.2	800	800	marker	
+gen_1	M2.3	M2.3	1200	1200	marker	
+gen_1	M2.4	M2.4	1500	1500	marker	
+gen_1	M3.1	M3.1	1700	1700	marker	
+gen_1	M4.1	M4.1	3000	3000	marker	
