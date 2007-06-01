@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.47 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.48 2007-06-01 14:54:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -793,6 +793,60 @@ Crawl the scaffold to find the top zone that is attached.
 }
 
 # ----------------------------------------------------
+sub set_corrs_map_set {
+
+=pod
+
+=head2 set_corrs_map_set
+
+Modify the correspondences for a zone
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $zone_key1    = $args{'zone_key'};
+    my $map_set_id2  = $args{'map_set_id'};
+    my $map_set_ids2 = $args{'map_set_ids'} || [];
+    my $corrs_on     = $args{'corrs_on'};
+
+    if ($map_set_id2) {
+        push @$map_set_ids2, $map_set_id2;
+    }
+    foreach $map_set_id2 (@$map_set_ids2) {
+        if ($corrs_on) {
+            $self->{'zone_to_map_set_correspondences_on'}{$zone_key1}
+                {$map_set_id2} = 1;
+        }
+        else {
+            $self->{'zone_to_map_set_correspondences_on'}{$zone_key1}
+                {$map_set_id2} = 0;
+        }
+
+        foreach my $zone_key2 (
+            @{ $self->map_set_id_to_zone_keys($map_set_id2) || [] } )
+        {
+            if ($corrs_on) {
+                $self->add_zone_corrs(
+                    window_key => $window_key,
+                    zone_key1  => $zone_key1,
+                    zone_key2  => $zone_key2,
+                );
+            }
+            else {
+                $self->clear_zone_corrs(
+                    window_key => $window_key,
+                    zone_key1  => $zone_key1,
+                    zone_key2  => $zone_key2,
+                );
+            }
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub toggle_corrs_zone {
 
 =pod
@@ -1451,17 +1505,6 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
         app_display_data => $self,
     );
 
-    #$app_interface->destroy_zone_controls(
-    #window_key => $window_key,
-    #zone_key  => $zone_key,
-    #);
-    #$app_interface->add_zone_controls(
-    #window_key        => $window_key,
-    #zone_key         => $zone_key,
-    #window_key       => $window_key,
-    #app_display_data => $self,
-    #);
-
     # BF DO THIS SOMETIME
     #$self->move_lower_zones(
     #    stationary_zone_key => $zone_key,
@@ -1962,6 +2005,47 @@ Hide Corrs for moving
 }
 
 # ----------------------------------------------------
+sub get_correspondence_menu_data {
+
+=pod
+
+=head2 get_correspondence_menu_data
+
+Return information about correspondences for the menu
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'};
+
+    my $self_map_set_id = $self->{'scaffold'}{$zone_key}{'map_set_id'};
+
+    my $self_return_hash;
+    my @return_array;
+    foreach
+        my $map_set_id ( keys %{ $self->map_set_id_to_zone_keys() || {} } )
+    {
+        my $map_set_data = $self->app_data_module()
+            ->get_map_set_data( map_set_id => $map_set_id, );
+        my $return_ref = {
+            map_set_id   => $map_set_id,
+            map_set_data => $map_set_data,
+            corrs_on     =>
+                $self->{'zone_to_map_set_correspondences_on'}{$zone_key}
+                {$map_set_id} || 0,
+        };
+        if ( $map_set_id == $self_map_set_id ) {
+            $self_return_hash = $return_ref;
+        }
+        else {
+            push @return_array, $return_ref;
+        }
+    }
+
+    return ( \@return_array, $self_return_hash );
+}
+
+# ----------------------------------------------------
 sub get_move_map_data {
 
 =pod
@@ -2114,6 +2198,10 @@ Move a map from one place on a parent to another
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
+    );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
     );
 
     return;
@@ -2284,7 +2372,6 @@ Create two new maps and hide the original
     }
 
 # Always save the action and wipe any later changes.  A split will kill the redo path.
-#unless ($undo_or_redo){
     my %action_data = (
         action                  => 'split_map',
         ori_map_key             => $ori_map_key,
@@ -2311,8 +2398,6 @@ Create two new maps and hide the original
         window_key  => $window_key,
         action_data => \%action_data,
     );
-
-    #}
 
     # Move the features to the new map in Memory
     # We don't need to change the locations of these features because the maps
@@ -2405,6 +2490,10 @@ Create two new maps and hide the original
         window_key       => $window_key,
         app_display_data => $self,
     );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
 
     return;
 
@@ -2479,6 +2568,10 @@ Destroy the two new maps and show the original
             zone_key => $zone_key,
         );
     }
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
 
     return;
 }
@@ -2743,6 +2836,10 @@ Create one new map and hide the original maps
         window_key       => $window_key,
         app_display_data => $self,
     );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
 
     return;
 
@@ -2817,6 +2914,10 @@ Destroy the new map and show the original
     $self->uninitialize_map(
         map_key  => $merged_map_key,
         zone_key => $zone_key,
+    );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
     );
 
     return;
@@ -3697,6 +3798,8 @@ Clears a zone of correspondences and calls on the interface to remove the drawin
     my $zone_key1  = $args{'zone_key1'}  or return;
     my $zone_key2  = $args{'zone_key2'}  or return;
 
+    return unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} );
+
     $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 0;
     $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 0;
     my %zone2_maps;
@@ -3745,15 +3848,17 @@ Adds a zone of correspondences
     my $zone_key1  = $args{'zone_key1'}  or return;
     my $zone_key2  = $args{'zone_key2'}  or return;
 
-    $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 1;
-    $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 1;
+    unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} ) {
+        $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 1;
+        $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 1;
 
-    add_correspondences(
-        window_key       => $window_key,
-        zone_key1        => $zone_key1,
-        zone_key2        => $zone_key2,
-        app_display_data => $self,
-    );
+        add_correspondences(
+            window_key       => $window_key,
+            zone_key1        => $zone_key1,
+            zone_key2        => $zone_key2,
+            app_display_data => $self,
+        );
+    }
     $self->app_interface()->draw_corrs(
         window_key       => $window_key,
         app_display_data => $self,
@@ -4410,6 +4515,8 @@ Initializes zone
     };
     $self->initialize_zone_layout( $zone_key, $window_key, );
 
+    $self->map_set_id_to_zone_keys( $map_set_id, $zone_key );
+
     if ($parent_zone_key) {
         push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} },
             $zone_key;
@@ -4591,6 +4698,43 @@ Gets/sets map keys
     }
 
     return $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id};
+}
+
+# ----------------------------------------------------
+sub map_set_id_to_zone_keys {
+
+=pod
+
+=head2 map_set_id_to_zone_keys
+
+Gets/sets the zones associated with a map set
+
+=cut
+
+    my $self       = shift;
+    my $map_set_id = shift;
+    my $zone_key   = shift;
+
+    if ( $map_set_id and $zone_key ) {
+
+        # Return if it is already entered
+        foreach my $previously_entered_zone_key (
+            @{ $self->{'map_set_id_to_zone_keys'}{$map_set_id} || [] } )
+        {
+            if ( $previously_entered_zone_key == $zone_key ) {
+                return $self->{'map_set_id_to_zone_keys'}{$map_set_id};
+            }
+        }
+
+        # If it made it through the gauntlet, add it to the list
+        push @{ $self->{'map_set_id_to_zone_keys'}{$map_set_id} }, $zone_key;
+        return $self->{'map_set_id_to_zone_keys'}{$map_set_id};
+    }
+    elsif ($map_set_id) {
+        return $self->{'map_set_id_to_zone_keys'}{$map_set_id};
+    }
+
+    return $self->{'map_set_id_to_zone_keys'};
 }
 
 # ----------------------------------------------------

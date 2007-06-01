@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.51 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.52 2007-06-01 14:54:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -167,72 +167,6 @@ Add the quck keys;
                 ->app_display_data->redo_action( window_key => $window_key, );
         },
     );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub int_create_zone_controls {
-
-    #print STDERR "AI_NEEDS_MODDED 1\n";
-
-=pod
-
-=head2 int_create_zone_controls
-
-This method will create the zone controls for the panel.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'} or return;
-    my $app_display_data = $args{'app_display_data'};
-
-    foreach
-        my $zone_key ( @{ $app_display_data->{'zone_order'}{$window_key} } )
-    {
-        $self->add_zone_controls(
-            window_key       => $window_key,
-            zone_key         => $zone_key,
-            app_display_data => $app_display_data,
-        );
-    }
-    ${ $self->{'selected_zone_key_scalar'} }
-        = $app_display_data->{'zone_order'}{$window_key}[0] || 0;
-
-    return;
-}
-
-# ----------------------------------------------------
-sub add_zone_controls {
-
-    #print STDERR "AI_NEEDS_MODDED 2\n";
-
-=pod
-
-=head2 add_zone_controls
-
-This method will create the zone controls for one zone
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $zone_key   = $args{'zone_key'}   or return;
-    my $app_display_data = $args{'app_display_data'};
-
-    $self->toggle_zone_pane(
-        zone_key         => $zone_key,
-        app_display_data => $app_display_data,
-    );
-
-    my $zone_label = $self->_get_zone_label(
-        window_key       => $window_key,
-        zone_key         => $zone_key,
-        app_display_data => $app_display_data,
-    );
-
-    Tk::grid( $zone_label, -sticky => "ne", );
 
     return;
 }
@@ -528,42 +462,6 @@ Returns the controls_pane object.
 }
 
 # ----------------------------------------------------
-sub _get_zone_label {
-
-    #print STDERR "AI_NEEDS_MODDED 4\n";
-
-=pod
-
-=head2 _get_zone_label
-
-Gets Map set label 
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $zone_key   = $args{'zone_key'}   or return;
-    my $app_display_data = $args{'app_display_data'};
-    my $toggle_zone_pane = $self->{'toggle_zone_pane'}{$zone_key};
-    my $font             = [
-        -family => 'Times',
-        -size   => 12,
-    ];
-    my $controller = $self->app_controller();
-    my $map_set_id = $controller->app_display_data->{'scaffold'}{$zone_key}
-        {'map_set_id'};
-    my $map_set_data = $self->app_data_module()
-        ->get_map_set_data( map_set_id => $map_set_id, );
-
-    return $toggle_zone_pane->Label(
-        -text => $map_set_data->{'species_common_name'} . " "
-            . $map_set_data->{'map_set_short_name'},
-        -background => "white",
-    );
-
-}
-
-# ----------------------------------------------------
 sub _add_info_widgets {
 
 =pod
@@ -641,10 +539,21 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
-    my $toggle_corrs_button = $controls_pane->Button(
-        -text    => "Toggle Correspondences",
+
+    #my $toggle_corrs_button = $controls_pane->Button(
+    #    -text    => "Toggle Correspondences",
+    #    -command => sub {
+    #        $self->app_controller()->toggle_corrs_zone(
+    #            window_key => $window_key,
+    #            zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+    #        );
+    #    },
+    #    -font => $font,
+    #);
+    my $corr_menu_button = $controls_pane->Button(
+        -text    => "Correspondences",
         -command => sub {
-            $self->app_controller()->toggle_corrs_zone(
+            $self->popup_corr_menu(
                 window_key => $window_key,
                 zone_key   => ${ $self->{'selected_zone_key_scalar'} },
             );
@@ -753,7 +662,7 @@ Adds control buttons to the controls_pane.
     );
     Tk::grid(
         $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
-        '-', $toggle_corrs_button,    #$reattach_button,
+        '-', $corr_menu_button,    #$reattach_button,
         -sticky => "nw",
     );
     Tk::grid(
@@ -761,7 +670,7 @@ Adds control buttons to the controls_pane.
         $zoom_button1,           $zoom_button2,
         $scroll_type_1,          $scroll_far_type_1,
 
-        $expand_button,               # $show_features_check_box,
+        $expand_button,            # $show_features_check_box,
             # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
@@ -2201,6 +2110,121 @@ sub popup_map_menu {
 }
 
 # ----------------------------------------------------
+sub popup_corr_menu {
+
+=pod
+
+=head2 popup_corr_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my ( $corr_menu_data, $zone_map_set_data )
+        = $app_display_data->get_correspondence_menu_data(
+        zone_key => $zone_key, );
+
+    my $menu_items = [];
+    push @$menu_items, [
+        Button => 'Show All Correspondences',
+        -command => sub {
+            $app_display_data->set_corrs_map_set(
+                zone_key    => $zone_key,
+                window_key  => $window_key,
+                map_set_ids =>
+                    [ map { $_->{'map_set_id'} } @$corr_menu_data ],
+                corrs_on => 1,
+            );
+        },
+    ];
+    push @$menu_items, [
+        Button => 'Hide All Correspondences',
+        -command => sub {
+            $app_display_data->set_corrs_map_set(
+                zone_key    => $zone_key,
+                window_key  => $window_key,
+                map_set_ids =>
+                    [ map { $_->{'map_set_id'} } @$corr_menu_data ],
+                corrs_on => 0,
+            );
+        },
+    ];
+
+    my $map_set_id = $zone_map_set_data->{'map_set_id'};
+    my $corrs_on   = ( $zone_map_set_data->{'corrs_on'} ) ? 1 : 0;
+
+    push @$menu_items, [
+        'checkbutton' => '',
+        -variable     => \$corrs_on,
+        -onvalue      => 1,
+        -offvalue     => 0,
+        -label        => 'Self',
+        -command => sub {
+            $app_display_data->set_corrs_map_set(
+                zone_key   => $zone_key,
+                window_key => $window_key,
+                map_set_id => $map_set_id,
+                corrs_on   => $corrs_on,
+            );
+        },
+    ];
+
+    foreach my $individual_corr_data (
+        sort {
+            $a->{'map_set_data'}{'map_set_name'}
+                cmp $b->{'map_set_data'}{'map_set_name'}
+        } @$corr_menu_data
+        )
+    {
+        my $map_set_id = $individual_corr_data->{'map_set_id'};
+        my $corrs_on   = ( $individual_corr_data->{'corrs_on'} ) ? 1 : 0;
+
+        push @$menu_items, [
+            'checkbutton' => '',
+            -variable     => \$corrs_on,
+            -onvalue      => 1,
+            -offvalue     => 0,
+            -label => $individual_corr_data->{'map_set_data'}{'map_set_name'},
+            -command => sub {
+                $app_display_data->set_corrs_map_set(
+                    zone_key   => $zone_key,
+                    window_key => $window_key,
+                    map_set_id => $map_set_id,
+                    corrs_on   => $corrs_on,
+                );
+            },
+        ];
+    }
+
+    push @$menu_items, [
+        Button => 'Cancel',
+        -command => sub {
+            return;
+        },
+    ];
+
+    my $menu = $self->main_window()->Menu(
+        -tearoff   => 0,
+        -menuitems => $menu_items,
+    );
+
+    #$menu->bind(
+    #'<FocusOut>',
+    #sub {
+    #$menu->destroy();
+    #},
+    #);
+    $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub fill_info_box {
 
 =pod
@@ -3090,32 +3114,6 @@ Handle the placement of tagged items in layers
     $zinc->raise( 'tmp_on_top', );
     $zinc->lower( 'on_bottom', );
 
-    return;
-}
-
-# ----------------------------------------------------
-sub destroy_zone_controls {
-
-    #print STDERR "AI_NEEDS_MODDED 47\n";
-
-=pod
-
-=head2 destroy_zone_controls
-
-Remove the interface buttons for a zone.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $zone_key   = $args{'zone_key'};
-    if ( $self->{'toggle_zone_pane'}{$zone_key} ) {
-        $self->toggle_zone_pane(
-            window_key => $window_key,
-            zone_key   => $zone_key,
-        )->destroy();
-        $self->{'toggle_zone_pane'}{$zone_key} = undef;
-    }
     return;
 }
 

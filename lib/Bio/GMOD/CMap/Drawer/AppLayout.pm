@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.37 2007-05-05 05:25:05 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.38 2007-06-01 14:54:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -1535,12 +1535,18 @@ Lays out correspondences between two zones
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
 
+    my $allow_intramap = 0;
+    if ( $zone_key1 == $zone_key2 ) {
+        $allow_intramap = 1;
+    }
+
     # Get Correspondence Data
     my $corrs = $app_display_data->app_data_module()->zone_correspondences(
-        zone_key1  => $zone_key1,
-        zone_key2  => $zone_key2,
-        slot_info1 => $app_display_data->{'slot_info'}{$zone_key1},
-        slot_info2 => $app_display_data->{'slot_info'}{$zone_key2},
+        zone_key1      => $zone_key1,
+        zone_key2      => $zone_key2,
+        slot_info1     => $app_display_data->{'slot_info'}{$zone_key1},
+        slot_info2     => $app_display_data->{'slot_info'}{$zone_key2},
+        allow_intramap => $allow_intramap,
     );
 
     # Get the zone offsets which reflect the "real" coordinates.
@@ -1564,16 +1570,28 @@ Lays out correspondences between two zones
             = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
         my $map2_x1
             = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[0];
-        my ( $corr_y1, $corr_y2, $draw_downward );
-        if ( $zone_key1 < $zone_key2 ) {
-            $draw_downward = 1;
+        my ( $corr_y1, $corr_y2, $draw_downward1, $draw_downward2, );
+
+        # Work out the y starting point for each map
+        if ( $zone_key1 == $zone_key2 ) {
+            $draw_downward1 = 0;
+            $draw_downward2 = 0;
+            $corr_y1
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
+            $corr_y2
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
+        }
+        elsif ( $zone_key1 < $zone_key2 ) {
+            $draw_downward1 = 1;
+            $draw_downward2 = 0;
             $corr_y1
                 = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[3];
             $corr_y2
                 = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
         }
         else {
-            $draw_downward = 0;
+            $draw_downward1 = 0;
+            $draw_downward2 = 1;
             $corr_y1
                 = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
             $corr_y2
@@ -1619,14 +1637,14 @@ Lays out correspondences between two zones
         my $y_end2          = $corr_y2 + $zone2_y_offset;
         my $x_mid1          = $x_end1;
         my $y_mid1          =
-              $draw_downward
+              $draw_downward1
             ? $y_end1 + $end_line_height
             : $y_end1 - $end_line_height;
         my $x_mid2 = $x_end2;
         my $y_mid2 =
-              $draw_downward
-            ? $y_end2 - $end_line_height
-            : $y_end2 + $end_line_height;
+              $draw_downward2
+            ? $y_end2 + $end_line_height
+            : $y_end2 - $end_line_height;
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
                 {$map_key2}{'items'} },
             (

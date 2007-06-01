@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.9 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: Remote.pm,v 1.10 2007-06-01 14:54:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -132,10 +132,12 @@ sub handler {
             slot_info_str => $apr->param('slot_info'), );
         my $slot_info2 = $self->unstringify_slot_info(
             slot_info_str => $apr->param('slot_info2'), );
+        my $allow_intramap = $apr->param('allow_intramap');
         my $data = $self->sql()->get_feature_correspondence_for_counting(
-            cmap_object => $self,
-            slot_info   => $slot_info,
-            slot_info2  => $slot_info2,
+            cmap_object    => $self,
+            slot_info      => $slot_info,
+            slot_info2     => $slot_info2,
+            allow_intramap => $allow_intramap,
         );
         unless ( @{ $data || [] } ) {
             $data = undef;

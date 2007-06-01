@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.21 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: AppData.pm,v 1.22 2007-06-01 14:54:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -516,6 +516,7 @@ Requires zone_key1 to be less than zone_key2.
     my $zone_key2  = $args{'zone_key2'}  or return undef;
     my $slot_info1 = $args{'slot_info1'} or return undef;
     my $slot_info2 = $args{'slot_info2'} or return undef;
+    my $allow_intramap = $args{'allow_intramap'} || 0;
 
     if ( $zone_key1 > $zone_key2 ) {
         die "AppData->zone_correspondences called with zone1 > zone2\n";
@@ -528,8 +529,9 @@ Requires zone_key1 to be less than zone_key2.
     {
 
         my $corrs = $self->sql_get_feature_correspondence_for_counting(
-            slot_info  => $slot_info1,
-            slot_info2 => $slot_info2,
+            slot_info      => $slot_info1,
+            slot_info2     => $slot_info2,
+            allow_intramap => $allow_intramap,
             )
             || [];
         $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'corrs'} = $corrs;
@@ -891,11 +893,14 @@ Calls get_feature_correspondence_for_counting either locally or remotely
 =cut
 
     my ( $self, %args ) = @_;
-    my $slot_info  = $args{'slot_info'};
-    my $slot_info2 = $args{'slot_info2'};
+    my $slot_info      = $args{'slot_info'};
+    my $slot_info2     = $args{'slot_info2'};
+    my $allow_intramap = $args{'allow_intramap'} || 0;
 
     if ( my $url = $self->{'remote_url'} ) {
-        $url .= ';action=get_feature_correspondence_for_counting';
+        $url .= ';action=get_feature_correspondence_for_counting;'
+            . 'allow_intramap='
+            . $allow_intramap . ';';
         $url .= $self->stringify_slot_info(
             slot_info  => $slot_info,
             param_name => 'slot_info',
@@ -909,9 +914,10 @@ Calls get_feature_correspondence_for_counting either locally or remotely
     }
     else {
         return $self->sql()->get_feature_correspondence_for_counting(
-            cmap_object => $self,
-            slot_info   => $slot_info,
-            slot_info2  => $slot_info2,
+            cmap_object    => $self,
+            slot_info      => $slot_info,
+            slot_info2     => $slot_info2,
+            allow_intramap => $allow_intramap,
             )
             || [];
     }

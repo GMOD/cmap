@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.163 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: Generic.pm,v 1.164 2007-06-01 14:54:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.163 $)[-1];
+$VERSION = (qw$Revision: 1.164 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6613,6 +6613,8 @@ DEFAULT->{'aggregated_type_substitute'}).
 
 =item - Feature Type Accessions to ignore (ignored_feature_type_accs)
 
+=item - Allow intramap correspondences (allow_intramap)
+
 =back
 
 =item * Output
@@ -6649,6 +6651,7 @@ Array of Hashes:
         greater_evidence_type_accs  => 0,
         evidence_type_score         => 0,
         ignored_feature_type_accs   => 0,
+        allow_intramap              => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -6667,6 +6670,7 @@ Array of Hashes:
         || [];
     my $evidence_type_score       = $args{'evidence_type_score'}       || {};
     my $ignored_feature_type_accs = $args{'ignored_feature_type_accs'} || [];
+    my $allow_intramap            = $args{'allow_intramap'}            || 0;
     my $db                        = $cmap_object->db;
     my $return_object;
 
@@ -6690,8 +6694,15 @@ Array of Hashes:
         and      fc.is_enabled=1
         and      fc.feature_correspondence_id=
                  ce.feature_correspondence_id
-        and      cl.map_id1!=cl.map_id2
     ];
+    if ( !$allow_intramap ) {
+        $where_sql .= qq[ and cl.map_id1 != cl.map_id2 ];
+    }
+    else {
+
+        # Eliminate duplicates
+        $where_sql .= qq[ and cl.feature_id1 < cl.feature_id2 ];
+    }
 
     my $order_by_sql = qq[
         order by cl.map_id1,
