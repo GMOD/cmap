@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.10 2007-06-01 14:54:00 mwz444 Exp $
+# $Id: Remote.pm,v 1.11 2007-06-07 16:38:05 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -139,6 +139,19 @@ sub handler {
             slot_info2     => $slot_info2,
             allow_intramap => $allow_intramap,
         );
+        unless ( @{ $data || [] } ) {
+            $data = undef;
+        }
+        print nfreeze($data);
+    }
+    elsif ( $action eq 'get_feature_correspondence_with_slot_comparisons' ) {
+        my $slot_comparisons = thaw $apr->param('slot_comparisons');
+        my $data_module      = $self->data_module();
+        my $data
+            = $data_module->get_feature_correspondence_with_slot_comparisons(
+            $slot_comparisons, )
+            || [];
+
         unless ( @{ $data || [] } ) {
             $data = undef;
         }

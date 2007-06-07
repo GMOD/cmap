@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.285 2007-04-24 16:31:21 briano Exp $
+# $Id: Data.pm,v 1.286 2007-06-07 16:38:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.285 $)[-1];
+$VERSION = (qw$Revision: 1.286 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4211,6 +4211,68 @@ original start and stop.
     }
 
     return $self->{'slot_info'};
+}
+
+# ----------------------------------------------------
+sub get_feature_correspondence_with_slot_comparisons {
+
+=pod
+                                                                                
+=head2 get_feature_correspondence_with_slot_comparisons
+
+Given a set of slot_comparisons,
+
+ Structure:
+    @slot_comparisons = (
+        {   map_id1          => $map_id1,
+            slot_info1       => {$map_id1 => [ current_start, current_stop, ori_start, ori_stop, magnification ]},
+            fragment_offset1 => $fragment_offset1,
+            slot_info2       => {$map_id2 => [ current_start, current_stop, ori_start, ori_stop, magnification ]},
+            fragment_offset2 => $fragment_offset2,
+            map_id2          => $map_id2,
+        },
+    );
+
+
+
+=cut
+
+    my $self             = shift;
+    my $slot_comparisons = shift or return [];
+    my $sql_object       = $self->sql;
+
+    my @results;
+    foreach my $slot_comparison (@$slot_comparisons) {
+        my $corrs = $self->sql()->get_feature_correspondence_for_counting(
+            cmap_object    => $self,
+            slot_info      => $slot_comparison->{'slot_info1'},
+            slot_info2     => $slot_comparison->{'slot_info2'},
+            allow_intramap => $slot_comparison->{'allow_intramap'},
+            )
+            || [];
+
+        # Modify the correspondences to match up to the maps
+        my $map_id1          = $slot_comparison->{'map_id1'};
+        my $fragment_offset1 = $slot_comparison->{'fragment_offset1'};
+        my $map_id2          = $slot_comparison->{'map_id2'};
+        my $fragment_offset2 = $slot_comparison->{'fragment_offset2'};
+        foreach my $corr ( @{ $corrs || [] } ) {
+            $corr->{'map_id1'} = $map_id1;
+            $corr->{'feature_start1'} += $fragment_offset1;
+            $corr->{'feature_stop1'}  += $fragment_offset1;
+            $corr->{'map_id2'} = $map_id2;
+            $corr->{'feature_start2'} += $fragment_offset2;
+            $corr->{'feature_stop2'}  += $fragment_offset2;
+        }
+        push @results,
+            {
+            cache_key => $slot_comparison->{'cache_key'},
+            corrs     => $corrs,
+            };
+
+    }
+
+    return \@results;
 }
 
 sub orderOutFromZero {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.38 2007-06-01 14:54:01 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.39 2007-06-07 16:38:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -1539,15 +1539,16 @@ Lays out correspondences between two zones
     if ( $zone_key1 == $zone_key2 ) {
         $allow_intramap = 1;
     }
+    my $slot_comparisons = $app_display_data->get_slot_comparisons_for_corrs(
+        window_key => $window_key,
+        zone_key1  => $zone_key1,
+        zone_key2  => $zone_key2,
+    );
 
     # Get Correspondence Data
-    my $corrs = $app_display_data->app_data_module()->zone_correspondences(
-        zone_key1      => $zone_key1,
-        zone_key2      => $zone_key2,
-        slot_info1     => $app_display_data->{'slot_info'}{$zone_key1},
-        slot_info2     => $app_display_data->{'slot_info'}{$zone_key2},
-        allow_intramap => $allow_intramap,
-    );
+    my $corrs = $app_display_data->app_data_module()
+        ->zone_correspondences_using_slot_comparisons(
+        slot_comparisons => $slot_comparisons, );
 
     # Get the zone offsets which reflect the "real" coordinates.
     my ( $zone1_x_offset, $zone1_y_offset )
@@ -1559,17 +1560,32 @@ Lays out correspondences between two zones
         $app_display_data->{'corr_layout'}{'changed'} = 1;
     }
 
+    my $map_data_hash = $app_display_data->app_data_module()->map_data_hash(
+        map_ids => [
+            (   map { $app_display_data->map_key_to_id($_) }
+                    @{ $app_display_data->{'map_order'}{$zone_key1} || [] }
+            ),
+            (   map { $app_display_data->map_key_to_id($_) }
+                    @{ $app_display_data->{'map_order'}{$zone_key2} || [] }
+            ),
+        ],
+    );
+
     foreach my $corr ( @{ $corrs || [] } ) {
-        my $map_key1
-            = $app_display_data->map_id_to_key_by_zone( $corr->{'map_id1'},
+        my $map_id1  = $corr->{'map_id1'};
+        my $map_id2  = $corr->{'map_id2'};
+        my $map_key1 = $app_display_data->map_id_to_key_by_zone( $map_id1,
             $zone_key1 );
-        my $map_key2
-            = $app_display_data->map_id_to_key_by_zone( $corr->{'map_id2'},
+        my $map_key2 = $app_display_data->map_id_to_key_by_zone( $map_id2,
             $zone_key2 );
         my $map1_x1
             = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
         my $map2_x1
             = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[0];
+
+        my $map_start1 = $map_data_hash->{$map_id1}{'map_start'};
+        my $map_start2 = $map_data_hash->{$map_id2}{'map_start'};
+
         my ( $corr_y1, $corr_y2, $draw_downward1, $draw_downward2, );
 
         # Work out the y starting point for each map
@@ -1605,10 +1621,12 @@ Lays out correspondences between two zones
             || $app_display_data->{'scaffold'}{$zone_key2}{'pixels_per_unit'};
         my $corr_avg_x1
             = ( $corr->{'feature_start1'} + $corr->{'feature_stop1'} ) / 2;
-        my $corr_x1 = $map1_x1 + ( $map1_pixels_per_unit * $corr_avg_x1 );
+        my $corr_x1 = $map1_x1
+            + ( $map1_pixels_per_unit * ( $corr_avg_x1 - $map_start1 ) );
         my $corr_avg_x2
             = ( $corr->{'feature_start2'} + $corr->{'feature_stop2'} ) / 2;
-        my $corr_x2 = $map2_x1 + ( $map2_pixels_per_unit * $corr_avg_x2 );
+        my $corr_x2 = $map2_x1
+            + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
 
         unless (
             $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2} )

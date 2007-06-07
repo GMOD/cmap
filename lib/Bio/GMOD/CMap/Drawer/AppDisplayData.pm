@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.48 2007-06-01 14:54:01 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.49 2007-06-07 16:38:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -880,6 +880,192 @@ toggle the correspondences for a zone
     }
 
     return;
+}
+
+# ----------------------------------------------------
+sub get_slot_comparisons_for_corrs {
+
+=pod
+
+=head2 get_slot_comparisons_for_corrs
+
+Get a list of all the information needed for correspondences, taking into
+account the posibility of split/merged maps.
+
+The data structure looks like this
+
+    @slot_comparisons = (
+        {   map_id1          => $map_id1,
+            slot_info1       => $slot_info1,
+            fragment_offset1 => $fragment_offset1,
+            slot_info2       => $slot_info2,
+            fragment_offset2 => $fragment_offset2,
+            map_id2          => $map_id2,
+        },
+    );
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key1  = $args{'zone_key1'};
+    my $zone_key2  = $args{'zone_key2'};
+
+    ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
+        if ( $zone_key1 > $zone_key2 );
+
+    my $allow_intramap = 0;
+    if ( $zone_key1 == $zone_key2 ) {
+        $allow_intramap = 1;
+    }
+    my $slot_info1 = $self->{'slot_info'}{$zone_key1};
+    my @slot_comparisons;
+    foreach my $map_key1 ( @{ $self->map_order($zone_key1) } ) {
+        my $map_id1       = $self->map_key_to_id($map_key1);
+        my $map_pedigree1 = $self->map_pedigree($map_key1);
+        my $info_start    =
+            defined $slot_info1->{$map_id1}[0]
+            ? $slot_info1->{$map_id1}[0]
+            : $slot_info1->{$map_id1}[2];
+        my $info_stop =
+            defined $slot_info1->{$map_id1}[1]
+            ? $slot_info1->{$map_id1}[1]
+            : $slot_info1->{$map_id1}[3];
+        if ($map_pedigree1) {
+            foreach my $fragment (@$map_pedigree1) {
+                my $fragment_start  = $fragment->[0];
+                my $fragment_stop   = $fragment->[1];
+                my $ancestor_map_id = $fragment->[2];
+                my $ancestor_start  = $fragment->[3];
+                my $ancestor_stop   = $fragment->[4];
+
+                next
+                    if ( $fragment_stop < $info_start
+                    or $fragment_start > $info_stop );
+                if ( $info_stop < $fragment_stop ) {
+                    $ancestor_start -= ( $fragment_stop - $info_stop );
+                }
+                if ( $info_start > $fragment_start ) {
+                    $ancestor_start += ( $info_start - $fragment_start );
+                }
+                my $map_info1 = [
+                    $ancestor_start, $ancestor_stop, $ancestor_start,
+                    $ancestor_stop,  1,
+                ];
+                my $fragment_offset1 = $fragment_start - $ancestor_start;
+                push @slot_comparisons,
+                    $self->_get_slot_comparisons_for_corrs_helper1(
+                    map_id1          => $map_id1,
+                    ancestor_map_id1 => $ancestor_map_id,
+                    map_info1        => $map_info1,
+                    fragment_offset1 => $fragment_offset1,
+                    zone_key1        => $zone_key1,
+                    zone_key2        => $zone_key2,
+                    allow_intramap   => $allow_intramap,
+                    );
+            }
+        }
+        else {
+            my $map_info1 = $slot_info1->{$map_id1};
+            push @slot_comparisons,
+                $self->_get_slot_comparisons_for_corrs_helper1(
+                map_id1          => $map_id1,
+                map_info1        => $map_info1,
+                fragment_offset1 => 0,
+                zone_key1        => $zone_key1,
+                zone_key2        => $zone_key2,
+                allow_intramap   => $allow_intramap,
+                );
+        }
+    }
+
+    return \@slot_comparisons;
+}
+
+# ----------------------------------------------------
+sub _get_slot_comparisons_for_corrs_helper1 {
+
+=pod
+
+=head2 get_slot_comparisons_for_corrs_helper1
+
+Get a list of all the information needed for correspondences, taking into
+account the posibility of split/merged maps.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'};
+    my $zone_key1        = $args{'zone_key1'};
+    my $zone_key2        = $args{'zone_key2'};
+    my $map_id1          = $args{'map_id1'};
+    my $ancestor_map_id1 = $args{'ancestor_map_id1'} || $map_id1;
+    my $map_info1        = $args{'map_info1'};
+    my $fragment_offset1 = $args{'fragment_offset1'};
+    my $allow_intramap   = $args{'allow_intramap'};
+
+    my $slot_info2 = $self->{'slot_info'}{$zone_key2};
+    my @slot_comparisons;
+    foreach my $map_key2 ( @{ $self->map_order($zone_key2) } ) {
+        my $map_id2       = $self->map_key_to_id($map_key2);
+        my $map_pedigree2 = $self->map_pedigree($map_key2);
+        my $info_start    =
+            defined $slot_info2->{$map_id2}[0]
+            ? $slot_info2->{$map_id2}[0]
+            : $slot_info2->{$map_id2}[2];
+        my $info_stop =
+            defined $slot_info2->{$map_id2}[1]
+            ? $slot_info2->{$map_id2}[1]
+            : $slot_info2->{$map_id2}[3];
+        if ($map_pedigree2) {
+            foreach my $fragment (@$map_pedigree2) {
+                my $fragment_start   = $fragment->[0];
+                my $fragment_stop    = $fragment->[1];
+                my $ancestor_map_id2 = $fragment->[2];
+                my $ancestor_start   = $fragment->[3];
+                my $ancestor_stop    = $fragment->[4];
+                next
+                    if ( $fragment_stop < $info_start
+                    or $fragment_start > $info_stop );
+                if ( $info_stop < $fragment_stop ) {
+                    $ancestor_start -= ( $fragment_stop - $info_stop );
+                }
+                if ( $info_start > $fragment_start ) {
+                    $ancestor_start += ( $info_start - $fragment_start );
+                }
+                my $map_info2 = [
+                    $ancestor_start, $ancestor_stop, $ancestor_start,
+                    $ancestor_stop,  1,
+                ];
+                my $fragment_offset2 = $fragment_start - $ancestor_start;
+                push @slot_comparisons,
+                    {
+                    map_id1          => $map_id1,
+                    slot_info1       => { $ancestor_map_id1 => $map_info1 },
+                    fragment_offset1 => $fragment_offset1,
+                    map_id2          => $map_id2,
+                    slot_info2       => { $ancestor_map_id2 => $map_info2 },
+                    fragment_offset2 => $fragment_offset2,
+                    allow_intramap   => $allow_intramap,
+                    };
+            }
+        }
+        else {
+            my $map_info2 = $slot_info2->{$map_id2};
+            push @slot_comparisons,
+                {
+                map_id1          => $map_id1,
+                slot_info1       => { $map_id1 => $map_info1 },
+                fragment_offset1 => $fragment_offset1,
+                map_id2          => $map_id2,
+                slot_info2       => { $map_id2 => $map_info2 },
+                fragment_offset2 => 0,
+                allow_intramap   => $allow_intramap,
+                };
+        }
+    }
+
+    return @slot_comparisons;
 }
 
 # ----------------------------------------------------
@@ -2222,15 +2408,18 @@ Create two new maps and hide the original
 =cut
 
     my ( $self, %args ) = @_;
-    my $ori_map_key     = $args{'map_key'};
-    my $position_on_map = $args{'position_on_map'};
-    my $undo_or_redo    = $args{'undo_or_redo'} || 0;
-    my $zone_key        = $self->map_key_to_zone_key($ori_map_key);
-    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $ori_map_key    = $args{'map_key'};
+    my $split_position = $args{'split_position'};
+    my $undo_or_redo   = $args{'undo_or_redo'} || 0;
+    my $zone_key       = $self->map_key_to_zone_key($ori_map_key);
+    my $window_key     = $self->{'scaffold'}{$zone_key}{'window_key'};
 
     my $ori_map_id = $self->map_key_to_id($ori_map_key);
     my $ori_map_data
         = $self->app_data_module()->map_data( map_id => $ori_map_id );
+
+    my $ori_map_start = $ori_map_data->{'map_start'};
+    my $ori_map_stop  = $ori_map_data->{'map_stop'};
     my $unit_granularity
         = $self->map_type_data( $ori_map_data->{'map_type_acc'},
         'unit_granularity' )
@@ -2248,11 +2437,11 @@ Create two new maps and hide the original
     # Figure out the break points, the two maps will probably overlap some.
     # Simultaniously, place the features on one or the other.
     my $first_map_name   = $ori_map_data->{'map_name'} . ".1";
-    my $first_map_start  = $ori_map_data->{'map_start'};
-    my $first_map_stop   = $position_on_map;
+    my $first_map_start  = $ori_map_start;
+    my $first_map_stop   = $split_position;
     my $second_map_name  = $ori_map_data->{'map_name'} . ".2";
-    my $second_map_start = $position_on_map;
-    my $second_map_stop  = $ori_map_data->{'map_stop'};
+    my $second_map_start = $split_position;
+    my $second_map_stop  = $ori_map_stop;
     my %feature_accs_for_first_map;
     my %feature_accs_for_second_map;
     my %sub_map_ids_for_first_map;
@@ -2262,14 +2451,14 @@ Create two new maps and hide the original
 
     foreach my $lane ( keys %{ $sorted_feature_data || {} } ) {
         foreach my $feature ( @{ $sorted_feature_data->{$lane} || [] } ) {
-            if ( $feature->{'feature_stop'} <= $position_on_map ) {
+            if ( $feature->{'feature_stop'} <= $split_position ) {
                 $feature_accs_for_first_map{ $feature->{'feature_acc'} } = 1;
                 if ( $feature->{'sub_map_id'} ) {
                     $sub_map_ids_for_first_map{ $feature->{'sub_map_id'} }
                         = 1;
                 }
             }
-            elsif ( $feature->{'feature_start'} >= $position_on_map ) {
+            elsif ( $feature->{'feature_start'} >= $split_position ) {
                 $feature_accs_for_second_map{ $feature->{'feature_acc'} } = 1;
                 if ( $feature->{'sub_map_id'} ) {
                     $sub_map_ids_for_second_map{ $feature->{'sub_map_id'} }
@@ -2280,8 +2469,8 @@ Create two new maps and hide the original
 
                 # Overlapping feature, Figure out which it should be on and
                 # extend that map.
-                if ( $position_on_map - $feature->{'feature_start'}
-                    > $feature->{'feature_stop'} - $position_on_map )
+                if ( $split_position - $feature->{'feature_start'}
+                    > $feature->{'feature_stop'} - $split_position )
                 {
                     $feature_accs_for_first_map{ $feature->{'feature_acc'} }
                         = 1;
@@ -2307,13 +2496,11 @@ Create two new maps and hide the original
         }
     }
 
-    my $ori_map_length
-        = $ori_map_data->{'map_stop'} - $ori_map_data->{'map_start'}
-        + $unit_granularity;
+    my $ori_map_length = $ori_map_stop - $ori_map_start + $unit_granularity;
     my $first_map_length
-        = $first_map_stop - $ori_map_data->{'map_start'} + $unit_granularity;
+        = $first_map_stop - $ori_map_start + $unit_granularity;
     my $second_map_length
-        = $ori_map_data->{'map_stop'} - $second_map_start + $unit_granularity;
+        = $ori_map_stop - $second_map_start + $unit_granularity;
 
     # Get the identifiers for the two new maps
     my $first_map_id  = $self->create_temp_id();
@@ -2390,13 +2577,26 @@ Create two new maps and hide the original
         second_map_stop         => $second_map_stop,
         second_feature_start    => $second_feature_start,
         second_feature_stop     => $second_feature_stop,
-        position_on_map         => $position_on_map,
+        split_position          => $split_position,
         first_map_feature_accs  => [ keys %feature_accs_for_first_map ],
         second_map_feature_accs => [ keys %feature_accs_for_second_map ],
     );
     $self->add_action(
         window_key  => $window_key,
         action_data => \%action_data,
+    );
+
+    # Create the new pedigrees
+    $self->split_map_pedigree(
+        ori_map_key      => $ori_map_key,
+        ori_map_start    => $ori_map_start,
+        ori_map_stop     => $ori_map_stop,
+        first_map_key    => $first_map_key,
+        first_map_start  => $first_map_start,
+        first_map_stop   => $first_map_stop,
+        second_map_key   => $second_map_key,
+        second_map_start => $second_map_start,
+        second_map_stop  => $second_map_stop,
     );
 
     # Move the features to the new map in Memory
@@ -2468,9 +2668,15 @@ Create two new maps and hide the original
     );
 
     # Cut the maps ties with the other zones so it doesn't get re-drawn
-    $self->remove_from_move_map(
+    $self->remove_from_map_order(
         map_key  => $ori_map_key,
         zone_key => $zone_key,
+    );
+
+    # Remove any drawn correspondences
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key    => $ori_map_key,
     );
 
 # This probably should be more elegant but for now, just layout the whole thing
@@ -2601,8 +2807,12 @@ Create one new map and hide the original maps
     my $second_map_id = $self->map_key_to_id($second_map_key);
     my $first_map_data
         = $self->app_data_module()->map_data( map_id => $first_map_id );
+    my $first_map_start = $first_map_data->{'map_start'};
+    my $first_map_stop  = $first_map_data->{'map_stop'};
     my $second_map_data
         = $self->app_data_module()->map_data( map_id => $second_map_id );
+    my $second_map_start = $second_map_data->{'map_start'};
+    my $second_map_stop  = $second_map_data->{'map_stop'};
 
     my $second_map_offset = $first_map_data->{'map_stop'} - $overlap_amount;
     if ( $second_map_offset < $first_map_data->{'map_start'} ) {
@@ -2800,6 +3010,20 @@ Create one new map and hide the original maps
         action_data => \%action_data,
     );
 
+    # Create the new pedigree
+    $self->merge_map_pedigrees(
+        merged_map_key    => $merged_map_key,
+        merged_map_start  => $merged_map_start,
+        merged_map_stop   => $merged_map_stop,
+        first_map_key     => $first_map_key,
+        first_map_start   => $first_map_start,
+        first_map_stop    => $first_map_stop,
+        second_map_key    => $second_map_key,
+        second_map_start  => $second_map_start,
+        second_map_stop   => $second_map_stop,
+        second_map_offset => $second_map_offset,
+    );
+
     # Create the new map data
     $self->app_data_module()->generate_map_data(
         old_map_id => $first_map_id,
@@ -2810,13 +3034,23 @@ Create one new map and hide the original maps
     );
 
     # Cut the ties with the other zones so the maps don't get re-drawn
-    $self->remove_from_move_map(
+    $self->remove_from_map_order(
         map_key  => $first_map_key,
         zone_key => $zone_key,
     );
-    $self->remove_from_move_map(
+    $self->remove_from_map_order(
         map_key  => $second_map_key,
         zone_key => $zone_key,
+    );
+
+    # Remove any drawn correspondences
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key    => $first_map_key,
+    );
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key    => $second_map_key,
     );
 
 # This probably should be more elegant but for now, just layout the whole thing
@@ -2924,6 +3158,208 @@ Destroy the new map and show the original
 }
 
 # ----------------------------------------------------
+sub map_pedigree {
+
+=pod
+
+=head2 map_pedigree
+
+Get/Set the liniage of a map.  If the map is unmodified it will return undef;
+
+=cut
+
+    my $self         = shift;
+    my $map_key      = shift or return undef;
+    my $map_pedigree = shift;
+
+    if ($map_pedigree) {
+        $self->{'map_pedigree'}{$map_key} = $map_pedigree;
+    }
+
+    return $self->{'map_pedigree'}{$map_key};
+}
+
+# ----------------------------------------------------
+sub split_map_pedigree {
+
+=pod
+
+=head2 split_map_pedigree
+
+Assumes that the split maps keep the same coordinate system as the original.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $ori_map_key      = $args{'ori_map_key'} or return undef;
+    my $ori_map_start    = $args{'ori_map_start'};
+    my $ori_map_stop     = $args{'ori_map_stop'};
+    my $first_map_key    = $args{'first_map_key'} or return undef;
+    my $first_map_start  = $args{'first_map_start'};
+    my $first_map_stop   = $args{'first_map_stop'};
+    my $second_map_key   = $args{'second_map_key'} or return undef;
+    my $second_map_start = $args{'second_map_start'};
+    my $second_map_stop  = $args{'second_map_stop'};
+
+    my $ori_map_id = $self->map_key_to_id($ori_map_key);
+
+    my $ori_map_pedigree = $self->map_pedigree( $ori_map_key, );
+    my @first_map_pedigree;
+    my @second_map_pedigree;
+    if ($ori_map_pedigree) {
+        foreach my $fragment (@$ori_map_pedigree) {
+            my $fragment_start  = $fragment->[0];
+            my $fragment_stop   = $fragment->[1];
+            my $ancestor_map_id = $fragment->[2];
+            my $ancestor_start  = $fragment->[3];
+            my $ancestor_stop   = $fragment->[4];
+
+            # Is fragment on the first map
+            if ( $fragment_stop < $first_map_stop ) {
+                push @first_map_pedigree,
+                    [
+                    $fragment_start, $fragment_stop, $ancestor_map_id,
+                    $ancestor_start, $ancestor_stop,
+                    ];
+            }
+            elsif ( $fragment_start < $first_map_stop ) {
+                push @first_map_pedigree,
+                    [
+                    $fragment_start,
+                    $first_map_stop,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_start + $first_map_stop - $fragment_start,
+                    ];
+            }
+
+            # Is fragment on the second map
+            if ( $fragment_start > $second_map_start ) {
+                push @second_map_pedigree,
+                    [
+                    $fragment_start, $fragment_stop, $ancestor_map_id,
+                    $ancestor_start, $ancestor_stop,
+                    ];
+            }
+            elsif ( $fragment_stop > $second_map_start ) {
+                push @second_map_pedigree,
+                    [
+                    $second_map_start,
+                    $fragment_stop,
+                    $ancestor_map_id,
+                    $ancestor_stop - ( $fragment_stop - $second_map_start ),
+                    $ancestor_stop,
+                    ];
+            }
+
+        }
+    }
+    else {
+        @first_map_pedigree = (
+            [   $first_map_start, $first_map_stop, $ori_map_id,
+                $first_map_start, $first_map_stop,
+            ],
+        );
+        @second_map_pedigree = (
+            [   $second_map_start, $second_map_stop, $ori_map_id,
+                $second_map_start, $second_map_stop,
+            ],
+        );
+    }
+
+    # Save the new pedigrees
+    $self->map_pedigree( $first_map_key,  \@first_map_pedigree, );
+    $self->map_pedigree( $second_map_key, \@second_map_pedigree, );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub merge_map_pedigrees {
+
+=pod
+
+=head2 merge_map_pedigrees
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $merged_map_key    = $args{'merged_map_key'} or return undef;
+    my $merged_map_start  = $args{'merged_map_start'};
+    my $merged_map_stop   = $args{'merged_map_stop'};
+    my $first_map_key     = $args{'first_map_key'} or return undef;
+    my $first_map_start   = $args{'first_map_start'};
+    my $first_map_stop    = $args{'first_map_stop'};
+    my $second_map_key    = $args{'second_map_key'} or return undef;
+    my $second_map_start  = $args{'second_map_start'};
+    my $second_map_stop   = $args{'second_map_stop'};
+    my $second_map_offset = $args{'second_map_offset'} || 0;
+
+    my $first_map_id  = $self->map_key_to_id($first_map_key);
+    my $second_map_id = $self->map_key_to_id($second_map_key);
+
+    my $first_map_pedigree  = $self->map_pedigree( $first_map_key, );
+    my $second_map_pedigree = $self->map_pedigree( $second_map_key, );
+
+    my @merged_map_pedigree;
+    if ($first_map_pedigree) {
+
+        # Simply copy the first pedigree
+        foreach my $fragment (@$first_map_pedigree) {
+            my $fragment_start  = $fragment->[0];
+            my $fragment_stop   = $fragment->[1];
+            my $ancestor_map_id = $fragment->[2];
+            my $ancestor_start  = $fragment->[3];
+            my $ancestor_stop   = $fragment->[4];
+            push @merged_map_pedigree,
+                [
+                $fragment_start, $fragment_stop, $ancestor_map_id,
+                $ancestor_start, $ancestor_stop
+                ];
+        }
+    }
+    else {
+        push @merged_map_pedigree,
+            [
+            $first_map_start, $first_map_stop, $first_map_id,
+            $first_map_start, $first_map_stop,
+            ];
+    }
+
+    if ($second_map_pedigree) {
+
+        # Copy the second pedigree but with the offset added
+        foreach my $fragment (@$first_map_pedigree) {
+            my $fragment_start  = $fragment->[0] + $second_map_offset;
+            my $fragment_stop   = $fragment->[1] + $second_map_offset;
+            my $ancestor_map_id = $fragment->[2];
+            my $ancestor_start  = $fragment->[3];
+            my $ancestor_stop   = $fragment->[4];
+            push @merged_map_pedigree,
+                [
+                $fragment_start, $fragment_stop, $ancestor_map_id,
+                $ancestor_start, $ancestor_stop
+                ];
+        }
+    }
+    else {
+        push @merged_map_pedigree,
+            [
+            $second_map_start + $second_map_offset,
+            $second_map_stop + $second_map_offset,
+            $second_map_id,
+            $second_map_start,
+            $second_map_stop,
+            ];
+    }
+
+    # Save the new pedigree
+    $self->map_pedigree( $merged_map_key, \@merged_map_pedigree, );
+
+    return 1;
+}
+
+# ----------------------------------------------------
 sub get_map_keys_from_id_and_a_list_of_zones {
 
 =pod
@@ -3009,7 +3445,7 @@ another (and possibly on a different parent).
         }
 
         # Remove from old zone map order
-        $self->remove_from_move_map(
+        $self->remove_from_map_order(
             map_key  => $sub_map_key,
             zone_key => $old_sub_zone_key,
         );
@@ -3201,9 +3637,9 @@ Redo the action that was last undone.
     }
     elsif ( $next_action->{'action'} eq 'split_map' ) {
         $self->split_map(
-            map_key         => $next_action->{'ori_map_key'},
-            position_on_map => $next_action->{'position_on_map'},
-            undo_or_redo    => 1,
+            map_key        => $next_action->{'ori_map_key'},
+            split_position => $next_action->{'split_position'},
+            undo_or_redo   => 1,
         );
     }
     elsif ( $next_action->{'action'} eq 'merge_maps' ) {
@@ -3283,11 +3719,11 @@ Condence redundant window actions for commits and exporting.
 }
 
 # ----------------------------------------------------
-sub remove_from_move_map {
+sub remove_from_map_order {
 
 =pod
 
-=head2 remove_from_move_map
+=head2 remove_from_map_order
 
 =cut
 
@@ -3810,23 +4246,81 @@ Clears a zone of correspondences and calls on the interface to remove the drawin
             keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
         {
             next unless ( $zone2_maps{$map_key2} );
-            $self->destroy_items(
-                items => $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
-                    {'items'},
+            $self->remove_corrs_between_maps(
                 window_key => $window_key,
+                map_key1   => $map_key1,
+                map_key2   => $map_key2,
             );
-            delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
-            delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
+        }
+    }
 
-            unless (
-                keys %{ $self->{'corr_layout'}{'maps'}{$map_key2} || {} } )
-            {
-                delete $self->{'corr_layout'}{'maps'}{$map_key2};
-            }
-        }
-        unless ( keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } ) {
-            delete $self->{'corr_layout'}{'maps'}{$map_key1};
-        }
+    return;
+}
+
+# ----------------------------------------------------
+sub remove_corrs_between_maps {
+
+=pod
+
+=head2 remove_corrs_between_maps
+
+Removes correspondences between two maps.
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $map_key1   = $args{'map_key1'}   or return;
+    my $map_key2   = $args{'map_key2'}   or return;
+
+    $self->destroy_items(
+        items =>
+            $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}{'items'},
+        window_key => $window_key,
+    );
+    delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
+    delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
+
+    unless ( %{ $self->{'corr_layout'}{'maps'}{$map_key2} || {} } ) {
+        delete $self->{'corr_layout'}{'maps'}{$map_key2};
+    }
+    unless ( %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } ) {
+        delete $self->{'corr_layout'}{'maps'}{$map_key1};
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub remove_corrs_to_map {
+
+=pod
+
+=head2 clear_zone_corrs
+
+Removes all the correspondences to a single map
+
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key  => $map_key,
+    );
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $map_key1   = $args{'map_key'}    or return;
+
+    foreach my $map_key2 (
+        keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
+    {
+        $self->remove_corrs_between_maps(
+            window_key => $window_key,
+            map_key1   => $map_key1,
+            map_key2   => $map_key2,
+        );
     }
 
     return;
@@ -4346,7 +4840,7 @@ sub get_position_on_map {
 
 =pod
 
-=head2 get_map_ids
+=head2 get_position_on_map
 
 returns
 
@@ -4568,9 +5062,16 @@ Removes a map
     my $map_id   = $self->map_key_to_id($map_key);
 
     # Detach new maps from the zone
-    $self->remove_from_move_map(
+    $self->remove_from_map_order(
         map_key  => $map_key,
         zone_key => $zone_key,
+    );
+
+    # Remove any drawn correspondences
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key    => $map_key,
     );
 
     foreach (
@@ -5093,7 +5594,7 @@ Revisit
         second_map_stop         => $second_map_stop,
         second_feature_start    => $second_feature_start,
         second_feature_stop     => $second_feature_stop,
-        position_on_map         => $position_on_map,
+        split_position         => $split_position,
         first_map_feature_accs  => [ keys %feature_accs_for_first_map ],
         second_map_feature_accs => [ keys %feature_accs_for_second_map ],
     );

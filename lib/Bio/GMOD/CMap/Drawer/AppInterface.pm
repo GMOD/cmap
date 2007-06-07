@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.52 2007-06-01 14:54:01 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.53 2007-06-07 16:38:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2557,7 +2557,7 @@ sub split_map_popup {
     my $mouse_x    = $args{'mouse_x'};
     my $controller = $self->app_controller();
 
-    my $position_on_map = $controller->app_display_data->get_position_on_map(
+    my $split_position = $controller->app_display_data->get_position_on_map(
         map_key => $map_key,
         mouse_x => $mouse_x,
     );
@@ -2569,7 +2569,7 @@ sub split_map_popup {
     );
     $popup->add(
         'LabEntry',
-        -textvariable => \$position_on_map,
+        -textvariable => \$split_position,
         -width        => 10,
         -label        => 'Position',
         -labelPack    => [ -side => 'left' ],
@@ -2578,8 +2578,8 @@ sub split_map_popup {
 
     if ( $answer eq 'OK' ) {
         $controller->app_display_data->split_map(
-            map_key         => $map_key,
-            position_on_map => $position_on_map,
+            map_key        => $map_key,
+            split_position => $split_position,
         );
     }
     $self->reset_object_selections(
@@ -2620,8 +2620,8 @@ sub merge_maps_popup {
     my @map_ids       = ( $map_id1, $map_id2 );
     my $map_data_hash = $app_display_data->app_data_module()
         ->map_data_hash( map_ids => \@map_ids, );
-    unless ( $map_data_hash->{$map_key1}{'map_set_id'}
-        == $map_data_hash->{$map_key2}{'map_set_id'} )
+    unless ( $map_data_hash->{$map_id1}{'map_set_id'}
+        == $map_data_hash->{$map_id2}{'map_set_id'} )
     {
         $self->popup_warning(
             text => "Cannot merge maps that are not in the same map set.", );
@@ -2650,15 +2650,15 @@ sub merge_maps_popup {
         'Radiobutton',
         -variable => \$order,
         -value    => 1,
-        -text     => $map_data_hash->{$map_key1}{'map_name'} . "-"
-            . $map_data_hash->{$map_key2}{'map_name'},
+        -text     => $map_data_hash->{$map_id1}{'map_name'} . "-"
+            . $map_data_hash->{$map_id2}{'map_name'},
     )->pack();
     $popup->add(
         'Radiobutton',
         -variable => \$order,
         -value    => -1,
-        -text     => $map_data_hash->{$map_key2}{'map_name'} . "-"
-            . $map_data_hash->{$map_key1}{'map_name'},
+        -text     => $map_data_hash->{$map_id2}{'map_name'} . "-"
+            . $map_data_hash->{$map_id1}{'map_name'},
     )->pack();
     my $answer = $popup->Show();
 

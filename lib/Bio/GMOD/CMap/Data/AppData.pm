@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.22 2007-06-01 14:54:00 mwz444 Exp $
+# $Id: AppData.pm,v 1.23 2007-06-07 16:38:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -543,6 +543,63 @@ Requires zone_key1 to be less than zone_key2.
 }
 
 # ----------------------------------------------------
+sub zone_correspondences_using_slot_comparisons {
+
+=pod
+
+=head2 zone_correspondences_using_slot_comparisons
+
+Given a set of slot_comparisons,
+
+ Structure:
+    @slot_comparisons = (
+        {   map_id1          => $map_id1,
+            slot_info1       => {$map_id1 => [ current_start, current_stop, ori_start, ori_stop, magnification ]},
+            fragment_offset1 => $fragment_offset1,
+            slot_info2       => {$map_id2 => [ current_start, current_stop, ori_start, ori_stop, magnification ]},
+            fragment_offset2 => $fragment_offset2,
+            map_id2          => $map_id2,
+        },
+    );
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_comparisons = $args{'slot_comparisons'} or return undef;
+
+    my @corrs;
+
+    # Check if any of the slot_comparisons have already been retrieved
+    for ( my $i = 0; $i <= $#{$slot_comparisons}; $i++ ) {
+        my $cache_key = md5_hex( Dumper( $slot_comparisons->[$i] ) );
+        if ( $self->{'zone_corr_data'}{$cache_key} ) {
+            push @corrs, @{ $self->{'zone_corr_data'}{$cache_key} };
+            splice @$slot_comparisons, $i, 1;
+            $i--;
+        }
+        else {
+            $slot_comparisons->[$i]{'cache_key'} = $cache_key;
+        }
+    }
+    return \@corrs unless ( @{ $slot_comparisons || [] } );
+
+    # Actually get the correspondences
+    my $slot_comparisons_results
+        = $self->data_get_feature_correspondence_with_slot_comparisons(
+        slot_comparisons => $slot_comparisons, )
+        || [];
+
+    # Store results and compile return list
+    foreach my $slot_comparison_result (@$slot_comparisons_results) {
+        $self->{'zone_corr_data'}{ $slot_comparison_result->{'cache_key'} }
+            = $slot_comparison_result->{'corrs'};
+        push @corrs, @{ $slot_comparison_result->{'corrs'} };
+    }
+
+    return \@corrs;
+}
+
+# ----------------------------------------------------
 sub get_map_set_data {
 
 =pod
@@ -922,6 +979,34 @@ Calls get_feature_correspondence_for_counting either locally or remotely
             || [];
     }
 
+}
+
+# ----------------------------------------------------
+sub data_get_feature_correspondence_with_slot_comparisons {
+
+=pod
+
+=head2 data_get_feature_correspondence_with_slot_comparisons
+
+Calls get_feature_correspondence_with_slot_comparisons either locally or remotely
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_comparisons = $args{'slot_comparisons'} or return [];
+
+    if ( my $url = $self->{'remote_url'} ) {
+        $url .= ';action=get_feature_correspondence_with_slot_comparisons;';
+        $url .= ';slot_comparisons=' . nfreeze($slot_comparisons);
+
+        return $self->request_remote_data( url => $url, thaw => 1, );
+    }
+    else {
+        my $data_module = $self->data_module();
+        return $data_module->get_feature_correspondence_with_slot_comparisons(
+            $slot_comparisons, )
+            || [];
+    }
 }
 
 # ----------------------------------------------------
