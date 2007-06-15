@@ -609,6 +609,9 @@ sub ACTION_create_mysql_db {
         q{}
     );
 
+
+    print "Dropping the database $db_name if it exists...\n";
+    eval qq{system("mysql -uroot -p -e 'drop database $db_name'")};
     foreach my $command_list (
         [   qq{mysql -uroot -p -e 'create database $db_name'},
             "Problem creating database: "
@@ -616,7 +619,7 @@ sub ACTION_create_mysql_db {
         [   qq{mysql -uroot -p $db_name < sql/cmap.create.mysql},
             "Problem reading sql file: "
         ],
-        [   qq{mysql -uroot -p $db_name -e 'grant select, insert, update, delete on $db_name.* to $db_user identified by "$db_pass"'},
+        [   qq{mysql -uroot -p $db_name -e 'grant select, insert, update, delete on $db_name.* to $db_user\@localhost identified by "$db_pass"'},
             "Problem granting privileges: "
         ],
         [   qq{mysqladmin -uroot -p flush-privileges},
