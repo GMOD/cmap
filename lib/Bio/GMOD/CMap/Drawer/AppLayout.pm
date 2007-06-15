@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.39 2007-06-07 16:38:05 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.40 2007-06-15 14:46:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT => 3;
 use constant ZONE_Y_BUFFER         => 30;
@@ -578,9 +578,14 @@ Lays out head maps in a zone
     # The zone level maps_min_x is used for creating the overview
     $zone_layout->{'maps_min_x'} = $map_min_x;
 
+    my %label_info;
     foreach
         my $map_key ( @{ $app_display_data->{'map_order'}{$zone_key} || [] } )
     {
+        $label_info{$map_key} = $app_display_data->map_label_info(
+            window_key => $window_key,
+            map_key    => $map_key,
+        );
         my $map_id              = $app_display_data->map_key_to_id($map_key);
         my $map                 = $map_data_hash->{$map_id};
         my $length_in_units     = $map->{'map_stop'} - $map->{'map_start'};
@@ -678,12 +683,17 @@ Lays out head maps in a zone
             move_offset_y    => $move_offset_y,
             force_relayout   => $force_relayout,
             depth            => $depth,
+            label            => $label_info{$map_key},
         );
         if ( $row_max_y < $tmp_map_max_y ) {
             $row_max_y = $tmp_map_max_y;
         }
 
-        $map_min_x += $map_container_width + MAP_X_BUFFER;
+        $map_min_x +=
+            ( $label_info{$map_key}->{'width'} > $map_container_width )
+            ? $label_info{$map_key}->{'width'}
+            : $map_container_width;
+        $map_min_x += MAP_X_BUFFER;
         $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
     }
 
@@ -817,8 +827,14 @@ Lays out sub maps in a slot.
     my $parent_pixel_width = $parent_map_layout->{'coords'}[2]
         - $parent_map_layout->{'coords'}[0] + 1;
 
+    my %label_info;
+
     # Place each map in a row
     foreach my $sub_map_key (@sub_map_keys) {
+        $label_info{$sub_map_key} = $app_display_data->map_label_info(
+            window_key => $window_key,
+            map_key    => $sub_map_key,
+        );
 
         # feature_start/stop refers to where the sub-map is on the parent
         my $feature_start
@@ -832,13 +848,25 @@ Lays out sub maps in a slot.
         my $x2_on_parent_map
             = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
-        my $x1        = $parent_x1 + $x1_on_parent_map;
-        my $x2        = $parent_x1 + $x2_on_parent_map;
+        my $x1 = $parent_x1 + $x1_on_parent_map;
+        my $x2 = $parent_x1 + $x2_on_parent_map;
+
+        my $map_width = ($parent_pixel_width) * $scale;
+        if ( $app_display_data->map_labels_visible($zone_key) ) {
+
+            # Check if the label goes past the end of the map
+            my $label_x2
+                = $x1_on_parent_map + $label_info{$sub_map_key}->{'width'};
+            $label_x2 = $map_width if ( $label_x2 > $map_width );
+            $x2_on_parent_map = $label_x2
+                if ( $label_x2 > $x2_on_parent_map );
+        }
+
         my $row_index = simple_column_distribution(
             low        => $x1_on_parent_map,
             high       => $x2_on_parent_map,
             columns    => \@row_distribution_array,
-            map_height => ($parent_pixel_width) * $scale,    # actually width
+            map_height => $map_width,                 # actually width
             buffer     => MAP_X_BUFFER,
         );
 
@@ -944,6 +972,7 @@ Lays out sub maps in a slot.
                 move_offset_y    => $move_offset_y,
                 force_relayout   => $force_relayout,
                 depth            => $depth,
+                label            => $label_info{$sub_map_key},
             );
 
             if ( $row_max_y < $tmp_map_max_y ) {
@@ -1067,24 +1096,26 @@ Lays out a maps in a contained area.
 
 =cut
 
-    my %args             = @_;
-    my $app_display_data = $args{'app_display_data'};
-    my $window_key       = $args{'window_key'};
-    my $zone_key         = $args{'zone_key'};
-    my $map_key          = $args{'map_key'};
-    my $map              = $args{'map'};
-    my $min_x            = $args{'min_x'};
-    my $max_x            = $args{'max_x'};
-    my $min_y            = $args{'min_y'};
-    my $viewable_x1      = $args{'viewable_x1'};
-    my $viewable_x2      = $args{'viewable_x2'};
-    my $pixels_per_unit  = $args{'pixels_per_unit'};
-    my $relayout         = $args{'relayout'} || 0;
-    my $move_offset_x    = $args{'move_offset_x'} || 0;
-    my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $force_relayout   = $args{'force_relayout'} || 0;
-    my $depth            = $args{'depth'} || 0;
-    my $font_height      = 20;
+    my %args               = @_;
+    my $app_display_data   = $args{'app_display_data'};
+    my $window_key         = $args{'window_key'};
+    my $zone_key           = $args{'zone_key'};
+    my $map_key            = $args{'map_key'};
+    my $map                = $args{'map'};
+    my $min_x              = $args{'min_x'};
+    my $max_x              = $args{'max_x'};
+    my $min_y              = $args{'min_y'};
+    my $viewable_x1        = $args{'viewable_x1'};
+    my $viewable_x2        = $args{'viewable_x2'};
+    my $pixels_per_unit    = $args{'pixels_per_unit'};
+    my $relayout           = $args{'relayout'} || 0;
+    my $move_offset_x      = $args{'move_offset_x'} || 0;
+    my $move_offset_y      = $args{'move_offset_y'} || 0;
+    my $force_relayout     = $args{'force_relayout'} || 0;
+    my $depth              = $args{'depth'} || 0;
+    my $label              = $args{'label'};
+    my $font_height        = $label->{'height'};
+    my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
@@ -1137,17 +1168,20 @@ Lays out a maps in a contained area.
     # 3: Both Sides Truncated
     my $truncated = 0;
 
-    push @{ $map_layout->{'items'} },
-        (
-        [   1, undef, 'text',
-            [ ( $min_x > $viewable_x1 ) ? $min_x : $viewable_x1, $min_y ],
-            {   -text   => $map->{'map_name'},
-                -anchor => 'nw',
-                -color  => 'black',
-            }
-        ]
-        );
-    $min_y += $font_height * 2;
+    # Draw label if there is supposed to be one.
+    if ($map_labels_visible) {
+        push @{ $map_layout->{'items'} },
+            (
+            [   1, undef, 'text',
+                [ ( $min_x > $viewable_x1 ) ? $min_x : $viewable_x1, $min_y ],
+                {   -text   => $label->{'text'},
+                    -anchor => 'nw',
+                    -color  => 'black',
+                }
+            ]
+            );
+        $min_y += $label->{'height'} * 3;
+    }
 
     # set the color of the map
     my $color = $map->{'color'}
@@ -1179,19 +1213,23 @@ Lays out a maps in a contained area.
     $map_layout->{'coords'}[1] = $map_coords->[1];
     $map_layout->{'coords'}[3] = $map_coords->[3];
 
-    # Unit tick marks
-    my $tick_overhang = 8;
-    _add_tick_marks(
-        map              => $map,
-        map_layout       => $map_layout,
-        zone_key         => $zone_key,
-        map_coords       => $map_coords,
-        label_y          => $min_y - $font_height - $tick_overhang,
-        label_x          => $min_x,
-        viewable_x1      => $viewable_x1,
-        viewable_x2      => $viewable_x2,
-        app_display_data => $app_display_data,
-    );
+    if ($map_labels_visible) {
+
+        # Unit tick marks
+        my $tick_overhang = 8;
+        _add_tick_marks(
+            map              => $map,
+            map_layout       => $map_layout,
+            zone_key         => $zone_key,
+            map_coords       => $map_coords,
+            label_y          => $min_y - $font_height - $tick_overhang,
+            label_x          => $min_x,
+            viewable_x1      => $viewable_x1,
+            viewable_x2      => $viewable_x2,
+            app_display_data => $app_display_data,
+        );
+    }
+
     $min_y = $max_y = $map_coords->[3];
 
     if ( $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {

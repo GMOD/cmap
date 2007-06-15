@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.49 2007-06-07 16:38:05 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.50 2007-06-15 14:45:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -186,6 +186,7 @@ Adds the first slot
         expanded           => 1,
         is_top             => 1,
         show_features      => 1,
+        map_labels_visible => 1,
     );
 
     $self->{'head_zone_key'}{$window_key} = $zone_key;
@@ -276,6 +277,7 @@ hierarchy
         expanded           => 1,
         is_top             => 1,
         show_features      => 1,
+        map_labels_visible => 1,
     );
 
     $self->{'head_zone_key'}{$window_key} = $zone_key;
@@ -365,6 +367,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         expanded           => 0,
         is_top             => 0,
         show_features      => 0,
+        map_labels_visible => 0,
     );
 
     $zone_view_data_queue = $self->create_maps_from_saved_view(
@@ -554,6 +557,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             expanded           => 0,
             is_top             => 0,
             show_features      => 0,
+            map_labels_visible => 0,
         );
 
         push @new_zone_keys, $child_zone_key;
@@ -674,17 +678,25 @@ Zoom zones
 
     my $zone_scaffold = $self->{'scaffold'}{$zone_key};
 
+    # Don't let it zoom out farther than is useful.
+    if ( $zone_scaffold->{'scale'} == 1 and $zoom_value < 1 ) {
+        return;
+    }
+
+    my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
+    my $zone_width  = $zone_bounds->[2] - $zone_bounds->[0] + 1;
+
+    my $old_scale = $zone_scaffold->{'scale'};
     $zone_scaffold->{'scale'}           *= $zoom_value;
     $zone_scaffold->{'pixels_per_unit'} *= $zoom_value;
     my $move_offset_x = $self->get_zooming_offset(
         window_key => $window_key,
         zone_key   => $zone_key,
         zoom_value => $zoom_value,
+        old_scale  => $old_scale,
     );
 
     # Create new zone bounds for this zone, taking into
-    my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
-    my $zone_width  = $zone_bounds->[2] - $zone_bounds->[0] + 1;
     $zone_bounds->[2] += ( $zone_width * $zoom_value ) - $zone_width;
 
     layout_zone(
@@ -1099,22 +1111,9 @@ expand zones
         );
     }
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
-    # Maybe RELAYOUT OVERVIEW
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
     return;
 }
 
@@ -1318,18 +1317,63 @@ sub get_zooming_offset {
     my $window_key = $args{'window_key'} or return;
     my $zone_key   = $args{'zone_key'}   or return;
     my $zoom_value = $args{'zoom_value'} or return;
+    my $old_scale  = $args{'old_scale'}  or return;
 
-    my $old_width = $self->{'zone_layout'}{$zone_key}{'bounds'}[2]
-        - $self->{'zone_layout'}{$zone_key}{'bounds'}[0] + 1;
+    my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
+
+    my $old_width      = $zone_bounds->[2] - $zone_bounds->[0] + 1;
+    my $viewable_width = $old_width / $old_scale;
 
     my $new_width = $old_width * $zoom_value;
 
-    my $change = ( $new_width - $old_width ) / 2;
+    #my $change = ( $new_width - $old_width ) / 2;
+    my $viewable_section_change
+        = ( ( $viewable_width * $zoom_value ) - $viewable_width ) / 2;
 
     my $old_offset = $self->{'scaffold'}{$zone_key}{'x_offset'};
-    my $new_offset = ( $old_offset * $zoom_value );               # - $change;
+    my $new_offset = ( $old_offset * $zoom_value ) - $viewable_section_change;
 
-    return $new_offset;
+    # If it zooms out to the point of viewing past the end, push the view over
+    my $new_offset_plus_viewable_width
+        = ( -1 * $new_offset ) + $viewable_width;
+    if ( $new_offset > 0 ) {
+        $new_offset = 0;
+    }
+    if ( $new_offset_plus_viewable_width > $new_width ) {
+        $new_offset += $new_offset_plus_viewable_width - $new_width;
+    }
+
+    my $offset_dx = $new_offset - $old_offset;
+
+    return $offset_dx;
+}
+
+# ----------------------------------------------------
+sub map_label_info {
+
+=pod
+
+=head2 map_label_info
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $map_key    = $args{'map_key'}    or return;
+
+    my $map_data = $self->app_data_module()
+        ->map_data( map_id => $self->map_key_to_id($map_key), );
+    my $text = $map_data->{'map_name'};
+    my ( $width, $height, ) = $self->app_interface()->text_dimensions(
+        window_key => $window_key,
+        text       => $text,
+    );
+
+    return {
+        text   => $text,
+        width  => $width,
+        height => $height,
+    };
 }
 
 # ----------------------------------------------------
@@ -1636,6 +1680,49 @@ sub attach_slot_to_parent {
     $self->{'slot_layout'}{$slot_key}{'separator'} = [];
 
     return;
+}
+
+# ----------------------------------------------------
+sub map_labels_visible {
+
+=pod
+
+=head2 map_labels_visible
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    if ( defined $value ) {
+        $self->{'map_labels_visible'}{$zone_key} = $value;
+    }
+
+    return $self->{'map_labels_visible'}{$zone_key};
+}
+
+# ----------------------------------------------------
+sub set_map_labels_visibility {
+
+=pod
+
+=head2 set_map_labels_visibility
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    $self->map_labels_visible( $zone_key, $value, );
+
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
+
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2368,27 +2455,8 @@ Move a map from one place on a parent to another
         feature_stop   => $new_feature_stop,
     );
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
-
-    #RELAYOUT OVERVIEW
-    $self->recreate_overview( window_key => $window_key, );
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-    $self->cascade_reset_zone_corrs(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
 
@@ -2679,27 +2747,8 @@ Create two new maps and hide the original
         map_key    => $ori_map_key,
     );
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
-
-    #RELAYOUT OVERVIEW
-    $self->recreate_overview( window_key => $window_key, );
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-    $self->cascade_reset_zone_corrs(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
 
@@ -3053,27 +3102,8 @@ Create one new map and hide the original maps
         map_key    => $second_map_key,
     );
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
-
-    #RELAYOUT OVERVIEW
-    $self->recreate_overview( window_key => $window_key, );
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-    $self->cascade_reset_zone_corrs(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
 
@@ -3440,6 +3470,8 @@ another (and possibly on a different parent).
                 expanded           => 0,
                 is_top             => 0,
                 show_features => $old_sub_zone_scaffold->{'show_features'},
+                map_labels_visible =>
+                    $self->map_labels_visible($old_sub_zone_key),
             );
 
         }
@@ -3578,23 +3610,9 @@ Undo the action that was just performed.
 
     $self->{'window_actions'}{$window_key}{'last_action_index'}--;
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
-    #RELAYOUT OVERVIEW
-    $self->recreate_overview( window_key => $window_key, );
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
     return;
 }
 
@@ -3650,23 +3668,8 @@ Redo the action that was last undone.
         );
     }
 
-# This probably should be more elegant but for now, just layout the whole thing
-    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
-
-    #RELAYOUT OVERVIEW
-    $self->recreate_overview( window_key => $window_key, );
-
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
 }
@@ -4703,6 +4706,44 @@ Returns the number of remaining windows.
 }
 
 # ----------------------------------------------------
+sub redraw_the_whole_window {
+
+=pod
+
+=head2 redraw_the_whole_window
+
+Redraws the whole window
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    # This probably should be more elegant but for now,
+    # just layout the whole thing
+    my $top_zone_key = $self->{'head_zone_key'}{$window_key};
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $top_zone_key,    #$zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        force_relayout   => 1,
+    );
+
+    #RELAYOUT OVERVIEW
+    $self->recreate_overview( window_key => $window_key, );
+
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $top_zone_key,
+    );
+}
+
+# ----------------------------------------------------
 sub save_view_data_hash {
 
 =pod
@@ -4991,7 +5032,8 @@ Initializes zone
     my $attached_to_parent = $args{'attached_to_parent'} || 0;
     my $expanded           = $args{'expanded'} || 0;
     my $is_top             = $args{'is_top'} || 0;
-    my $show_features      = $args{'is_top'} || 0;
+    my $show_features      = $args{'show_features'} || 0;
+    my $map_labels_visible = $args{'map_labels_visible'} || 0;
 
     $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,
@@ -5009,7 +5051,8 @@ Initializes zone
     };
     $self->initialize_zone_layout( $zone_key, $window_key, );
 
-    $self->map_set_id_to_zone_keys( $map_set_id, $zone_key );
+    $self->map_set_id_to_zone_keys( $map_set_id, $zone_key, );
+    $self->map_labels_visible( $zone_key, $map_labels_visible, );
 
     if ($parent_zone_key) {
         push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} },

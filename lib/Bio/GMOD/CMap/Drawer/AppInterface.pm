@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.53 2007-06-07 16:38:05 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.54 2007-06-15 14:46:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -560,6 +560,16 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
+    my $display_options_menu_button = $controls_pane->Button(
+        -text    => "Display Options",
+        -command => sub {
+            $self->popup_display_options_menu(
+                window_key => $window_key,
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+            );
+        },
+        -font => $font,
+    );
     my $expand_button = $controls_pane->Button(
         -text    => "Add Sub Maps",
         -command => sub {
@@ -662,7 +672,8 @@ Adds control buttons to the controls_pane.
     );
     Tk::grid(
         $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
-        '-', $corr_menu_button,    #$reattach_button,
+        '-',                                  $corr_menu_button,
+        $display_options_menu_button,    #$reattach_button,
         -sticky => "nw",
     );
     Tk::grid(
@@ -670,7 +681,7 @@ Adds control buttons to the controls_pane.
         $zoom_button1,           $zoom_button2,
         $scroll_type_1,          $scroll_far_type_1,
 
-        $expand_button,            # $show_features_check_box,
+        $expand_button,                  # $show_features_check_box,
             # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
@@ -2219,6 +2230,54 @@ sub popup_corr_menu {
     #$menu->destroy();
     #},
     #);
+    $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub popup_display_options_menu {
+
+=pod
+
+=head2 popup_display_options_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key       = $args{'window_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my $menu_items = [];
+
+    my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
+    push @$menu_items, [
+        'checkbutton' => '',
+        -variable     => \$map_labels_visible,
+        -onvalue      => 1,
+        -offvalue     => 0,
+        -label        => 'Display Map Labels',
+        -command => sub {
+            $app_display_data->set_map_labels_visibility( $zone_key,
+                $map_labels_visible, );
+        },
+    ];
+
+    push @$menu_items, [
+        Button => 'Cancel',
+        -command => sub {
+            return;
+        },
+    ];
+
+    my $menu = $self->main_window()->Menu(
+        -tearoff   => 0,
+        -menuitems => $menu_items,
+    );
+
     $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
 
     return;
@@ -4677,6 +4736,42 @@ Pack the frames
         -fill => 'both',
     );
 
+}
+
+sub text_dimensions {
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $text       = $args{'text'} | q{};
+
+    my $font_name = $self->get_font_name( window_key => $window_key, );
+    my $zinc      = $self->zinc( window_key          => $window_key, );
+
+    my $height = $zinc->fontConfigure( $font_name, '-size' ) * -1;
+    my $width  = $zinc->fontMeasure( $font_name,   $text );
+
+    return ( $width, $height, );
+}
+
+sub get_font_name {
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+
+    unless ( $self->{'font_name'}{$window_key} ) {
+        my $font_size = -10;
+        my $font_name = 'cmap_font';
+        my $family    = "courier";
+        my $zinc      = $self->zinc( window_key => $window_key, );
+
+        unless ( grep {/$font_name/} $zinc->fontNames ) {
+            my %fontDesc = ( -size => $font_size, -family => $family, );
+            $zinc->fontCreate( $font_name, %fontDesc );
+        }
+        $self->{'font_name'}{$window_key} = $font_name;
+    }
+
+    return $self->{'font_name'}{$window_key};
 }
 
 sub expand_bounds {
