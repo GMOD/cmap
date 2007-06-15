@@ -52,7 +52,11 @@ BEGIN {
         "*** Installing Perl files needed for a net-based install ***\n";
     eval << 'END';
     use CPAN '!get';
-    use CPAN::Config;
+    eval "use CPAN::Config";
+    if ($@) {
+        CPAN::Shell->Config();
+    }
+
     CPAN::Shell->install('LWP::Simple');
     CPAN::Shell->install('Archive::Zip');
     CPAN::Shell->install('Archive::Tar');
