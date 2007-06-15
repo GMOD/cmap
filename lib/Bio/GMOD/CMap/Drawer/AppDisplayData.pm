@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.50 2007-06-15 14:45:59 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.51 2007-06-15 20:06:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2750,7 +2750,7 @@ Create two new maps and hide the original
     # Redraw
     $self->redraw_the_whole_window( window_key => $window_key, );
 
-    return;
+    return ( [ $first_map_key, $second_map_key, ], $zone_key );
 
 }
 
@@ -3104,6 +3104,8 @@ Create one new map and hide the original maps
 
     # Redraw
     $self->redraw_the_whole_window( window_key => $window_key, );
+
+    return ( [ $merged_map_key, ], $zone_key );
 
     return;
 

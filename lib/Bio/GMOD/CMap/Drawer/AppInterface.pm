@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.54 2007-06-15 14:46:00 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.55 2007-06-15 20:06:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -157,6 +157,7 @@ Add the quck keys;
         '<Control-Key-z>' => sub {
             $self->app_controller()
                 ->app_display_data->undo_action( window_key => $window_key, );
+            $self->reset_object_selections( window_key => $window_key, );
         },
     );
 
@@ -165,6 +166,7 @@ Add the quck keys;
         '<Control-Key-y>' => sub {
             $self->app_controller()
                 ->app_display_data->redo_action( window_key => $window_key, );
+            $self->reset_object_selections( window_key => $window_key, );
         },
     );
 
@@ -1742,6 +1744,8 @@ Populates the edit menu with menu_items
                     $self->app_controller()
                         ->app_display_data->undo_action(
                         window_key => $window_key, );
+                    $self->reset_object_selections( window_key => $window_key,
+                    );
                 },
             ],
             [   'command',
@@ -1751,6 +1755,8 @@ Populates the edit menu with menu_items
                     $self->app_controller()
                         ->app_display_data->redo_action(
                         window_key => $window_key, );
+                    $self->reset_object_selections( window_key => $window_key,
+                    );
                 },
             ],
         ];
@@ -2636,15 +2642,17 @@ sub split_map_popup {
     my $answer = $popup->Show();
 
     if ( $answer eq 'OK' ) {
-        $controller->app_display_data->split_map(
+        my ( $selected_map_keys, $zone_key )
+            = $controller->app_display_data->split_map(
             map_key        => $map_key,
             split_position => $split_position,
+            );
+        $self->reassign_object_selection(
+            window_key => $window_key,
+            zone_key   => $zone_key,
+            map_keys   => $selected_map_keys,
         );
     }
-    $self->reset_object_selections(
-        zinc       => $zinc,
-        window_key => $window_key,
-    );
 
     return;
 }
@@ -2739,16 +2747,17 @@ sub merge_maps_popup {
             ( $map_id1,  $map_id2 )  = ( $map_id2,  $map_id1 );
         }
 
-        $app_display_data->merge_maps(
+        my ( $selected_map_keys, $zone_key ) = $app_display_data->merge_maps(
             overlap_amount => $overlap_amount,
             first_map_key  => $map_key1,
             second_map_key => $map_key2,
         );
+        $self->reassign_object_selection(
+            window_key => $window_key,
+            zone_key   => $zone_key,
+            map_keys   => $selected_map_keys,
+        );
     }
-    $self->reset_object_selections(
-        zinc       => $zinc,
-        window_key => $window_key,
-    );
 
     return 1;
 }
@@ -3689,6 +3698,73 @@ Handle the stopping drag event
 }
 
 # ----------------------------------------------------
+sub reassign_object_selection {
+
+=pod
+
+=head2 reassign_object_selection
+
+Reset old selections and add map or feature selections when given a list of map keys or feature accessions.
+
+This can be used by other modules but probably shouldn't be.
+
+    $app_interface->reassign_object_selection(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+        map_keys   => $map_keys,
+    );
+
+    or
+
+    $app_interface->reassign_object_selection(
+        window_key   => $window_key,
+        zone_key     => $zone_key,
+        feature_accs => $feature_accs,
+    );
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'};
+    my $map_keys     = $args{'map_keys'} || [];
+    my $feature_accs = $args{'feature_accs'} || [];
+    my $zone_key     = $args{'zone_key'};
+
+    my $zinc = $self->zinc( window_key => $window_key, );
+
+    $self->reset_object_selections(
+        zinc       => $zinc,
+        window_key => $window_key,
+    );
+    if (@$map_keys) {
+        foreach my $map_key (@$map_keys) {
+            $self->add_object_selection(
+                zinc       => $zinc,
+                zone_key   => $zone_key,
+                map_key    => $map_key,
+                window_key => $window_key,
+            );
+        }
+    }
+    elsif (@$feature_accs) {
+        foreach my $feature_acc (@$feature_accs) {
+            $self->add_object_selection(
+                zinc        => $zinc,
+                zone_key    => $zone_key,
+                feature_acc => $feature_acc,
+                window_key  => $window_key,
+            );
+        }
+    }
+
+    $self->fill_info_box( window_key => $window_key, );
+
+    $self->layer_tagged_items( zinc => $zinc, );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub add_object_selection {
 
 =pod
@@ -3931,8 +4007,8 @@ Remove all selected objects from the selection list
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
     my $window_key = $args{'window_key'};
+    my $zinc = $args{'zinc'} || $self->zinc( window_key => $window_key, );
 
     foreach my $object_key (
         keys %{ $self->{'object_selections'}{$window_key} || {} } )
@@ -4082,6 +4158,7 @@ Draw a highlight over the object
         zone_key   => TOP_LAYER_ZONE_KEY,
         zinc       => $zinc,
     );
+
     foreach my $ori_id (@$ori_ids) {
         my $type = $zinc->type($ori_id);
         next if ( $type eq 'text' );
