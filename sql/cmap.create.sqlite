@@ -1,21 +1,14 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Mon Nov  7 11:15:51 2005
+-- Created on Fri Jun 22 09:44:00 2007
 -- 
 BEGIN TRANSACTION;
+
 
 --
 -- Table: cmap_attribute
 --
 CREATE TABLE cmap_attribute (
--- Comments: 
--- MySQL dump 8.23
--- Host: localhost    Database: CMAPTEST
--- -------------------------------------------------------
--- Server version	4.0.16-standard-log
--- Table structure for table `cmap_attribute`
---
-
   attribute_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   table_name varchar(30) NOT NULL DEFAULT '',
   object_id int(11) NOT NULL DEFAULT '0',
@@ -25,14 +18,12 @@ CREATE TABLE cmap_attribute (
   attribute_value text NOT NULL
 );
 
+CREATE INDEX table_name_cmap_attribute on cmap_attribute (table_name, object_id, display_order, attribute_name);
+
 --
 -- Table: cmap_correspondence_evidence
 --
 CREATE TABLE cmap_correspondence_evidence (
--- Comments: 
--- Table structure for table `cmap_correspondence_evidence`
---
-
   correspondence_evidence_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   correspondence_evidence_acc varchar(30) NOT NULL DEFAULT '',
   feature_correspondence_id int(11) NOT NULL DEFAULT '0',
@@ -41,14 +32,13 @@ CREATE TABLE cmap_correspondence_evidence (
   rank int(11) NOT NULL DEFAULT '0'
 );
 
+CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (feature_correspondence_id);
+CREATE UNIQUE INDEX correspondence_evidence_acc_cm on cmap_correspondence_evidence (correspondence_evidence_acc);
+
 --
 -- Table: cmap_correspondence_lookup
 --
 CREATE TABLE cmap_correspondence_lookup (
--- Comments: 
--- Table structure for table `cmap_correspondence_lookup`
---
-
   feature_id1 int(11) DEFAULT NULL,
   feature_id2 int(11) DEFAULT NULL,
   feature_correspondence_id int(11) DEFAULT NULL,
@@ -62,14 +52,17 @@ CREATE TABLE cmap_correspondence_lookup (
   feature_type_acc2 varchar(30) DEFAULT NULL
 );
 
+CREATE INDEX feature_id1_cmap_correspondenc on cmap_correspondence_lookup (feature_id1);
+CREATE INDEX corr_id_cmap_correspondence_lo on cmap_correspondence_lookup (feature_correspondence_id);
+CREATE INDEX cl_map_id1_cmap_correspondence on cmap_correspondence_lookup (map_id1);
+CREATE INDEX cl_map_id2_cmap_correspondence on cmap_correspondence_lookup (map_id2);
+CREATE INDEX cl_map_id1_map_id2_cmap_corres on cmap_correspondence_lookup (map_id1, map_id2);
+CREATE INDEX cl_map_id2_map_id1_cmap_corres on cmap_correspondence_lookup (map_id2, map_id1);
+
 --
 -- Table: cmap_correspondence_matrix
 --
 CREATE TABLE cmap_correspondence_matrix (
--- Comments: 
--- Table structure for table `cmap_correspondence_matrix`
---
-
   reference_map_acc varchar(30) NOT NULL DEFAULT '0',
   reference_map_name varchar(32) NOT NULL DEFAULT '',
   reference_map_set_acc varchar(30) NOT NULL DEFAULT '0',
@@ -81,14 +74,11 @@ CREATE TABLE cmap_correspondence_matrix (
   no_correspondences int(11) NOT NULL DEFAULT '0'
 );
 
+
 --
 -- Table: cmap_feature
 --
 CREATE TABLE cmap_feature (
--- Comments: 
--- Table structure for table `cmap_feature`
---
-
   feature_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   feature_acc varchar(30) NOT NULL DEFAULT '',
   map_id int(11) NOT NULL DEFAULT '0',
@@ -101,27 +91,30 @@ CREATE TABLE cmap_feature (
   direction tinyint(4) NOT NULL DEFAULT '1'
 );
 
+CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
+CREATE INDEX feature_id_map_id_cmap_feature on cmap_feature (feature_id, map_id);
+CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, feature_start);
+CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
+CREATE INDEX map_id_feature_id_cmap_feature on cmap_feature (map_id, feature_id);
+CREATE UNIQUE INDEX feature_acc_cmap_feature on cmap_feature (feature_acc);
+
 --
 -- Table: cmap_feature_alias
 --
 CREATE TABLE cmap_feature_alias (
--- Comments: 
--- Table structure for table `cmap_feature_alias`
---
-
   feature_alias_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   feature_id int(11) NOT NULL DEFAULT '0',
   alias varchar(255) DEFAULT NULL
 );
 
+CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id);
+CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
+CREATE UNIQUE INDEX feature_id_2_cmap_feature_alia on cmap_feature_alias (feature_id, alias);
+
 --
 -- Table: cmap_feature_correspondence
 --
 CREATE TABLE cmap_feature_correspondence (
--- Comments: 
--- Table structure for table `cmap_feature_correspondence`
---
-
   feature_correspondence_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   feature_correspondence_acc varchar(30) NOT NULL DEFAULT '',
   feature_id1 int(11) NOT NULL DEFAULT '0',
@@ -129,14 +122,14 @@ CREATE TABLE cmap_feature_correspondence (
   is_enabled tinyint(4) NOT NULL DEFAULT '1'
 );
 
+CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
+CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
+CREATE UNIQUE INDEX feature_correspondence_acc_cma on cmap_feature_correspondence (feature_correspondence_acc);
+
 --
 -- Table: cmap_map
 --
 CREATE TABLE cmap_map (
--- Comments: 
--- Table structure for table `cmap_map`
---
-
   map_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   map_acc varchar(30) NOT NULL DEFAULT '',
   map_set_id int(11) NOT NULL DEFAULT '0',
@@ -146,14 +139,14 @@ CREATE TABLE cmap_map (
   map_stop double(11,2) DEFAULT NULL
 );
 
+CREATE INDEX map_set_id_index_cmap_map on cmap_map (map_set_id);
+CREATE UNIQUE INDEX map_acc_cmap_map on cmap_map (map_acc);
+CREATE UNIQUE INDEX map_id_cmap_map on cmap_map (map_id, map_set_id, map_name, map_acc);
+
 --
 -- Table: cmap_map_set
 --
 CREATE TABLE cmap_map_set (
--- Comments: 
--- Table structure for table `cmap_map_set`
---
-
   map_set_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   map_set_acc varchar(30) NOT NULL DEFAULT '',
   map_set_name varchar(64) NOT NULL DEFAULT '',
@@ -170,27 +163,24 @@ CREATE TABLE cmap_map_set (
   is_relational_map tinyint(11) NOT NULL DEFAULT '0'
 );
 
+CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (is_relational_map, is_enabled, species_id, display_order, published_on, map_set_short_name);
+CREATE UNIQUE INDEX map_set_acc_cmap_map_set on cmap_map_set (map_set_acc);
+CREATE UNIQUE INDEX map_set_id_cmap_map_set on cmap_map_set (map_set_id, species_id, map_set_short_name, map_set_acc);
+
 --
 -- Table: cmap_next_number
 --
 CREATE TABLE cmap_next_number (
--- Comments: 
--- Table structure for table `cmap_next_number`
---
-
   table_name varchar(40) NOT NULL DEFAULT '',
   next_number int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (table_name)
 );
 
+
 --
 -- Table: cmap_species
 --
 CREATE TABLE cmap_species (
--- Comments: 
--- Table structure for table `cmap_species`
---
-
   species_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   species_acc varchar(30) NOT NULL DEFAULT '',
   species_common_name varchar(64) NOT NULL DEFAULT '',
@@ -198,14 +188,13 @@ CREATE TABLE cmap_species (
   display_order int(11) NOT NULL DEFAULT '1'
 );
 
+CREATE INDEX acc_id_species_id_cmap_species on cmap_species (species_acc, species_id);
+CREATE UNIQUE INDEX species_acc_cmap_species on cmap_species (species_acc);
+
 --
 -- Table: cmap_xref
 --
 CREATE TABLE cmap_xref (
--- Comments: 
--- Table structure for table `cmap_xref`
---
-
   xref_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   table_name varchar(30) NOT NULL DEFAULT '',
   object_id int(11) DEFAULT NULL,
@@ -214,14 +203,12 @@ CREATE TABLE cmap_xref (
   xref_url text NOT NULL
 );
 
+CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);
+
 --
 -- Table: cmap_saved_link
 --
 CREATE TABLE cmap_saved_link (
--- Comments: 
--- Table structure for table `cmap_saved_link`
---
-
   saved_link_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   saved_on date DEFAULT NULL,
   last_access date DEFAULT NULL,
@@ -234,35 +221,19 @@ CREATE TABLE cmap_saved_link (
   hidden tinyint(4) NOT NULL DEFAULT '0'
 );
 
-CREATE INDEX table_name_cmap_attribute on cmap_attribute (table_name, object_id, display_order, attribute_name);
-CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (feature_correspondence_id);
-CREATE INDEX feature_id1_cmap_correspondenc on cmap_correspondence_lookup (feature_id1);
-CREATE INDEX corr_id_cmap_correspondence_lo on cmap_correspondence_lookup (feature_correspondence_id);
-CREATE INDEX cl_map_id1_cmap_correspondence on cmap_correspondence_lookup (map_id1);
-CREATE INDEX cl_map_id2_cmap_correspondence on cmap_correspondence_lookup (map_id2);
-CREATE INDEX cl_map_id1_map_id2_cmap_corres on cmap_correspondence_lookup (map_id1, map_id2);
-CREATE INDEX cl_map_id2_map_id1_cmap_corres on cmap_correspondence_lookup (map_id2, map_id1);
-CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
-CREATE INDEX feature_id_map_id_cmap_feature on cmap_feature (feature_id, map_id);
-CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, feature_start);
-CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
-CREATE INDEX map_id_feature_id_cmap_feature on cmap_feature (map_id, feature_id);
-CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id);
-CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
-CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
-CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
-CREATE INDEX map_set_id_index_cmap_map on cmap_map (map_set_id);
-CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (is_relational_map, is_enabled, species_id, display_order, published_on, map_set_short_name);
-CREATE INDEX acc_id_species_id_cmap_species on cmap_species (species_acc, species_id);
-CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);
 CREATE INDEX link_group_cmap_saved_link on cmap_saved_link (link_group);
-CREATE UNIQUE INDEX correspondence_evidence_acc_cm on cmap_correspondence_evidence (correspondence_evidence_acc);
-CREATE UNIQUE INDEX feature_acc_cmap_feature on cmap_feature (feature_acc);
-CREATE UNIQUE INDEX feature_id_2_cmap_feature_alia on cmap_feature_alias (feature_id, alias);
-CREATE UNIQUE INDEX feature_correspondence_acc_cma on cmap_feature_correspondence (feature_correspondence_acc);
-CREATE UNIQUE INDEX map_acc_cmap_map on cmap_map (map_acc);
-CREATE UNIQUE INDEX map_id_cmap_map on cmap_map (map_id, map_set_id, map_name, map_acc);
-CREATE UNIQUE INDEX map_set_acc_cmap_map_set on cmap_map_set (map_set_acc);
-CREATE UNIQUE INDEX map_set_id_cmap_map_set on cmap_map_set (map_set_id, species_id, map_set_short_name, map_set_acc);
-CREATE UNIQUE INDEX species_acc_cmap_species on cmap_species (species_acc);
+
+--
+-- Table: cmap_map_to_feature
+--
+CREATE TABLE cmap_map_to_feature (
+  map_id int(11) NOT NULL DEFAULT '0',
+  map_acc varchar(30) NOT NULL DEFAULT '',
+  feature_id int(11) NOT NULL DEFAULT '0',
+  feature_acc varchar(30) NOT NULL DEFAULT ''
+);
+
+CREATE INDEX map_id_cmap_map_to_feature on cmap_map_to_feature (map_id);
+CREATE INDEX feature_id_cmap_map_to_feature on cmap_map_to_feature (feature_id);
+
 COMMIT;

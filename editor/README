@@ -3,7 +3,7 @@ editor) running.
 
 Currently, the application has very little functionality.
 
-1. Add the table in editor_tables.sql to the CMap database.
+1. (Only needed for upgrading from an older db as the new table is now in the main cmap schema.) Add the table in editor_tables.sql to the CMap database.
     - This will add a table to link a feature to a map.  This identifies the
       feature and map as the same entity.
 
