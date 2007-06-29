@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.135 2007-03-16 23:19:10 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.136 2007-06-29 21:01:55 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.135 $)[-1];
+$VERSION = (qw$Revision: 1.136 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -22,6 +22,7 @@ use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE        => 'cmap_viewer.tmpl';
+use constant IMAGE_ONLY_TEMPLATE        => 'image_only.tmpl';
 use constant DETAIL_TEMPLATE => 'map_detail_bottom.tmpl';
 use constant FIELD_SEP       => "\t";
 use constant RECORD_SEP      => "\n";
@@ -61,6 +62,11 @@ sub handler {
     my $use_whole_page_cache = 1;
     if ( $apr->param('session_id') or $apr->path_info() =~ /map_details/ ) {
         $use_whole_page_cache = 0;
+    }
+
+    my $image_only = 0;
+    if ($apr->param('image_only')){
+        $image_only = 1;
     }
 
     my $whole_page_cache_key;
@@ -225,188 +231,213 @@ sub handler {
         #
         # get the data for the form.
         #
-        my $form_data = $data->cmap_form_data(
-            slots                  => $parsed_url_options{'slots'},
-            menu_min_corrs         => $parsed_url_options{'menu_min_corrs'},
-            included_feature_types =>
-                $parsed_url_options{'included_feature_types'},
-            ignored_feature_types =>
-                $parsed_url_options{'ignored_feature_types'},
-            ignored_evidence_types =>
-                $parsed_url_options{'ignored_evidence_types'},
-            included_evidence_types =>
-                $parsed_url_options{'included_evidence_types'},
-            less_evidence_types => $parsed_url_options{'less_evidence_types'},
-            greater_evidence_types =>
-                $parsed_url_options{'greater_evidence_types'},
-            evidence_type_score => $parsed_url_options{'evidence_type_score'},
-            flip_list           => ($drawer) ? $drawer->flip() : '',
-            ref_species_acc     => $parsed_url_options{'ref_species_acc'},
-            ref_map_set_acc     => $parsed_url_options{'ref_map_set_acc'},
-            ref_slot_data       => $drawer
-            ? $drawer->{'data'}->{'slot_data'}{0}
-            : {},
-            )
-            or return $self->error( $data->error );
-
-        for my $key (qw[ ref_species_acc ref_map_set_acc ]) {
-            $apr->param( $key, $form_data->{$key} );
-        }
-
-        my $feature_default_display = $data->feature_default_display;
-
-        if ( !$drawer->{'image_name'}
-            and $parsed_url_options{'ref_map_set_acc'} )
-        {
-            my $ref_map_set_id = $self->sql()->acc_id_to_internal_id(
-                cmap_object => $self,
-                object_type => 'map_set',
-                acc_id      => $parsed_url_options{'ref_map_set_acc'},
-            );
-            $form_data->{'feature_types'} = [
-                sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-                    @{
-                    $self->sql()->get_used_feature_types(
-                        cmap_object => $self,
-                        map_set_ids => [ $ref_map_set_id, ],
-                        )
-                        || []
-                    }
-            ];
+        my $form_data;
+        my $t = $self->template or return;
+        if ( $image_only ) {
+            $t->process(
+                IMAGE_ONLY_TEMPLATE,
+                {   apr            => $apr,
+                    drawer         => $drawer,
+                    web_image_cache_dir => $self->web_image_cache_dir(),
+                },
+                \$html
+                )
+                or $html = $t->error;
         }
         else {
-            $form_data->{'feature_types'} = [
-                sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-                    @{ $self->data_module->get_all_feature_types } ];
-        }
-
-        my %evidence_type_menu_select = (
-            (   map { $_ => 0 }
-                    @{ $parsed_url_options{'ignored_evidence_types'} }
-            ),
-            (   map { $_ => 1 }
-                    @{ $parsed_url_options{'included_evidence_types'} }
-            ),
-            (   map { $_ => 2 }
-                    @{ $parsed_url_options{'less_evidence_types'} }
-            ),
-            (   map { $_ => 3 }
-                    @{ $parsed_url_options{'greater_evidence_types'} }
-            )
-        );
-        my @pixel_heights;
-        my $pixel_height = $apr->param('pixel_height')
-            || VALID->{'image_size'}{ DEFAULT->{'image_size'} };
-        my $use_custom_pixel_height = 1;
-        foreach my $image_size (
-            sort { VALID->{'image_size'}{$a} <=> VALID->{'image_size'}{$b} }
-            keys %{ VALID->{'image_size'} }
-            )
-        {
-            my $selected =
-                ( VALID->{'image_size'}{$image_size} == $pixel_height )
-                ? 1
-                : 0;
-            $use_custom_pixel_height = 0 if $selected;
-            push @pixel_heights,
-                {
-                name     => $image_size,
-                value    => VALID->{'image_size'}{$image_size},
-                selected => $selected
-                };
-        }
-
-        my $t = $self->template or return;
-        $t->process(
-            TEMPLATE,
-            {   apr            => $apr,
-                url_for_saving => $parsed_url_options{'url_for_saving'},
-                form_data      => $form_data,
-                drawer         => $drawer,
-                page           => $self->page,
-                intro          => $INTRO,
-                data_source    => $self->data_source,
-                data_sources   => $self->data_sources,
-                title          => $self->config_data('cmap_title')
-                    || 'cmap',
-                stylesheet    => $self->stylesheet,
-                selected_maps => {
-                    map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
-                },
-                included_features => {
-                    map { $_, 1 }
-                        @{ $parsed_url_options{'included_feature_types'} }
-                },
-                corr_only_feature_types   => \%included_corr_only_features,
-                ignored_feature_types     => \%ignored_feature_types,
-                evidence_type_menu_select => \%evidence_type_menu_select,
-                evidence_type_score       =>
+            $form_data = $data->cmap_form_data(
+                slots          => $parsed_url_options{'slots'},
+                menu_min_corrs => $parsed_url_options{'menu_min_corrs'},
+                included_feature_types =>
+                    $parsed_url_options{'included_feature_types'},
+                ignored_feature_types =>
+                    $parsed_url_options{'ignored_feature_types'},
+                ignored_evidence_types =>
+                    $parsed_url_options{'ignored_evidence_types'},
+                included_evidence_types =>
+                    $parsed_url_options{'included_evidence_types'},
+                less_evidence_types =>
+                    $parsed_url_options{'less_evidence_types'},
+                greater_evidence_types =>
+                    $parsed_url_options{'greater_evidence_types'},
+                evidence_type_score =>
                     $parsed_url_options{'evidence_type_score'},
-                feature_types => join( ',',
-                    @{ $parsed_url_options{'included_feature_types'} } ),
-                evidence_types => join( ',',
-                    @{ $parsed_url_options{'included_evidence_types'} } ),
-                extra_code              => $extra_code,
-                extra_form              => $extra_form,
-                feature_default_display => $feature_default_display,
-                pixel_height_options    => \@pixel_heights,
-                use_custom_pixel_height => $use_custom_pixel_height,
-                no_footer => $parsed_url_options{'path_info'} eq 'map_details'
-                ? 1
-                : 0,
-                prev_ref_map_order => $self->ref_map_order(),
-                no_footer => $parsed_url_options{'path_info'} eq 'map_details'
-                ? 1
-                : 0,
-                menu_bgcolor_tint => $self->config_data('menu_bgcolor_tint')
-                    || DEFAULT->{'menu_bgcolor_tint'},
-                menu_bgcolor => $self->config_data('menu_bgcolor')
-                    || DEFAULT->{'menu_bgcolor'},
-                menu_ref_bgcolor_tint =>
-                    $self->config_data('menu_ref_bgcolor_tint')
-                    || DEFAULT->{'menu_ref_bgcolor_tint'},
-                menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
-                    || DEFAULT->{'menu_ref_bgcolor'},
-                web_image_cache_dir => $self->web_image_cache_dir(),
-                web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
-                dotplot             => $parsed_url_options{'dotplot'},
+                flip_list => ($drawer) ? $drawer->flip() : '',
+                ref_species_acc => $parsed_url_options{'ref_species_acc'},
+                ref_map_set_acc => $parsed_url_options{'ref_map_set_acc'},
+                ref_slot_data   => $drawer
+                ? $drawer->{'data'}->{'slot_data'}{0}
+                : {},
+                )
+                or return $self->error( $data->error );
 
-            },
-            \$html
-            )
-            or $html = $t->error;
+            for my $key (qw[ ref_species_acc ref_map_set_acc ]) {
+                $apr->param( $key, $form_data->{$key} );
+            }
 
-        # Clear some of the extra spaces.
-        $html =~ s/   +/  /g;
+            my $feature_default_display = $data->feature_default_display;
 
-        # cache the data if using the whole page cache
-        if ($use_whole_page_cache) {
-            my $cached_data;
-            $cached_data->{'html'}       = $html;
-            $cached_data->{'image_name'} = $drawer->{'image_name'};
-            $cached_data->{'slots'}      = $parsed_url_options{'slots'};
-            $cached_data->{'included_feature_types'}
-                = $parsed_url_options{'included_feature_types'};
-            $cached_data->{'corr_only_feature_types'}
-                = $parsed_url_options{'corr_only_feature_types'};
-            $cached_data->{'ignored_feature_types'}
-                = $parsed_url_options{'ignored_feature_types'};
-            $cached_data->{'ignored_evidence_types'}
-                = $parsed_url_options{'ignored_evidence_types'};
-            $cached_data->{'included_evidence_types'}
-                = $parsed_url_options{'included_evidence_types'};
-            $cached_data->{'greater_evidence_types'}
-                = $parsed_url_options{'greater_evidence_types'};
-            $cached_data->{'less_evidence_types'}
-                = $parsed_url_options{'less_evidence_types'};
-            $cached_data->{'included_corr_only_features_hash'}
-                = \%included_corr_only_features;
-            $cached_data->{'ignored_feature_types_hash'}
-                = \%ignored_feature_types;
+            if ( !$drawer->{'image_name'}
+                and $parsed_url_options{'ref_map_set_acc'} )
+            {
+                my $ref_map_set_id = $self->sql()->acc_id_to_internal_id(
+                    cmap_object => $self,
+                    object_type => 'map_set',
+                    acc_id      => $parsed_url_options{'ref_map_set_acc'},
+                );
+                $form_data->{'feature_types'} = [
+                    sort {
+                        lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
+                        } @{
+                        $self->sql()->get_used_feature_types(
+                            cmap_object => $self,
+                            map_set_ids => [ $ref_map_set_id, ],
+                            )
+                            || []
+                        }
+                ];
+            }
+            else {
+                $form_data->{'feature_types'} = [
+                    sort {
+                        lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
+                        } @{ $self->data_module->get_all_feature_types }
+                ];
+            }
 
-            $self->store_cached_results( 5, $whole_page_cache_key,
-                $cached_data );
+            my %evidence_type_menu_select = (
+                (   map { $_ => 0 }
+                        @{ $parsed_url_options{'ignored_evidence_types'} }
+                ),
+                (   map { $_ => 1 }
+                        @{ $parsed_url_options{'included_evidence_types'} }
+                ),
+                (   map { $_ => 2 }
+                        @{ $parsed_url_options{'less_evidence_types'} }
+                ),
+                (   map { $_ => 3 }
+                        @{ $parsed_url_options{'greater_evidence_types'} }
+                )
+            );
+            my @pixel_heights;
+            my $pixel_height = $apr->param('pixel_height')
+                || VALID->{'image_size'}{ DEFAULT->{'image_size'} };
+            my $use_custom_pixel_height = 1;
+            foreach my $image_size (
+                sort {
+                    VALID->{'image_size'}{$a} <=> VALID->{'image_size'}{$b}
+                }
+                keys %{ VALID->{'image_size'} }
+                )
+            {
+                my $selected =
+                    ( VALID->{'image_size'}{$image_size} == $pixel_height )
+                    ? 1
+                    : 0;
+                $use_custom_pixel_height = 0 if $selected;
+                push @pixel_heights,
+                    {
+                    name     => $image_size,
+                    value    => VALID->{'image_size'}{$image_size},
+                    selected => $selected
+                    };
+            }
 
+            $t->process(
+                TEMPLATE,
+                {   apr            => $apr,
+                    url_for_saving => $parsed_url_options{'url_for_saving'},
+                    form_data      => $form_data,
+                    drawer         => $drawer,
+                    page           => $self->page,
+                    intro          => $INTRO,
+                    data_source    => $self->data_source,
+                    data_sources   => $self->data_sources,
+                    title          => $self->config_data('cmap_title')
+                        || 'cmap',
+                    stylesheet    => $self->stylesheet,
+                    selected_maps => {
+                        map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
+                    },
+                    included_features => {
+                        map { $_, 1 }
+                            @{ $parsed_url_options{'included_feature_types'} }
+                    },
+                    corr_only_feature_types => \%included_corr_only_features,
+                    ignored_feature_types   => \%ignored_feature_types,
+                    evidence_type_menu_select => \%evidence_type_menu_select,
+                    evidence_type_score       =>
+                        $parsed_url_options{'evidence_type_score'},
+                    feature_types => join( ',',
+                        @{ $parsed_url_options{'included_feature_types'} } ),
+                    evidence_types => join(
+                        ',',
+                        @{  $parsed_url_options{'included_evidence_types'}
+                            }
+                    ),
+                    extra_code              => $extra_code,
+                    extra_form              => $extra_form,
+                    feature_default_display => $feature_default_display,
+                    pixel_height_options    => \@pixel_heights,
+                    use_custom_pixel_height => $use_custom_pixel_height,
+                    no_footer => $parsed_url_options{'path_info'} eq
+                        'map_details' ? 1
+                    : 0,
+                    prev_ref_map_order => $self->ref_map_order(),
+                    no_footer          => $parsed_url_options{'path_info'} eq
+                        'map_details' ? 1
+                    : 0,
+                    menu_bgcolor_tint =>
+                        $self->config_data('menu_bgcolor_tint')
+                        || DEFAULT->{'menu_bgcolor_tint'},
+                    menu_bgcolor => $self->config_data('menu_bgcolor')
+                        || DEFAULT->{'menu_bgcolor'},
+                    menu_ref_bgcolor_tint =>
+                        $self->config_data('menu_ref_bgcolor_tint')
+                        || DEFAULT->{'menu_ref_bgcolor_tint'},
+                    menu_ref_bgcolor => $self->config_data('menu_ref_bgcolor')
+                        || DEFAULT->{'menu_ref_bgcolor'},
+                    web_image_cache_dir => $self->web_image_cache_dir(),
+                    web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+                    dotplot             => $parsed_url_options{'dotplot'},
+
+                },
+                \$html
+                )
+                or $html = $t->error;
+
+            # Clear some of the extra spaces.
+            $html =~ s/   +/  /g;
+
+            # cache the data if using the whole page cache
+            if ($use_whole_page_cache) {
+                my $cached_data;
+                $cached_data->{'html'}       = $html;
+                $cached_data->{'image_name'} = $drawer->{'image_name'};
+                $cached_data->{'slots'}      = $parsed_url_options{'slots'};
+                $cached_data->{'included_feature_types'}
+                    = $parsed_url_options{'included_feature_types'};
+                $cached_data->{'corr_only_feature_types'}
+                    = $parsed_url_options{'corr_only_feature_types'};
+                $cached_data->{'ignored_feature_types'}
+                    = $parsed_url_options{'ignored_feature_types'};
+                $cached_data->{'ignored_evidence_types'}
+                    = $parsed_url_options{'ignored_evidence_types'};
+                $cached_data->{'included_evidence_types'}
+                    = $parsed_url_options{'included_evidence_types'};
+                $cached_data->{'greater_evidence_types'}
+                    = $parsed_url_options{'greater_evidence_types'};
+                $cached_data->{'less_evidence_types'}
+                    = $parsed_url_options{'less_evidence_types'};
+                $cached_data->{'included_corr_only_features_hash'}
+                    = \%included_corr_only_features;
+                $cached_data->{'ignored_feature_types_hash'}
+                    = \%ignored_feature_types;
+
+                $self->store_cached_results( 5, $whole_page_cache_key,
+                    $cached_data );
+
+            }
         }
     }
     unless ( $parsed_url_options{'reusing_step'} ) {

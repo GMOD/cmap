@@ -1,0 +1,5 @@
+[%- IF drawer.image_type=='svg' -%]
+  <object type="image/svg+xml" data="[%- web_image_cache_dir -%]/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]"></object>
+[%- ELSE -%]
+  <img src="[%- web_image_cache_dir -%]/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]" usemap="#zoom" border="0">
+[%- END -%]
