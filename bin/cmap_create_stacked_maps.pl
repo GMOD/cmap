@@ -137,7 +137,7 @@ if ($evidence_type_accs_str) {
 
 unless (
     validate_params(
-        cmap_object            => $cmap_admin,
+        cmap_admin             => $cmap_admin,
         sql_object             => $sql_object,
         stack_map_set_acc      => $stack_map_set_acc,
         ref_map_set_acc        => $ref_map_set_acc,
@@ -151,41 +151,26 @@ unless (
 }
 
 my $stack_map_set_id = $sql_object->acc_id_to_internal_id(
-    cmap_object => $cmap_admin,
     acc_id      => $stack_map_set_acc,
     object_type => 'map_set'
 );
-my ( $stack_map_set, ) = @{
-    $sql_object->get_map_sets_simple(
-        cmap_object => $cmap_admin,
-        map_set_id  => $stack_map_set_id,
-    )
+my ( $stack_map_set, )
+    = @{ $sql_object->get_map_sets_simple( map_set_id => $stack_map_set_id, )
     };
-my $stack_maps = $sql_object->get_maps_simple(
-    cmap_object => $cmap_admin,
-    map_set_id  => $stack_map_set_id,
-    )
+my $stack_maps
+    = $sql_object->get_maps_simple( map_set_id => $stack_map_set_id, )
     or die "No maps in $stack_map_set_acc.\n";
 my $ref_map_set_id = $sql_object->acc_id_to_internal_id(
-    cmap_object => $cmap_admin,
     acc_id      => $ref_map_set_acc,
     object_type => 'map_set'
 );
-my ( $ref_map_set, ) = @{
-    $sql_object->get_map_sets_simple(
-        cmap_object => $cmap_admin,
-        map_set_id  => $ref_map_set_id,
-    )
-    };
-my $ref_maps = $sql_object->get_maps_simple(
-    cmap_object => $cmap_admin,
-    map_set_id  => $ref_map_set_id,
-);
+my ( $ref_map_set, )
+    = @{ $sql_object->get_map_sets_simple( map_set_id => $ref_map_set_id, ) };
+my $ref_maps = $sql_object->get_maps_simple( map_set_id => $ref_map_set_id, );
 die "No maps in $ref_map_set_acc.\n" unless @{ $ref_maps || [] };
 my %ref_map_lookup = map { $_->{'map_id'} => $_ } @$ref_maps;
 
 my $new_map_set_id = $sql_object->acc_id_to_internal_id(
-    cmap_object => $cmap_admin,
     acc_id      => $new_map_set_acc,
     object_type => 'map_set'
 );
@@ -208,7 +193,6 @@ if ($alignment_file) {
         my $ref_map_id;
         unless ( $ref_map_id = $ref_map_id_lookup{ $la[0] } ) {
             $ref_map_id = $sql_object->acc_id_to_internal_id(
-                cmap_object => $cmap_admin,
                 acc_id      => $la[0],
                 object_type => 'map'
             );
@@ -216,7 +200,6 @@ if ($alignment_file) {
             $ref_map_id_lookup{ $la[0] } = $ref_map_id;
         }
         my $stack_map_id = $sql_object->acc_id_to_internal_id(
-            cmap_object => $cmap_admin,
             acc_id      => $la[1],
             object_type => 'map'
         );
@@ -251,9 +234,8 @@ foreach my $stack_map ( @{ $stack_maps || [] } ) {
         next STACK_MAP;
     }
     my $corrs = $sql_object->get_feature_correspondence_for_counting(
-        cmap_object => $cmap_admin,
-        slot_info   => { $stack_map_id => [], },
-        slot_info2  => { map { $_->{'map_id'} => [], } @$ref_maps },
+        slot_info => { $stack_map_id => [], },
+        slot_info2 => { map { $_->{'map_id'} => [], } @$ref_maps },
         included_evidence_type_accs => \@evidence_type_accs,
     );
 
@@ -370,9 +352,8 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
 
     # Create map but fill in start and stop later.
     my $new_map_id = $sql_object->insert_map(
-        cmap_object => $cmap_admin,
-        map_set_id  => $new_map_set_id,
-        map_name    => $stack_map_set->{'map_set_short_name'} . " on "
+        map_set_id => $new_map_set_id,
+        map_name   => $stack_map_set->{'map_set_short_name'} . " on "
             . $ref_map_lookup{$ref_map_id}->{'map_name'},
         display_order => 1,
         map_start     => 1,
@@ -390,7 +371,6 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
         my $new_composite_end = $current_composite_length + $stack_map_length;
 
         my $new_feature_id = $sql_object->insert_feature(
-            cmap_object      => $cmap_admin,
             map_id           => $new_map_id,
             feature_name     => $stack_map_name{$stack_map_id},
             is_landmark      => 1,
@@ -410,7 +390,6 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             )
         {
             $sql_object->insert_attribute(
-                cmap_object     => $cmap_admin,
                 display_order   => $drawing_order,
                 object_type     => 'feature',
                 object_id       => $new_feature_id,
@@ -425,7 +404,6 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
 
         # Create dbxref to link back to the original map
         $sql_object->insert_xref(
-            cmap_object => $cmap_admin,
             object_type => 'feature',
             object_id   => $new_feature_id,
             xref_name   => 'Original Map',
@@ -433,17 +411,14 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
                 . $stack_map_acc{$stack_map_id},
         );
 
-        my $features = $sql_object->get_features_simple(
-            cmap_object => $cmap_admin,
-            map_id      => $stack_map_id,
-        );
+        my $features
+            = $sql_object->get_features_simple( map_id => $stack_map_id, );
 
         foreach my $feature ( @{ $features || [] } ) {
             my $new_feature_id;
 
             if ( $stack_direction{$stack_map_id} > 0 ) {
                 $new_feature_id = $sql_object->insert_feature(
-                    cmap_object   => $cmap_admin,
                     map_id        => $new_map_id,
                     feature_name  => $feature->{'feature_name'},
                     is_landmark   => $feature->{'is_landmark'},
@@ -459,7 +434,6 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             }
             else {
                 $new_feature_id = $sql_object->insert_feature(
-                    cmap_object   => $cmap_admin,
                     map_id        => $new_map_id,
                     feature_name  => $feature->{'feature_name'},
                     is_landmark   => $feature->{'is_landmark'},
@@ -475,7 +449,6 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             }
 
             my $corrs = $sql_object->get_feature_correspondence_details(
-                cmap_object             => $cmap_admin,
                 feature_id1             => $feature->{'feature_id'},
                 disregard_evidence_type => 1,
             );
@@ -504,10 +477,9 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
 
     # Fill in start and stop of the map
     $sql_object->update_map(
-        cmap_object => $cmap_admin,
-        map_id      => $new_map_id,
-        map_start   => 1,
-        map_stop    => $current_composite_length,
+        map_id    => $new_map_id,
+        map_start => 1,
+        map_stop  => $current_composite_length,
     );
 
 }
@@ -519,7 +491,7 @@ print " Cache Purged \n ";
 sub validate_params {
 
     my %args                   = @_;
-    my $cmap_object            = $args{'cmap_object'};
+    my $cmap_admin             = $args{'cmap_admin'};
     my $sql_object             = $args{'sql_object'};
     my $stack_map_set_acc      = $args{'stack_map_set_acc'};
     my $ref_map_set_acc        = $args{'ref_map_set_acc'};
@@ -530,7 +502,6 @@ sub validate_params {
     my @missing = ();
     if ( defined($stack_map_set_acc) ) {
         my $query_map_set_id = $sql_object->acc_id_to_internal_id(
-            cmap_object => $cmap_object,
             acc_id      => $stack_map_set_acc,
             object_type => 'map_set'
         );
@@ -545,7 +516,6 @@ sub validate_params {
     }
     if ( defined($ref_map_set_acc) ) {
         my $query_map_set_id = $sql_object->acc_id_to_internal_id(
-            cmap_object => $cmap_object,
             acc_id      => $ref_map_set_acc,
             object_type => 'map_set'
         );
@@ -560,7 +530,6 @@ sub validate_params {
     }
     if ( defined($new_map_set_acc) ) {
         my $query_map_set_id = $sql_object->acc_id_to_internal_id(
-            cmap_object => $cmap_object,
             acc_id      => $new_map_set_acc,
             object_type => 'map_set'
         );
@@ -574,7 +543,7 @@ sub validate_params {
         push @missing, 'new_map_set';
     }
     if ( defined($stack_feature_type_acc) ) {
-        unless ( $cmap_object->feature_type_data($stack_feature_type_acc) ) {
+        unless ( $cmap_admin->feature_type_data($stack_feature_type_acc) ) {
             print STDERR " The feature_type_acc,
     '$stack_feature_type_acc' is not valid . \n ";
             push @missing, 'valid feature_type_acc';
@@ -585,7 +554,7 @@ sub validate_params {
     }
     if ( @{ $evidence_type_accs || [] } ) {
         foreach my $evidence_type_acc ( @{ $evidence_type_accs || [] } ) {
-            unless ( $cmap_object->evidence_type_data($evidence_type_acc) ) {
+            unless ( $cmap_admin->evidence_type_data($evidence_type_acc) ) {
                 print STDERR " The evidence_type_acc,
     '$evidence_type_acc' is not valid . \n ";
                 push @missing, 'valid evidence_type_acc';

@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.6 2007-04-12 21:13:15 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.7 2007-07-02 15:16:28 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -160,6 +160,28 @@ sub modify_right_click_menu {
             menu_items => $menu_items,
         );
     }
+}
+
+sub modify_commit_changes {
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $actions    = $args{'actions'};
+
+    my $return_value = 1;
+    for my $p ( $self->plugins ) {
+        next unless $p->type eq 'modify_commit_changes';
+        unless (
+            $p->modify_commit_changes(
+                window_key => $window_key,
+                actions    => $actions,
+            )
+            )
+        {
+            $return_value = 0;
+        }
+    }
+
+    return $return_value;
 }
 
 1;

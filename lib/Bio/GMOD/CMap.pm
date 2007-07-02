@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.113 2007-03-23 13:14:29 mwz444 Exp $
+# $Id: CMap.pm,v 1.114 2007-07-02 15:16:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -304,7 +304,9 @@ Basically a front for set_config()
             $db->disconnect;
             $self->{'db'} = undef;
         }
-
+        if ( defined $self->{'sql_module'} ) {
+            $self->{'sql_module'} = undef;
+        }
     }
 
     unless ( $self->{'data_source'} ) {
@@ -895,10 +897,7 @@ Given a table name and some objects, get the cross-references.
 
     return unless @{ $objects || [] };
 
-    my $xrefs = $sql_object->get_xrefs(
-        cmap_object => $self,
-        object_type => $object_type,
-    );
+    my $xrefs = $sql_object->get_xrefs( object_type => $object_type, );
 
     my ( %xref_specific, @xref_generic );
     for my $xref (@$xrefs) {
@@ -1141,14 +1140,19 @@ Returns the correct SQL module driver for the RDBMS we're using.
         my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
 
         eval "require $sql_module"
-            or die $self->error(
-            qq[Unable to require SQL module "$sql_module": $@]);
+            or die qq[Unable to require SQL module "$sql_module": $@];
 
         # IF YOU ARE GETTING A BIZZARE WARNING:
         # It might be that the $sql_module has errors in it
         #  aren't being reported.  This might manifest as "$self->sql"
         #  returning nothing or as "cannot find method new".
-        $self->{'sql_module'} = $sql_module->new( config => $self->config );
+        my $data_source = $self->data_source();
+        $self->{'sql_module'} = $sql_module->new(
+            config      => $self->config,
+            data_source => $data_source,
+        );
+        die "Could not initialize the database accession module.\n"
+            unless ( $self->{'sql_module'} );
     }
 
     return $self->{'sql_module'};

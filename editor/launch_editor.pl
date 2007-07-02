@@ -12,7 +12,13 @@ $args{'remote_url'}  = $ARGV[1] || '';
 $args{'saved_view'}  = $ARGV[2] || '';
 
 # To add plugins, add the plugin name to the plugins list
-# $args{'plugins'}     = ['ExampleModifyMainMenu','ExampleModifyRightClickMenu',];
 $args{'plugins'} = [];
+if (0) {
+    $args{'plugins'} = [
+        'ExampleModifyMainMenu', 'ExampleModifyRightClickMenu',
+        'ExampleModifyCommitChanges',
+    ];
+}
+
 my $controller = Bio::GMOD::CMap::AppController->new(%args);
 

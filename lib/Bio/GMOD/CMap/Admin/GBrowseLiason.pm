@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.10 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.11 2007-07-02 15:16:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -56,9 +56,9 @@ feature type accessions.
 sub prepare_data_for_gbrowse {
     my ( $self, %args ) = @_;
     my $map_set_ids = $args{'map_set_ids'}
-      or return $self->error('No map set ids');
+        or return $self->error('No map set ids');
     my $feature_type_accs = $args{'feature_type_accs'}
-      or return $self->error('No feature type accs');
+        or return $self->error('No feature type accs');
     my $db = $self->db;
     my %gclass_lookup;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
@@ -66,26 +66,26 @@ sub prepare_data_for_gbrowse {
     my $admin      = $self->admin;
     my $sql_object = $self->sql;
 
-    for ( my $i = 0 ; $i <= $#{$feature_type_accs} ; $i++ ) {
-        my $gclass =
-          $self->feature_type_data( $feature_type_accs->[$i], 'gbrowse_class' );
+    for ( my $i = 0; $i <= $#{$feature_type_accs}; $i++ ) {
+        my $gclass = $self->feature_type_data( $feature_type_accs->[$i],
+            'gbrowse_class' );
         if ($gclass) {
             $gclass_lookup{ $feature_type_accs->[$i] } = $gclass;
         }
         else {
             print $LOG_FH "Feature Type with acc "
-              . $feature_type_accs->[$i]
-              . " not eligible\n";
+                . $feature_type_accs->[$i]
+                . " not eligible\n";
             print $LOG_FH
-"If you wish to prepare this feature type, add a gbrowse_class to it in the config file\n";
+                "If you wish to prepare this feature type, add a gbrowse_class to it in the config file\n";
             splice @$feature_type_accs, $i, 1;
             $i--;
         }
     }
     return $self->error("No Map Sets to work on.\n")
-      unless ( $map_set_ids and @$map_set_ids );
+        unless ( $map_set_ids and @$map_set_ids );
     return $self->error("No Feature Types to work on.\n")
-      unless (%gclass_lookup);
+        unless (%gclass_lookup);
 
     #
     # Make sure there is a "Map" feature for GBrowse
@@ -113,22 +113,22 @@ sub prepare_data_for_gbrowse {
 
     my $sth = $db->prepare($map_feature_sql);
 
-    my $map_set_results =
-      $db->selectall_arrayref( $map_set_sql, { Columns => {} }, );
+    my $map_set_results
+        = $db->selectall_arrayref( $map_set_sql, { Columns => {} }, );
     my %map_class_lookup;
     my $ft_acc = $self->config_data('gbrowse_default_map_feature_type_acc');
     return $self->error(
         "No gbrowse_default_map_feature_type_acc defined in config file.\n")
-      unless ($ft_acc);
+        unless ($ft_acc);
     foreach my $row (@$map_set_results) {
         unless ( $map_class_lookup{ $row->{'map_type_acc'} } ) {
             my $class = $self->map_type_data( $row->{'map_type_acc'},
                 'gbrowse_map_class' );
             $class = $self->config_data('gbrowse_default_map_class')
-              unless ($class);
+                unless ($class);
             return $self->error(
                 "No gbrowse_default_map_class defined in config file.\n")
-              unless ($class);
+                unless ($class);
             $map_class_lookup{ $row->{'map_type_acc'} } = $class;
         }
         $sth->execute( $ft_acc, $row->{'map_id'},
@@ -137,12 +137,12 @@ sub prepare_data_for_gbrowse {
         unless ( $map_search and @$map_search ) {
             print $LOG_FH "Adding Map feature\n";
             $admin->feature_create(
-                map_id        => $row->{'map_id'},
-                feature_name  => $self->create_fref_name( $row->{'map_name'} ),
-                feature_start => $row->{'feature_start'},
-                feature_stop  => $row->{'feature_stop'},
+                map_id       => $row->{'map_id'},
+                feature_name => $self->create_fref_name( $row->{'map_name'} ),
+                feature_start    => $row->{'feature_start'},
+                feature_stop     => $row->{'feature_stop'},
                 feature_type_acc => $ft_acc,
-                gclass           => $map_class_lookup{ $row->{'map_type_acc'} },
+                gclass => $map_class_lookup{ $row->{'map_type_acc'} },
             );
         }
     }
@@ -181,9 +181,9 @@ it to be viewed in GBrowse.
 sub copy_data_into_gbrowse {
     my ( $self, %args ) = @_;
     my $map_set_ids = $args{'map_set_ids'}
-      or return $self->error('No map set ids');
+        or return $self->error('No map set ids');
     my $feature_type_accs = $args{'feature_type_accs'}
-      or return $self->error('No feature type accs');
+        or return $self->error('No feature type accs');
     my $db = $self->db;
     my %gclass_lookup;
     my %ftype_lookup;
@@ -199,25 +199,25 @@ sub copy_data_into_gbrowse {
 
     # get the feature type acc that is used for the "Map feature"
     # and make sure that it is not in the list of feature types
-    my $gbrowse_map_ft_acc =
-      $self->config_data('gbrowse_default_map_feature_type_acc');
+    my $gbrowse_map_ft_acc
+        = $self->config_data('gbrowse_default_map_feature_type_acc');
 
     @$feature_type_accs = grep !/$gbrowse_map_ft_acc/, @$feature_type_accs;
 
     # Remove feature types that don't have the proper attributes
     # specified in the config file.
-    for ( my $i = 0 ; $i <= $#{$feature_type_accs} ; $i++ ) {
-        my $gclass =
-          $self->feature_type_data( $feature_type_accs->[$i], 'gbrowse_class' );
-        my $ftype =
-          $self->feature_type_data( $feature_type_accs->[$i], 'gbrowse_ftype' );
+    for ( my $i = 0; $i <= $#{$feature_type_accs}; $i++ ) {
+        my $gclass = $self->feature_type_data( $feature_type_accs->[$i],
+            'gbrowse_class' );
+        my $ftype = $self->feature_type_data( $feature_type_accs->[$i],
+            'gbrowse_ftype' );
         if ( $gclass and $ftype ) {
             $gclass_lookup{ $feature_type_accs->[$i] } = $gclass;
             $ftype_lookup{ $feature_type_accs->[$i] }  = $ftype;
         }
         else {
             print $LOG_FH $feature_type_accs->[$i]
-              . " will Not be used because it does not have the following: \n";
+                . " will Not be used because it does not have the following: \n";
             print $LOG_FH "gbrowse_class\n" unless $gclass;
             print $LOG_FH "gbrowse_ftype\n" unless $ftype;
             print $LOG_FH "\n";
@@ -228,9 +228,9 @@ sub copy_data_into_gbrowse {
 
     #Make sure we have something to work with
     return $self->error("No Map Sets to work on.\n")
-      unless ( $map_set_ids and @$map_set_ids );
+        unless ( $map_set_ids and @$map_set_ids );
     return $self->error("No Feature Types to work on.\n")
-      unless (%gclass_lookup);
+        unless (%gclass_lookup);
 
     print $LOG_FH "Prepare data\n";
 
@@ -238,11 +238,11 @@ sub copy_data_into_gbrowse {
     $self->prepare_data_for_gbrowse(
         map_set_ids       => $map_set_ids,
         feature_type_accs => $feature_type_accs,
-      )
-      or do {
+        )
+        or do {
         print "Error: ", $self->error, "\n";
         return;
-      };
+        };
 
     # Make sure there are all the required ftypes and get their ftypeids
     my %ftypeid_lookup;
@@ -305,15 +305,15 @@ sub copy_data_into_gbrowse {
     my ( $fref, $fstart, $fstop, $fbin, $ftypeid, $fstrand, $feature_id );
 
     # Insert the new features
-    my $feature_results =
-      $db->selectall_arrayref( $feature_sql, { Columns => {} }, );
+    my $feature_results
+        = $db->selectall_arrayref( $feature_sql, { Columns => {} }, );
     foreach my $row (@$feature_results) {
-        $fref    = $self->create_fref_name( $row->{'map_name'} );
-        $fstart  = $row->{'feature_start'};
-        $fstop   = $row->{'feature_stop'};
-        $fbin    = bin( $fstart, $fstop, MIN_BIN );
-        $ftypeid =
-          $ftypeid_lookup{ $ftype_lookup{ $row->{'feature_type_acc'} } };
+        $fref   = $self->create_fref_name( $row->{'map_name'} );
+        $fstart = $row->{'feature_start'};
+        $fstop  = $row->{'feature_stop'};
+        $fbin   = bin( $fstart, $fstop, MIN_BIN );
+        $ftypeid
+            = $ftypeid_lookup{ $ftype_lookup{ $row->{'feature_type_acc'} } };
         $fstrand    = ( $row->{'feature_id'} > 0 ) ? '+' : '-';
         $feature_id = $row->{'feature_id'};
 
@@ -322,26 +322,27 @@ sub copy_data_into_gbrowse {
     }
 
     # Insert the new map features
-    my $map_feature_results =
-      $db->selectall_arrayref( $map_feature_sql, { Columns => {} }, );
+    my $map_feature_results
+        = $db->selectall_arrayref( $map_feature_sql, { Columns => {} }, );
     my %map_ftype_lookup;
     foreach my $row (@$map_feature_results) {
 
         # First get the maps ftype
         unless ( $map_ftype_lookup{ $row->{'map_type_acc'} } ) {
-            my $ftype =
-              $self->map_type_data( $row->{'map_type_acc'}, 'gbrowse_ftype' );
+            my $ftype = $self->map_type_data( $row->{'map_type_acc'},
+                'gbrowse_ftype' );
             if ($ftype) {
                 $map_ftype_lookup{ $row->{'map_type_acc'} } = $ftype;
             }
             else {
                 print $LOG_FH "Map Type with acc "
-                  . $row->{'map_type_acc'}
-                  . " not eligible\n";
+                    . $row->{'map_type_acc'}
+                    . " not eligible\n";
                 print $LOG_FH
-"If you wish to prepare this map type, add a gbrowse_ftype to it in the config file\n";
-                return $self->error(
-                    "Map Type Not Accepted: " . $row->{'map_type_acc'} . "\n" );
+                    "If you wish to prepare this map type, add a gbrowse_ftype to it in the config file\n";
+                return $self->error( "Map Type Not Accepted: "
+                        . $row->{'map_type_acc'}
+                        . "\n" );
             }
         }
 
@@ -353,12 +354,12 @@ sub copy_data_into_gbrowse {
                 $map_ftype_lookup{ $row->{'map_type_acc'} } );
         }
 
-        $fref    = $self->create_fref_name( $row->{'map_name'} );
-        $fstart  = $row->{'feature_start'};
-        $fstop   = $row->{'feature_stop'};
-        $fbin    = bin( $fstart, $fstop, MIN_BIN );
-        $ftypeid =
-          $ftypeid_lookup{ $map_ftype_lookup{ $row->{'map_type_acc'} } };
+        $fref   = $self->create_fref_name( $row->{'map_name'} );
+        $fstart = $row->{'feature_start'};
+        $fstop  = $row->{'feature_stop'};
+        $fbin   = bin( $fstart, $fstop, MIN_BIN );
+        $ftypeid
+            = $ftypeid_lookup{ $map_ftype_lookup{ $row->{'map_type_acc'} } };
         $fstrand    = '+';
         $feature_id = $row->{'feature_id'};
 
@@ -384,23 +385,23 @@ it to be viewed in GBrowse.
 sub copy_data_into_cmap {
     my ( $self, %args ) = @_;
     my $map_set_id = $args{'map_set_id'}
-      or return $self->error('No map set ids');
+        or return $self->error('No map set ids');
     my $db = $self->db;
     my %fmethod_to_ft_acc;
 
     my $gbrowse_config_dir = $self->config_data('gbrowse_config_dir');
     return $self->error('No gbrowse_config_dir defined in config file')
-      unless $gbrowse_config_dir;
+        unless $gbrowse_config_dir;
 
     my $gbrowse_config = $self->config_data('gbrowse_config_file');
     return $self->error('No gbrowse_config_file defined in config file')
-      unless $gbrowse_config;
+        unless $gbrowse_config;
     $gbrowse_config =~ s/\.conf$//;
     $gbrowse_config =~ s/^\d+\.//;
 
     my $main_gbconfig = open_config($gbrowse_config_dir);
     $main_gbconfig->source($gbrowse_config)
-      or return $self->("Reading $gbrowse_config FAILED");
+        or return $self->("Reading $gbrowse_config FAILED");
     my $gbconfig   = $main_gbconfig->config();
     my $track_info = $gbconfig->{'config'};
 
@@ -412,8 +413,8 @@ sub copy_data_into_cmap {
         if ( $track_info->{$label}{'cmap_feature_type_acc'} ) {
             $fmethod = $track_info->{$label}{'feature'};
             $fmethod =~ s/:.+//;
-            $fmethod_to_ft_acc{$fmethod} =
-              $track_info->{$label}{'cmap_feature_type_acc'};
+            $fmethod_to_ft_acc{$fmethod}
+                = $track_info->{$label}{'cmap_feature_type_acc'};
         }
     }
 
@@ -441,13 +442,12 @@ sub copy_data_into_cmap {
             and f_data.feature_id=f_group.feature_id
             and f_data.ftypeid=f_type.ftypeid 
     ];
-    $data_sql .=
-      " and f_type.fmethod in ('"
-      . join( "','", keys(%fmethod_to_ft_acc) ) . "')";
+    $data_sql .= " and f_type.fmethod in ('"
+        . join( "','", keys(%fmethod_to_ft_acc) ) . "')";
     $data_sql .= " order by m_group.feature_name ";
 
-    my $feature_results =
-      $db->selectall_arrayref( $data_sql, { Columns => {} }, );
+    my $feature_results
+        = $db->selectall_arrayref( $data_sql, { Columns => {} }, );
 
     my $current_map_name;
     my $map_id;
@@ -456,7 +456,8 @@ sub copy_data_into_cmap {
     my $map_count = 0;
 
     foreach my $row (@$feature_results) {
-        unless ( defined $map_id and $current_map_name eq $row->{'map_name'} ) {
+        unless ( defined $map_id and $current_map_name eq $row->{'map_name'} )
+        {
             $map_count++;
             $current_map_name = $row->{'map_name'};
             $map_id           = $admin->map_create(
@@ -467,20 +468,17 @@ sub copy_data_into_cmap {
             );
         }
         $direction = 1;
-        if (
-            (
-                defined( $row->{'feature_strand'} )
+        if ((   defined( $row->{'feature_strand'} )
                 and $row->{'feature_strand'} eq '-'
             )
             or $row->{'feature_stop'} < $row->{'feature_start'}
-          )
+            )
         {
             $direction = -1;
         }
         $ft_acc = $fmethod_to_ft_acc{ $row->{'feature_method'} };
 
         $sql_object->update_feature(
-            cmap_object      => $self,
             map_id           => $map_id,
             feature_id       => $row->{'feature_id'},
             feature_name     => $row->{'feature_name'},
@@ -491,8 +489,8 @@ sub copy_data_into_cmap {
         );
     }
     print "Copied "
-      . scalar(@$feature_results)
-      . " features on $map_count maps.\n";
+        . scalar(@$feature_results)
+        . " features on $map_count maps.\n";
 
     return 1;
 }
@@ -562,7 +560,7 @@ sub find_or_create_ftype {
             }
             else {
                 die
-"Something terrible has happened and the ftype, $ftype did not insert\n";
+                    "Something terrible has happened and the ftype, $ftype did not insert\n";
             }
         }
     }
@@ -572,8 +570,8 @@ sub admin {
     my $self = shift;
 
     unless ( $self->{'admin'} ) {
-        $self->{'admin'} =
-          Bio::GMOD::CMap::Admin->new( data_source => $self->data_source );
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
+            data_source => $self->data_source );
     }
     return $self->{'admin'};
 }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.51 2007-06-15 20:06:16 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.52 2007-07-02 15:16:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -183,7 +183,7 @@ Adds the first slot
         window_key => $window_key,
         map_set_id => $self->get_map_set_id_from_map_id( $map_ids->[0] ),
         attached_to_parent => 0,
-        expanded           => 1,
+        expanded           => 0,
         is_top             => 1,
         show_features      => 1,
         map_labels_visible => 1,
@@ -198,12 +198,6 @@ Adds the first slot
         my $map_key = $self->initialize_map(
             map_id   => $map_id,
             zone_key => $zone_key,
-        );
-
-        $self->add_sub_maps_to_map(
-            window_key      => $window_key,
-            parent_zone_key => $zone_key,
-            parent_map_key  => $map_key,
         );
     }
 
@@ -274,7 +268,7 @@ hierarchy
         window_key         => $window_key,
         map_set_id         => $map_data->{'map_set_id'},
         attached_to_parent => 0,
-        expanded           => 1,
+        expanded           => 0,
         is_top             => 1,
         show_features      => 1,
         map_labels_visible => 1,
@@ -306,9 +300,7 @@ sub create_sub_zone_from_saved_view {
 
 =pod
 
-=head2 add_sub_maps_to_map
-
-Adds sub-maps to the view.  Doesn't do any sanity checking.
+=head2 create_sub_zone_from_saved_view
 
 =cut
 
@@ -322,6 +314,8 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $parent_map_id   = $zone_view_data->{'parent_map_id'};
     my $parent_map_key  = $zone_view_data->{'parent_map_key'};
     my $parent_zone_key = $zone_view_data->{'parent_zone_key'};
+
+    $self->{'map_layout'}{$parent_map_key}{'expanded'} = 1;
 
     my $parent_map_data = $self->app_data_module()
         ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
@@ -385,7 +379,7 @@ sub create_maps_from_saved_view {
 
 =pod
 
-=head2 add_sub_maps_to_map
+=head2 create_maps_from_saved_view
 
 Adds sub-maps to the view.  Doesn't do any sanity checking.
 
@@ -509,6 +503,11 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $window_key      = $args{'window_key'}      or return;
     my $parent_zone_key = $args{'parent_zone_key'} or return;
     my $parent_map_key  = $args{'parent_map_key'}  or return;
+
+    return if ( $self->{'map_layout'}{$parent_map_key}{'expanded'} );
+
+    # Mark as expanded
+    $self->{'map_layout'}{$parent_map_key}{'expanded'} = 1;
 
     my $parent_map_data = $self->app_data_module()
         ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
@@ -1902,15 +1901,17 @@ Initializes map_layout
     my $map_key = shift;
 
     $self->{'map_layout'}{$map_key} = {
-        bounds      => [],
-        coords      => [],
-        buttons     => [],
-        features    => {},
-        items       => [],
-        changed     => 1,
-        sub_changed => 1,
-        row_index   => undef,
-        color       => 'black',
+        bounds       => [],
+        coords       => [],
+        buttons      => [],
+        features     => {},
+        items        => [],
+        changed      => 1,
+        sub_changed  => 1,
+        row_index    => undef,
+        color        => 'black',
+        expanded     => 0,
+        show_details => 1,
     };
 
     return;
@@ -1959,6 +1960,8 @@ Destroys then recreates the overview
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
 
+    #BF DEBUG
+    return;
     my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
     # Destroy zone information and drawings
@@ -4848,13 +4851,29 @@ later to create this view again.
 }
 
 # ----------------------------------------------------
-sub get_children_zones_of_map {
-
-    #print STDERR "ADD_NEEDS_MODDED 50\n";
+sub create_bin_key {
 
 =pod
 
-=head2 get_map_ids
+=head2 create_bin_key
+
+Creates the key used to identify a map bin.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key  = $args{'zone_key'};
+    my $bin_index = $args{'bin_index'};
+
+    return 'bin_' . $zone_key . '_' . $bin_index;
+}
+
+# ----------------------------------------------------
+sub get_children_zones_of_map {
+
+=pod
+
+=head2 get_children_zones_of_map
 
 returns
 
@@ -4916,6 +4935,31 @@ returns
         = round_to_granularity( $relative_unit_position, $unit_granularity );
 
     return $relative_unit_position + $map_data->{'map_start'};
+}
+
+# ----------------------------------------------------
+sub get_zone_bin_layouts {
+
+=pod
+
+=head2 get_zone_bin_layouts
+
+returns
+
+=cut
+
+    my $self      = shift;
+    my $zone_key  = shift;
+    my $bin_index = shift;
+
+    if ( defined $bin_index ) {
+        return $self->{'zone_bin_layouts'}{$zone_key}[$bin_index];
+    }
+    elsif ($zone_key) {
+        return $self->{'zone_bin_layouts'}{$zone_key};
+    }
+
+    return $self->{'zone_bin_layouts'};
 }
 
 # ----------------------------------------------------
@@ -5605,14 +5649,12 @@ Revisit
         map_key            => $map_key,
         map_id             => $self->map_key_to_id($map_key),
         feature_id         => $self->{'sub_maps'}{$map_key}{'feature_id'},
-        old_parent_map_key =>
-            $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-        old_parent_map_id => $self->map_key_to_id(
+        old_parent_map_key => $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+        old_parent_map_id  => $self->map_key_to_id(
             $self->{'sub_maps'}{$map_key}{'parent_map_key'}
         ),
-        old_feature_start =>
-            $self->{'sub_maps'}{$map_key}{'feature_start'},
-        feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+        old_feature_start  => $self->{'sub_maps'}{$map_key}{'feature_start'},
+        feature_stop       => $self->{'sub_maps'}{$map_key}{'feature_stop'},
         new_parent_map_key => $new_parent_map_key,
         new_parent_map_id  => $self->map_key_to_id($new_parent_map_key),
         new_feature_start  => $new_feature_start,
@@ -5639,7 +5681,7 @@ Revisit
         second_map_stop         => $second_map_stop,
         second_feature_start    => $second_feature_start,
         second_feature_stop     => $second_feature_stop,
-        split_position         => $split_position,
+        split_position          => $split_position,
         first_map_feature_accs  => [ keys %feature_accs_for_first_map ],
         second_map_feature_accs => [ keys %feature_accs_for_second_map ],
     );

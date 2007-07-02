@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.23 2007-06-07 16:38:05 mwz444 Exp $
+# $Id: AppData.pm,v 1.24 2007-07-02 15:16:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -278,7 +278,6 @@ features.  These do NOT include the sub-maps.
     unless ( $self->{'feature_data_by_map'}{$map_id} ) {
 
         my $features = $self->sql_get_features_sub_maps_version(
-            cmap_object => $self,
             map_id      => $map_id,
             no_sub_maps => 1,
             )
@@ -380,7 +379,6 @@ features.  These do NOT include the sub-maps.
         return undef;
 
         #my $features = $self->sql_get_features_sub_maps_version(
-        #cmap_object => $self,
         #map_id      => $map_id,
         #no_sub_maps => 1,
         #)
@@ -417,7 +415,6 @@ sub-maps.  These do NOT include the regular features;
     unless ( $self->{'sub_map_data'}{$map_id} ) {
 
         my $features = $self->sql_get_features_sub_maps_version(
-            cmap_object  => $self,
             map_id       => $map_id,
             get_sub_maps => 1,
             )
@@ -615,10 +612,8 @@ Returns information about map set
 
     unless ( $self->{'map_set_data'}{$map_set_id} ) {
 
-        my $map_set_data_array = $self->sql_get_map_sets(
-            cmap_object => $self,
-            map_set_id  => $map_set_id,
-            )
+        my $map_set_data_array
+            = $self->sql_get_map_sets( map_set_id => $map_set_id, )
             || [];
         $self->{'map_set_data'}{$map_set_id} = $map_set_data_array->[0];
 
@@ -643,7 +638,6 @@ Returns information about all possible reference maps.
 
         # Get all species first
         $self->{'reference_maps_by_species'} = $self->sql_get_species(
-            cmap_object       => $self,
             is_relational_map => 0,
             is_enabled        => 1,
         );
@@ -652,7 +646,6 @@ Returns information about all possible reference maps.
             my $species ( @{ $self->{'reference_maps_by_species'} || [] } )
         {
             $species->{'map_sets'} = $self->sql_get_map_sets(
-                cmap_object       => $self,
                 species_id        => $species->{'species_id'},
                 is_relational_map => 0,
                 is_enabled        => 1,
@@ -661,9 +654,7 @@ Returns information about all possible reference maps.
                 $self->{'map_set_data'}{ $map_set->{'map_set_id'} }
                     = $map_set;
                 $map_set->{'maps'} = $self->sql_get_maps_from_map_set(
-                    cmap_object => $self,
-                    map_set_id  => $map_set->{'map_set_id'},
-                );
+                    map_set_id => $map_set->{'map_set_id'}, );
             }
         }
 
@@ -885,10 +876,9 @@ Calls get_maps either locally or remotely
     }
     else {
         return $self->sql()->get_maps(
-            cmap_object => $self,
-            map_id      => $map_id,
-            map_ids     => $map_ids,
-            map_accs    => $map_accs,
+            map_id   => $map_id,
+            map_ids  => $map_ids,
+            map_accs => $map_accs,
             )
             || [];
     }
@@ -928,7 +918,6 @@ Calls get_features_sub_maps_version either locally or remotely
     }
     else {
         return $self->sql()->get_features_sub_maps_version(
-            cmap_object  => $self,
             map_id       => $map_id,
             no_sub_maps  => $no_sub_maps,
             get_sub_maps => $get_sub_maps,
@@ -971,7 +960,6 @@ Calls get_feature_correspondence_for_counting either locally or remotely
     }
     else {
         return $self->sql()->get_feature_correspondence_for_counting(
-            cmap_object    => $self,
             slot_info      => $slot_info,
             slot_info2     => $slot_info2,
             allow_intramap => $allow_intramap,
@@ -1038,7 +1026,6 @@ Calls get_species either locally or remotely
     }
     else {
         return $self->sql()->get_species(
-            cmap_object       => $self,
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
             )
@@ -1084,7 +1071,6 @@ Calls get_map_sets either locally or remotely
     }
     else {
         return $self->sql()->get_map_sets(
-            cmap_object       => $self,
             species_id        => $species_id,
             map_set_id        => $map_set_id,
             is_relational_map => $is_relational_map,
@@ -1119,10 +1105,8 @@ Calls get_maps_from_map_set either locally or remotely
         return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
-        return $self->sql()->get_maps_from_map_set(
-            cmap_object => $self,
-            map_set_id  => $map_set_id,
-            )
+        return $self->sql()
+            ->get_maps_from_map_set( map_set_id => $map_set_id, )
             || [];
     }
 
@@ -1248,7 +1232,6 @@ Data Structures:
                 next;
             }
             $self->sql()->update_feature(
-                cmap_object      => $self,
                 feature_id       => $feature->{'feature_id'},
                 map_id           => $feature->{'map_id'},
                 feature_acc      => $feature->{'feature_acc'},

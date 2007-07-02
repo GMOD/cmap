@@ -61,12 +61,11 @@ my $sql_object = $cmap_admin->sql();
 
 if ( $object_type eq 'map_set' ) {
     my $attributes = $sql_object->get_attributes(
-        cmap_object    => $cmap_admin,
         object_type    => 'map_set',
         get_all        => 1,
         attribute_name => $attribute_name,
     );
-    my $map_sets = $sql_object->get_map_sets( cmap_object => $cmap_admin, );
+    my $map_sets = $sql_object->get_map_sets();
     my %attr_lookup;
     for my $attr (@$attributes) {
         $attr_lookup{ $attr->{'object_id'} } = $attr->{'attribute_value'};
@@ -86,12 +85,11 @@ if ( $object_type eq 'map_set' ) {
 }
 elsif ( $object_type eq 'species' ) {
     my $attributes = $sql_object->get_attributes(
-        cmap_object    => $cmap_admin,
         object_type    => 'species',
         get_all        => 1,
         attribute_name => $attribute_name,
     );
-    my $species = $sql_object->get_species( cmap_object => $cmap_admin, );
+    my $species = $sql_object->get_species();
     my %attr_lookup;
     for my $attr (@$attributes) {
         $attr_lookup{ $attr->{'object_id'} } = $attr->{'attribute_value'};
@@ -111,12 +109,11 @@ elsif ( $object_type eq 'species' ) {
 }
 elsif ( $object_type eq 'map' ) {
     my $attributes = $sql_object->get_attributes(
-        cmap_object    => $cmap_admin,
         object_type    => 'map',
         get_all        => 1,
         attribute_name => $attribute_name,
     );
-    my $maps = $sql_object->get_maps( cmap_object => $cmap_admin, );
+    my $maps = $sql_object->get_maps();
     my %attr_lookup;
     for my $attr (@$attributes) {
         $attr_lookup{ $attr->{'object_id'} } = $attr->{'attribute_value'};
@@ -136,12 +133,11 @@ elsif ( $object_type eq 'map' ) {
 }
 elsif ( $object_type eq 'feature' ) {
     my $attributes = $sql_object->get_attributes(
-        cmap_object    => $cmap_admin,
         object_type    => 'feature',
         get_all        => 1,
         attribute_name => $attribute_name,
     );
-    my $features = $sql_object->get_features( cmap_object => $cmap_admin, );
+    my $features = $sql_object->get_features();
     my %attr_lookup;
     for my $attr (@$attributes) {
         $attr_lookup{ $attr->{'object_id'} } = $attr->{'attribute_value'};

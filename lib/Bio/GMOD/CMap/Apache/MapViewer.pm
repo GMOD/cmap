@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.136 2007-06-29 21:01:55 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.137 2007-07-02 15:16:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -21,12 +21,12 @@ use Digest::MD5 qw(md5 md5_hex);
 use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap::Apache';
-use constant TEMPLATE        => 'cmap_viewer.tmpl';
-use constant IMAGE_ONLY_TEMPLATE        => 'image_only.tmpl';
-use constant DETAIL_TEMPLATE => 'map_detail_bottom.tmpl';
-use constant FIELD_SEP       => "\t";
-use constant RECORD_SEP      => "\n";
-use constant COLUMN_NAMES    => [
+use constant TEMPLATE            => 'cmap_viewer.tmpl';
+use constant IMAGE_ONLY_TEMPLATE => 'image_only.tmpl';
+use constant DETAIL_TEMPLATE     => 'map_detail_bottom.tmpl';
+use constant FIELD_SEP           => "\t";
+use constant RECORD_SEP          => "\n";
+use constant COLUMN_NAMES        => [
     qw[ species_acc species_common_name
         map_set_acc map_set_name
         map_acc map_name
@@ -65,7 +65,7 @@ sub handler {
     }
 
     my $image_only = 0;
-    if ($apr->param('image_only')){
+    if ( $apr->param('image_only') ) {
         $image_only = 1;
     }
 
@@ -233,11 +233,11 @@ sub handler {
         #
         my $form_data;
         my $t = $self->template or return;
-        if ( $image_only ) {
+        if ($image_only) {
             $t->process(
                 IMAGE_ONLY_TEMPLATE,
-                {   apr            => $apr,
-                    drawer         => $drawer,
+                {   apr                 => $apr,
+                    drawer              => $drawer,
                     web_image_cache_dir => $self->web_image_cache_dir(),
                 },
                 \$html
@@ -281,7 +281,6 @@ sub handler {
                 and $parsed_url_options{'ref_map_set_acc'} )
             {
                 my $ref_map_set_id = $self->sql()->acc_id_to_internal_id(
-                    cmap_object => $self,
                     object_type => 'map_set',
                     acc_id      => $parsed_url_options{'ref_map_set_acc'},
                 );
@@ -290,7 +289,6 @@ sub handler {
                         lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
                         } @{
                         $self->sql()->get_used_feature_types(
-                            cmap_object => $self,
                             map_set_ids => [ $ref_map_set_id, ],
                             )
                             || []

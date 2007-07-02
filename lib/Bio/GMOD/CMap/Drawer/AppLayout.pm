@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.40 2007-06-15 14:46:00 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.41 2007-07-02 15:16:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,15 +31,17 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
-use constant ZONE_SEPARATOR_HEIGHT => 3;
-use constant ZONE_Y_BUFFER         => 30;
-use constant MAP_Y_BUFFER          => 15;
-use constant MAP_X_BUFFER          => 15;
-use constant SMALL_BUFFER          => 2;
-use constant MIN_MAP_WIDTH         => 40;
-use constant BETWEEN_ZONE_BUFFER   => 5;
+use constant ZONE_SEPARATOR_HEIGHT   => 3;
+use constant ZONE_Y_BUFFER           => 30;
+use constant MAP_Y_BUFFER            => 15;
+use constant MAP_X_BUFFER            => 5;
+use constant MAP_X_NO_DETAILS_BUFFER => 0;
+use constant SMALL_BUFFER            => 2;
+use constant MIN_MAP_WIDTH           => 4;
+use constant MIN_MAP_DETAIL_WIDTH    => 50;
+use constant BETWEEN_ZONE_BUFFER     => 5;
 
 use base 'Exporter';
 
@@ -128,6 +130,9 @@ sub layout_overview {
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
     my $width            = $args{'width'} || 500;
+
+    #BF DEBUG
+    return;
 
     my $overview_layout = $app_display_data->{'overview_layout'}{$window_key};
     my $head_zone_key
@@ -506,6 +511,8 @@ Lays out head maps in a zone
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
 
+    my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
+
     #  Options that should be defined elsewhere
     my $stacked = 0;
 
@@ -537,14 +544,15 @@ Lays out head maps in a zone
     }
 
     # The left and right bound limit where the maps get layed out to.
-    my $left_bound        = MAP_X_BUFFER;
+    my $left_bound        = 0;
     my $right_bound       = $zone_width - MAP_X_BUFFER;
     my $active_zone_width = $right_bound - $left_bound;
     return 0 unless ($active_zone_width);
 
     # Get map data for the zone
     my @ordered_map_ids = map { $app_display_data->map_key_to_id($_) }
-        @{ $app_display_data->{'map_order'}{$zone_key} || [] };
+        @{ $app_display_data->{'map_order'}{$zone_key} || [] }
+        or return 0;
     my $map_data_hash = $app_display_data->app_data_module()
         ->map_data_hash( map_ids => \@ordered_map_ids, );
 
@@ -559,6 +567,11 @@ Lays out head maps in a zone
     # Set the background color
     $app_display_data->zone_bgcolor( zone_key => $zone_key, );
 
+    my $unit_granularity = $app_display_data->map_type_data(
+        $map_data_hash->{ $ordered_map_ids[0] }{'map_type_acc'},
+        'unit_granularity' )
+        || DEFAULT->{'unit_granularity'};
+
     # Get the ppu, this is important because it essentially defines the zoom
     # level.
     my $pixels_per_unit = _pixels_per_map_unit(
@@ -568,6 +581,7 @@ Lays out head maps in a zone
         zone_key         => $zone_key,
         stacked          => $stacked,
         app_display_data => $app_display_data,
+        unit_granularity => $unit_granularity,
     );
 
     my $map_min_x = $left_bound;
@@ -577,8 +591,15 @@ Lays out head maps in a zone
 
     # The zone level maps_min_x is used for creating the overview
     $zone_layout->{'maps_min_x'} = $map_min_x;
+    my $binned_maps = {};
+    destroy_binned_maps_for_relayout(
+        app_display_data => $app_display_data,
+        zone_key         => $zone_key,
+        window_key       => $window_key,
+    );
 
     my %label_info;
+MAP:
     foreach
         my $map_key ( @{ $app_display_data->{'map_order'}{$zone_key} || [] } )
     {
@@ -586,20 +607,82 @@ Lays out head maps in a zone
             window_key => $window_key,
             map_key    => $map_key,
         );
-        my $map_id              = $app_display_data->map_key_to_id($map_key);
-        my $map                 = $map_data_hash->{$map_id};
-        my $length_in_units     = $map->{'map_stop'} - $map->{'map_start'};
+        my $map_id     = $app_display_data->map_key_to_id($map_key);
+        my $map_layout = $app_display_data->{'map_layout'}{$map_key};
+        my $map        = $map_data_hash->{$map_id};
+        my $length_in_units
+            = $map->{'map_stop'} - $map->{'map_start'} + $unit_granularity;
         my $map_container_width = $length_in_units * $pixels_per_unit;
+        my $show_details        = 1;
 
         # If the map is the minimum width,
         # Set the individual ppu otherwise clear it.
         if ( $map_container_width < MIN_MAP_WIDTH ) {
-            $map_container_width = MIN_MAP_WIDTH;
+            $binned_maps->{'total_size'} += $map_container_width;
+            push @{ $binned_maps->{'maps'} },
+                { map_key => $map_key, map_id => $map_id, };
             $app_display_data->{'map_pixels_per_unit'}{$map_key}
-                = $map_container_width / $length_in_units;
+                = MIN_MAP_WIDTH / $length_in_units;
+
+            # If it breaks the width threshold, lay out all the bins
+            if ( $binned_maps->{'total_size'} >= MIN_MAP_WIDTH ) {
+                my $token_map_id   = $binned_maps->{'maps'}[0]{'map_id'};
+                my $token_map_data = $map_data_hash->{$token_map_id};
+                ( $row_max_y, $map_min_x, $binned_maps, )
+                    = _layout_binned_maps(
+                    app_display_data => $app_display_data,
+                    window_key       => $window_key,
+                    zone_key         => $zone_key,
+                    binned_maps      => $binned_maps,
+                    token_map_data   => $token_map_data,
+                    row_max_y        => $row_max_y,
+                    min_y            => $row_min_y,
+                    min_x            => $map_min_x,
+                    max_x            => $map_min_x + MIN_MAP_WIDTH,
+                    );
+            }
+            next MAP;
         }
         elsif ( $app_display_data->{'map_pixels_per_unit'}{$map_key} ) {
             delete $app_display_data->{'map_pixels_per_unit'}{$map_key};
+        }
+
+        # This new map is being layed out, clear the last bin if needed
+        if ( %{ $binned_maps || {} }
+            and my $token_map_id = $binned_maps->{'maps'}[0]{'map_id'} )
+        {
+            my $token_map_data = $map_data_hash->{$token_map_id};
+            ( $row_max_y, $map_min_x, $binned_maps, ) = _layout_binned_maps(
+                app_display_data => $app_display_data,
+                window_key       => $window_key,
+                zone_key         => $zone_key,
+                binned_maps      => $binned_maps,
+                token_map_data   => $token_map_data,
+                row_max_y        => $row_max_y,
+                min_y            => $row_min_y,
+                min_x            => $map_min_x,
+                max_x            => $map_min_x + MIN_MAP_WIDTH,
+            );
+        }
+
+        # Clip off the map_container width to the last pixel.
+        $map_container_width = int($map_container_width);
+        if ( $map_container_width < MIN_MAP_DETAIL_WIDTH ) {
+            $show_details = 0;
+        }
+        $map_layout->{'show_details'} = $show_details;
+
+        if ($show_details) {
+
+            # Since the map has passed the size threshold, add sub maps.
+            $app_display_data->add_sub_maps_to_map(
+                window_key      => $window_key,
+                parent_zone_key => $zone_key,
+                parent_map_key  => $map_key,
+            );
+
+            # Add buffer on the left
+            $map_min_x += MAP_X_BUFFER;
         }
 
         my $map_pixels_per_unit
@@ -615,14 +698,14 @@ Lays out head maps in a zone
 
         # Set bounds so overview can access it later even if it
         # isn't on the screen.
-        $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0] = $map_min_x;
-        $app_display_data->{'map_layout'}{$map_key}{'bounds'}[1] = $row_min_y;
-        $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2] = $map_max_x;
+        $map_layout->{'bounds'}[0] = $map_min_x;
+        $map_layout->{'bounds'}[1] = $row_min_y;
+        $map_layout->{'bounds'}[2] = $map_max_x;
 
         # Set the shape of the map
         # Do this now while we have the map data handy
         _map_shape_sub_ref(
-            map_layout => $app_display_data->{'map_layout'}{$map_key},
+            map_layout => $map_layout,
             map        => $map,
         );
 
@@ -638,18 +721,34 @@ Lays out head maps in a zone
             < $zone_layout->{'viewable_internal_x1'}
             or $map_min_x > $zone_layout->{'viewable_internal_x2'} )
         {
-            destroy_map_for_relayout(
-                app_display_data => $app_display_data,
-                map_key          => $map_key,
-                window_key       => $window_key,
-                cascade          => 1,
-            );
-            next;
+            if ( @{ $map_layout->{'items'} || [] } ) {
+                destroy_map_for_relayout(
+                    app_display_data => $app_display_data,
+                    map_key          => $map_key,
+                    window_key       => $window_key,
+                    cascade          => 1,
+                );
+            }
+            $map_min_x += $map_container_width;
+            if ($show_details) {
+                $map_min_x += MAP_X_BUFFER;
+            }
+            else {
+                $map_min_x += MAP_X_NO_DETAILS_BUFFER;
+            }
+            next MAP;
         }
 
         # Set the row index in case this zone needs to be split
         # BF this may not be needed anymore
-        $app_display_data->{'map_layout'}{$map_key}{'row_index'} = $row_index;
+        $map_layout->{'row_index'} = $row_index;
+        my $hide_label = 0;
+        if (    $map_labels_visible
+            and $show_details
+            and $label_info{$map_key}->{'width'} > $map_container_width )
+        {
+            $hide_label = 1;
+        }
 
         # Add info to slot_info needed for creation of correspondences
         _add_to_slot_info(
@@ -684,17 +783,38 @@ Lays out head maps in a zone
             force_relayout   => $force_relayout,
             depth            => $depth,
             label            => $label_info{$map_key},
+            hide_label       => $hide_label,
+            head_map         => 1,
         );
         if ( $row_max_y < $tmp_map_max_y ) {
             $row_max_y = $tmp_map_max_y;
         }
 
-        $map_min_x +=
-            ( $label_info{$map_key}->{'width'} > $map_container_width )
-            ? $label_info{$map_key}->{'width'}
-            : $map_container_width;
-        $map_min_x += MAP_X_BUFFER;
-        $app_display_data->{'map_layout'}{$map_key}{'changed'} = 1;
+        $map_min_x += $map_container_width;
+
+        if ($show_details) {
+            $map_min_x += MAP_X_BUFFER;
+        }
+        else {
+            $map_min_x += MAP_X_NO_DETAILS_BUFFER;
+        }
+        $map_layout->{'changed'} = 1;
+    }
+    if ( %{ $binned_maps || {} }
+        and my $token_map_id = $binned_maps->{'maps'}[0]{'map_id'} )
+    {
+        my $token_map_data = $map_data_hash->{$token_map_id};
+        ( $row_max_y, $map_min_x, $binned_maps, ) = _layout_binned_maps(
+            app_display_data => $app_display_data,
+            window_key       => $window_key,
+            zone_key         => $zone_key,
+            binned_maps      => $binned_maps,
+            token_map_data   => $token_map_data,
+            row_max_y        => $row_max_y,
+            min_y            => $row_min_y,
+            min_x            => $map_min_x,
+            max_x            => $map_min_x + MIN_MAP_WIDTH,
+        );
     }
 
     my $height_change
@@ -713,9 +833,6 @@ Lays out head maps in a zone
 
     $zone_layout->{'sub_changed'} = 1;
     $zone_layout->{'changed'}     = 1;
-
-    # BF DON'T KNOW IF I NEED THIS ANYMORE
-    #$app_display_data->create_zone_coverage_array( zone_key => $zone_key, );
 
     return $height_change;
 }
@@ -1114,6 +1231,8 @@ Lays out a maps in a contained area.
     my $force_relayout     = $args{'force_relayout'} || 0;
     my $depth              = $args{'depth'} || 0;
     my $label              = $args{'label'};
+    my $hide_label         = $args{'hide_label'} || 0;
+    my $head_map           = $args{'head_map'} || 0;
     my $font_height        = $label->{'height'};
     my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
 
@@ -1169,7 +1288,10 @@ Lays out a maps in a contained area.
     my $truncated = 0;
 
     # Draw label if there is supposed to be one.
-    if ($map_labels_visible) {
+    if (    $map_labels_visible
+        and $map_layout->{'show_details'}
+        and !$hide_label )
+    {
         push @{ $map_layout->{'items'} },
             (
             [   1, undef, 'text',
@@ -1180,6 +1302,9 @@ Lays out a maps in a contained area.
                 }
             ]
             );
+        $min_y += $label->{'height'} * 3;
+    }
+    elsif ( $hide_label or $head_map ) {
         $min_y += $label->{'height'} * 3;
     }
 
@@ -1213,7 +1338,7 @@ Lays out a maps in a contained area.
     $map_layout->{'coords'}[1] = $map_coords->[1];
     $map_layout->{'coords'}[3] = $map_coords->[3];
 
-    if ($map_labels_visible) {
+    if ( $map_labels_visible and $map_layout->{'show_details'} ) {
 
         # Unit tick marks
         my $tick_overhang = 8;
@@ -1232,7 +1357,9 @@ Lays out a maps in a contained area.
 
     $min_y = $max_y = $map_coords->[3];
 
-    if ( $app_display_data->{'scaffold'}{$zone_key}{'show_features'} ) {
+    if (    $app_display_data->{'scaffold'}{$zone_key}{'show_features'}
+        and $map_layout->{'show_details'} )
+    {
         $max_y = _layout_features(
             app_display_data => $app_display_data,
             zone_key         => $zone_key,
@@ -1246,40 +1373,119 @@ Lays out a maps in a contained area.
             pixels_per_unit  => $pixels_per_unit,
         );
     }
+    if ( $map_layout->{'show_details'} ) {
+        foreach my $child_zone_key (
+            $app_display_data->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            )
+            )
+        {
+            my $zone_bounds
+                = [ $min_x, $max_y + BETWEEN_ZONE_BUFFER, $max_x, ];
 
-    foreach my $child_zone_key (
-        $app_display_data->get_children_zones_of_map(
-            map_key  => $map_key,
-            zone_key => $zone_key,
-        )
-        )
-    {
-        my $zone_bounds = [ $min_x, $max_y + BETWEEN_ZONE_BUFFER, $max_x, ];
-
-        # The x and y offsets are not needed in the next zone since the zone
-        # has it's own coordinate system.
-        layout_zone(
-            window_key       => $window_key,
-            zone_key         => $child_zone_key,
-            zone_bounds      => $zone_bounds,
-            app_display_data => $app_display_data,
-            relayout         => $relayout,
-            move_offset_x    => 0,
-            move_offset_y    => 0,
-            force_relayout   => $force_relayout,
-            depth            => $depth + 1,
-        );
-        $max_y
-            += $app_display_data->{'zone_layout'}{$child_zone_key}{'bounds'}
-            [3]
-            - $app_display_data->{'zone_layout'}{$child_zone_key}{'bounds'}
-            [1];
+          # The x and y offsets are not needed in the next zone since the zone
+          # has it's own coordinate system.
+            layout_zone(
+                window_key       => $window_key,
+                zone_key         => $child_zone_key,
+                zone_bounds      => $zone_bounds,
+                app_display_data => $app_display_data,
+                relayout         => $relayout,
+                move_offset_x    => 0,
+                move_offset_y    => 0,
+                force_relayout   => $force_relayout,
+                depth            => $depth + 1,
+            );
+            $max_y += $app_display_data->{'zone_layout'}{$child_zone_key}
+                {'bounds'}[3]
+                - $app_display_data->{'zone_layout'}{$child_zone_key}
+                {'bounds'}[1];
+        }
     }
     $map_layout->{'bounds'}[3] = $max_y;
 
     $map_layout->{'sub_changed'} = 1;
 
     return $max_y;
+}
+
+# ----------------------------------------------------
+sub _layout_binned_maps {
+
+=pod
+
+=head2 _layout_binned_maps
+
+Lays out maps that are in a binned region.  This is when zoomed way out.
+
+=cut
+
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $window_key       = $args{'window_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $row_max_y        = $args{'row_max_y'};
+    my $token_map_data   = $args{'token_map_data'};
+    my $min_x            = $args{'min_x'};
+    my $binned_maps = $args{'binned_maps'} or return ( $row_max_y, $min_x, );
+    my $max_x       = $args{'max_x'};
+    my $min_y       = $args{'min_y'};
+    my $color       = $token_map_data->{'color'}
+        || $token_map_data->{'default_color'}
+        || $app_display_data->config_data('map_color')
+        || 'black';
+
+    return ( $row_max_y, $min_x, )
+        unless ( %$binned_maps and @{ $binned_maps->{'maps'} || [] } );
+
+    my $bin_layout = {};
+    my $bin_index
+        = scalar @{ $app_display_data->{'zone_bin_layouts'}{$zone_key}
+            || [] };
+    foreach my $maps ( @{ $binned_maps->{'maps'} || [] } ) {
+        my $map_key = $maps->{'map_key'};
+        push @{ $bin_layout->{'map_keys'} }, $map_key;
+        $app_display_data->{'map_key_to_zone_bin'}{$map_key}
+            = [ $zone_key, $bin_index ];
+
+        # remove the map drawings if this has already been drawn previously
+        if ( $app_display_data->{'map_layout'}{$map_key}
+            and
+            @{ $app_display_data->{'map_layout'}{$map_key}{'items'} || [] } )
+        {
+            destroy_map_for_relayout(
+                app_display_data => $app_display_data,
+                map_key          => $map_key,
+                window_key       => $window_key,
+                cascade          => 1,
+            );
+        }
+    }
+
+    # One pixel for each map
+    my $glyph_height = scalar( @{ $binned_maps->{'maps'} } );
+    push @{ $bin_layout->{'items'} },
+        (
+        [   1,
+            undef,
+            'rectangle',
+            [ $min_x, $min_y, $max_x, $min_y + $glyph_height, ],
+            { -fillcolor => $color, -linecolor => $color, -filled => 1 }
+        ]
+        );
+    $bin_layout->{'changed'} = 1;
+
+    $app_display_data->{'zone_bin_layouts'}{$zone_key}[$bin_index]
+        = $bin_layout;
+
+    $min_x = $max_x;
+    if ( $row_max_y < $min_y + $glyph_height ) {
+        $row_max_y = $min_y + $glyph_height;
+    }
+    $binned_maps = {};
+
+    return ( $row_max_y, $min_x, $binned_maps, );
 }
 
 # ----------------------------------------------------
@@ -1551,6 +1757,41 @@ Also, destroys the features.
 }
 
 # ----------------------------------------------------
+sub destroy_binned_maps_for_relayout {
+
+=pod
+
+=head2 destroy_binned_maps_for_relayout
+
+Destroys the drawing items for a map so it can be drawn again.
+
+Also, destroys the features.
+
+=cut
+
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'};
+    my $zone_key         = $args{'zone_key'};
+    my $window_key       = $args{'window_key'};
+
+    my $zone_bin_layouts = $app_display_data->{'zone_bin_layouts'}{$zone_key}
+        or return;
+    foreach my $bin_layout ( @{ $zone_bin_layouts || [] } ) {
+        $app_display_data->destroy_items(
+            items      => $bin_layout->{'items'},
+            window_key => $window_key,
+        );
+        foreach my $map ( @{ $bin_layout->{'maps'} || [] } ) {
+            delete $app_display_data->{'map_key_to_zone_bin'}
+                { $map->{'map_key'} };
+        }
+    }
+    delete $app_display_data->{'zone_bin_layouts'}{$zone_key};
+
+    return;
+}
+
+# ----------------------------------------------------
 sub add_correspondences {
 
     #print STDERR "AL_NEEDS_MODDED 11\n";
@@ -1773,6 +2014,7 @@ returns the number of pixesl per map unit.
     my $zone_key         = $args{'zone_key'};
     my $stacked          = $args{'stacked'};
     my $app_display_data = $args{'app_display_data'};
+    my $unit_granularity = $args{'unit_granularity'};
 
     unless ( $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'} ) {
         my $pixels_per_unit = 1;
@@ -1792,53 +2034,37 @@ returns the number of pixesl per map unit.
         }
         else {
             my %map_length;
+            my $length_sum = 0;
             foreach my $map_id (@$ordered_map_ids) {
                 my $map       = $map_data_hash->{$map_id};
                 my $map_start = $map->{'map_start'};
                 my $map_stop  = $map->{'map_stop'};
                 $map_length{$map_id}
-                    = $map->{'map_stop'} - $map->{'map_start'};
+                    = $map->{'map_stop'} - $map->{'map_start'}
+                    + $unit_granularity;
+                $length_sum += $map_length{$map_id};
             }
 
-            my $all_maps_fit = 0;
-            my %map_is_min_length;
-            while ( !$all_maps_fit ) {
-                my $length_sum           = 0;
-                my $scaled_map_count     = 0;
-                my $min_length_map_count = 0;
-                foreach my $map_id (@$ordered_map_ids) {
-                    if ( $map_is_min_length{$map_id} ) {
-                        $min_length_map_count++;
-                        next;
-                    }
-                    else {
-                        $scaled_map_count++;
-                        $length_sum += $map_length{$map_id};
-                    }
-                }
-                my $other_space
-                    = ( 1 + scalar(@$ordered_map_ids) ) * MAP_X_BUFFER
-                    + ( MIN_MAP_WIDTH * $min_length_map_count );
-                $pixels_per_unit = $length_sum
-                    ? ( $zone_width - $other_space ) / $length_sum
-                    : 0;
+            return 0 unless ($length_sum);
+            my $first_pixels_per_unit = ($zone_width) / $length_sum;
 
-                # Check this ppu to see if it makes any
-                #   new maps drop below the minimum
-                my $redo = 0;
-                foreach my $map_id (@$ordered_map_ids) {
-                    next if ( $map_is_min_length{$map_id} );
-                    if ( $map_length{$map_id} * $pixels_per_unit
-                        < MIN_MAP_WIDTH )
-                    {
-                        $redo = 1;
-                        $map_is_min_length{$map_id} = 1;
-                    }
+            # Check this ppu to see if it how many maps are above minimum and
+            # need buffers.  The buffers will be used to create the real ppu.
+            my $full_buffer_count  = 0;
+            my $small_buffer_count = 0;
+            foreach my $map_id (@$ordered_map_ids) {
+                if ( $map_length{$map_id} * $first_pixels_per_unit
+                    >= MIN_MAP_DETAIL_WIDTH )
+                {
+                    $full_buffer_count++;
                 }
-                unless ($redo) {
-                    $all_maps_fit = 1;
+                else {
+                    $small_buffer_count++;
                 }
             }
+            my $buffer_space = ( $full_buffer_count * MAP_X_BUFFER * 2 )
+                + ( $small_buffer_count * MAP_X_NO_DETAILS_BUFFER );
+            $pixels_per_unit = ( $zone_width - $buffer_space ) / $length_sum;
         }
         $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'}
             = $pixels_per_unit;
@@ -1947,8 +2173,9 @@ Move a zone
         app_display_data => $app_display_data,
     );
 
-    $zone_layout->{'changed'}     = 1;
-    $zone_layout->{'sub_changed'} = 1;
+    # Don't mark changed because it has already been redrawn above.
+    # $zone_layout->{'changed'}     = 1;
+    # $zone_layout->{'sub_changed'} = 1;
 }
 
 # ----------------------------------------------------
@@ -2118,6 +2345,9 @@ Get the scale value between the main layout and the overview
     my %args                 = @_;
     my $overview_zone_layout = $args{'overview_zone_layout'};
     my $main_zone_layout     = $args{'main_zone_layout'};
+
+    #BF DEBUG
+    return 1;
 
     my $return_val = ( $overview_zone_layout->{'internal_bounds'}[2]
             - $overview_zone_layout->{'internal_bounds'}[1] + 1 ) /

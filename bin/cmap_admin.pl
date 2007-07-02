@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.141 2007-06-01 14:49:01 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.142 2007-07-02 15:16:23 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.141 $)[-1];
+$VERSION = (qw$Revision: 1.142 $)[-1];
 
 #
 # Get command-line options
@@ -593,10 +593,8 @@ sub create_map_set {
             $map_set_short_name ||= $map_set_name;
         }
         if ($species_id) {
-            my $return = $sql_object->get_species(
-                cmap_object => $self,
-                species_id  => $species_id
-            );
+            my $return
+                = $sql_object->get_species( species_id => $species_id );
             unless ( defined($return) and %$return ) {
                 print STDERR "The species_id, '$species_id' is not valid.\n";
                 push @missing, 'species_id or species_acc';
@@ -604,7 +602,6 @@ sub create_map_set {
         }
         elsif ($species_acc) {
             $species_id = $sql_object->acc_id_to_internal_id(
-                cmap_object => $self,
                 acc_id      => $species_acc,
                 object_type => 'species'
             );
@@ -641,7 +638,7 @@ sub create_map_set {
             prompt  => 'What species?',
             display => 'species_common_name',
             return  => 'species_id,species_common_name',
-            data    => $sql_object->get_species( cmap_object => $self ),
+            data    => $sql_object->get_species(),
         );
         my $species_common_name;
         ( $species_id, $species_common_name ) = @$species_info;
@@ -782,9 +779,7 @@ sub delete_correspondences {
             my @map_set_accs = split /[,\s]+/, $map_set_accs;
             if (@map_set_accs) {
                 $map_sets = $sql_object->get_map_sets(
-                    cmap_object  => $self,
-                    map_set_accs => \@map_set_accs,
-                );
+                    map_set_accs => \@map_set_accs, );
             }
             unless ( @{ $map_sets || [] } ) {
                 print STDERR
@@ -796,7 +791,6 @@ sub delete_correspondences {
             my $species_id;
             if ( defined($species_acc) ) {
                 $species_id = $sql_object->acc_id_to_internal_id(
-                    cmap_object => $self,
                     acc_id      => $species_acc,
                     object_type => 'species'
                 );
@@ -814,7 +808,6 @@ sub delete_correspondences {
                 }
             }
             $map_sets = $sql_object->get_map_sets(
-                cmap_object  => $self,
                 species_id   => $species_id,
                 map_type_acc => $map_type_acc,
             );
@@ -913,9 +906,8 @@ sub delete_correspondences {
             $map_set->{'species_common_name'}, '-',
             $map_set->{'map_set_short_name'},  "\n";
         my $map_set_acc = $map_set->{'map_set_acc'};
-        my $maps        = $sql_object->get_maps_from_map_set(
-            cmap_object => $self,
-            map_set_acc => $map_set_acc,
+        my $maps
+            = $sql_object->get_maps_from_map_set( map_set_acc => $map_set_acc,
             )
             if ($map_set_acc);
 
@@ -925,7 +917,6 @@ sub delete_correspondences {
             my $map_acc = $map->{'map_acc'};
             next unless ($map_acc);
             my $corrs = $sql_object->get_feature_correspondence_details(
-                cmap_object                 => $self,
                 included_evidence_type_accs => \@evidence_type_accs,
                 map_acc2                    => $map_acc,
                 disregard_evidence_type     => $disregard_evidence,
@@ -940,10 +931,8 @@ sub delete_correspondences {
             #
             for my $corr (@$corrs) {
                 my $all_evidence = $sql_object->get_correspondence_evidences(
-                    cmap_object               => $self,
                     feature_correspondence_id =>
-                        $corr->{'feature_correspondence_id'},
-                );
+                        $corr->{'feature_correspondence_id'}, );
 
                 my $no_evidence_deleted = 0;
                 for my $evidence (@$all_evidence) {
@@ -988,30 +977,28 @@ sub delete_maps {
             push @missing, 'map_set_acc or map_accs';
         }
         if ( defined($map_accs_str) ) {
-            if ($map_accs_str =~ /^all$/i){
-                if (defined($map_set_acc)){
+            if ( $map_accs_str =~ /^all$/i ) {
+                if ( defined($map_set_acc) ) {
                     my $maps = $sql_object->get_maps_from_map_set(
-                        cmap_object => $self,
-                        map_set_acc      => $map_set_acc,
-                    );
-                    if (@{$maps||[]}) {
-                        @map_ids = map {$_->{'map_id'}} @$maps;
+                        map_set_acc => $map_set_acc, );
+                    if ( @{ $maps || [] } ) {
+                        @map_ids = map { $_->{'map_id'} } @$maps;
                     }
                     else {
-                        print STDERR "The map_set_acc, '$map_set_acc' does not have any maps.\n";
+                        print STDERR
+                            "The map_set_acc, '$map_set_acc' does not have any maps.\n";
                     }
                 }
-                else{
+                else {
                     push @missing, 'map_set_acc';
                 }
 
             }
-            else{
+            else {
                 my @map_accs = split /[,\s]+/, $map_accs_str;
                 my $valid = 1;
                 foreach my $acc (@map_accs) {
                     my $map_id = $sql_object->acc_id_to_internal_id(
-                        cmap_object => $self,
                         acc_id      => $acc,
                         object_type => 'map'
                     );
@@ -1029,10 +1016,8 @@ sub delete_maps {
             }
         }
         elsif ( defined($map_set_acc) ) {
-            my $map_sets = $sql_object->get_map_sets(
-                cmap_object => $self,
-                map_set_acc => $map_set_acc,
-            );
+            my $map_sets
+                = $sql_object->get_map_sets( map_set_acc => $map_set_acc, );
             if ( @{ $map_sets || [] } ) {
                 $map_set    = $map_sets->[0];
                 $map_set_id = $map_set->{'map_set_id'};
@@ -1076,10 +1061,7 @@ sub delete_maps {
                 allow_null => 1,
                 allow_all  => 1,
                 allow_mult => 1,
-                data       => $sql_object->get_maps(
-                    cmap_object => $self,
-                    map_set_id  => $map_set_id
-                ),
+                data => $sql_object->get_maps( map_set_id => $map_set_id ),
             );
         }
 
@@ -1088,7 +1070,6 @@ sub delete_maps {
             foreach my $map_id (@map_ids) {
                 push @$map_names,
                     $sql_object->get_object_name(
-                    cmap_object => $self,
                     object_id   => $map_id,
                     object_type => 'map',
                     );
@@ -1176,7 +1157,6 @@ sub delete_features {
             my $valid = 1;
             foreach my $acc (@map_accs) {
                 my $map_id = $sql_object->acc_id_to_internal_id(
-                    cmap_object => $self,
                     acc_id      => $acc,
                     object_type => 'map'
                 );
@@ -1193,10 +1173,8 @@ sub delete_features {
             }
         }
         elsif ( defined($map_set_acc) ) {
-            my $map_sets = $sql_object->get_map_sets(
-                cmap_object => $self,
-                map_set_acc => $map_set_acc,
-            );
+            my $map_sets
+                = $sql_object->get_map_sets( map_set_acc => $map_set_acc, );
             if ( @{ $map_sets || [] } ) {
                 $map_set    = $map_sets->[0];
                 $map_set_id = $map_set->{'map_set_id'};
@@ -1244,10 +1222,7 @@ sub delete_features {
                 allow_null => 1,
                 allow_all  => 1,
                 allow_mult => 1,
-                data       => $sql_object->get_maps(
-                    cmap_object => $self,
-                    map_set_id  => $map_set_id
-                ),
+                data => $sql_object->get_maps( map_set_id => $map_set_id ),
             );
         }
 
@@ -1256,7 +1231,6 @@ sub delete_features {
             foreach my $map_id (@map_ids) {
                 push @$map_names,
                     $sql_object->get_object_name(
-                    cmap_object => $self,
                     object_id   => $map_id,
                     object_type => 'map',
                     );
@@ -1296,16 +1270,12 @@ sub delete_features {
     my $admin  = $self->admin;
     my $log_fh = $self->log_fh;
     if ( $map_set_id and not @map_ids ) {
-        my $maps = $sql_object->get_maps_simple(
-            cmap_object => $self,
-            map_set_id  => $map_set_id,
-        );
+        my $maps = $sql_object->get_maps_simple( map_set_id => $map_set_id, );
         @map_ids = map { $_->{'map_id'} } @{ $maps || [] };
     }
     if (@map_ids) {
         for my $map_id (@map_ids) {
             my $features = $sql_object->get_features_simple(
-                cmap_object       => $self,
                 map_id            => $map_id,
                 feature_type_accs => \@feature_type_accs,
             );
@@ -1425,9 +1395,7 @@ sub export_as_text {
             my @map_set_accs = split /[,\s]+/, $map_set_accs;
             if (@map_set_accs) {
                 $map_sets = $sql_object->get_map_sets(
-                    cmap_object  => $self,
-                    map_set_accs => \@map_set_accs,
-                );
+                    map_set_accs => \@map_set_accs, );
             }
             unless ( @{ $map_sets || [] } ) {
                 print STDERR
@@ -1439,7 +1407,6 @@ sub export_as_text {
             my $species_id;
             if ( defined($species_acc) ) {
                 $species_id = $sql_object->acc_id_to_internal_id(
-                    cmap_object => $self,
                     acc_id      => $species_acc,
                     object_type => 'species'
                 );
@@ -1457,7 +1424,6 @@ sub export_as_text {
                 }
             }
             $map_sets = $sql_object->get_map_sets(
-                cmap_object  => $self,
                 species_id   => $species_id,
                 map_type_acc => $map_type_acc,
             );
@@ -1602,15 +1568,10 @@ sub export_as_text {
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
         print $fh join( OFS, @col_names ), ORS;
 
-        my $maps = $sql_object->get_maps_simple(
-            cmap_object => $self,
-            map_set_id  => $map_set_id,
-        );
+        my $maps = $sql_object->get_maps_simple( map_set_id => $map_set_id, );
 
-        my $attributes = $sql_object->get_attributes(
-            cmap_object => $self,
-            object_type => 'feature',
-        );
+        my $attributes
+            = $sql_object->get_attributes( object_type => 'feature', );
 
         my %attr_lookup = ();
         for my $a (@$attributes) {
@@ -1620,15 +1581,12 @@ sub export_as_text {
 
         for my $map (@$maps) {
             my $features = $sql_object->get_features(
-                cmap_object       => $self,
                 feature_type_accs => \@feature_type_accs,
                 map_id            => $map->{'map_id'},
             );
 
             my $aliases = $sql_object->get_feature_aliases(
-                cmap_object => $self,
-                map_id      => $map->{'map_id'},
-            );
+                map_id => $map->{'map_id'}, );
 
             my %alias_lookup = ();
             for my $a (@$aliases) {
@@ -1952,9 +1910,7 @@ sub export_objects {
                 my @map_set_accs = split /[,\s]+/, $map_set_accs;
                 if (@map_set_accs) {
                     $map_sets = $sql_object->get_map_sets(
-                        cmap_object  => $self,
-                        map_set_accs => \@map_set_accs,
-                    );
+                        map_set_accs => \@map_set_accs, );
                 }
                 unless ( @{ $map_sets || [] } ) {
                     print STDERR
@@ -1966,7 +1922,6 @@ sub export_objects {
                 my $species_id;
                 if ( defined($species_acc) ) {
                     $species_id = $sql_object->acc_id_to_internal_id(
-                        cmap_object => $self,
                         acc_id      => $species_acc,
                         object_type => 'species'
                     );
@@ -1984,7 +1939,6 @@ sub export_objects {
                     }
                 }
                 $map_sets = $sql_object->get_map_sets(
-                    cmap_object  => $self,
                     species_id   => $species_id,
                     map_type_acc => $map_type_acc,
                 );
@@ -2201,10 +2155,8 @@ sub get_map_sets {
         chomp( my $answer = <STDIN> );
         my @accessions = split( /[,\s+]/, $answer );
         return unless @accessions;
-        $map_sets = $sql_object->get_map_sets(
-            cmap_object  => $self,
-            map_set_accs => \@accessions,
-        );
+        $map_sets
+            = $sql_object->get_map_sets( map_set_accs => \@accessions, );
         unless ( $map_sets and @$map_sets ) {
             print "Those map sets were not in the database!\n";
             return;
@@ -2212,8 +2164,7 @@ sub get_map_sets {
         return unless @$map_sets;
     }
     else {
-        my $map_type_results
-            = $sql_object->get_used_map_types( cmap_object => $self, );
+        my $map_type_results = $sql_object->get_used_map_types();
         unless (@$map_type_results) {
             print
                 "No map sets in the database!  Use cmap_admin.pl to create.\n";
@@ -2235,10 +2186,8 @@ sub get_map_sets {
         );
         $map_types = [$map_types] unless ( ref($map_types) eq 'ARRAY' );
 
-        my $map_set_species = $sql_object->get_map_sets(
-            cmap_object   => $self,
-            map_type_accs => $map_types,
-        );
+        my $map_set_species
+            = $sql_object->get_map_sets( map_type_accs => $map_types, );
         die "No species! Please create.\n"
             unless @$map_set_species;
 
@@ -2270,7 +2219,6 @@ sub get_map_sets {
         }
 
         my $ms_choices = $sql_object->get_map_sets(
-            cmap_object   => $self,
             map_type_accs => $map_types,
             species_ids   => $species_ids,
         );
@@ -2291,7 +2239,6 @@ sub get_map_sets {
 
         if ( $map_set_ids and @$map_set_ids ) {
             $map_sets = $sql_object->get_map_sets(
-                cmap_object => $self,
                 map_set_ids => $map_set_ids,
                 species_ids => $species_ids,
             );
@@ -2316,9 +2263,7 @@ sub get_feature_types {
     if (@map_set_ids) {
         my $sql_object = $self->sql or die $self->error;
         $ft_sql_data = $sql_object->get_used_feature_types(
-            cmap_object => $self,
-            map_set_ids => \@map_set_ids,
-        );
+            map_set_ids => \@map_set_ids, );
     }
     else {
         $ft_sql_data
@@ -2556,9 +2501,7 @@ sub import_correspondences {
             my $map_sets;
             if (@map_set_accs) {
                 $map_sets = $sql_object->get_map_sets(
-                    cmap_object  => $self,
-                    map_set_accs => \@map_set_accs,
-                );
+                    map_set_accs => \@map_set_accs, );
             }
             unless ( @{ $map_sets || [] } ) {
                 print STDERR
@@ -2607,7 +2550,7 @@ sub import_correspondences {
             allow_null => 1,
             allow_mult => 1,
             data       => sort_selectall_arrayref(
-                $sql_object->get_map_sets( cmap_object => $self, ),
+                $sql_object->get_map_sets(),
                 'species_common_name, map_set_short_name'
             ),
         );
@@ -2670,10 +2613,8 @@ sub delete_duplicate_correspondences {
         my $sql_object = $self->sql;
         my @missing    = ();
         if ( defined($map_set_acc) ) {
-            my $map_sets = $sql_object->get_map_sets(
-                cmap_object => $self,
-                map_set_acc => $map_set_acc,
-            );
+            my $map_sets
+                = $sql_object->get_map_sets( map_set_acc => $map_set_acc, );
             if ( @{ $map_sets || [] } ) {
                 $map_set_id = $map_sets->[0]{'map_set_id'};
             }
@@ -2801,10 +2742,8 @@ sub import_tab_data {
             push @missing, 'input file(s)';
         }
         if ( defined($map_set_acc) ) {
-            my $map_sets = $sql_object->get_map_sets(
-                cmap_object => $self,
-                map_set_acc => $map_set_acc,
-            );
+            my $map_sets
+                = $sql_object->get_map_sets( map_set_acc => $map_set_acc, );
             unless ( @{ $map_sets || [] } ) {
                 print STDERR
                     "Map set Accession, '$map_set_acc' is not valid.\n";
@@ -3049,7 +2988,6 @@ sub make_name_correspondences {
                 my $valid = 1;
                 foreach my $acc (@from_map_set_accs) {
                     my $map_set_id = $sql_object->acc_id_to_internal_id(
-                        cmap_object => $self,
                         acc_id      => $acc,
                         object_type => 'map_set'
                     );
@@ -3081,7 +3019,6 @@ sub make_name_correspondences {
                 my $valid = 1;
                 foreach my $acc (@to_map_set_accs) {
                     my $map_set_id = $sql_object->acc_id_to_internal_id(
-                        cmap_object => $self,
                         acc_id      => $acc,
                         object_type => 'map_set'
                     );

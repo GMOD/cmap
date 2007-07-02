@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.82 2007-05-11 15:40:32 mwz444 Exp $
+# $Id: Utils.pm,v 1.83 2007-07-02 15:16:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1695,9 +1695,7 @@ sub parse_url {
 
         # Get the saved link from the db
         my $saved_links = $calling_cmap_object->sql->get_saved_links(
-            cmap_object   => $calling_cmap_object,
-            saved_link_id => $parsed_url_options{'saved_link_id'},
-        );
+            saved_link_id => $parsed_url_options{'saved_link_id'}, );
         my $saved_link;
         if ( @{ $saved_links || [] } ) {
             $saved_link = $saved_links->[0];

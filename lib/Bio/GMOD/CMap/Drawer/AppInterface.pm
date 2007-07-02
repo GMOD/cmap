@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.55 2007-06-15 20:06:16 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.56 2007-07-02 15:16:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -822,6 +822,9 @@ Draws and re-draws on the overview zinc
 =cut
 
     my ( $self, %args ) = @_;
+
+    #BF DEBUG
+    return;
     my $window_key = $args{'window_key'}
         or die 'no panel key for draw_overview';
     my $app_display_data = $args{'app_display_data'};
@@ -1121,6 +1124,40 @@ Draws and re-draws on the zinc
             }
             $map_layout->{'changed'} = 0;
         }
+
+        # Binned Maps
+        foreach (
+            my $bin_index = 0;
+            $bin_index <=
+            $#{ $app_display_data->{'zone_bin_layouts'}{$zone_key} || [] };
+            $bin_index++
+            )
+        {
+            my $bin_layout
+                = $app_display_data->{'zone_bin_layouts'}{$zone_key}
+                [$bin_index];
+            $self->draw_items(
+                zinc     => $zinc,
+                x_offset => $zone_x_offset,
+                y_offset => $zone_y_offset,
+                items    => $bin_layout->{'items'},
+                tags     => [
+                    'middle_layer',
+                    'display',
+                    'bin_maps_'
+                        . $window_key . '_'
+                        . $zone_key . '_'
+                        . $bin_index
+                ],
+                group_id => $zone_group_id,
+            );
+            $self->record_zone_bin_drawn_id(
+                bin_index => $bin_index,
+                zone_key  => $zone_key,
+                items     => $bin_layout->{'items'},
+            );
+            $bin_layout->{'changed'} = 0;
+        }
         $zone_layout->{'sub_changed'} = 0;
     }
 
@@ -1364,6 +1401,9 @@ Sets the group clip object
         || $self->zinc( window_key => $args{'window_key'}, );
     my $zone_layout = $args{'zone_layout'};
 
+    # return unless it has been layed out.
+    return unless ( defined $zone_layout->{'internal_bounds'}[0] );
+
     #my $fillcolor = ( $zone_key == 1 ) ? 'blue' : 'red';
     my $clip_bounds = [
         $zone_layout->{'internal_bounds'}[0],
@@ -1488,6 +1528,38 @@ Item structure:
 }
 
 # ----------------------------------------------------
+sub record_zone_bin_drawn_id {
+
+=pod
+
+=head2 record_zone_bin_drawn_id
+
+Create a hash lookup for ids to a zone bin
+
+Item structure:
+
+  [ changed, item_id, type, coord_array, options_hash ]
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key  = $args{'zone_key'};
+    my $bin_index = $args{'bin_index'};
+    my $items     = $args{'items'} || return;
+
+    $self->{'zone_bin_to_drawn_ids'}{$zone_key}[$bin_index] = [];
+    for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
+        $self->{'drawn_id_to_zone_bin'}{ $items->[$i][1] }
+            = [ $zone_key, $bin_index ];
+        push @{ $self->{'zone_bin_to_drawn_ids'}{$zone_key}[$bin_index] },
+            $items->[$i][1];
+    }
+    @{ $self->{'zone_bin_to_drawn_ids'}{$zone_key}[$bin_index] }
+        = sort { $b <=> $a }
+        @{ $self->{'zone_bin_to_drawn_ids'}{$zone_key}[$bin_index] };
+}
+
+# ----------------------------------------------------
 sub drawn_id_to_map_key {
 
     #print STDERR "AI_NEEDS_MODDED 16\n";
@@ -1506,6 +1578,24 @@ Accessor method to map_keys from drawn ids
 }
 
 # ----------------------------------------------------
+sub drawn_id_to_zone_bin_info {
+
+    #print STDERR "AI_NEEDS_MODDED 16\n";
+
+=pod
+
+=head2 drawn_id_to_zone_bin_info
+
+Accessor method to zone_bin_infos from drawn ids
+
+=cut
+
+    my ( $self, $drawn_id, ) = @_;
+
+    return $self->{'drawn_id_to_zone_bin_info'}{$drawn_id};
+}
+
+# ----------------------------------------------------
 sub map_key_to_drawn_ids {
 
     #print STDERR "AI_NEEDS_MODDED 17\n";
@@ -1521,6 +1611,24 @@ Accessor method to drawn ids from a map_key
     my ( $self, $map_key, ) = @_;
 
     return @{ $self->{'map_key_to_drawn_ids'}{$map_key} || [] };
+}
+
+# ----------------------------------------------------
+sub zone_bin_to_drawn_ids {
+
+    #print STDERR "AI_NEEDS_MODDED 17\n";
+
+=pod
+
+=head2 map_key_to_drawn_ids
+
+Accessor method to drawn ids from a map_key
+
+=cut
+
+    my ( $self, $zone_key, $bin_index, ) = @_;
+
+    return @{ $self->{'zone_bin_to_drawn_ids'}{$zone_key}[$bin_index] || [] };
 }
 
 # ----------------------------------------------------
@@ -2054,9 +2162,19 @@ sub popup_map_menu {
         push @$menu_items, [
             Button => 'New Window',
             -command => sub {
-                $controller->open_new_window( selected_map_keys => [$map_key],
-                );
-
+                my @object_selection_keys
+                    = $self->object_selection_keys($window_key);
+                my $selected_type
+                    = $self->object_selected_type( window_key => $window_key,
+                    );
+                if ( $selected_type eq 'map' and @object_selection_keys ) {
+                    $controller->open_new_window(
+                        selected_map_keys => \@object_selection_keys, );
+                }
+                else {
+                    $controller->open_new_window(
+                        selected_map_keys => [$map_key], );
+                }
             },
         ];
         if ( !$moved ) {
@@ -2351,6 +2469,36 @@ sub fill_info_box {
 
     $text_box->insert( 'end', $new_text );
     $text_box->configure( -state => 'disabled', );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub highlight_map_corrs {
+
+=pod
+
+=head2 highlight_map_corrs
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc    = $args{'zinc'}    or return;
+    my $map_key = $args{'map_key'} or return;
+    my $color   = $args{'color'}   or return;
+
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my $map_corrs = $app_display_data->{'corr_layout'}{'maps'}{$map_key}
+        || {};
+    foreach my $map_key2 ( keys %$map_corrs ) {
+        foreach my $item ( @{ $map_corrs->{$map_key2}{'items'} || [] } ) {
+            next unless ( $item->[1] );
+            $zinc->itemconfigure( $item->[1], -linecolor => $color, );
+        }
+    }
 
     return;
 }
@@ -3113,10 +3261,9 @@ Deletes all widgets in the provided list
         ? $self->overview_zinc( window_key => $window_key, )
         : $self->zinc( window_key => $window_key, );
 
-    #$zinc->remove( map { $_->[1] } @$items );
     map { $zinc->remove( $_->[1] ) } @$items;
 
-    # Maybe clear bindings if they aren't destroyed with delete.
+    # Maybe clear the ties to a map or zone_bin
 
     return;
 }
@@ -3283,7 +3430,6 @@ Handle down click of the left mouse button
                 object_key => $map_key,
                 window_key => $window_key,
             );
-            $self->fill_info_box( window_key => $window_key, );
         }
         else {
 
@@ -3292,6 +3438,59 @@ Handle down click of the left mouse button
                 zinc       => $zinc,
                 zone_key   => $self->{'drag_zone_key'},
                 map_key    => $map_key,
+                window_key => $window_key,
+            );
+        }
+
+        $self->fill_info_box( window_key => $window_key, );
+    }
+    elsif ( @tags = grep /^bin_maps_/,
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    {
+        $tags[0] =~ /^bin_maps_(\S+)_(\S+)_(\S+)/;
+        my $zone_key  = $2;
+        my $bin_index = $3;
+
+        my $object_selected_type
+            = $self->object_selected_type( window_key => $window_key );
+
+        # User is trying to combine features and maps.  We can't have that.
+        if (    $control
+            and $object_selected_type
+            and $object_selected_type ne 'map' )
+        {
+            return;
+        }
+
+        my $app_display_data = $self->app_controller()->app_display_data();
+        my $bin_layout
+            = $app_display_data->get_zone_bin_layouts( $zone_key, $bin_index,
+            );
+
+        my $bin_key = $app_display_data->create_bin_key(
+            bin_index => $bin_index,
+            zone_key  => $zone_key,
+        );
+        my $object_selected = $self->object_selected(
+            window_key => $window_key,
+            bin_key    => $bin_key,
+        );
+
+        # If it was previously highlighted, remove it
+        if ($object_selected) {
+            $self->remove_object_selection(
+                zinc       => $zinc,
+                object_key => $bin_key,
+                window_key => $window_key,
+            );
+        }
+        else {
+
+            # Add each to the object_selection list
+            $self->add_object_selection(
+                zinc       => $zinc,
+                zone_key   => $zone_key,
+                bin_key    => $bin_key,
                 window_key => $window_key,
             );
         }
@@ -3744,6 +3943,11 @@ This can be used by other modules but probably shouldn't be.
                 map_key    => $map_key,
                 window_key => $window_key,
             );
+            $self->highlight_map_corrs(
+                zinc    => $zinc,
+                map_key => $map_key,
+                color   => 'black',
+            );
         }
     }
     elsif (@$feature_accs) {
@@ -3779,11 +3983,17 @@ Add map or feature selection
     my $zinc        = $args{'zinc'};
     my $map_key     = $args{'map_key'};
     my $feature_acc = $args{'feature_acc'};
+    my $bin_key     = $args{'bin_key'};
     my $zone_key    = $args{'zone_key'};
     my $window_key  = $args{'window_key'};
 
-    my $object_key = $map_key || $feature_acc;
-    my $object_type = $map_key ? 'map' : 'feature';
+    my $bin_index;
+    if ( $bin_key and $bin_key =~ /^bin_(\d+)_(\d+)/ ) {
+        $bin_index = $2;
+    }
+
+    my $object_key = $map_key || $feature_acc || $bin_key;
+    my $object_type = $feature_acc ? 'feature' : 'map';
 
     my $selected_type
         = $self->object_selected_type( window_key => $window_key, );
@@ -3823,7 +4033,10 @@ Add map or feature selection
 
     # Create a highlight item for each item in the original feature glyph
     my @ori_ids;
-    if ($map_key) {
+    if ($bin_key) {
+        @ori_ids = $self->zone_bin_to_drawn_ids( $zone_key, $bin_index, );
+    }
+    elsif ($map_key) {
         @ori_ids = $self->map_key_to_drawn_ids($map_key);
     }
     elsif ($feature_acc) {
@@ -3854,6 +4067,11 @@ Add map or feature selection
                 $self->{'object_selections'}{$window_key}{$object_key}
                 {'highlight_bounds'},
             );
+        $self->highlight_map_corrs(
+            zinc    => $zinc,
+            map_key => $map_key,
+            color   => 'black',
+        );
     }
 
     return;
@@ -3895,15 +4113,16 @@ Test if a map or feautre is selected
     my $map_key     = $args{'map_key'};
     my $object_key  = $args{'object_key'};
     my $feature_acc = $args{'feature_acc'};
+    my $bin_key     = $args{'bin_key'};
     my $window_key  = $args{'window_key'};
 
-    $object_key = $object_key || $map_key || $feature_acc;
-    my $object_type = $map_key ? 'map' : 'feature';
+    $object_key = $object_key || $map_key || $feature_acc || $bin_key;
+    my $object_type = $feature_acc ? 'feature' : 'map';
 
     # Return if the object is already selected or if the object is a new type.
     my $selected_type
         = $self->object_selected_type( window_key => $window_key, );
-    if (( $map_key or $feature_acc )
+    if (( $map_key or $feature_acc or $bin_key )
         and ( !$selected_type
             or $selected_type ne $object_type )
         )
@@ -3946,9 +4165,23 @@ Test if a map or feautre is selected
 
     my $self       = shift;
     my $window_key = shift;
+    my $count      = 0;
+    foreach my $object_key (
+        keys %{ $self->{'object_selections'}{$window_key} || {} } )
+    {
+        if ( $object_key =~ /^bin_(\d+)_(\d+)/ ) {
+            my $zone_key   = $1;
+            my $bin_index  = $2;
+            my $bin_layout = $self->app_controller()->app_display_data()
+                ->get_zone_bin_layouts( $zone_key, $bin_index );
+            $count += scalar @{ $bin_layout->{'map_keys'} || [] };
+        }
+        else {
+            $count++;
+        }
+    }
 
-    return
-        scalar( keys %{ $self->{'object_selections'}{$window_key} || {} } );
+    return $count;
 }
 
 # ----------------------------------------------------
@@ -4010,6 +4243,9 @@ Remove all selected objects from the selection list
     my $window_key = $args{'window_key'};
     my $zinc = $args{'zinc'} || $self->zinc( window_key => $window_key, );
 
+    my $selected_type
+        = $self->object_selected_type( window_key => $window_key, );
+
     foreach my $object_key (
         keys %{ $self->{'object_selections'}{$window_key} || {} } )
     {
@@ -4018,6 +4254,13 @@ Remove all selected objects from the selection list
             object_key => $object_key,
             window_key => $window_key,
         );
+        if ( $selected_type eq 'map' ) {
+            $self->highlight_map_corrs(
+                zinc    => $zinc,
+                map_key => $object_key,
+                color   => 'red',
+            );
+        }
     }
 
     return;
@@ -4584,7 +4827,7 @@ Modifies the controls to act on this slot.
     # Wipe old info
     $text_box->delete( "1.0", 'end' );
 
-    my $new_text = $map_set_data->{'map_set_name'};
+    my $new_text = $zone_key . " " . $map_set_data->{'map_set_name'};
 
     $text_box->insert( 'end', $new_text );
     $text_box->configure( -state => 'disabled', );
@@ -4841,9 +5084,10 @@ sub get_font_name {
         my $family    = "courier";
         my $zinc      = $self->zinc( window_key => $window_key, );
 
-        unless ( grep {/$font_name/} $zinc->fontNames ) {
+        unless ( $self->{'font_name_created'}{$font_name} ) {
             my %fontDesc = ( -size => $font_size, -family => $family, );
             $zinc->fontCreate( $font_name, %fontDesc );
+            $self->{'font_name_created'}{$font_name} = 1;
         }
         $self->{'font_name'}{$window_key} = $font_name;
     }

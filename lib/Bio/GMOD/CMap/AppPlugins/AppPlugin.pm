@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.5 2007-04-12 21:13:15 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.6 2007-07-02 15:16:28 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME
@@ -39,6 +39,8 @@ CMap currently recognizes 1 distinct types of plugins:
 =item 1) modify_main_menu
 
 =item 2) modify_right_click_menu
+
+=item 3) modify_commit_changes
 
 
 =back
@@ -80,10 +82,10 @@ button.
 
 =item $type = $self->type()
 
-This tells gbrowse what the plugin's type is.  It must return one of
-the types "modify_main_menu" or "modify_right_click_menu"  as described in the
-introduction to this documentation.  If the method is not overridden,
-type() will return "generic."
+This tells gbrowse what the plugin's type is.  It must return one of the types
+"modify_main_menu" or "modify_right_click_menu" or "modify_commit_changes"  as
+described in the introduction to this documentation.  If the method is not
+overridden, type() will return "generic."
 
 =item $self->init()
 
@@ -127,6 +129,20 @@ methods described in this section.
 =over 4
 
 =item $self->modify_right_click_menu()
+
+=back
+
+=head2 METHODS TO BE IMPLEMENTED IN Commit Changes Modifiers 
+
+All plugins that modify_commit_changes should override one or more of the
+methods described in this section.
+
+=over 4
+
+=item $self->modify_commit_changes()
+
+This method should return true in order for the changes to be committed.  If
+the plugin returns false, the commit will not happen.  
 
 =back
 
@@ -233,6 +249,13 @@ sub modify_right_click_menu {
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
     my $menu_items = $args{'menu_items'};
+    return;
+}
+
+sub modify_commit_changes {
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $actions    = $args{'actions'};
     return;
 }
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.3 2005-11-11 21:46:14 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.4 2007-07-02 15:16:28 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -65,7 +65,6 @@ sub create_saved_link {
         or return $self->error('Problem creating the new session step.');
 
     my $saved_link_id = $self->sql->insert_saved_link(
-        cmap_object         => $self,
         saved_url           => $saved_url,
         legacy_url          => $legacy_url,
         session_step_object => freeze($session_step_object),
@@ -106,7 +105,7 @@ VIEW:
             }
             $slots->{$slot_num} = _create_slot($slot_params);
         }
-        unless ($slots->{0}) {
+        unless ( $slots->{0} ) {
             print STDERR qq[No reference slot (slot 0) defined.\n];
             next VIEW;
         }

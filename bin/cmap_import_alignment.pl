@@ -83,7 +83,6 @@ else {
 }
 if ( defined($query_map_set_acc) ) {
     $query_map_set_id = $sql_object->acc_id_to_internal_id(
-        cmap_object => $admin,
         acc_id      => $query_map_set_acc,
         object_type => 'map_set'
     );
@@ -98,7 +97,6 @@ else {
 }
 if ( defined($subject_map_set_acc) ) {
     $subject_map_set_id = $sql_object->acc_id_to_internal_id(
-        cmap_object => $admin,
         acc_id      => $subject_map_set_acc,
         object_type => 'map_set'
     );
@@ -335,7 +333,6 @@ sub get_map_id {
     # Check for existance of map in cmap_map
 
     my $map_id_results = $sql_object->get_maps(
-        cmap_object => $admin,
         map_acc     => $map_acc,
         map_name    => $map_name,
         map_length  => $map_length,
@@ -350,7 +347,6 @@ sub get_map_id {
         # Map not found, creat it.
         print "Map \"$map_name\" not found.  Creating.\n";
         $map_id = $sql_object->insert_map(
-            cmap_object => $admin,
             map_name    => $map_name,
             map_set_id  => $map_set_id,
             map_acc     => $map_acc,
@@ -396,7 +392,6 @@ sub get_feature_id {
     # Check for existance of feature in cmap_feature
 
     my $feature_id_results = $sql_object->get_features(
-        cmap_object       => $admin,
         feature_start     => $start,
         feature_stop      => $end,
         feature_type_accs => [$feature_type_acc],

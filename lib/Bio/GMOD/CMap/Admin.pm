@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.97 2007-05-25 20:58:22 mwz444 Exp $
+# $Id: Admin.pm,v 1.98 2007-07-02 15:16:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -97,7 +97,6 @@ The primary key of the object.
     my $sql_object  = $self->sql or return;
 
     $sql_object->delete_attribute(
-        cmap_object => $self,
         object_type => $object_type,
         object_id   => $object_id,
     );
@@ -146,9 +145,7 @@ Nothing
     my $sql_object = $self->sql;
 
     my $evidences = $sql_object->get_correspondence_evidences(
-        cmap_object                => $self,
-        correspondence_evidence_id => $corr_evidence_id,
-    );
+        correspondence_evidence_id => $corr_evidence_id, );
     return $self->error('Invalid correspondence evidence id')
         unless (@$evidences);
     my $feature_correspondence_id
@@ -158,9 +155,7 @@ Nothing
     $self->xref_delete( 'correspondence_evidence', $corr_evidence_id );
 
     $sql_object->delete_evidence(
-        cmap_object                => $self,
-        correspondence_evidence_id => $corr_evidence_id,
-    );
+        correspondence_evidence_id => $corr_evidence_id, );
 
     return $feature_correspondence_id;
 }
@@ -279,10 +274,8 @@ The direction the feature points in relation to the map.
     my $direction        = $args{'direction'};
     my $sql_object       = $self->sql or return $self->error;
 
-    my $ori_features = $sql_object->get_features_simple(
-        cmap_object => $self,
-        feature_id  => $ori_feature_id,
-    );
+    my $ori_features
+        = $sql_object->get_features_simple( feature_id => $ori_feature_id, );
     return unless ( $ori_features and @$ori_features );
     my $ori_feature = $ori_features->[0];
     $map_id = $ori_feature->{'map_id'} unless ( defined $map_id );
@@ -392,7 +385,6 @@ The type of item that is being copied to.
     my $sql_object    = $self->sql or return $self->error;
 
     my $ori_attributes = $sql_object->get_attributes(
-        cmap_object => $self,
         object_id   => $ori_object_id,
         object_type => $object_type,
     );
@@ -467,7 +459,6 @@ The type of item that is being copied to.
     my $sql_object    = $self->sql or return $self->error;
 
     my $ori_xrefs = $sql_object->get_xrefs(
-        cmap_object => $self,
         object_id   => $ori_object_id,
         object_type => $object_type,
     );
@@ -536,9 +527,7 @@ Identifier of the feature that will have information copied to it.
     my $sql_object     = $self->sql or return $self->error;
 
     my $ori_correspondences = $sql_object->get_feature_correspondence_details(
-        cmap_object => $self,
-        feature_id1 => $ori_feature_id,
-    );
+        feature_id1 => $ori_feature_id, );
     my $last_corr_id;
     my @evidence    = ();
     my %last_params = ();
@@ -685,7 +674,6 @@ integrated with GBrowse and should not be used otherwise.
     }
 
     my $feature_id = $sql_object->insert_feature(
-        cmap_object      => $self,
         map_id           => $map_id,
         feature_name     => $feature_name,
         feature_acc      => $feature_acc,
@@ -746,26 +734,22 @@ Create an alias for a feature.  The alias is searchable.
     my $feature_id = $args{'feature_id'}
         or return $self->error('No feature id');
     my $alias = $args{'alias'} or return 1;
-    my $features = $sql_object->get_features_simple(
-        cmap_object => $self,
-        feature_id  => $feature_id,
-    );
+    my $features
+        = $sql_object->get_features_simple( feature_id => $feature_id, );
 
     if ( !@$features or $alias eq $features->[0]{'feature_name'} ) {
         return 1;
     }
 
     my $feature_aliases = $sql_object->get_feature_aliases(
-        cmap_object => $self,
-        alias       => $alias,
-        feature_id  => $feature_id,
+        alias      => $alias,
+        feature_id => $feature_id,
     );
     return 1 if (@$feature_aliases);
 
     my $feature_alias_id = $sql_object->insert_feature_alias(
-        cmap_object => $self,
-        alias       => $alias,
-        feature_id  => $feature_id,
+        alias      => $alias,
+        feature_id => $feature_id,
     );
 
     return $feature_alias_id;
@@ -814,17 +798,13 @@ Nothing
 
     my $sql_object = $self->sql or return;
 
-    my $features = $sql_object->get_features(
-        cmap_object => $self,
-        feature_id  => $feature_id,
-    );
+    my $features = $sql_object->get_features( feature_id => $feature_id, );
     return $self->error('Invalid feature id')
         unless (@$features);
 
     my $map_id = $features->[0]{'map_id'};
 
     my $corrs = $sql_object->get_feature_correspondence_details(
-        cmap_object             => $self,
         feature_id1             => $feature_id,
         disregard_evidence_type => 1,
     );
@@ -837,15 +817,9 @@ Nothing
     $self->attribute_delete( 'feature', $feature_id );
     $self->xref_delete( 'feature', $feature_id );
 
-    $sql_object->delete_feature_alias(
-        cmap_object => $self,
-        feature_id  => $feature_id,
-    );
+    $sql_object->delete_feature_alias( feature_id => $feature_id, );
 
-    $sql_object->delete_feature(
-        cmap_object => $self,
-        feature_id  => $feature_id,
-    );
+    $sql_object->delete_feature( feature_id => $feature_id, );
 
     return $map_id;
 }
@@ -937,10 +911,7 @@ If not defined, the object_id will be assigned to it.
     unless ( $feature_id1 or $feature_acc1 ) {
 
         # Flush the buffer;
-        $sql_object->insert_feature_correspondence(
-            cmap_object => $self,
-            threshold   => 0,
-        );
+        $sql_object->insert_feature_correspondence( threshold => 0, );
     }
 
     my $allow_update =
@@ -961,7 +932,6 @@ If not defined, the object_id will be assigned to it.
     #
     if ( !$feature_id1 && $feature_acc1 ) {
         $feature_id1 = $sql_object->acc_id_to_internal_id(
-            cmap_object => $self,
             object_type => 'feature',
             acc_id      => $feature_acc1,
         );
@@ -969,7 +939,6 @@ If not defined, the object_id will be assigned to it.
 
     if ( !$feature_id2 && $feature_acc2 ) {
         $feature_id2 = $sql_object->acc_id_to_internal_id(
-            cmap_object => $self,
             object_type => 'feature',
             acc_id      => $feature_acc2,
         );
@@ -998,7 +967,6 @@ If not defined, the object_id will be assigned to it.
         # See if a correspondence exists already.
         #
         my $corrs = $sql_object->get_feature_correspondence_details(
-            cmap_object             => $self,
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
             disregard_evidence_type => 1,
@@ -1017,14 +985,12 @@ If not defined, the object_id will be assigned to it.
 
         for ( my $i = 0; $i <= $#{$evidence}; $i++ ) {
             my $evidence_array = $sql_object->get_correspondence_evidences(
-                cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
                 evidence_type_acc => $evidence->[$i]{'evidence_type_acc'},
             );
             next if @$evidence_array;
 
             $sql_object->insert_correspondence_evidence(
-                cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
                 evidence_type_acc => $evidence->[$i]{'evidence_type_acc'},
                 score             => $evidence->[$i]{'score'},
@@ -1037,7 +1003,6 @@ If not defined, the object_id will be assigned to it.
 
         $feature_correspondence_id
             = $sql_object->insert_feature_correspondence(
-            cmap_object => $self,
             feature_id1 => $feature_id1,
             feature_id2 => $feature_id2,
             is_enabled  => $is_enabled,
@@ -1088,9 +1053,7 @@ Nothing
     print "Deleting Duplicate Correspondences\n";
     print "Retrieving list of correspondences\n";
     my $corr_hash = $sql_object->get_duplicate_correspondences_hash(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+        map_set_id => $map_set_id, );
     print "Retrieved list of correspondences\n\n";
     print
         "Examining correspondences.\n (A '.' will appear for each deleted correspondence)\n";
@@ -1119,14 +1082,12 @@ Nothing
                     unless ( $delete_count % $report_num );
                 print ".";
                 my $move_evidence = $sql_object->get_moveable_evidence(
-                    cmap_object  => $self,
                     original_id  => $original_id,
                     duplicate_id => $duplicate_id,
                 );
                 if ( scalar(@$move_evidence) ) {
                     foreach my $evidence_id (@$move_evidence) {
                         $sql_object->update_correspondence_evidence(
-                            cmap_object                => $self,
                             correspondence_evidence_id => $evidence_id,
                             feature_correspondence_id  => $original_id,
                         );
@@ -1247,14 +1208,10 @@ Nothing
     my $sql_object = $self->sql or return;
 
     $sql_object->delete_evidence(
-        cmap_object               => $self,
-        feature_correspondence_id => $feature_correspondence_id,
-    );
+        feature_correspondence_id => $feature_correspondence_id, );
 
     $sql_object->delete_correspondence(
-        cmap_object               => $self,
-        feature_correspondence_id => $feature_correspondence_id,
-    );
+        feature_correspondence_id => $feature_correspondence_id, );
 
     $self->attribute_delete( 'feature_correspondence',
         $feature_correspondence_id, );
@@ -1294,10 +1251,7 @@ Arrayref of hashes with keys "feature_alias_id", "feature_id" and "alias".
     my ( $self, $feature_id ) = @_;
     my $sql_object = $self->sql or return;
 
-    return $sql_object->get_feature_aliases(
-        cmap_object => $self,
-        feature_id  => $feature_id,
-    );
+    return $sql_object->get_feature_aliases( feature_id => $feature_id, );
 }
 
 # ----------------------------------------------------
@@ -1395,7 +1349,6 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
         my $feature_results;
         if ( $search_field eq 'feature_name' ) {
             $feature_results = $sql_object->get_features(
-                cmap_object       => $self,
                 map_acc           => $map_acc,
                 feature_name      => $feature_name,
                 feature_type_accs => $feature_type_accs,
@@ -1405,7 +1358,6 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
         }
         else {
             $feature_results = $sql_object->get_features(
-                cmap_object       => $self,
                 map_acc           => $map_acc,
                 feature_acc       => $feature_name,
                 feature_type_accs => $feature_type_accs,
@@ -1450,9 +1402,7 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
 
         for my $f (@results) {
             $f->{'aliases'} = $sql_object->get_feature_aliases(
-                cmap_object => $self,
-                feature_id  => $f->{'feature_id'},
-            );
+                feature_id => $f->{'feature_id'}, );
         }
     }
 
@@ -1510,7 +1460,6 @@ Array of feature names.
 
     my $sql_object = $self->sql or return;
     my $features = $sql_object->get_features_simple(
-        cmap_object => $self,
         feature_id  => $feature_id,
         feature_acc => $feature_acc,
     );
@@ -1661,7 +1610,6 @@ End point of the map.
 
     my $sql_object = $self->sql or return $self->error;
     my $map_id = $sql_object->insert_map(
-        cmap_object   => $self,
         map_acc       => $map_acc,
         map_set_id    => $map_set_id,
         map_name      => $map_name,
@@ -1714,19 +1662,13 @@ Nothing
     my $map_id     = $args{'map_id'} or return $self->error('No map id');
     my $sql_object = $self->sql      or return;
 
-    my $maps = $sql_object->get_maps(
-        cmap_object => $self,
-        map_id      => $map_id,
-    );
+    my $maps = $sql_object->get_maps( map_id => $map_id, );
     return $self->error('Invalid map id')
         unless (@$maps);
 
     my $map_set_id = $maps->[0]{'map_set_id'};
 
-    my $features = $sql_object->get_features_simple(
-        cmap_object => $self,
-        map_id      => $map_id,
-    );
+    my $features = $sql_object->get_features_simple( map_id => $map_id, );
 
     foreach my $feature (@$features) {
         $self->feature_delete( feature_id => $feature->{'feature_id'}, );
@@ -1735,10 +1677,7 @@ Nothing
     $self->attribute_delete( 'map', $map_id );
     $self->xref_delete( 'map', $map_id );
 
-    $sql_object->delete_map(
-        cmap_object => $self,
-        map_id      => $map_id,
-    );
+    $sql_object->delete_map( map_id => $map_id, );
 
     return $map_set_id;
 }
@@ -1874,7 +1813,6 @@ If not defined, the object_id will be assigned to it.
         = $self->map_type_data( $map_type_acc, 'is_relational_map' ) || 0;
 
     my $map_set_id = $sql_object->insert_map_set(
-        cmap_object        => $self,
         map_set_acc        => $map_set_acc,
         map_set_short_name => $map_set_short_name,
         map_set_name       => $map_set_name,
@@ -1933,10 +1871,7 @@ Nothing
     my $map_set_id = $args{'map_set_id'}
         or return $self->error('No map set id');
     my $sql_object = $self->sql or return;
-    my $maps = $sql_object->get_maps(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+    my $maps = $sql_object->get_maps( map_set_id => $map_set_id, );
 
     foreach my $map (@$maps) {
         $self->map_delete( map_id => $map->{'map_id'}, );
@@ -1945,10 +1880,7 @@ Nothing
     $self->attribute_delete( 'map_set', $map_set_id );
     $self->xref_delete( 'map_set', $map_set_id );
 
-    $sql_object->delete_map_set(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+    $sql_object->delete_map_set( map_set_id => $map_set_id, );
 
     return 1;
 }
@@ -1983,8 +1915,7 @@ Nothing
     my ( $self, %args ) = @_;
     my $sql_object = $self->sql or return;
 
-    my $new_records
-        = $sql_object->reload_correspondence_matrix( cmap_object => $self, );
+    my $new_records = $sql_object->reload_correspondence_matrix();
 
     print("\n$new_records new records inserted.\n");
 }
@@ -2049,7 +1980,6 @@ The name of the object being reference.
 
     if ($overwrite) {
         $sql_object->delete_attribute(
-            cmap_object => $self,
             object_id   => $object_id,
             object_type => $object_type,
         );
@@ -2075,7 +2005,6 @@ The name of the object being reference.
 
             # Check for duplicate attribute
             my $attribute = $sql_object->get_attributes(
-                cmap_object     => $self,
                 object_id       => $object_id,
                 object_type     => $object_type,
                 attribute_name  => $attr_name,
@@ -2088,7 +2017,6 @@ The name of the object being reference.
 
         if ($attr_id) {
             $sql_object->update_attribute(
-                cmap_object     => $self,
                 attribute_id    => $attr_id,
                 object_id       => $object_id,
                 object_type     => $object_type,
@@ -2101,7 +2029,6 @@ The name of the object being reference.
         else {
             $is_public = 1 unless defined $is_public;
             $attr_id = $sql_object->insert_attribute(
-                cmap_object     => $self,
                 object_id       => $object_id,
                 object_type     => $object_type,
                 attribute_name  => $attr_name,
@@ -2174,7 +2101,6 @@ The name of the object being reference.
 
     if ( $overwrite && $object_id ) {
         $sql_object->delete_xref(
-            cmap_object => $self,
             object_id   => $object_id,
             object_type => $object_type,
         );
@@ -2199,7 +2125,6 @@ The name of the object being reference.
 
             # Check for duplicate xref
             my $xref = $sql_object->get_xrefs(
-                cmap_object => $self,
                 object_id   => $object_id,
                 object_type => $object_type,
                 xref_name   => $xref_name,
@@ -2212,7 +2137,6 @@ The name of the object being reference.
 
         if ($xref_id) {
             $sql_object->update_xref(
-                cmap_object   => $self,
                 xref_id       => $xref_id,
                 object_id     => $object_id,
                 object_type   => $object_type,
@@ -2224,7 +2148,6 @@ The name of the object being reference.
         else {
             $is_public = 1 unless defined $is_public;
             $xref_id = $sql_object->insert_xref(
-                cmap_object   => $self,
                 object_id     => $object_id,
                 object_type   => $object_type,
                 xref_name     => $xref_name,
@@ -2307,7 +2230,6 @@ If not defined, the object_id will be assigned to it.
     my $species_acc   = $args{'species_acc'};
 
     my $species_id = $sql_object->insert_species(
-        cmap_object         => $self,
         species_acc         => $species_acc,
         species_full_name   => $species_full_name,
         species_common_name => $species_common_name,
@@ -2362,10 +2284,7 @@ Nothing
 
     my $sql_object = $self->sql or return;
 
-    my $map_sets = $sql_object->get_map_sets(
-        cmap_object => $self,
-        species_id  => $species_id,
-    );
+    my $map_sets = $sql_object->get_map_sets( species_id => $species_id, );
 
     if ( scalar(@$map_sets) > 0 and !$cascade_delete ) {
         return $self->error(
@@ -2382,10 +2301,7 @@ Nothing
     $self->attribute_delete( 'species', $species_id );
     $self->xref_delete( 'species', $species_id );
 
-    $sql_object->delete_species(
-        cmap_object => $self,
-        species_id  => $species_id,
-    );
+    $sql_object->delete_species( species_id => $species_id, );
 
     return 1;
 }
@@ -2464,7 +2380,6 @@ The name of the table being reference.
     # See if one like this exists already.
     #
     my $xrefs = $sql_object->get_xrefs(
-        cmap_object => $self,
         object_type => $object_type,
         object_id   => $object_id,
         xref_name   => $xref_name,
@@ -2478,7 +2393,6 @@ The name of the table being reference.
             && $xref->{'display_order'} != $display_order )
         {
             $sql_object->update_xrefs(
-                cmap_object   => $self,
                 display_order => $display_order,
                 xref_id       => $xref_id,
             );
@@ -2551,7 +2465,6 @@ The primary key of the object.
     my $sql_object  = $self->sql or return;
 
     $sql_object->delete_xref(
-        cmap_object => $self,
         object_type => $object_type,
         object_id   => $object_id,
     );
@@ -2605,7 +2518,7 @@ The primary key of the object.
     my $sql_object     = $self->sql or return;
 
     my $temp_to_real_map_id = {};
-    $sql_object->start_transaction( cmap_object => $self, );
+    $sql_object->start_transaction();
     foreach my $action ( @{ $change_actions || [] } ) {
         if ( $action->{'action'} eq 'move_map' ) {
             my $feature_id = $action->{'feature_id'} or next;
@@ -2619,7 +2532,6 @@ The primary key of the object.
             my $feature_stop  = $action->{'new_feature_stop'};
 
             $sql_object->update_feature(
-                cmap_object   => $self,
                 feature_id    => $feature_id,
                 map_id        => $map_id,
                 feature_start => $feature_start,
@@ -2633,16 +2545,13 @@ The primary key of the object.
             my $ori_map_id
                 = $self->_translate_map_id( $action->{'ori_map_id'},
                 $temp_to_real_map_id );
-            my $ori_map_data = $sql_object->get_maps(
-                cmap_object => $self,
-                map_id      => $ori_map_id,
-            );
+            my $ori_map_data
+                = $sql_object->get_maps( map_id => $ori_map_id, );
             next unless $ori_map_data;
             $ori_map_data = $ori_map_data->[0];
 
             # Create new maps
             my $first_map_id = $sql_object->insert_map(
-                cmap_object   => $self,
                 map_set_id    => $ori_map_data->{'map_set_id'},
                 map_name      => $action->{'first_map_name'},
                 display_order => $ori_map_data->{'display_order'},
@@ -2651,7 +2560,6 @@ The primary key of the object.
             );
 
             my $second_map_id = $sql_object->insert_map(
-                cmap_object   => $self,
                 map_set_id    => $ori_map_data->{'map_set_id'},
                 map_name      => $action->{'second_map_name'},
                 display_order => $ori_map_data->{'display_order'},
@@ -2670,32 +2578,26 @@ The primary key of the object.
                 @{ $action->{'first_map_feature_accs'} || [] } )
             {
                 my $feature_data = $sql_object->get_features_simple(
-                    cmap_object => $self,
-                    feature_acc => $feature_acc,
-                );
+                    feature_acc => $feature_acc, );
                 next unless $feature_data;
                 $feature_data = $feature_data->[0];
                 my $feature_id = $feature_data->{'feature_id'};
                 $sql_object->update_feature(
-                    cmap_object => $self,
-                    feature_id  => $feature_id,
-                    map_id      => $first_map_id,
+                    feature_id => $feature_id,
+                    map_id     => $first_map_id,
                 );
             }
             foreach my $feature_acc (
                 @{ $action->{'second_map_feature_accs'} || [] } )
             {
                 my $feature_data = $sql_object->get_features_simple(
-                    cmap_object => $self,
-                    feature_acc => $feature_acc,
-                );
+                    feature_acc => $feature_acc, );
                 next unless $feature_data;
                 $feature_data = $feature_data->[0];
                 my $feature_id = $feature_data->{'feature_id'};
                 $sql_object->update_feature(
-                    cmap_object => $self,
-                    feature_id  => $feature_id,
-                    map_id      => $second_map_id,
+                    feature_id => $feature_id,
+                    map_id     => $second_map_id,
                 );
             }
 
@@ -2707,10 +2609,9 @@ The primary key of the object.
 
             # If the map was a sub map
             if ( defined $action->{'first_feature_start'} ) {
-                my $ori_map_to_features = $sql_object->get_map_to_feature(
-                    cmap_object => $self,
-                    map_id      => $ori_map_id,
-                );
+                my $ori_map_to_features
+                    = $sql_object->get_map_to_feature( map_id => $ori_map_id,
+                    );
                 if (    $ori_map_to_features
                     and @$ori_map_to_features
                     and my $ori_feature_id
@@ -2725,9 +2626,8 @@ The primary key of the object.
                         ori_feature_id => $ori_feature_id,
                     );
                     $sql_object->insert_map_to_feature(
-                        cmap_object => $self,
-                        feature_id  => $first_feature_id,
-                        map_id      => $first_map_id,
+                        feature_id => $first_feature_id,
+                        map_id     => $first_map_id,
                     );
 
                     my $second_feature_id = $self->feature_copy(
@@ -2737,9 +2637,8 @@ The primary key of the object.
                         ori_feature_id => $ori_feature_id,
                     );
                     $sql_object->insert_map_to_feature(
-                        cmap_object => $self,
-                        feature_id  => $second_feature_id,
-                        map_id      => $second_map_id,
+                        feature_id => $second_feature_id,
+                        map_id     => $second_map_id,
                     );
 
                     # Delete original sub-map feature
@@ -2779,10 +2678,8 @@ The primary key of the object.
             my $first_map_id
                 = $self->_translate_map_id( $action->{'first_map_id'},
                 $temp_to_real_map_id );
-            my $first_map_data = $sql_object->get_maps(
-                cmap_object => $self,
-                map_id      => $first_map_id,
-            );
+            my $first_map_data
+                = $sql_object->get_maps( map_id => $first_map_id, );
             next unless $first_map_data;
             $first_map_data = $first_map_data->[0];
 
@@ -2793,7 +2690,6 @@ The primary key of the object.
 
             # Create new map
             my $merged_map_id = $sql_object->insert_map(
-                cmap_object   => $self,
                 map_set_id    => $first_map_data->{'map_set_id'},
                 map_name      => $action->{'merged_map_name'},
                 display_order => $first_map_data->{'display_order'},
@@ -2804,26 +2700,22 @@ The primary key of the object.
                 = $merged_map_id;
 
             # Move features
-            my $first_feature_data = $sql_object->get_features_simple(
-                cmap_object => $self,
-                map_id      => $first_map_id,
-            );
+            my $first_feature_data
+                = $sql_object->get_features_simple( map_id => $first_map_id,
+                );
             foreach my $feature ( @{ $first_feature_data || [] } ) {
                 $sql_object->update_feature(
-                    cmap_object => $self,
-                    feature_id  => $feature->{'feature_id'},
-                    map_id      => $merged_map_id,
+                    feature_id => $feature->{'feature_id'},
+                    map_id     => $merged_map_id,
                 );
             }
 
             my $second_map_offset = $action->{'second_map_offset'} || 0;
-            my $second_feature_data = $sql_object->get_features_simple(
-                cmap_object => $self,
-                map_id      => $second_map_id,
-            );
+            my $second_feature_data
+                = $sql_object->get_features_simple( map_id => $second_map_id,
+                );
             foreach my $feature ( @{ $second_feature_data || [] } ) {
                 $sql_object->update_feature(
-                    cmap_object   => $self,
                     feature_id    => $feature->{'feature_id'},
                     map_id        => $merged_map_id,
                     feature_start => $feature->{'feature_start'}
@@ -2839,13 +2731,9 @@ The primary key of the object.
             # If the maps were a sub map
             if ( defined $action->{'merged_feature_start'} ) {
                 my $first_map_to_features = $sql_object->get_map_to_feature(
-                    cmap_object => $self,
-                    map_id      => $first_map_id,
-                );
+                    map_id => $first_map_id, );
                 my $second_map_to_features = $sql_object->get_map_to_feature(
-                    cmap_object => $self,
-                    map_id      => $second_map_id,
-                );
+                    map_id => $second_map_id, );
                 if (    $first_map_to_features
                     and @$first_map_to_features
                     and $second_map_to_features
@@ -2869,9 +2757,8 @@ The primary key of the object.
                     );
 
                     $sql_object->insert_map_to_feature(
-                        cmap_object => $self,
-                        feature_id  => $merged_feature_id,
-                        map_id      => $merged_map_id,
+                        feature_id => $merged_feature_id,
+                        map_id     => $merged_map_id,
                     );
 
                     # Delete original sub-map features
@@ -2910,7 +2797,7 @@ The primary key of the object.
 
         }
     }
-    $sql_object->commit_transaction( cmap_object => $self, );
+    $sql_object->commit_transaction();
 
     return 1;
 }
@@ -2971,10 +2858,7 @@ The primary key of the map.
     my $map_id     = shift or return;
     my $sql_object = $self->sql or return;
 
-    my $map_array = $sql_object->get_maps_simple(
-        cmap_object => $self,
-        map_id      => $map_id,
-    );
+    my $map_array = $sql_object->get_maps_simple( map_id => $map_id, );
     my ( $map_start,     $map_stop );
     my ( $ori_map_start, $ori_map_stop );
     if (@$map_array) {
@@ -2983,10 +2867,7 @@ The primary key of the map.
     }
 
     my ( $min_start, $max_start, $max_stop )
-        = $sql_object->get_feature_bounds_on_map(
-        cmap_object => $self,
-        map_id      => $map_id,
-        );
+        = $sql_object->get_feature_bounds_on_map( map_id => $map_id, );
 
     #
     # Verify that the map start and stop coordinates at least
@@ -3006,10 +2887,9 @@ The primary key of the map.
         or $ori_map_stop != $map_stop )
     {
         $map_id = $sql_object->update_map(
-            cmap_object => $self,
-            map_id      => $map_id,
-            map_start   => $map_start,
-            map_stop    => $map_stop,
+            map_id    => $map_id,
+            map_start => $map_start,
+            map_stop  => $map_stop,
         );
     }
 

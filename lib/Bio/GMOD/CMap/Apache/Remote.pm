@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.11 2007-06-07 16:38:05 mwz444 Exp $
+# $Id: Remote.pm,v 1.12 2007-07-02 15:16:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -63,10 +63,9 @@ sub handler {
         my @map_ids  = $apr->param('map_ids');
         my @map_accs = $apr->param('map_accs');
         my $data     = $self->sql()->get_maps(
-            cmap_object => $self,
-            map_id      => $map_id,
-            map_ids     => \@map_ids,
-            map_accs    => \@map_accs,
+            map_id   => $map_id,
+            map_ids  => \@map_ids,
+            map_accs => \@map_accs,
         );
         unless ( @{ $data || [] } ) {
             $data = undef;
@@ -77,7 +76,6 @@ sub handler {
         my $is_relational_map = $apr->param('is_relational_map');
         my $is_enabled        = $apr->param('is_enabled');
         my $data              = $self->sql()->get_species(
-            cmap_object       => $self,
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
         );
@@ -91,7 +89,6 @@ sub handler {
         my $is_enabled        = $apr->param('is_enabled');
         my $species_id        = $apr->param('species_id');
         my $data              = $self->sql()->get_map_sets(
-            cmap_object       => $self,
             species_id        => $species_id,
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
@@ -103,10 +100,8 @@ sub handler {
     }
     elsif ( $action eq 'get_maps_from_map_set' ) {
         my $map_set_id = $apr->param('map_set_id');
-        my $data       = $self->sql()->get_maps_from_map_set(
-            cmap_object => $self,
-            map_set_id  => $map_set_id,
-        );
+        my $data       = $self->sql()
+            ->get_maps_from_map_set( map_set_id => $map_set_id, );
         unless ( @{ $data || [] } ) {
             $data = undef;
         }
@@ -117,7 +112,6 @@ sub handler {
         my $no_sub_maps  = $apr->param('no_sub_maps');
         my $get_sub_maps = $apr->param('get_sub_maps');
         my $data         = $self->sql()->get_features_sub_maps_version(
-            cmap_object  => $self,
             map_id       => $map_id,
             no_sub_maps  => $no_sub_maps,
             get_sub_maps => $get_sub_maps,
@@ -134,7 +128,6 @@ sub handler {
             slot_info_str => $apr->param('slot_info2'), );
         my $allow_intramap = $apr->param('allow_intramap');
         my $data = $self->sql()->get_feature_correspondence_for_counting(
-            cmap_object    => $self,
             slot_info      => $slot_info,
             slot_info2     => $slot_info2,
             allow_intramap => $allow_intramap,
@@ -197,7 +190,6 @@ sub handler {
                 : $feature_data{'rank'};
 
             $self->sql()->update_feature(
-                cmap_object      => $self,
                 feature_id       => $feature_id,
                 map_id           => $map_id,
                 feature_acc      => $feature_acc,

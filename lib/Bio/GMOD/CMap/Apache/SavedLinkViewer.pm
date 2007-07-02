@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.10 2007-03-16 23:19:10 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.11 2007-07-02 15:16:28 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -54,10 +54,8 @@ sub saved_links_viewer {
     my $hidden = $apr->param('display_hidden') ? undef: 0;
 
     # Create hash of link_groups
-    my $link_group_counts_ref = $sql_object->get_saved_link_groups(
-        cmap_object => $self,
-        hidden      => $hidden,
-    );
+    my $link_group_counts_ref
+        = $sql_object->get_saved_link_groups( hidden => $hidden, );
 
     my $pager;
     my $saved_links_ref;
@@ -65,9 +63,8 @@ sub saved_links_viewer {
 
         # Get the Saved links
         $saved_links_ref = $sql_object->get_saved_links(
-            cmap_object => $self,
-            link_group  => $selected_link_group,
-            hidden      => $hidden,
+            link_group => $selected_link_group,
+            hidden     => $hidden,
         );
 
         # Slice the results up into pages suitable for web viewing.
@@ -119,10 +116,8 @@ sub saved_link_view {
     my $saved_link_id = $apr->param('saved_link_id')
         or die 'No feature saved_link id';
     my $url_to_return_to = $apr->param('url_to_return_to');
-    my $saved_links      = $sql_object->get_saved_links(
-        cmap_object   => $self,
-        saved_link_id => $saved_link_id,
-    );
+    my $saved_links
+        = $sql_object->get_saved_links( saved_link_id => $saved_link_id, );
     my $saved_link;
     if ( @{ $saved_links || [] } ) {
         $saved_link = $saved_links->[0];
@@ -204,10 +199,8 @@ sub saved_link_edit {
         or die 'No feature saved_link id';
     my $url_to_return_to = $apr->param('url_to_return_to');
 
-    my $saved_links = $sql_object->get_saved_links(
-        cmap_object   => $self,
-        saved_link_id => $saved_link_id,
-    );
+    my $saved_links
+        = $sql_object->get_saved_links( saved_link_id => $saved_link_id, );
     my $saved_link;
     if ( @{ $saved_links || [] } ) {
         $saved_link = $saved_links->[0];
@@ -250,7 +243,6 @@ sub saved_link_update {
         or die 'No feature saved_link id';
 
     $self->sql->update_saved_link(
-        cmap_object   => $self,
         saved_link_id => $saved_link_id,
         link_group    => $apr->param('link_group'),
         link_title    => $apr->param('link_title'),

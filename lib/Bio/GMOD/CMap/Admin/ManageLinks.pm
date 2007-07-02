@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ManageLinks;
 
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.9 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.10 2007-07-02 15:16:28 mwz444 Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ This module encapsulates the logic for handling imported links.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -161,7 +161,6 @@ under and is displayed when the accessing the links.
     }
 
     my $map_set_acc = $sql_object->internal_id_to_acc_id(
-        cmap_object => $self,
         object_type => 'map_set',
         id          => $map_set_id,
     );
@@ -211,7 +210,6 @@ under and is displayed when the accessing the links.
               unless ( defined($map_name) );
 
             my $temp_maps = $sql_object->get_maps(
-                cmap_object => $self,
                 map_set_id  => $map_set_id,
                 map_name    => $map_name,
             );

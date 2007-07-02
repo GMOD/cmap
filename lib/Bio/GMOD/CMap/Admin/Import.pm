@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.81 2007-05-18 20:27:41 mwz444 Exp $
+# $Id: Import.pm,v 1.82 2007-07-02 15:16:27 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -227,21 +227,21 @@ appended to the list of xrefs.
     my $fh         = $args{'fh'}         or die 'No file handle';
     my $overwrite = $args{'overwrite'} || 0;
     my $allow_update =
-      defined( $args{'allow_update'} )
-      ? $args{'allow_update'}
-      : 2;
+        defined( $args{'allow_update'} )
+        ? $args{'allow_update'}
+        : 2;
     my $maps = $args{'maps'};
 
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
     my $file_pos = $fh->getpos;
     return $self->error("File did not pass inspection\n")
-      unless (
+        unless (
         $self->validate_tab_file(
             fh     => $fh,
             log_fh => $LOG_FH,
         )
-      );
+        );
     $fh->setpos($file_pos);
 
     my $max_simultaneous_inserts = 1000;
@@ -249,8 +249,8 @@ appended to the list of xrefs.
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source
-      )
-      or return $self->error( "Can't create admin object: ",
+        )
+        or return $self->error( "Can't create admin object: ",
         Bio::GMOD::CMap::Admin->error );
 
     #
@@ -258,24 +258,20 @@ appended to the list of xrefs.
     #
     $self->Print("Importing map set data.\n");
     $self->Print("Examining map set.\n");
-    my $map_set_array = $sql_object->get_map_sets(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+    my $map_set_array
+        = $sql_object->get_map_sets( map_set_id => $map_set_id, );
     return unless (@$map_set_array);
     my $map_set = $map_set_array->[0];
 
-    my $map_set_name =
-      $map_set->{'species_common_name'} . "-" . $map_set->{'map_set_name'};
+    my $map_set_name = $map_set->{'species_common_name'} . "-"
+        . $map_set->{'map_set_name'};
 
-    my $map_info = $sql_object->get_maps_simple(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+    my $map_info = $sql_object->get_maps_simple( map_set_id => $map_set_id, );
 
     unless ( $maps and %$maps ) {
         %$maps =
-          map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } } @$map_info;
+            map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } }
+            @$map_info;
     }
     my %map_accs      = map { $_->{'map_acc'}, $_->{'map_name'} } @$map_info;
     my %modified_maps = ();
@@ -292,12 +288,10 @@ appended to the list of xrefs.
     if ($overwrite) {
         for my $map_name ( keys %$maps ) {
             my $map_id = $maps->{$map_name}{'map_id'}
-              or return $self->error("Map '$map_name' has no ID!");
+                or return $self->error("Map '$map_name' has no ID!");
 
-            my $features = $sql_object->get_features_simple(
-                cmap_object => $self,
-                map_id      => $map_id,
-            );
+            my $features
+                = $sql_object->get_features_simple( map_id => $map_id, );
 
             for (@$features) {
                 $maps->{$map_name}{'features'}{ $_->{'feature_id'} } = 1;
@@ -324,7 +318,7 @@ appended to the list of xrefs.
             $_ = shift;
             if ($_) { s/^\s+|\s+$//g; }
             $_;
-            },
+        },
     );
     $parser->field_compute( 'feature_aliases',
         sub { [ parse_line( ',', 0, shift() ) ] } );
@@ -334,8 +328,7 @@ appended to the list of xrefs.
     my ( %feature_type_accs, %feature_ids, %map_info );
     my ( $last_map_name, $last_map_id ) = ( '', '' );
     my $feature_index = 0;
-    my (
-        @bulk_insert_aliases, @bulk_insert_atts,
+    my (@bulk_insert_aliases, @bulk_insert_atts,
         @bulk_insert_xrefs,   @bulk_feature_names
     );
 
@@ -362,8 +355,8 @@ appended to the list of xrefs.
                     #
                     $field_val += 0 if $datatype eq 'number';
                     return $self->error( "Value of '$field_name' is wrong.  "
-                          . "Expected $datatype and got '$field_val'." )
-                      unless $field_val =~ $regex;
+                            . "Expected $datatype and got '$field_val'." )
+                        unless $field_val =~ $regex;
                 }
             }
             elsif ( $datatype eq 'number' && $field_val eq '' ) {
@@ -379,7 +372,7 @@ appended to the list of xrefs.
         unless ( $self->feature_type_data($feature_type_acc) ) {
             $self->Print(
                 "Feature type accession '$feature_type_acc' doesn't exist.  "
-                  . "After import, please add it to your configuration file.[<enter> to continue] "
+                    . "After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
             exit;
@@ -390,8 +383,8 @@ appended to the list of xrefs.
         #
         my ( $map_id, $map_name );
         my $map_acc = $record->{'map_acc'}
-          || $record->{'map_accession_id'}
-          || '';
+            || $record->{'map_accession_id'}
+            || '';
         if ($map_acc) {
             $map_name = $map_accs{$map_acc} || '';
         }
@@ -423,7 +416,6 @@ appended to the list of xrefs.
             #
             unless ($map_id) {
                 $map_id = $sql_object->insert_map(
-                    cmap_object   => $self,
                     map_acc       => $map_acc,
                     map_set_id    => $map_set_id,
                     map_name      => $map_name,
@@ -454,9 +446,9 @@ appended to the list of xrefs.
         # Basic feature info
         #
         my $feature_name = $record->{'feature_name'}
-          or warn "feature name blank! ", Dumper($record), "\n";
+            or warn "feature name blank! ", Dumper($record), "\n";
         my $feature_acc = $record->{'feature_acc'}
-          || $record->{'feature_accession_id'};
+            || $record->{'feature_accession_id'};
         my $aliases      = $record->{'feature_aliases'};
         my $attributes   = $record->{'feature_attributes'} || '';
         my $start        = $record->{'feature_start'};
@@ -464,7 +456,7 @@ appended to the list of xrefs.
         my $direction    = $record->{'feature_direction'} || 1;
         my $is_landmark  = $record->{'is_landmark'} || 0;
         my $default_rank = $record->{'default_rank'}
-          || $self->feature_type_data( $feature_type_acc, 'default_rank' );
+            || $self->feature_type_data( $feature_type_acc, 'default_rank' );
 
         #
         # Feature attributes
@@ -473,17 +465,18 @@ appended to the list of xrefs.
         if ($attributes) {
             for my $attr ( parse_line( ';', 1, $attributes ) ) {
                 my ( $key, $value ) =
-                  map { s/^\s+|\s+$//g; s/^"|"$//g; $_ }
-                  parse_line( ':', 1, $attr );
+                    map { s/^\s+|\s+$//g; s/^"|"$//g; $_ }
+                    parse_line( ':', 1, $attr );
 
                 if ( $key =~ /^alias(es)?$/i ) {
                     push @$aliases,
-                      map { s/^\s+|\s+$//g; s/\\"/"/g; $_ }
-                      parse_line( ',', 1, $value );
+                        map { s/^\s+|\s+$//g; s/\\"/"/g; $_ }
+                        parse_line( ',', 1, $value );
                 }
                 elsif ( $key =~ /^(db)?xref$/i ) {
                     $value =~ s/^"|"$//g;
-                    if ( my ( $xref_name, $xref_url ) = split( /;/, $value ) ) {
+                    if ( my ( $xref_name, $xref_url ) = split( /;/, $value ) )
+                    {
                         push @xrefs, { name => $xref_name, url => $xref_url };
                     }
                 }
@@ -529,7 +522,6 @@ appended to the list of xrefs.
         if ($allow_update) {
             if ($feature_acc) {
                 my $features_array = $sql_object->get_features_simple(
-                    cmap_object => $self,
                     map_id      => $map_id,
                     feature_acc => $feature_acc,
                 );
@@ -544,7 +536,6 @@ appended to the list of xrefs.
             #
             if ( !$feature_id && !$feature_acc ) {
                 my $features_array = $sql_object->get_features_simple(
-                    cmap_object  => $self,
                     map_id       => $map_id,
                     feature_name => $feature_name,
                 );
@@ -557,7 +548,6 @@ appended to the list of xrefs.
             if ($feature_id) {
                 $action = 'Updated';
                 $sql_object->update_feature(
-                    cmap_object      => $self,
                     feature_id       => $feature_id,
                     feature_acc      => $feature_acc,
                     map_id           => $map_id,
@@ -571,7 +561,8 @@ appended to the list of xrefs.
                 );
 
                 $maps->{ uc $map_name }{'features'}{$feature_id} = 1
-                  if defined $maps->{ uc $map_name }{'features'}{$feature_id};
+                    if
+                    defined $maps->{ uc $map_name }{'features'}{$feature_id};
             }
             else {
 
@@ -579,7 +570,6 @@ appended to the list of xrefs.
                 # Create a new feature record.
                 #
                 $feature_id = $sql_object->insert_feature(
-                    cmap_object      => $self,
                     feature_acc      => $feature_acc,
                     map_id           => $map_id,
                     feature_type_acc => $feature_type_acc,
@@ -594,17 +584,16 @@ appended to the list of xrefs.
 
             my $pos = join( '-', map { defined $_ ? $_ : () } $start, $stop );
             $self->Print(
-"$action $feature_type_acc '$feature_name' on map $map_name at $pos.\n"
+                "$action $feature_type_acc '$feature_name' on map $map_name at $pos.\n"
             );
 
             for my $name (@$aliases) {
                 next if $name eq $feature_name;
                 $sql_object->insert_feature_alias(
-                    cmap_object => $self,
-                    feature_id  => $feature_id,
-                    alias       => $name,
-                  )
-                  or warn $sql_object->error;
+                    feature_id => $feature_id,
+                    alias      => $name,
+                    )
+                    or warn $sql_object->error;
             }
 
             if (@fattributes) {
@@ -613,8 +602,8 @@ appended to the list of xrefs.
                     object_type => 'feature',
                     attributes  => \@fattributes,
                     overwrite   => $overwrite,
-                  )
-                  or return $self->error( $admin->error );
+                    )
+                    or return $self->error( $admin->error );
             }
 
             if (@xrefs) {
@@ -623,8 +612,8 @@ appended to the list of xrefs.
                     object_type => 'feature',
                     overwrite   => $overwrite,
                     xrefs       => \@xrefs,
-                  )
-                  or return $self->error( $admin->error );
+                    )
+                    or return $self->error( $admin->error );
             }
         }
         else {
@@ -634,7 +623,6 @@ appended to the list of xrefs.
             #
 
             $feature_id = $sql_object->insert_feature(
-                cmap_object      => $self,
                 feature_acc      => $feature_acc,
                 map_id           => $map_id,
                 feature_type_acc => $feature_type_acc,
@@ -654,16 +642,15 @@ appended to the list of xrefs.
 
             if ( defined($feature_id) ) {
                 my $base_feature_id = $feature_id - $feature_index;
-                for ( my $i = 0 ; $i <= $feature_index ; $i++ ) {
+                for ( my $i = 0; $i <= $feature_index; $i++ ) {
                     my $current_feature_id = $base_feature_id + $i;
                     for my $name ( @{ $bulk_insert_aliases[$i] } ) {
                         next if $name eq $bulk_feature_names[$i];
                         $sql_object->insert_feature_alias(
-                            cmap_object => $self,
-                            feature_id  => $current_feature_id,
-                            alias       => $name,
-                          )
-                          or warn $sql_object->error;
+                            feature_id => $current_feature_id,
+                            alias      => $name,
+                            )
+                            or warn $sql_object->error;
                     }
 
                     if ( @{ $bulk_insert_atts[$i] } ) {
@@ -672,8 +659,8 @@ appended to the list of xrefs.
                             object_type => 'feature',
                             attributes  => $bulk_insert_atts[$i],
                             overwrite   => $overwrite,
-                          )
-                          or return $self->error( $admin->error );
+                            )
+                            or return $self->error( $admin->error );
                     }
 
                     if ( @{ $bulk_insert_xrefs[$i] } ) {
@@ -682,8 +669,8 @@ appended to the list of xrefs.
                             object_type => 'feature',
                             overwrite   => $overwrite,
                             xrefs       => $bulk_insert_xrefs[$i],
-                          )
-                          or return $self->error( $admin->error );
+                            )
+                            or return $self->error( $admin->error );
                     }
                 }
                 $feature_index       = 0;
@@ -698,24 +685,20 @@ appended to the list of xrefs.
         }
     }
 
-    my $feature_id = $sql_object->insert_feature(
-        cmap_object => $self,
-        threshold   => 0
-    );
+    my $feature_id = $sql_object->insert_feature( threshold => 0 );
 
     if ( defined($feature_id) ) {
         $feature_index--;    # reverse the last ++
         my $base_feature_id = $feature_id - $feature_index;
-        for ( my $i = 0 ; $i <= $feature_index ; $i++ ) {
+        for ( my $i = 0; $i <= $feature_index; $i++ ) {
             my $current_feature_id = $base_feature_id + $i;
             for my $name ( @{ $bulk_insert_aliases[$i] } ) {
                 next if $name eq $bulk_feature_names[$i];
                 $sql_object->insert_feature_alias(
-                    cmap_object => $self,
-                    feature_id  => $current_feature_id,
-                    alias       => $name,
-                  )
-                  or warn $sql_object->error;
+                    feature_id => $current_feature_id,
+                    alias      => $name,
+                    )
+                    or warn $sql_object->error;
             }
 
             if ( @{ $bulk_insert_atts[$i] } ) {
@@ -724,8 +707,8 @@ appended to the list of xrefs.
                     object_type => 'feature',
                     attributes  => $bulk_insert_atts[$i],
                     overwrite   => $overwrite,
-                  )
-                  or return $self->error( $admin->error );
+                    )
+                    or return $self->error( $admin->error );
             }
 
             if ( @{ $bulk_insert_xrefs[$i] } ) {
@@ -734,8 +717,8 @@ appended to the list of xrefs.
                     object_type => 'feature',
                     overwrite   => $overwrite,
                     xrefs       => $bulk_insert_xrefs[$i],
-                  )
-                  or return $self->error( $admin->error );
+                    )
+                    or return $self->error( $admin->error );
             }
         }
         $feature_index       = 0;
@@ -749,7 +732,6 @@ appended to the list of xrefs.
     #
     for my $map ( values %map_info ) {
         $sql_object->update_map(
-            cmap_object   => $self,
             map_id        => $map->{'map_id'},
             map_acc       => $map->{'map_acc'},
             map_set_id    => $map->{'map_set_id'},
@@ -768,25 +750,25 @@ appended to the list of xrefs.
     if ($overwrite) {
         for my $map_name ( sort keys %$maps ) {
             my $map_id = $maps->{ uc $map_name }{'map_id'}
-              or return $self->error("Map '$map_name' has no ID!");
+                or return $self->error("Map '$map_name' has no ID!");
 
             unless ( $maps->{ uc $map_name }{'touched'} ) {
                 $self->Print( "Map '$map_name' ($map_id) ",
                     "wasn't updated or inserted, so deleting\n" );
                 $admin->map_delete( map_id => $map_id )
-                  or return $self->error( $admin->error );
+                    or return $self->error( $admin->error );
                 delete $maps->{ uc $map_name };
                 next;
             }
 
-            while ( my ( $feature_id, $touched ) =
-                each %{ $maps->{ uc $map_name }{'features'} } )
+            while ( my ( $feature_id, $touched )
+                = each %{ $maps->{ uc $map_name }{'features'} } )
             {
                 next if $touched;
                 $self->Print( "Feature '$feature_id' ",
                     "wasn't updated or inserted, so deleting\n" );
                 $admin->feature_delete( feature_id => $feature_id )
-                  or return $self->error( $admin->error );
+                    or return $self->error( $admin->error );
             }
         }
     }
@@ -795,12 +777,10 @@ appended to the list of xrefs.
     # Make sure the maps have legitimate starts and stops.
     #
     for my $map_name ( sort keys %modified_maps ) {
-        my $map_id    = $maps->{$map_name}{'map_id'};
-        $admin->validate_update_map_start_stop( $map_id );
+        my $map_id = $maps->{$map_name}{'map_id'};
+        $admin->validate_update_map_start_stop($map_id);
 
-        $self->Print(
-            "Verified map $map_name ($map_id).\n"
-        );
+        $self->Print( "Verified map $map_name ($map_id).\n" );
     }
 
     $self->Print("Done\n");
@@ -899,21 +879,21 @@ File handle of the log file (default is STDOUT).
             $_ = shift;
             if ($_) { s/^\s+|\s+$//g; }
             $_;
-            },
+        },
     );
     $parser->field_compute( 'feature_aliases',
         sub { [ parse_line( ',', 0, shift() ) ] } );
     $parser->bind_header;
 
     my %required =
-      map { $_, 0 }
-      grep { $COLUMNS{$_}{'is_required'} }
-      keys %COLUMNS;
+        map { $_, 0 }
+        grep { $COLUMNS{$_}{'is_required'} }
+        keys %COLUMNS;
 
     for my $column_name ( $parser->field_list ) {
         if ( exists $COLUMNS{$column_name} ) {
             $required{$column_name} = 1
-              if defined $required{$column_name};
+                if defined $required{$column_name};
         }
         else {
             $valid = 0;
@@ -921,14 +901,13 @@ File handle of the log file (default is STDOUT).
         }
     }
 
-    if (
-        my @missing =
+    if (my @missing =
         grep { $required{$_} == 0 } keys %required
-      )
+        )
     {
         $valid = 0;
         print $LOG_FH "Missing following required columns: "
-          . join( ', ', @missing );
+            . join( ', ', @missing );
     }
 
     return 0 unless ( $required{'feature_type_acc'} );
@@ -942,8 +921,8 @@ File handle of the log file (default is STDOUT).
         unless ( $self->feature_type_data($ft_acc) ) {
             $valid = 0;
             print $LOG_FH
-              "You must define a feature type with the accession id, '"
-              . $ft_acc . "'.\n";
+                "You must define a feature type with the accession id, '"
+                . $ft_acc . "'.\n";
         }
     }
 
@@ -1010,8 +989,8 @@ File handle of the log file (default is STDOUT).
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source
-      )
-      or return $self->error( "Can't create admin object: ",
+        )
+        or return $self->error( "Can't create admin object: ",
         Bio::GMOD::CMap::Admin->error );
 
     my $import = XMLin(
@@ -1020,10 +999,10 @@ File handle of the log file (default is STDOUT).
         SuppressEmpty => 1,
         ForceArray    => [
             qw(
-              cmap_map_set map feature xref attribute
-              cmap_species feature_alias
-              cmap_feature_correspondence cmap_xref correspondence_evidence
-              )
+                cmap_map_set map feature xref attribute
+                cmap_species feature_alias
+                cmap_feature_correspondence cmap_xref correspondence_evidence
+                )
         ],
     );
 
@@ -1038,10 +1017,10 @@ File handle of the log file (default is STDOUT).
             overwrite   => $overwrite,
             object_type => 'species',
             object      => $species,
-          )
-          or return;
+            )
+            or return;
 
-        $species{ $species_id } = $species;
+        $species{$species_id} = $species;
     }
 
     #
@@ -1055,14 +1034,14 @@ File handle of the log file (default is STDOUT).
         my $species      = $species{ $ms->{'species_id'} };
         my $map_type_acc = $ms->{'map_type_acc'};
         $ms->{'species_id'} = $species->{'new_species_id'}
-          or return $self->error('Cannot determine species id');
+            or return $self->error('Cannot determine species id');
 
         $self->import_object(
             overwrite   => $overwrite,
             object_type => 'map_set',
             object      => $ms,
-          )
-          or return;
+            )
+            or return;
 
         for my $map ( @{ $ms->{'map'} || [] } ) {
             $map->{'map_set_id'} = $ms->{'new_map_set_id'};
@@ -1070,8 +1049,8 @@ File handle of the log file (default is STDOUT).
                 overwrite   => $overwrite,
                 object_type => 'map',
                 object      => $map,
-              )
-              or return;
+                )
+                or return;
 
             for my $feature ( @{ $map->{'feature'} || [] } ) {
                 $feature->{'map_id'} = $map->{'new_map_id'};
@@ -1079,11 +1058,12 @@ File handle of the log file (default is STDOUT).
                     overwrite   => $overwrite,
                     object_type => 'feature',
                     object      => $feature,
-                  )
-                  or return;
-                my $feature_id = $feature->{'object_id'} || $feature->{'feature_id'};
+                    )
+                    or return;
+                my $feature_id = $feature->{'object_id'}
+                    || $feature->{'feature_id'};
 
-                $feature_ids{ $feature_id } = $feature->{'new_feature_id'};
+                $feature_ids{$feature_id} = $feature->{'new_feature_id'};
 
                 for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
                     $alias->{'feature_id'} = $feature->{'new_feature_id'};
@@ -1092,8 +1072,8 @@ File handle of the log file (default is STDOUT).
                         object_type => 'feature_alias',
                         object      => $alias,
                         lookup_acc  => 0,
-                      )
-                      or return;
+                        )
+                        or return;
                 }
             }
         }
@@ -1109,8 +1089,8 @@ File handle of the log file (default is STDOUT).
         $self->import_object(
             object_type => 'feature_correspondence',
             object      => $fc,
-          )
-          or return $self->error;
+            )
+            or return $self->error;
     }
 
     #
@@ -1121,8 +1101,8 @@ File handle of the log file (default is STDOUT).
             object_type => 'xref',
             object      => $xref,
             lookup_acc  => 0,
-          )
-          or return;
+            )
+            or return;
     }
 
     return 1;
@@ -1172,9 +1152,9 @@ Imports an object.
     my $object_type = $args{'object_type'};
     my $object      = $args{'object'} || {};
     my $lookup_acc  =
-      defined $args{'lookup_acc'}
-      ? $args{'lookup_acc'}
-      : 1;
+        defined $args{'lookup_acc'}
+        ? $args{'lookup_acc'}
+        : 1;
 
     my $sql_object = $self->sql;
     my $pk_name    = $sql_object->pk_name($object_type);
@@ -1184,9 +1164,8 @@ Imports an object.
 
     if ($lookup_acc) {
         $new_object_id = $sql_object->acc_id_to_internal_id(
-            cmap_object => $self,
-            acc_id      => $object->{ $object_type . "_acc" }
-              || $object->{"accession_id"},
+            acc_id => $object->{ $object_type . "_acc" }
+                || $object->{"accession_id"},
             object_type => $object_type,
         );
     }
@@ -1196,21 +1175,19 @@ Imports an object.
         my $update_method = 'update_' . $object_type;
         $object->{$pk_name} = $new_object_id;
         $sql_object->$update_method(
-            cmap_object => $self,
-            no_validation =>1,
+            no_validation => 1,
             %$object,
-          )
-          or return $sql_object->error( $admin->error );
+            )
+            or return $sql_object->error( $admin->error );
     }
     elsif ( !$new_object_id ) {
         $self->Print("Creating new data in $object_type\n");
         my $create_method = 'insert_' . $object_type;
         $new_object_id = $sql_object->$create_method(
-            cmap_object => $self,
-            no_validation =>1,
+            no_validation => 1,
             %$object,
-          )
-          or return $self->error( $sql_object->error );
+            )
+            or return $self->error( $sql_object->error );
     }
 
     $object->{"new_$pk_name"} = $new_object_id;
@@ -1298,8 +1275,8 @@ Bio::GMOD::CMap::Admin object
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
             config      => $self->config,
             data_source => $self->data_source
-          )
-          or return $self->error( "Can't create admin object: ",
+            )
+            or return $self->error( "Can't create admin object: ",
             Bio::GMOD::CMap::Admin->error );
     }
 

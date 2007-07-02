@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.59 2006-06-14 14:07:31 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.60 2007-07-02 15:16:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -417,10 +417,7 @@ sub _get_map_ids {
     my ( $self, $map_set_id ) = @_;
 
     my $sql_object = $self->sql();
-    my $maps       = $sql_object->get_maps_simple(
-        cmap_object => $self,
-        map_set_id  => $map_set_id,
-    );
+    my $maps = $sql_object->get_maps_simple( map_set_id => $map_set_id, );
     my @map_ids = map { $_->{'map_id'} } @{ $maps || [] };
     return @map_ids;
 }
@@ -441,11 +438,9 @@ sub _get_features {
 
     my $divide_maps_by = $self->config_data('make_corr_feature_divisor') || 1;
 
-    my $sql_object      = $self->sql();
-    my $min_max_results = $sql_object->get_feature_id_bounds_on_map(
-        cmap_object => $self,
-        map_id      => $map_id,
-    );
+    my $sql_object = $self->sql();
+    my $min_max_results
+        = $sql_object->get_feature_id_bounds_on_map( map_id => $map_id, );
     unless ( @{ $min_max_results || [] } ) {
         return {};
     }
@@ -467,14 +462,12 @@ sub _get_features {
             : $i + $feature_id_group_size;
 
         my $features = $sql_object->get_features_simple(
-            cmap_object              => $self,
             map_id                   => $map_id,
             min_feature_id           => $tmp_min_feature_id,
             max_feature_id           => $tmp_max_feature_id,
             ignore_feature_type_accs => $ignore_feature_types,
         );
         my $aliases = $sql_object->get_feature_aliases(
-            cmap_object              => $self,
             map_id                   => $map_id,
             min_feature_id           => $tmp_min_feature_id,
             max_feature_id           => $tmp_max_feature_id,

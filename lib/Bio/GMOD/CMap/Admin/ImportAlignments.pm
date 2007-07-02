@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.7 2006-05-16 02:12:10 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.8 2007-07-02 15:16:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -39,15 +39,15 @@ use base 'Bio::GMOD::CMap';
 sub import_alignments {
     my ( $self, %args ) = @_;
     my $file_name = $args{'file_name'}
-      or return $self->error('No file');
+        or return $self->error('No file');
     my $query_map_set_id = $args{'query_map_set_id'}
-      or return $self->error('No map set');
+        or return $self->error('No map set');
     my $hit_map_set_id = $args{'hit_map_set_id'}
-      || $query_map_set_id;
+        || $query_map_set_id;
     my $feature_type_acc = $args{'feature_type_acc'}
-      or return $self->error('No feature_type_acc');
+        or return $self->error('No feature_type_acc');
     my $evidence_type_acc = $args{'evidence_type_acc'}
-      or return $self->error('No evidence_type_acc');
+        or return $self->error('No evidence_type_acc');
     my $min_identity = $args{'min_identity'} || 0;
     my $min_length   = $args{'min_length'}   || 0;
     my $format       = $args{'format'}       || 'blast';
@@ -69,15 +69,15 @@ sub import_alignments {
         my $query_map_id = $self->get_map_id(
             object     => $result,
             map_set_id => $query_map_set_id,
-          )
-          or return $self->error(
+            )
+            or return $self->error(
             "Unable to find or create map " . $result->query_name() . "\n" );
         while ( my $hit = $result->next_hit ) {
             my $hit_map_id = $self->get_map_id(
                 object     => $hit,
                 map_set_id => $hit_map_set_id,
-              )
-              or return $self->error(
+                )
+                or return $self->error(
                 "Unable to find or create map " . $hit->name() . "\n" );
             while ( my $hsp = $hit->next_hsp ) {
                 if ( $hsp->length('total') > $min_length ) {
@@ -91,8 +91,8 @@ sub import_alignments {
                             start            => $query_range[0],
                             end              => $query_range[1],
                             format           => $format,
-                          )
-                          or return $self->error(
+                            )
+                            or return $self->error(
                             "Unable to find or create feature for query \n");
                         my $hit_feature_id = $self->get_feature_id(
                             feature_type_acc => $feature_type_acc,
@@ -100,9 +100,10 @@ sub import_alignments {
                             start            => $hit_range[0],
                             end              => $hit_range[1],
                             format           => $format,
-                          )
-                          or return $self->error(
-                            "Unable to find or create feature for subject \n");
+                            )
+                            or return $self->error(
+                            "Unable to find or create feature for subject \n"
+                            );
 
                         $self->{'admin'}->feature_correspondence_create(
                             feature_id1       => $query_feature_id,
@@ -152,8 +153,8 @@ sub get_map_id {
     $map_acc = '' unless defined($map_acc);
 
     # Check if added before
-    my $map_key =
-      $map_set_id . ":" . $map_name . ":" . $map_acc . ":" . $map_length;
+    my $map_key
+        = $map_set_id . ":" . $map_name . ":" . $map_acc . ":" . $map_length;
     if ( $self->{'maps'}->{$map_key} ) {
         return $self->{'maps'}->{$map_key};
     }
@@ -161,10 +162,9 @@ sub get_map_id {
     # Check for existance of map in cmap_map
 
     my $map_id_results = $sql_object->get_maps(
-        cmap_object => $self,
-        map_acc     => $map_acc,
-        map_name    => $map_name,
-        map_length  => $map_length,
+        map_acc    => $map_acc,
+        map_name   => $map_name,
+        map_length => $map_length,
     );
 
     my $map_id;
@@ -176,12 +176,11 @@ sub get_map_id {
         # Map not found, creat it.
         print "Map \"$map_name\" not found.  Creating.\n";
         $map_id = $sql_object->insert_map(
-            cmap_object => $self,
-            map_name    => $map_name,
-            map_set_id  => $map_set_id,
-            map_acc     => $map_acc,
-            map_start   => '1',
-            map_stop    => $map_length,
+            map_name   => $map_name,
+            map_set_id => $map_set_id,
+            map_acc    => $map_acc,
+            map_start  => '1',
+            map_stop   => $map_length,
         );
     }
     $self->{'maps'}->{$map_key} = $map_id;
@@ -208,10 +207,10 @@ sub get_feature_id {
     my $sql_object = $self->sql;
 
     my $feature_key = $direction
-      . $feature_type_acc . ":"
-      . $map_id . ":"
-      . $start . ":"
-      . $end;
+        . $feature_type_acc . ":"
+        . $map_id . ":"
+        . $start . ":"
+        . $end;
     if ( $self->{'added_feature_ids'}->{$feature_key} ) {
         return $self->{'added_feature_ids'}->{$feature_key};
     }
@@ -220,7 +219,6 @@ sub get_feature_id {
     # Check for existance of feature in cmap_feature
 
     my $feature_id_results = $sql_object->get_features(
-        cmap_object       => $self,
         feature_start     => $start,
         feature_stop      => $end,
         feature_type_accs => [$feature_type_acc],

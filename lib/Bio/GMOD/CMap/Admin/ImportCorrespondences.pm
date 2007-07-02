@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.36 2006-10-31 21:54:18 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.37 2007-07-02 15:16:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -167,12 +167,12 @@ which is slow.  Setting to 0 is recommended.
     }
 
     my @feature_name_fields = qw[
-      species_common_name map_set_short_name map_name feature_name
+        species_common_name map_set_short_name map_name feature_name
     ];
 
     $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_accs, $inserts, $total );
-  LINE:
+LINE:
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{$field_name} or next;
@@ -188,8 +188,8 @@ which is slow.  Setting to 0 is recommended.
             if ( $datatype && defined $field_val && $field_val ne '' ) {
                 if ( my $regex = RE_LOOKUP->{$datatype} ) {
                     return $self->error( "Value of '$field_name'  is wrong.  "
-                          . "Expected $datatype and got '$field_val'." )
-                      unless $field_val =~ $regex;
+                            . "Expected $datatype and got '$field_val'." )
+                        unless $field_val =~ $regex;
                 }
             }
         }
@@ -202,21 +202,20 @@ which is slow.  Setting to 0 is recommended.
             my $legacy_acc_field_name = "feature_accession_id$i";
             my $feature_name          = $record->{$field_name} || '';
             my $feature_acc           = $record->{$acc_field_name}
-              || $record->{$legacy_acc_field_name}
-              || '';
+                || $record->{$legacy_acc_field_name}
+                || '';
             next unless $feature_name || $feature_acc;
             my $upper_name = uc $feature_name;
             my @feature_ids;
 
             if ($feature_acc) {
-                my $features = $sql_object->get_features(
-                    cmap_object => $self,
-                    feature_acc => $feature_acc,
-                );
-                if (@{$features||[]}){
+                my $features
+                    = $sql_object->get_features( feature_acc => $feature_acc,
+                    );
+                if ( @{ $features || [] } ) {
                     push @feature_ids, $features->[0];
                 }
-                else{
+                else {
                     print STDERR "$feature_acc is not a valid feature_acc\n";
                     next LINE;
                 }
@@ -230,11 +229,10 @@ which is slow.  Setting to 0 is recommended.
             unless (@feature_ids) {
                 @feature_ids = @{
                     $sql_object->get_features(
-                        cmap_object  => $self,
                         feature_name => $upper_name,
                         map_set_ids  => \@map_set_ids,
                     )
-                  };
+                    };
             }
 
             if (@feature_ids) {
@@ -256,7 +254,7 @@ which is slow.  Setting to 0 is recommended.
 
         if (%map_set_ids) {
             my @found_map_set_ids = map { $_->{'map_set_id'} } @feature_ids1,
-              @feature_ids2;
+                @feature_ids2;
             my $ok;
             for my $found (@found_map_set_ids) {
                 $ok = 1, last if $map_set_ids{$found};
@@ -267,7 +265,7 @@ which is slow.  Setting to 0 is recommended.
         next LINE unless @feature_ids1 && @feature_ids2;
 
         my @evidences = map { s/^\s+|\s+$//g; $_ }
-          split /,/, $record->{'evidence'};
+            split /,/, $record->{'evidence'};
         my @evidence_type_accs;
         my $evidence_type_acc;
         my $score;
@@ -281,15 +279,15 @@ which is slow.  Setting to 0 is recommended.
                 $score             = undef;
             }
 
-            unless($evidence_type_acc_exists{$evidence_type_acc}){
+            unless ( $evidence_type_acc_exists{$evidence_type_acc} ) {
                 if ( $self->evidence_type_data($evidence_type_acc) ) {
-                    $evidence_type_acc_exists{$evidence_type_acc}
+                    $evidence_type_acc_exists{$evidence_type_acc};
                 }
-                else{
+                else {
                     $self->Print( "Evidence type accession '"
-                          . $evidence_type_acc
-                          . "' doesn't exist.  "
-                          . "Please add it to your configuration file.[<enter> to continue] "
+                            . $evidence_type_acc
+                            . "' doesn't exist.  "
+                            . "Please add it to your configuration file.[<enter> to continue] "
                     );
                     chomp( my $answer = <STDIN> );
                     return;
@@ -306,13 +304,13 @@ which is slow.  Setting to 0 is recommended.
             for my $feature2 (@feature_ids2) {
                 if (%map_set_ids) {
                     next
-                      unless $map_set_ids{ $feature1->{'map_set_id'} }
-                      || $map_set_ids{ $feature2->{'map_set_id'} };
+                        unless $map_set_ids{ $feature1->{'map_set_id'} }
+                        || $map_set_ids{ $feature2->{'map_set_id'} };
                 }
 
                 for my $evidence_type_acc_list (@evidence_type_accs) {
-                    my ( $evidence_type_acc, $score ) =
-                      @$evidence_type_acc_list;
+                    my ( $evidence_type_acc, $score )
+                        = @$evidence_type_acc_list;
                     my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
@@ -320,8 +318,8 @@ which is slow.  Setting to 0 is recommended.
                         score             => $score,
                         allow_update      => $allow_update,
                         threshold         => 1000,
-                      )
-                      or return $self->error( $admin->error );
+                        )
+                        or return $self->error( $admin->error );
                 }
             }
         }
