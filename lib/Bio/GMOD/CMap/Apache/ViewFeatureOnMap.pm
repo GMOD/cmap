@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.16 2006-09-18 15:03:08 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.17 2007-07-02 15:32:58 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -24,24 +24,27 @@ sub handler {
     my $highlight_by = $apr->param('highlight_by') || '';
     my $start = $apr->param('start') || $apr->param('ref_map_start');
     my $stop  = $apr->param('stop')  || $apr->param('ref_map_stop');
-    my $data  = $self->data_module;
-    my $url   = $apr->url;
+    my $image_only = $apr->param('image_only') || 0;
+    my $data       = $self->data_module;
+    my $url        = $apr->url;
 
-    my ( $ms_acc, $map_acc, $feature_name ) =
-      $data->view_feature_on_map($feature_acc);
+    my ( $ms_acc, $map_acc, $feature_name )
+        = $data->view_feature_on_map($feature_acc);
 
-    my $highlight =
-      ($highlight_by eq 'feature_acc' or $highlight_by eq 'accession_id') ? $feature_acc : $feature_name;
+    my $highlight = ( $highlight_by eq 'feature_acc'
+            or $highlight_by eq 'accession_id' )
+        ? $feature_acc
+        : $feature_name;
 
     return $self->error("Can't find the feature accession ID '$feature_acc'")
-      unless $ms_acc && $map_acc;
+        unless $ms_acc && $map_acc;
 
     print $apr->redirect(
-            "$url/viewer?ref_map_set_acc=$ms_acc&label_features=all"
-          . qq[&ref_map_accs=$map_acc&highlight="$highlight"]
-          . "&ref_map_start=$start&ref_map_stop=$stop"
-          . '&data_source='
-          . $apr->param('data_source') );
+              "$url/viewer?ref_map_set_acc=$ms_acc&label_features=all"
+            . qq[&ref_map_accs=$map_acc&highlight="$highlight"]
+            . "&ref_map_start=$start&ref_map_stop=$stop&image_only=$image_only"
+            . '&data_source='
+            . $apr->param('data_source') );
 
     return 1;
 }
@@ -75,7 +78,7 @@ Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.
