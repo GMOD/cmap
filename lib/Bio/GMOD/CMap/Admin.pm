@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.98 2007-07-02 15:16:27 mwz444 Exp $
+# $Id: Admin.pm,v 1.99 2007-07-03 16:33:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -46,6 +46,127 @@ use Bio::GMOD::CMap::Utils qw[ parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
+
+# ----------------------------------------------------
+sub attribute_create {
+
+=pod
+
+=head2 attribute_create
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+attribute_create
+
+=item * Usage
+
+    $admin->attribute_create(
+        object_id       => $object_id,
+        attribute_name  => $attribute_name,
+        attribute_value => $attribute_value,
+        object_type     => $object_type,
+        display_order   => $display_order,
+        is_public       => $is_public,
+    );
+
+=item * Returns
+
+XRef ID
+
+=item * Fields
+
+=over 4
+
+=item - object_id
+
+The primary key of the object.
+
+=item - attribute_name
+
+=item - attribute_value
+
+=item - object_type
+
+The name of the table being reference.
+
+=item - display_order
+
+=item - is_public
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $sql_object  = $self->sql or return $self->error;
+    my @missing     = ();
+    my $object_id   = $args{'object_id'} || 0;
+    my $object_type = $args{'object_type'}
+        or push @missing, 'database object (table name)';
+    my $attribute_name = $args{'attribute_name'}
+        or push @missing, 'attribute name';
+    my $attribute_value = $args{'attribute_value'}
+        or push @missing, 'attribute value';
+    my $display_order = $args{'display_order'};
+    my $is_public     = $args{'is_public'};
+    my $attribute_id;
+
+    if (@missing) {
+        return $self->error(
+            'Cross-reference create failed.  Missing required fields: ',
+            join( ', ', @missing ) );
+    }
+
+    #
+    # See if one like this exists already.
+    #
+    my $attributes = $sql_object->get_attributes(
+        object_type     => $object_type,
+        object_id       => $object_id,
+        attribute_name  => $attribute_name,
+        attribute_value => $attribute_value,
+    );
+
+    if (@$attributes) {
+        my $attribute = $attributes->[0];
+        $attribute_id = $attribute->{'attribute_id'};
+        if ((   defined $display_order
+                && $attribute->{'display_order'} != $display_order
+            )
+            or ( defined $is_public
+                && $attribute->{'is_public'} != $is_public )
+            )
+        {
+            $sql_object->update_attributes(
+                display_order => $display_order,
+                is_public     => $is_public,
+                attribute_id  => $attribute_id,
+            );
+        }
+    }
+    else {
+        $attribute_id = $self->set_attributes(
+            object_id   => $object_id,
+            object_type => $object_type,
+            attributes  => [
+                {   name          => $attribute_name,
+                    value         => $attribute_value,
+                    display_order => $display_order,
+                    is_public     => $is_public,
+                },
+            ],
+            )
+            or return $self->error;
+    }
+
+    return $attribute_id;
+}
 
 # ----------------------------------------------------
 sub attribute_delete {
@@ -1938,9 +2059,16 @@ Set the attributes for a database object.
 =item * Usage
 
     $admin->set_attributes(
-        object_id => $object_id,
-        overwrite => $overwrite,
+        object_id   => $object_id,
+        overwrite   => $overwrite,
         object_type => $object_type,
+        attributes  => [
+            {   name          => $attribute_name,
+                value         => $attribute_value,
+                display_order => $display_order,
+                is_public     => $is_public,
+            },
+        ],
     );
 
 =item * Returns
@@ -2473,6 +2601,84 @@ The primary key of the object.
 }
 
 # ----------------------------------------------------
+sub map_to_feature_create {
+
+=pod
+
+=head2 map_to_feature_create
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Create a map_to_feature link.  Basically this is just a wrapper.
+
+=item * Usage
+
+    $admin->map_to_feature_create(
+        feature_id => $feature_id,
+        feature_acc => $feature_acc,
+        map_id => $map_id,
+        map_acc => $map_acc,
+    );
+
+=item * Returns
+
+Feature ID
+
+=item * Fields
+
+=over 4
+
+=item - map_id (Required unless map_acc is given)
+
+Identifier of the map to be linked.
+
+=item - map_acc (Required unless map_id is given)
+
+Accession of the map to be linked.
+
+=item - feature_id (Required unless feature_acc is given)
+
+Identifier of the feature to be linked.
+
+=item - feature_acc (Required unless feature_id is given)
+
+Accession of the feature to be linked.
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @missing     = ();
+    my $map_id      = $args{'map_id'};
+    my $map_acc     = $args{'map_acc'};
+    my $feature_id  = $args{'feature_id'};
+    my $feature_acc = $args{'feature_acc'};
+
+    push @missing, "map"     unless ( $map_id     or $map_acc );
+    push @missing, "feature" unless ( $feature_id or $feature_acc );
+
+    if (@missing) {
+        return die 'Feature create failed.  Missing required fields: ',
+            join( ', ', @missing );
+    }
+    my $sql_object = $self->sql or return $self->error;
+
+    return $sql_object->insert_map_to_feature(
+        map_id      => $map_id,
+        map_acc     => $map_acc,
+        feature_id  => $feature_id,
+        feature_acc => $feature_acc,
+    );
+}
+
+# ----------------------------------------------------
 sub commit_changes {
 
 =pod
@@ -2610,7 +2816,7 @@ The primary key of the object.
             # If the map was a sub map
             if ( defined $action->{'first_feature_start'} ) {
                 my $ori_map_to_features
-                    = $sql_object->get_map_to_feature( map_id => $ori_map_id,
+                    = $sql_object->get_map_to_features( map_id => $ori_map_id,
                     );
                 if (    $ori_map_to_features
                     and @$ori_map_to_features
@@ -2730,9 +2936,9 @@ The primary key of the object.
 
             # If the maps were a sub map
             if ( defined $action->{'merged_feature_start'} ) {
-                my $first_map_to_features = $sql_object->get_map_to_feature(
+                my $first_map_to_features = $sql_object->get_map_to_features(
                     map_id => $first_map_id, );
-                my $second_map_to_features = $sql_object->get_map_to_feature(
+                my $second_map_to_features = $sql_object->get_map_to_features(
                     map_id => $second_map_id, );
                 if (    $first_map_to_features
                     and @$first_map_to_features

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.165 2007-07-02 15:16:29 mwz444 Exp $
+# $Id: Generic.pm,v 1.166 2007-07-03 16:33:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165 $)[-1];
+$VERSION = (qw$Revision: 1.166 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -9111,12 +9111,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut 
 
+sub get_map_to_feature {&get_map_to_features}
+
 #-----------------------------------------------
-sub get_map_to_feature {
+sub get_map_to_features {
 
 =pod
 
-=head2 get_map_to_feature()
+=head2 get_map_to_features()
 
 =over 4
 
@@ -9142,7 +9144,13 @@ Get the map_to_feature information into the database.
 
 =item * Output
 
-1
+Array of Hashes:
+
+  Keys:
+    map_id,
+    map_acc,
+    feature_id,
+    feature_acc,
 
 =back
 
