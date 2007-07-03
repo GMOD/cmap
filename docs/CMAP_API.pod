@@ -4,7 +4,7 @@ CMap Application Programming Interface
 
 =head1 VERSION
 
-$Revision: 1.1 $
+$Revision: 1.2 $
 
 This document was written for the upcoming CMap 1.0 release.  It corresponds to
 code that is in CVS at the time off commit.  It may not be applicable to older
@@ -695,37 +695,37 @@ Add a feature count to the return object
 
 =head3 Structure Returned
 
-[   {   map_id                 => $map_id,
-        map_acc                => $map_acc,
-        map_name               => $map_name,
-        map_start              => $map_start,
-        map_stop               => $map_stop,
-        display_order          => $display_order,
-        map_set_id             => $map_set_id,
-        map_set_acc            => $map_set_acc,
-        map_set_name           => $map_set_name,
-        map_set_short_name     => $map_set_short_name,
-        published_on           => $published_on,
-        shape                  => $shape,
-        width                  => $width,
-        color                  => $color,
-        map_type_acc           => $map_type_acc,
-        map_units              => $map_units,
-        is_relational_map      => $is_relational_map,
-        species_id             => $species_id,
-        species_acc            => $species_acc,
-        species_common_name    => $species_common_name,
-        species_full_name      => $species_full_name,
-        map_type_display_order => $map_type_display_order,
-        map_type               => $map_type,
-        epoch_published_on     => $epoch_published_on,
-        default_shape          => $default_shape,
-        default_color          => $default_color,
-        default_width          => $default_width,
-        feature_count          =>
-            $feature_count,    # (Only if count_features is specified)
-    },
-]
+    [   {   map_id                 => $map_id,
+            map_acc                => $map_acc,
+            map_name               => $map_name,
+            map_start              => $map_start,
+            map_stop               => $map_stop,
+            display_order          => $display_order,
+            map_set_id             => $map_set_id,
+            map_set_acc            => $map_set_acc,
+            map_set_name           => $map_set_name,
+            map_set_short_name     => $map_set_short_name,
+            published_on           => $published_on,
+            shape                  => $shape,
+            width                  => $width,
+            color                  => $color,
+            map_type_acc           => $map_type_acc,
+            map_units              => $map_units,
+            is_relational_map      => $is_relational_map,
+            species_id             => $species_id,
+            species_acc            => $species_acc,
+            species_common_name    => $species_common_name,
+            species_full_name      => $species_full_name,
+            map_type_display_order => $map_type_display_order,
+            map_type               => $map_type,
+            epoch_published_on     => $epoch_published_on,
+            default_shape          => $default_shape,
+            default_color          => $default_color,
+            default_width          => $default_width,
+            feature_count          =>
+                $feature_count,    # (Only if count_features is specified)
+        },
+    ]
 
 =head3 See also
 
@@ -876,36 +876,36 @@ parameter must be set to true, otherwise, no data will be returned.
 
 =head3 Structure Returned
 
-[   {   feature_name2              => $feature_name2,
-        feature_id2                => $feature_id2,
-        feature_id2                => $feature_id2,
-        feature_acc1               => $feature_acc1,
-        feature_acc2               => $feature_acc2,
-        feature_start2             => $feature_start2,
-        feature_stop2              => $feature_stop2,
-        feature_type_acc2          => $feature_type_acc2,
-        map_id2                    => $map_id2,
-        map_acc2                   => $map_acc2,
-        map_name2                  => $map_name2,
-        map_display_order2         => $map_display_order2,
-        map_set_id2                => $map_set_id2,
-        map_set_acc2               => $map_set_acc2,
-        map_set_short_name2        => $map_set_short_name2,
-        ms_display_order2          => $ms_display_order2,
-        published_on2              => $published_on2,
-        map_type_acc2              => $map_type_acc2,
-        map_units2                 => $map_units2,
-        species_common_name2       => $species_common_name2,
-        species_display_order2     => $species_display_order2,
-        feature_correspondence_id  => $feature_correspondence_id,
-        feature_correspondence_acc => $feature_correspondence_acc,
-        is_enabled                 => $is_enabled,
-        evidence_type_acc          => $evidence_type_acc,
-        map_type2                  => $map_type2,
-        feature_type2              => $feature_type2,
-        evidence_type              => $evidence_type,
-    },
-]
+    [   {   feature_name2              => $feature_name2,
+            feature_id2                => $feature_id2,
+            feature_id2                => $feature_id2,
+            feature_acc1               => $feature_acc1,
+            feature_acc2               => $feature_acc2,
+            feature_start2             => $feature_start2,
+            feature_stop2              => $feature_stop2,
+            feature_type_acc2          => $feature_type_acc2,
+            map_id2                    => $map_id2,
+            map_acc2                   => $map_acc2,
+            map_name2                  => $map_name2,
+            map_display_order2         => $map_display_order2,
+            map_set_id2                => $map_set_id2,
+            map_set_acc2               => $map_set_acc2,
+            map_set_short_name2        => $map_set_short_name2,
+            ms_display_order2          => $ms_display_order2,
+            published_on2              => $published_on2,
+            map_type_acc2              => $map_type_acc2,
+            map_units2                 => $map_units2,
+            species_common_name2       => $species_common_name2,
+            species_display_order2     => $species_display_order2,
+            feature_correspondence_id  => $feature_correspondence_id,
+            feature_correspondence_acc => $feature_correspondence_acc,
+            is_enabled                 => $is_enabled,
+            evidence_type_acc          => $evidence_type_acc,
+            map_type2                  => $map_type2,
+            feature_type2              => $feature_type2,
+            evidence_type              => $evidence_type,
+        },
+    ]
 
 =head3 See also
 
