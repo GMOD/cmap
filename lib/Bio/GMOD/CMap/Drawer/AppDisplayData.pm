@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.53 2007-07-06 14:42:04 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.54 2007-07-06 16:03:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -183,7 +183,7 @@ Adds the first slot
         window_key => $window_key,
         map_set_id => $self->get_map_set_id_from_map_id( $map_ids->[0] ),
         attached_to_parent => 0,
-        expanded           => 0,
+        expanded           => 1,
         is_top             => 1,
         show_features      => 1,
         map_labels_visible => 1,
@@ -315,6 +315,7 @@ sub create_sub_zone_from_saved_view {
     my $parent_map_key  = $zone_view_data->{'parent_map_key'};
     my $parent_zone_key = $zone_view_data->{'parent_zone_key'};
 
+    $self->{'scaffold'}{$parent_zone_key}{'expanded'}  = 1;
     $self->{'map_layout'}{$parent_map_key}{'expanded'} = 1;
 
     my $parent_map_data = $self->app_data_module()
@@ -560,6 +561,7 @@ sub assign_and_initialize_new_maps {
         $sub_map_hash{$sub_map_id} = $sub_map;
     }
 
+    my %map_id_to_map_key;
     foreach my $set_key ( keys %map_ids_by_set ) {
         my $map_set_id = $self->get_map_set_id_from_map_id(
             $sub_maps->[0]{'sub_map_id'} );
@@ -590,6 +592,7 @@ sub assign_and_initialize_new_maps {
                 map_id   => $sub_map_id,
                 zone_key => $child_zone_key,
             );
+            $map_id_to_map_key{$sub_map_id} = $sub_map_key;
 
             my $sub_map = $sub_map_hash{$sub_map_id};
             $self->{'sub_maps'}{$sub_map_key} = {
@@ -605,7 +608,7 @@ sub assign_and_initialize_new_maps {
 
         }
     }
-    return 1;
+    return \%map_id_to_map_key;
 }
 
 # ----------------------------------------------------
@@ -4583,7 +4586,7 @@ Deletes the map data and wipes them from the canvas
     {
         $self->delete_zone(
             window_key => $window_key,
-            zone_key   => $zone_key,
+            zone_key   => $child_zone_key,
         );
     }
 
@@ -4604,7 +4607,7 @@ Deletes the map data and wipes them from the canvas
     # Remove Drawing info
     $self->destroy_items(
         window_key => $window_key,
-        items      => $map_layout->{'item'},
+        items      => $map_layout->{'items'},
     );
 
     delete $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id};
@@ -4644,7 +4647,8 @@ Deletes the zone data and wipes them from the canvas
     delete $self->{'zone_in_window'}{$window_key}{$zone_key};
 
     # Delete the maps in this zone
-    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
+    my @map_keys = @{ $self->{'map_order'}{$zone_key} || [] };
+    foreach my $map_key (@map_keys) {
         $self->delete_map(
             window_key => $window_key,
             map_key    => $map_key,
@@ -4925,6 +4929,7 @@ sub refresh_zone_children_from_database {
                 app_display_data => $self,
                 map_key          => $sub_map_key,
                 window_key       => $window_key,
+                cascade          => 0,
             );
         }
     }
@@ -4964,7 +4969,7 @@ sub refresh_zone_children_from_database {
 
     # Get any remaining in the db list
     for ( my $i = $db_index; $i <= $#db_sub_map_ids; $i++ ) {
-        $map_ids_new_in_db{$db_map_id} = 1;
+        $map_ids_new_in_db{ $db_sub_map_ids[$i] } = 1;
     }
 
     # Get any remaining in the old list
@@ -5003,13 +5008,29 @@ sub refresh_zone_children_from_database {
     }
 
     # Add new Maps
+    my $zone_expanded = $self->{'scaffold'}{$parent_zone_key}{'expanded'};
     foreach my $parent_map_key ( keys %new_sub_maps_by_parent_map_key ) {
-        $self->assign_and_initialize_new_maps(
+        my $map_id_to_map_key = $self->assign_and_initialize_new_maps(
             window_key => $window_key,
             sub_maps   => $new_sub_maps_by_parent_map_key{$parent_map_key},
             parent_zone_key => $parent_zone_key,
             parent_map_key  => $parent_map_key,
         );
+        if ($zone_expanded) {
+            foreach my $sub_map (
+                @{ $new_sub_maps_by_parent_map_key{$parent_map_key} || [] } )
+            {
+                my $sub_map_id   = $sub_map->{'sub_map_id'};
+                my $sub_map_key  = $map_id_to_map_key->{$sub_map_id};
+                my $sub_zone_key = $self->map_key_to_zone_key($sub_map_key);
+
+                $self->add_sub_maps_to_map(
+                    window_key      => $window_key,
+                    parent_zone_key => $sub_zone_key,
+                    parent_map_key  => $sub_map_key,
+                );
+            }
+        }
     }
 
     # Remove the lost maps
@@ -5064,6 +5085,8 @@ Redraws the whole window
     #RELAYOUT OVERVIEW
     $self->recreate_overview( window_key => $window_key, );
 
+    $self->app_interface->reset_object_selections( window_key => $window_key,
+    );
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
