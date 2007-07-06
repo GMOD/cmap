@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.35 2007-07-02 15:16:27 mwz444 Exp $
+# $Id: AppController.pm,v 1.36 2007-07-06 14:42:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -744,6 +744,8 @@ Commit the changes made to the cmap db.
     }
 
     $self->app_data_module->commit_changes( actions => $actions, );
+
+    $app_display_data->refresh_program_from_database();
 
     return;
 }

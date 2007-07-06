@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.24 2007-07-02 15:16:29 mwz444 Exp $
+# $Id: AppData.pm,v 1.25 2007-07-06 14:42:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -995,6 +995,32 @@ Calls get_feature_correspondence_with_slot_comparisons either locally or remotel
             $slot_comparisons, )
             || [];
     }
+}
+
+# ----------------------------------------------------
+sub clear_stored_data {
+
+=pod
+
+=head2 clear_stored_data
+
+Removes all the stored data, which makes it hit the db the next time something
+is requested.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    delete $self->{'map_set_data'};
+    delete $self->{'reference_maps_by_species'};
+    delete $self->{'sub_map_data'};
+    delete $self->{'map_data'};
+    delete $self->{'feature_data_by_map'};
+    delete $self->{'feature_data_by_acc'};
+    delete $self->{'sorted_feature_data'};
+    delete $self->{'zone_corr_data'};
+
+    return;
 }
 
 # ----------------------------------------------------

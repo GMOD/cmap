@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.56 2007-07-02 15:16:29 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.57 2007-07-06 14:42:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -582,6 +582,25 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
+    my $refresh_button = $controls_pane->Button(
+        -text    => "Refresh From Database",
+        -command => sub {
+            my $answer = $self->main_window()->Dialog(
+                -title => 'Refresh From the Database?',
+                -text  => 'Are you certain that you want to refresh?  '
+                    . 'Any changes that you have made will be lost.  '
+                    . 'This cannot be undone.',
+                -default_button => 'Cancel',
+                -buttons        => [ 'OK', 'Cancel', ],
+            )->Show();
+
+            if ( $answer eq 'OK' ) {
+                $self->app_controller()->app_display_data()
+                    ->refresh_program_from_database();
+            }
+        },
+        -font => $font,
+    );
     my $reattach_button = $controls_pane->Button(
         -text    => "Reattach Slot to Parent",
         -command => sub {
@@ -684,7 +703,9 @@ Adds control buttons to the controls_pane.
         $scroll_type_1,          $scroll_far_type_1,
 
         $expand_button,                  # $show_features_check_box,
-            # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
+        $refresh_button,
+
+        # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
 }

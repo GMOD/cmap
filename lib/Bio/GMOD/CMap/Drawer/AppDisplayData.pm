@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.52 2007-07-02 15:16:29 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.53 2007-07-06 14:42:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -509,15 +509,6 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     # Mark as expanded
     $self->{'map_layout'}{$parent_map_key}{'expanded'} = 1;
 
-    my $parent_map_data = $self->app_data_module()
-        ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
-    my $parent_unit_granularity
-        = $self->map_type_data( $parent_map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || 0;
-
-    my @sub_map_keys;
-
     my $parent_map_id = $self->map_key_to_id($parent_map_key);
 
     # Collect Sub-Maps
@@ -530,36 +521,69 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         return;
     }
 
+    return $self->assign_and_initialize_new_maps(
+        window_key      => $window_key,
+        sub_maps        => $sub_maps,
+        parent_zone_key => $parent_zone_key,
+        parent_map_key  => $parent_map_key,
+    );
+}
+
+# ----------------------------------------------------
+sub assign_and_initialize_new_maps {
+
+=pod
+
+=head2 assign_and_initialize_new_maps
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key      = $args{'window_key'}      or return;
+    my $sub_maps        = $args{'sub_maps'}        or return;
+    my $parent_zone_key = $args{'parent_zone_key'} or return;
+    my $parent_map_key  = $args{'parent_map_key'}  or return;
+
+    my $parent_map_data = $self->app_data_module()
+        ->map_data( map_id => $self->map_key_to_id($parent_map_key), );
+    my $parent_unit_granularity
+        = $self->map_type_data( $parent_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || 0;
+
     # Split maps into zones based on their map set
     my %map_ids_by_set;
     my %sub_map_hash;
     foreach my $sub_map ( @{ $sub_maps || [] } ) {
         my $sub_map_id = $sub_map->{'sub_map_id'};
-        my $sub_map_data
-            = $self->app_data_module()->map_data( map_id => $sub_map_id, );
-        push @{ $map_ids_by_set{ $sub_map_data->{'map_set_id'} } },
-            $sub_map_id;
+        push @{ $map_ids_by_set{ $sub_map->{'map_set_id'} } }, $sub_map_id;
         $sub_map_hash{$sub_map_id} = $sub_map;
     }
 
-    my @new_zone_keys;
     foreach my $set_key ( keys %map_ids_by_set ) {
+        my $map_set_id = $self->get_map_set_id_from_map_id(
+            $sub_maps->[0]{'sub_map_id'} );
 
-        my $child_zone_key = $self->initialize_zone(
-            window_key => $window_key,
-            map_set_id => $self->get_map_set_id_from_map_id(
-                $sub_maps->[0]{'sub_map_id'}
-            ),
-            parent_zone_key    => $parent_zone_key,
-            parent_map_key     => $parent_map_key,
-            attached_to_parent => 1,
-            expanded           => 0,
-            is_top             => 0,
-            show_features      => 0,
-            map_labels_visible => 0,
+        my $child_zone_key = $self->find_child_zone_for_map_set(
+            map_set_id      => $map_set_id,
+            parent_map_key  => $parent_map_key,
+            parent_zone_key => $parent_zone_key,
         );
 
-        push @new_zone_keys, $child_zone_key;
+        # If it's in a new zone, create the zone
+        unless ($child_zone_key) {
+            $child_zone_key = $self->initialize_zone(
+                window_key         => $window_key,
+                map_set_id         => $map_set_id,
+                parent_zone_key    => $parent_zone_key,
+                parent_map_key     => $parent_map_key,
+                attached_to_parent => 1,
+                expanded           => 0,
+                is_top             => 0,
+                show_features      => 0,
+                map_labels_visible => 0,
+            );
+        }
 
         foreach my $sub_map_id ( @{ $map_ids_by_set{$set_key} || [] } ) {
             my $sub_map_key = $self->initialize_map(
@@ -581,7 +605,7 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
 
         }
     }
-    return \@new_zone_keys;
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2452,6 +2476,7 @@ Move a map from one place on a parent to another
     }
 
     $self->move_sub_map_on_parents_in_memory(
+        window_key     => $window_key,
         sub_map_key    => $map_key,
         parent_map_key => $new_parent_map_key,
         feature_start  => $new_feature_start,
@@ -2698,6 +2723,7 @@ Create two new maps and hide the original
             my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
             next unless ($sub_map_info);
             $self->move_sub_map_on_parents_in_memory(
+                window_key     => $window_key,
                 sub_map_key    => $sub_map_key,
                 parent_map_key => $first_map_key,
                 feature_start  => $sub_map_info->{'feature_start'},
@@ -2714,6 +2740,7 @@ Create two new maps and hide the original
             my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
             next unless ($sub_map_info);
             $self->move_sub_map_on_parents_in_memory(
+                window_key     => $window_key,
                 sub_map_key    => $sub_map_key,
                 parent_map_key => $second_map_key,
                 feature_start  => $sub_map_info->{'feature_start'},
@@ -2803,6 +2830,7 @@ Destroy the two new maps and show the original
                 my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
                 next unless ($sub_map_info);
                 $self->move_sub_map_on_parents_in_memory(
+                    window_key     => $window_key,
                     sub_map_key    => $sub_map_key,
                     parent_map_key => $ori_map_key,
                     feature_start  => $sub_map_info->{'feature_start'},
@@ -3015,6 +3043,7 @@ Create one new map and hide the original maps
         my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
         next unless ($sub_map_info);
         $self->move_sub_map_on_parents_in_memory(
+            window_key     => $window_key,
             sub_map_key    => $sub_map_key,
             parent_map_key => $merged_map_key,
             feature_start  => $sub_map_info->{'feature_start'},
@@ -3025,6 +3054,7 @@ Create one new map and hide the original maps
         my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
         next unless ($sub_map_info);
         $self->move_sub_map_on_parents_in_memory(
+            window_key     => $window_key,
             sub_map_key    => $sub_map_key,
             parent_map_key => $merged_map_key,
             feature_start  => $second_map_offset
@@ -3163,6 +3193,7 @@ Destroy the new map and show the original
             my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
             next unless ($sub_map_info);
             $self->move_sub_map_on_parents_in_memory(
+                window_key     => $window_key,
                 sub_map_key    => $sub_map_key,
                 parent_map_key => $parent_map_key,
                 feature_start  => $sub_map_info->{'feature_start'} - $offset,
@@ -3438,32 +3469,22 @@ another (and possibly on a different parent).
     my $feature_stop       = $args{'feature_stop'};
 
     my $old_sub_zone_key    = $self->map_key_to_zone_key($sub_map_key);
-    my $new_sub_zone_key    = $old_sub_zone_key;
     my $new_parent_zone_key = $self->map_key_to_zone_key($new_parent_map_key);
     my $window_key = $self->{'scaffold'}{$old_sub_zone_key}{'window_key'};
 
     my $old_sub_zone_scaffold = $self->{'scaffold'}{$old_sub_zone_key};
     my $old_parent_map_key    = $old_sub_zone_scaffold->{'parent_map_key'};
 
-    # If it's in a new zone, change the sub map's zone
+    # If it's on a new parent, change the sub map's parent
     unless ( $new_parent_map_key == $old_parent_map_key ) {
-        my $map_set_id = $old_sub_zone_scaffold->{'map_set_id'};
-        $new_sub_zone_key = undef;
-        foreach my $child_zone_key (
-            $self->get_children_zones_of_map(
-                map_key  => $new_parent_map_key,
-                zone_key => $new_parent_zone_key,
-            )
-            )
-        {
-            if ( $map_set_id
-                == $self->{'scaffold'}{$child_zone_key}{'map_set_id'} )
-            {
-                $new_sub_zone_key = $child_zone_key;
-                last;
-            }
-        }
+        my $map_set_id       = $old_sub_zone_scaffold->{'map_set_id'};
+        my $new_sub_zone_key = $self->find_child_zone_for_map_set(
+            map_set_id      => $map_set_id,
+            parent_map_key  => $new_parent_map_key,
+            parent_zone_key => $new_parent_zone_key,
+        );
 
+        # If it's in a new zone, change the sub map's zone
         unless ($new_sub_zone_key) {
 
             $new_sub_zone_key = $self->initialize_zone(
@@ -3478,7 +3499,6 @@ another (and possibly on a different parent).
                 map_labels_visible =>
                     $self->map_labels_visible($old_sub_zone_key),
             );
-
         }
 
         # Remove from old zone map order
@@ -3512,6 +3532,37 @@ another (and possibly on a different parent).
     $self->{'sub_maps'}{$sub_map_key}{'feature_stop'}   = $feature_stop;
 
     return;
+}
+
+# ----------------------------------------------------
+sub find_child_zone_for_map_set {
+
+=pod
+
+=head2 find_child_zone_for_map_set
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_set_id       = $args{'map_set_id'};
+    my $parent_map_key   = $args{'parent_map_key'};
+    my $parent_zone_key  = $args{'parent_zone_key'};
+    my $new_sub_zone_key = undef;
+
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $parent_map_key,
+            zone_key => $parent_zone_key,
+        )
+        )
+    {
+        if ( $map_set_id
+            == $self->{'scaffold'}{$child_zone_key}{'map_set_id'} )
+        {
+            return $child_zone_key;
+        }
+    }
+    return undef;
 }
 
 # ----------------------------------------------------
@@ -3554,6 +3605,26 @@ be after this action (because of undoing).
 }
 
 # ----------------------------------------------------
+sub clear_actions {
+
+=pod
+
+=head2 clear_actions
+
+Clear the action list for this window.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+
+    $self->{'window_actions'}{$window_key}{'last_action_index'} = 0;
+    $self->{'window_actions'}{$window_key}{'actions'}           = [];
+
+    return;
+}
+
+# ----------------------------------------------------
 sub undo_action {
 
 =pod
@@ -3587,6 +3658,7 @@ Undo the action that was just performed.
     # Handle each action type
     if ( $last_action->{'action'} eq 'move_map' ) {
         $self->move_sub_map_on_parents_in_memory(
+            window_key     => $window_key,
             sub_map_key    => $last_action->{'map_key'},
             parent_map_key => $last_action->{'old_parent_map_key'},
             feature_start  => $last_action->{'old_feature_start'},
@@ -3650,6 +3722,7 @@ Redo the action that was last undone.
     # Handle each action type
     if ( $next_action->{'action'} eq 'move_map' ) {
         $self->move_sub_map_on_parents_in_memory(
+            window_key     => $window_key,
             sub_map_key    => $next_action->{'map_key'},
             parent_map_key => $next_action->{'new_parent_map_key'},
             feature_start  => $next_action->{'new_feature_start'},
@@ -4484,6 +4557,65 @@ Destroys items that were drawn
 }
 
 # ----------------------------------------------------
+sub delete_map {
+
+=pod
+
+=head2 delete_map
+
+Deletes the map data and wipes them from the canvas
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $map_key    = $args{'map_key'};
+    my $zone_key   = $args{'zone_key'};
+    my $map_id     = $self->map_key_to_id($map_key);
+
+    # Follow the tree first
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        $self->delete_zone(
+            window_key => $window_key,
+            zone_key   => $zone_key,
+        );
+    }
+
+    my $map_layout = $self->{'map_layout'}{$map_key};
+
+    # Remove from zone
+    $self->remove_from_map_order(
+        map_key  => $map_key,
+        zone_key => $zone_key,
+    );
+
+    # Remove correspondences
+    $self->remove_corrs_to_map(
+        window_key => $window_key,
+        map_key    => $map_key,
+    );
+
+    # Remove Drawing info
+    $self->destroy_items(
+        window_key => $window_key,
+        items      => $map_layout->{'item'},
+    );
+
+    delete $self->{'map_id_to_key_by_zone'}{$zone_key}{$map_id};
+    delete $self->{'map_key_to_id'}{$map_key};
+    delete $self->{'map_key_to_zone_key'}{$map_key};
+    delete $self->{'map_layout'}{$map_key};
+
+    return;
+}
+
+# ----------------------------------------------------
 sub delete_zone {
 
 =pod
@@ -4500,17 +4632,6 @@ Deletes the zone data and wipes them from the canvas
 
     my $zone_layout = $self->{'zone_layout'}{$zone_key};
 
-    # Remove correspondences
-    foreach
-        my $zone_key2 ( keys %{ $self->{'correspondences_on'}{$zone_key} } )
-    {
-        $self->clear_zone_corrs(
-            window_key => $window_key,
-            zone_key1  => $zone_key,
-            zone_key2  => $zone_key2,
-        );
-    }
-
     # Remove Drawing info
     foreach my $drawing_item_name (qw[ separator background ]) {
         $self->destroy_items(
@@ -4522,8 +4643,13 @@ Deletes the zone data and wipes them from the canvas
     # Remove zone from window
     delete $self->{'zone_in_window'}{$window_key}{$zone_key};
 
+    # Delete the maps in this zone
     foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
-        ### BF Someday Add a delet_map method
+        $self->delete_map(
+            window_key => $window_key,
+            map_key    => $map_key,
+            zone_key   => $zone_key,
+        );
     }
 
     # Remove from parent
@@ -4708,6 +4834,206 @@ Returns the number of remaining windows.
     delete $self->{'sub_maps'}{$window_key};
 
     return scalar( keys %{ $self->{'window_layout'} || {} } );
+}
+
+# ----------------------------------------------------
+sub refresh_program_from_database {
+
+=pod
+
+=head2 refresh_program_from_database
+
+Refresh the views to reflect the database.
+
+This will act on all open windows which are using the same instance.
+
+The Action history will be cleared
+
+Any view modifications on maps that were split/merged or children of the same
+will be reset.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    # Clear AppData
+    $self->app_data_module()->clear_stored_data();
+
+    # Refresh each window
+    foreach my $window_key ( keys %{ $self->{'window_layout'} || {} } ) {
+        my $top_zone_key = $self->{'head_zone_key'}{$window_key};
+
+        # Clear Action History
+        $self->clear_actions( window_key => $window_key, );
+
+        # Refresh the Children (this will recurse down the whole tree)
+        $self->refresh_zone_children_from_database(
+            parent_zone_key => $top_zone_key,
+            window_key      => $window_key,
+        );
+
+        # Redraw the window
+        $self->redraw_the_whole_window( window_key => $window_key, );
+    }
+}
+
+# ----------------------------------------------------
+sub refresh_zone_children_from_database {
+
+=pod
+
+=head2 refresh_zone_children_from_database
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $parent_zone_key = $args{'parent_zone_key'} or return;
+    my $window_key      = $args{'window_key'};
+
+    # Get New Sub Map List
+    my %db_sub_maps_by_parent_key;
+    my @db_sub_map_ids;
+    my %parent_map_id_to_key;
+    foreach my $parent_map_key ( @{ $self->map_order($parent_zone_key) } ) {
+        my $parent_map_id = $self->map_key_to_id($parent_map_key);
+        $parent_map_id_to_key{$parent_map_id} = $parent_map_key;
+
+        next unless ( $self->{'map_layout'}{$parent_map_key}{'expanded'} );
+
+        push @{ $db_sub_maps_by_parent_key{$parent_map_key} },
+            @{ $self->app_data_module()->sub_maps( map_id => $parent_map_id, )
+                || [] };
+
+        push @db_sub_map_ids,
+            map { $_->{'sub_map_id'} }
+            @{ $db_sub_maps_by_parent_key{$parent_map_key} || [] };
+    }
+
+    # Get Old Sub Map List
+    my @old_sub_map_ids;
+    my %old_sub_map_id_to_map_key;
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$parent_zone_key}{'children'} || [] } )
+    {
+        foreach
+            my $sub_map_key ( @{ $self->map_order($child_zone_key) || [] } )
+        {
+            my $sub_map_id = $self->map_key_to_id($sub_map_key);
+            push @old_sub_map_ids, $sub_map_id;
+            $old_sub_map_id_to_map_key{$sub_map_id} = $sub_map_key;
+            destroy_map_for_relayout(
+                app_display_data => $self,
+                map_key          => $sub_map_key,
+                window_key       => $window_key,
+            );
+        }
+    }
+
+    # Work out which maps are still there, which are new and which have been
+    # lost
+    my %map_ids_new_in_db;
+    my %map_ids_still_in_db;
+    my %map_ids_lost_in_db;
+
+    @db_sub_map_ids  = sort { $a <=> $b } @db_sub_map_ids;
+    @old_sub_map_ids = sort { $a <=> $b } @old_sub_map_ids;
+
+    my $db_index  = 0;
+    my $old_index = 0;
+
+    my ( $db_map_id, $old_map_id );
+    while ( $db_index <= $#db_sub_map_ids
+        and $old_index <= $#old_sub_map_ids )
+    {
+        $db_map_id  = $db_sub_map_ids[$db_index];
+        $old_map_id = $old_sub_map_ids[$old_index];
+        if ( $db_map_id == $old_map_id ) {
+            $map_ids_still_in_db{$db_map_id} = 1;
+            $db_index++;
+            $old_index++;
+        }
+        elsif ( $db_map_id < $old_map_id ) {
+            $map_ids_new_in_db{$db_map_id} = 1;
+            $db_index++;
+        }
+        else {
+            $map_ids_lost_in_db{$old_map_id} = 1;
+            $old_index++;
+        }
+    }
+
+    # Get any remaining in the db list
+    for ( my $i = $db_index; $i <= $#db_sub_map_ids; $i++ ) {
+        $map_ids_new_in_db{$db_map_id} = 1;
+    }
+
+    # Get any remaining in the old list
+    for ( my $i = $old_index; $i <= $#old_sub_map_ids; $i++ ) {
+        $map_ids_lost_in_db{$old_map_id} = 1;
+    }
+
+    # Handle the maps in the db
+    my %new_sub_maps_by_parent_map_key;
+    foreach my $parent_map_key ( keys %db_sub_maps_by_parent_key ) {
+        foreach my $sub_map (
+            @{ $db_sub_maps_by_parent_key{$parent_map_key} || [] } )
+        {
+            my $sub_map_id = $sub_map->{'sub_map_id'};
+
+            # Prepare for adding the new maps
+            if ( $map_ids_new_in_db{$sub_map_id} ) {
+                push @{ $new_sub_maps_by_parent_map_key{$parent_map_key} },
+                    $sub_map;
+            }
+
+            # Move the remaining maps
+            elsif ( $map_ids_still_in_db{$sub_map_id} ) {
+                $self->move_sub_map_on_parents_in_memory(
+                    window_key     => $window_key,
+                    sub_map_key    => $old_sub_map_id_to_map_key{$sub_map_id},
+                    parent_map_key => $parent_map_key,
+                    feature_start  => $sub_map->{'feature_start'},
+                    feature_stop   => $sub_map->{'feature_stop'},
+                );
+            }
+            else {
+                print STDERR "Sub-map not classified: " . $sub_map_id . "\n";
+            }
+        }
+    }
+
+    # Add new Maps
+    foreach my $parent_map_key ( keys %new_sub_maps_by_parent_map_key ) {
+        $self->assign_and_initialize_new_maps(
+            window_key => $window_key,
+            sub_maps   => $new_sub_maps_by_parent_map_key{$parent_map_key},
+            parent_zone_key => $parent_zone_key,
+            parent_map_key  => $parent_map_key,
+        );
+    }
+
+    # Remove the lost maps
+    foreach my $map_id ( keys %map_ids_lost_in_db ) {
+        my $map_key  = $old_sub_map_id_to_map_key{$map_id};
+        my $zone_key = $self->map_key_to_zone_key($map_key);
+        $self->delete_map(
+            window_key => $window_key,
+            map_key    => $map_key,
+            zone_key   => $zone_key,
+        );
+    }
+
+    # Refresh the children zones of each of these zones
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$parent_zone_key}{'children'} || [] } )
+    {
+        $self->refresh_zone_children_from_database(
+            parent_zone_key => $child_zone_key,
+            window_key      => $window_key,
+        );
+    }
+
+    return;
 }
 
 # ----------------------------------------------------
