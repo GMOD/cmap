@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.21 $
+$Revision: 1.22 $
 
 =head1 QUICK START
 
@@ -40,6 +40,11 @@ other Perl modules reported missing by the build process
 =item * Examine maps in viewer
 
 =back
+
+Note: The install script will ask if you want to create a demo.  This
+will import test data into the database and create the needed config
+file.  This is easy if you have a CMap database already constructed
+(if not it will ask to set up a CMap database in MySQL).  
 
 If you need further instructions, read on.  
 
@@ -430,11 +435,10 @@ To install the CMap modules and scripts:
   $ su
   # ./Build install
 
-Several configuration options can be set via arguments to Build.PL.
+The script will make a best guess for where to place components.
+There are several configuration options that can be set via arguments to Build.PL.
 Execute "perl Build.PL -h" to read a brief help message on what they
-are and how you can specify your choices.  Reasonable defaults are
-provided for all the options if you have no strong feelings about
-where to install things.
+are and how you can specify your choices.  
 
 To change the directories where components are installed from the
 default locations, specify them in the "./Build install" command by
