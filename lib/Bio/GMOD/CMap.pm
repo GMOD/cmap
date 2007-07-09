@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.114 2007-07-02 15:16:26 mwz444 Exp $
+# $Id: CMap.pm,v 1.115 2007-07-09 15:11:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -520,6 +520,30 @@ The default is 0.
     $self->{'clean_view'} = 0
         unless defined $self->{'clean_view'};
     return $self->{'clean_view'};
+}
+
+# ----------------------------------------------------
+sub hide_legend {
+
+=pod
+
+=head3 hide_legend
+
+Returns the boolean hide_legend variable.  This determines 
+if there will be a legend on the image;
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'hide_legend'} = $val if defined $val;
+    $self->{'hide_legend'} = $self->config_data('hide_legend')
+        unless defined $self->{'hide_legend'};
+    $self->{'hide_legend'} = 0
+        unless defined $self->{'hide_legend'};
+    return $self->{'hide_legend'};
 }
 
 # ----------------------------------------------------
@@ -1318,6 +1342,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
+    my $hide_legend                 = $args{'hide_legend'};
     my $comp_menu_order             = $args{'comp_menu_order'};
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
@@ -1490,6 +1515,8 @@ Given information about the link, creates a url to cmap_viewer.
         if ( defined($split_agg_ev) and $split_agg_ev ne '' );
     $url .= "clean_view=$clean_view;"
         if ( defined($clean_view) and $clean_view ne '' );
+    $url .= "hide_legend=$hide_legend;"
+        if ( defined($hide_legend) and $hide_legend ne '' );
     $url .= "comp_menu_order=$comp_menu_order;"
         if ( defined($comp_menu_order) and $comp_menu_order ne '' );
     $url .= "corrs_to_map=$corrs_to_map;"

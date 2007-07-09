@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.83 2007-07-02 15:16:27 mwz444 Exp $
+# $Id: Utils.pm,v 1.84 2007-07-09 15:11:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -49,7 +49,7 @@ $VERSION = (qw$Revision: 1.83 $)[-1];
     aggregate                dotplot
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
-    ignore_image_map_sanity
+    ignore_image_map_sanity  hide_legend
     scale_maps               stack_maps
     comp_menu_order          ref_map_order
     prev_ref_map_order       omit_area_boxes
@@ -1326,7 +1326,7 @@ sub _get_options_from_url {
         menu_min_corrs           dotplot
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
-        show_intraslot_corr      split_agg_ev
+        show_intraslot_corr      split_agg_ev        hide_legend
         clean_view               corrs_to_map        reuse_step
         ignore_image_map_sanity  scale_maps          stack_maps
         comp_menu_order          ref_map_order       prev_ref_map_order
@@ -1742,8 +1742,8 @@ sub parse_url {
     for my $param (
         qw[
         aggregate       show_intraslot_corr
-        split_agg_ev    clean_view
-        scale_maps      stack_maps   omit_area_boxes
+        split_agg_ev    clean_view           hide_legend
+        scale_maps      stack_maps           omit_area_boxes
         comp_menu_order ]
         )
     {

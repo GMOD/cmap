@@ -1102,7 +1102,13 @@ function stringify_form(form) {
                 <td align="left" valign="top">Clean View (no navigation buttons):</td>
                   [%- IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END -%]
                 <td><input type="radio" name="clean_view" value="0"[%- IF clean_view==0; ' checked'; END -%]>No</td>
-                <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>yes</td>
+                <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>Yes</td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Hide the Legend:</td>
+                  [%- IF apr.param('hide_legend')==1; hide_legend=1; ELSE; hide_legend=0; END -%]
+                <td><input type="radio" name="hide_legend" value="0"[%- IF hide_legend==0; ' checked'; END -%]>No</td>
+                <td><input type="radio" name="hide_legend" value="1"[%- IF hide_legend==1; ' checked'; END -%]>Yes</td>
               </tr>
             </table>
 

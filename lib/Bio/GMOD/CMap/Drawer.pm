@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.138 2007-04-24 16:31:21 briano Exp $
+# $Id: Drawer.pm,v 1.139 2007-07-09 15:11:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -55,6 +55,7 @@ The base map drawing module.
         show_intraslot_corr => $show_intraslot_corr,
         split_agg_ev => $split_agg_ev,
         clean_view => $clean_view,
+        hide_legend => $hide_legend,
         corrs_to_map => $corrs_to_map,
         scale_maps => $scale_maps,
         eliminate_orphans => $eliminate_orphans,
@@ -277,6 +278,10 @@ Set to 0 to aggregate them all together.
 
 Set to 1 to not have the control buttons displayed on the image.
 
+=item * hide_legend
+
+Set to 1 to not have the legend box displayed on the image.
+
 =item * corrs_to_map
 
 Set to 1 to have correspondence lines go to the map instead of the feature.
@@ -354,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.138 $)[-1];
+$VERSION = (qw$Revision: 1.139 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -384,7 +389,7 @@ my @INIT_PARAMS = qw[
     refMenu                 compMenu                    optionMenu
     addOpMenu               dotplot                     eliminate_orphans
     corrs_to_map            session_id                  next_step
-    ignore_image_map_sanity skip_drawing
+    ignore_image_map_sanity skip_drawing                hide_legend
 ];
 
 # ----------------------------------------------------
@@ -1388,12 +1393,99 @@ Lays out the image and writes it to the file system, set the "image_name."
         $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, 10 );
     }
 
+    my $font = $self->regular_font;
+    unless ( $self->hide_legend() ) {
+        ( $min_x, $max_x, $min_y, $max_y ) = $self->draw_legend(
+            font                => $font,
+            min_y               => $min_y,
+            max_y               => $max_y,
+            min_x               => $min_x,
+            max_x               => $max_x,
+            omit_all_area_boxes => $omit_all_area_boxes,
+            corrs_aggregated    => $corrs_aggregated,
+            bg_color            => $bg_color,
+            border_color        => $border_color,
+        );
+    }
+
+    my $watermark = 'CMap v' . $Bio::GMOD::CMap::VERSION;
+    my $wm_x      = $max_x - $font->width * length($watermark) - 5;
+    my $wm_y      = $max_y;
+    $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
+    $self->add_map_area(
+        coords => [
+            $wm_x, $wm_y,
+            $wm_x + $font->width * length($watermark),
+            $wm_y + $font->height
+        ],
+        url => CMAP_URL,
+        alt => 'GMOD-CMap website',
+        )
+        unless ($omit_all_area_boxes);
+
+    $max_y += $font->height;
+
+    $self->max_x($max_x);
+    $self->max_y($max_y);
+
+    # Do the sanity check for area boxes
+    unless ( $self->ignore_image_map_sanity ) {
+        my $max_boxes = DEFAULT->{'max_image_map_objects'};
+        my $config_max_image_map_objects
+            = $self->config_data('max_image_map_objects');
+        if ( defined($config_max_image_map_objects)
+            and $config_max_image_map_objects =~ /^[\d,]+$/ )
+        {
+            $max_boxes = $config_max_image_map_objects;
+        }
+
+        if ( scalar( $self->image_map_data ) > $max_boxes ) {
+            $self->{'image_map_data'} = ();
+            $self->message(
+                'WARNING:  There were too many clickable objects on this image to render in a timely manner and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
+            );
+        }
+    }
+
+    #
+    # Move all the coordinates to positive numbers.
+    #
+    $self->adjust_frame;
+
+    $self->draw_image();
+
+    return $self;
+}
+
+# ----------------------------------------------------
+sub draw_legend {
+
+=pod
+
+=head2 draw
+
+Lays out the legend.  Used in draw().
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    my $min_x               = $args{'min_x'};
+    my $max_x               = $args{'max_x'};
+    my $min_y               = $args{'min_y'};
+    my $max_y               = $args{'max_y'};
+    my $font                = $args{'font'};
+    my $omit_all_area_boxes = $args{'omit_all_area_boxes'};
+    my $corrs_aggregated    = $args{'corrs_aggregated'};
+    my $bg_color            = $args{'bg_color'};
+    my $border_color        = $args{'border_color'};
+
+    my @bounds = ( $min_x, $max_y + 10 );
+
     #
     # Add the legend
     #
-    my @bounds = ( $min_x, $max_y + 10 );
-    my $font   = $self->regular_font;
-    my $x      = $min_x + 20;
+    my $x = $min_x + 20;
     $max_y += 20;
 
     #
@@ -1674,57 +1766,12 @@ Lays out the image and writes it to the file system, set the "image_name."
         }
     }
 
-    my $watermark = 'CMap v' . $Bio::GMOD::CMap::VERSION;
-    my $wm_x      = $max_x - $font->width * length($watermark) - 5;
-    my $wm_y      = $max_y;
-    $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
-    $self->add_map_area(
-        coords => [
-            $wm_x, $wm_y,
-            $wm_x + $font->width * length($watermark),
-            $wm_y + $font->height
-        ],
-        url => CMAP_URL,
-        alt => 'GMOD-CMap website',
-        )
-        unless ($omit_all_area_boxes);
-
-    $max_y += $font->height + 5;
-
     push @bounds, ( $max_x, $max_y );
 
     $self->add_drawing( FILLED_RECT, @bounds, $bg_color,     -1 );
     $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
 
-    $self->max_x($max_x);
-
-    # Do the sanity check for area boxes
-    unless ( $self->ignore_image_map_sanity ) {
-        my $max_boxes = DEFAULT->{'max_image_map_objects'};
-        my $config_max_image_map_objects
-            = $self->config_data('max_image_map_objects');
-        if ( defined($config_max_image_map_objects)
-            and $config_max_image_map_objects =~ /^[\d,]+$/ )
-        {
-            $max_boxes = $config_max_image_map_objects;
-        }
-
-        if ( scalar( $self->image_map_data ) > $max_boxes ) {
-            $self->{'image_map_data'} = ();
-            $self->message(
-                'WARNING:  There were too many clickable objects on this image to render in a timely manner and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
-            );
-        }
-    }
-
-    #
-    # Move all the coordinates to positive numbers.
-    #
-    $self->adjust_frame;
-
-    $self->draw_image();
-
-    return $self;
+    return ( $min_x, $max_x, $min_y, $max_y );
 }
 
 # ----------------------------------------------------
@@ -3217,6 +3264,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
+    my $hide_legend                 = $args{'hide_legend'};
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
     my $flip                        = $args{'flip'};
@@ -3341,6 +3389,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($clean_view) ) {
         $clean_view = $self->clean_view();
     }
+    unless ( defined($hide_legend) ) {
+        $hide_legend = $self->hide_legend();
+    }
     unless ( defined($corrs_to_map) ) {
         $corrs_to_map = $self->corrs_to_map();
     }
@@ -3450,6 +3501,7 @@ Creates default link parameters for CMap->create_viewer_link()
         show_intraslot_corr         => $show_intraslot_corr,
         split_agg_ev                => $split_agg_ev,
         clean_view                  => $clean_view,
+        hide_legend                 => $hide_legend,
         corrs_to_map                => $corrs_to_map,
         ignore_image_map_sanity     => $ignore_image_map_sanity,
         flip                        => $flip,
