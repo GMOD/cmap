@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.25 2007-07-06 14:42:04 mwz444 Exp $
+# $Id: AppData.pm,v 1.26 2007-07-10 18:23:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -1133,6 +1133,38 @@ Calls get_maps_from_map_set either locally or remotely
     else {
         return $self->sql()
             ->get_maps_from_map_set( map_set_id => $map_set_id, )
+            || [];
+    }
+
+}
+
+# ----------------------------------------------------
+sub generic_get_data {
+
+=pod
+
+=head2 generic_get_data
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $method_name = $args{'method_name'};
+    my $parameters  = $args{'parameters'};
+
+    if ( my $url = $self->{'remote_url'} ) {
+        $url .= ';action=generic_get_data';
+
+        $url .= ";method_name=$method_name";
+        $url .= ';parameters=' . nfreeze($parameters);
+
+        return $self->request_remote_data( url => $url, thaw => 1, );
+    }
+    else {
+        return $self->sql()->generic_get_data(
+            method_name => $method_name,
+            parameters  => $parameters,
+            )
             || [];
     }
 

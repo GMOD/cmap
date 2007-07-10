@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.5 2007-04-27 13:40:21 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.6 2007-07-10 18:23:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -40,36 +40,171 @@ sub modify_right_click_menu {
     my $menu_items       = $args{'menu_items'};
     my $app_interface    = $self->app_interface();
     my $app_display_data = $self->app_display_data();
+    my $app_data_module  = $self->data_module();
 
     return
         unless (
         $app_interface->number_of_object_selections( $window_key, ) );
 
+    # Using Attributes Example
     push @{$menu_items}, [
-        Button => 'Selected Items',
+        Button => 'Use Search Terms',
         -command => sub {
             my $selected_type = $app_interface->object_selected_type(
                 window_key => $window_key, );
-            print STDERR "Selected Type: $selected_type\n";
+            my @urls;
+            my $template_processor = $self->template;
             if ( $selected_type eq 'map' ) {
-                print STDERR "Map Ids\n";
                 foreach my $map_key (
                     $app_interface->object_selection_keys( $window_key, ) )
                 {
-                    print STDERR $app_display_data->map_key_to_id($map_key)
-                        . "\n";
+                    my $map_id = $app_display_data->map_key_to_id($map_key);
+
+                    # Get the Attributes
+                    my $attribs = $app_display_data->app_data_module()
+                        ->generic_get_data(
+                        method_name => 'get_attributes',
+                        parameters  => {
+                            object_id      => $map_id,
+                            object_type    => 'map',
+                            attribute_name => "search_term",
+                        },
+                        );
+                    next unless ( @{ $attribs || [] } );
+
+                    my @search_terms;
+                    foreach my $attrib ( @{ $attribs || [] } ) {
+                        push @search_terms, $attrib->{'attribute_value'};
+                    }
+                    next unless (@search_terms);
+                    my $url = "http://www.google.com/search?q="
+                        . join( '+', @search_terms );
+                    push @urls, $url;
                 }
             }
             elsif ( $selected_type eq 'feature' ) {
-                print STDERR "Feature Accessions\n";
                 foreach my $feature_acc (
                     $app_interface->object_selection_keys(
                         window_key => $window_key,
                     )
                     )
                 {
-                    print STDERR "$feature_acc\n";
+                    my $feature_data = $app_display_data->app_data_module()
+                        ->feature_data( feature_acc => $feature_acc, );
+                    my $feature_id = $feature_data->{'feature_id'};
+
+                    # Get the Xrefs
+                    my $attribs = $app_display_data->app_data_module()
+                        ->generic_get_data(
+                        method_name => 'get_attributes',
+                        parameters  => {
+                            object_id      => $feature_id,
+                            object_type    => 'feature',
+                            attribute_name => "search_term",
+                        },
+                        );
+                    next unless ( @{ $attribs || [] } );
+
+                    my @search_terms;
+                    foreach my $attrib ( @{ $attribs || [] } ) {
+                        push @search_terms, $attrib->{'attribute_value'};
+                    }
+                    next unless (@search_terms);
+                    my $url = "http://www.google.com/search?q="
+                        . join( '+', @search_terms );
+                    push @urls, $url;
                 }
+            }
+            if (@urls) {
+                foreach my $url (@urls) {
+                    system( "/usr/bin/firefox " . $url );
+                }
+            }
+            else {
+                $self->app_interface->popup_warning( text =>
+                        "There are no search terms attached to the object(s).\n",
+                );
+            }
+        },
+    ];
+
+    # External Links Example
+    push @{$menu_items}, [
+        Button => 'Open External Links',
+        -command => sub {
+            my $selected_type = $app_interface->object_selected_type(
+                window_key => $window_key, );
+            my @urls;
+            my $template_processor = $self->template;
+            if ( $selected_type eq 'map' ) {
+                foreach my $map_key (
+                    $app_interface->object_selection_keys( $window_key, ) )
+                {
+                    my $map_id = $app_display_data->map_key_to_id($map_key);
+
+                    # Get the Xrefs
+                    my $xrefs = $app_display_data->app_data_module()
+                        ->generic_get_data(
+                        method_name => 'get_xrefs',
+                        parameters  => {
+                            object_id   => $map_id,
+                            object_type => 'map',
+                        },
+                        );
+                    next unless ( @{ $xrefs || [] } );
+
+                    my $map_data = $app_display_data->app_data_module()
+                        ->map_data( map_id => $map_id, );
+
+                    foreach my $xref ( @{ $xrefs || [] } ) {
+                        my $url;
+                        $template_processor->process( \$xref->{'xref_url'},
+                            { object => $map_data }, \$url );
+
+                        push @urls, $url;
+                    }
+                }
+            }
+            elsif ( $selected_type eq 'feature' ) {
+                foreach my $feature_acc (
+                    $app_interface->object_selection_keys(
+                        window_key => $window_key,
+                    )
+                    )
+                {
+                    my $feature_data = $app_display_data->app_data_module()
+                        ->feature_data( feature_acc => $feature_acc, );
+                    my $feature_id = $feature_data->{'feature_id'};
+
+                    # Get the Xrefs
+                    my $xrefs = $app_display_data->app_data_module()
+                        ->generic_get_data(
+                        method_name => 'get_xrefs',
+                        parameters  => {
+                            object_id   => $feature_id,
+                            object_type => 'feature',
+                        },
+                        );
+                    next unless ( @{ $xrefs || [] } );
+
+                    foreach my $xref ( @{ $xrefs || [] } ) {
+                        my $url;
+                        $template_processor->process( \$xref->{'xref_url'},
+                            { object => $feature_data }, \$url );
+
+                        push @urls, $url;
+                    }
+                }
+            }
+            if (@urls) {
+                foreach my $url (@urls) {
+                    system( "/usr/bin/firefox " . $url );
+                }
+            }
+            else {
+                $self->app_interface->popup_warning(
+                    text => "There are no external references to present.\n",
+                );
             }
         },
     ];

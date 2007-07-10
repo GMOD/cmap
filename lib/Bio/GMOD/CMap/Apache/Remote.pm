@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.12 2007-07-02 15:16:28 mwz444 Exp $
+# $Id: Remote.pm,v 1.13 2007-07-10 18:23:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -68,7 +68,7 @@ sub handler {
             map_accs => \@map_accs,
         );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -80,7 +80,7 @@ sub handler {
             is_enabled        => $is_enabled,
         );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -94,7 +94,7 @@ sub handler {
             is_enabled        => $is_enabled,
         );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -103,7 +103,7 @@ sub handler {
         my $data       = $self->sql()
             ->get_maps_from_map_set( map_set_id => $map_set_id, );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -117,7 +117,7 @@ sub handler {
             get_sub_maps => $get_sub_maps,
         );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -133,7 +133,7 @@ sub handler {
             allow_intramap => $allow_intramap,
         );
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
         }
         print nfreeze($data);
     }
@@ -146,7 +146,21 @@ sub handler {
             || [];
 
         unless ( @{ $data || [] } ) {
-            $data = undef;
+            $data = [];
+        }
+        print nfreeze($data);
+    }
+    elsif ( $action eq 'generic_get_data' ) {
+        my $parameters  = thaw $apr->param('parameters');
+        my $method_name = $apr->param('method_name');
+        my $data        = $self->sql->generic_get_data(
+            parameters  => $parameters,
+            method_name => $method_name,
+            )
+            || [];
+
+        unless ( @{ $data || [] } ) {
+            $data = [];
         }
         print nfreeze($data);
     }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.166 2007-07-03 16:33:06 mwz444 Exp $
+# $Id: Generic.pm,v 1.167 2007-07-10 18:23:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.166 $)[-1];
+$VERSION = (qw$Revision: 1.167 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -10745,6 +10745,72 @@ that db has auto incrementing.
     }
 
     return $next_number;
+}
+
+#-----------------------------------------------
+sub generic_get_data {
+
+=pod
+
+=head2 generic_get_data()
+
+=over 4
+
+=item * Description
+
+The reason for this method is to safely allow the data retrieval methods to be
+used from remote sources without opening up the data to correuption.
+
+Calls the method passed to it and returns the results.  The method must start
+with "get_".
+
+=item * Adaptor Writing Info
+
+This should be left alone.
+
+=item * Required Input
+
+=over 4
+
+=item - Parameters (parameters)
+
+These are the parameters to the method.
+
+=item - Method Name (method_name)
+
+This is the method to be run.  It must start with "get_"
+
+=item - return_start (return_start)
+
+=back
+
+=item * Output
+
+Returns the output of the method named in method_name.
+
+=back
+
+=cut
+
+    my $self              = shift;
+    my %validation_params = (
+        parameters  => 1,
+        method_name => 1,
+    );
+    my %args = @_;
+    validate( @_, \%validation_params ) unless $args{'no_validation'};
+
+    my $method_name = $args{'method_name'} or return;
+    my $parameters  = $args{'parameters'}  or return;
+    return undef unless ( $method_name =~ /^get_/ );
+
+    return undef unless ( ref $parameters eq 'HASH' );
+
+    if ( $self->can($method_name) ) {
+        return $self->$method_name(%$parameters);
+    }
+
+    return undef;
 }
 
 #-----------------------------------------------
