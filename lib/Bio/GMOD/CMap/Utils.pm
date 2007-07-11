@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.84 2007-07-09 15:11:37 mwz444 Exp $
+# $Id: Utils.pm,v 1.85 2007-07-11 21:21:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -104,6 +104,7 @@ my @subs = qw[
     create_session_step
     longest_run
     round_to_granularity
+    has_sql_command
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -796,6 +797,26 @@ sub sort_selectall_arrayref {
     } @$arrayref;
 
     return \@return;
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 has_sql_command
+
+Returns true if a string has an sql command in it.
+
+=cut 
+
+sub has_sql_command {
+    my $str = shift;
+
+    if ( $str =~ /(SELECT|UPDATE|DELETE|INSERT|MERGE|UNION)/i ) {
+        return 1;
+    }
+    return 0;
+
 }
 
 # --------------------------
