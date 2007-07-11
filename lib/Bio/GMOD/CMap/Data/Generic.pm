@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.167 2007-07-10 18:23:00 mwz444 Exp $
+# $Id: Generic.pm,v 1.168 2007-07-11 21:20:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.167 $)[-1];
+$VERSION = (qw$Revision: 1.168 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -221,6 +221,8 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $acc_id = $args{'acc_id'} or return $self->error('No accession id');
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
@@ -293,6 +295,8 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $id = $args{'id'} or return $self->error('No id');
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
@@ -374,8 +378,12 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object type');
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $object_id = $args{'object_id'} or return $self->error('No object id');
     my $order_by = $args{'order_by'};
+    die "Order by clause ($order_by) has SQL code in it\n"
+        if ( has_sql_command($order_by) );
     my $object_id_field = $object_type . "_id";
 
     my $db = $self->db;
@@ -388,7 +396,7 @@ Not using cache because this query is quicker.
     my $sql_str = qq[
         select $object_name_field
         from   $table_name
-        where  $object_id_field=$object_id
+        where  $object_id_field = ?
     ];
     if ( $order_by eq 'display_order' ) {
         $sql_str .= " order by display_order, $object_name_field ";
@@ -397,7 +405,7 @@ Not using cache because this query is quicker.
         $sql_str .= " order by $order_by ";
     }
 
-    $return_object = $db->selectrow_array($sql_str);
+    $return_object = $db->selectrow_array( $sql_str, {}, $object_id );
 
     return $return_object;
 }
@@ -446,6 +454,8 @@ Primary key field
 
     my $self        = shift;
     my $object_type = shift;
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     $object_type .= '_id';
     return $object_type;
 }
@@ -765,8 +775,10 @@ original start and stop.
             if ( $maps and %{$maps} ) {
 
                 $acc_where .= ' or ' if ($acc_where);
-                $acc_where .= " m.map_acc in ('"
-                    . join( "','", sort keys( %{$maps} ) ) . "')";
+                $acc_where .= " m.map_acc in ("
+                    . join( ",",
+                    map { $db->quote($_) } sort keys( %{$maps} ) )
+                    . ")";
             }
             elsif ( $map_sets and %{$map_sets} ) {
                 $from .= q[,
@@ -774,10 +786,10 @@ original start and stop.
                 $where .= " m.map_set_id=ms.map_set_id ";
 
                 #Map set acc
-                $acc_where .= " (ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '",
-                    sort keys( %{$map_sets} ) )
-                    . "') ";
+                $acc_where .= " (ms.map_set_acc = "
+                    . join( " or ms.map_set_acc = ",
+                    map { $db->quote($_) } sort keys( %{$map_sets} ) )
+                    . ") ";
             }
         }
         else {
@@ -814,8 +826,10 @@ original start and stop.
             {
 
                 $acc_where .= ' and ' if ($acc_where);
-                $acc_where .= " m.map_acc in ('"
-                    . join( "','", sort keys( %{$maps} ) ) . "')";
+                $acc_where .= " m.map_acc in ("
+                    . join( ",",
+                    map { $db->quote($_) } sort keys( %{$maps} ) )
+                    . ")";
             }
             else {
 
@@ -840,25 +854,27 @@ original start and stop.
                         and defined( $slot_info->{$m_id}->[1] ) )
                     {
                         $r_m_str .= " and (( cl.feature_start2>="
-                            . $slot_info->{$m_id}->[0]
+                            . $db->quote( $slot_info->{$m_id}->[0] )
                             . " and cl.feature_start2<="
-                            . $slot_info->{$m_id}->[1]
+                            . $db->quote( $slot_info->{$m_id}->[1] )
                             . " ) or ( cl.feature_stop2 is not null and "
                             . "  cl.feature_start2<="
-                            . $slot_info->{$m_id}->[0]
+                            . $db->quote( $slot_info->{$m_id}->[0] )
                             . " and cl.feature_stop2>="
-                            . $slot_info->{$m_id}->[0] . " ))) ";
+                            . $db->quote( $slot_info->{$m_id}->[0] )
+                            . " ))) ";
                     }
                     elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
                         $r_m_str .= " and (( cl.feature_start2>="
-                            . $slot_info->{$m_id}->[0]
+                            . $db->quote( $slot_info->{$m_id}->[0] )
                             . " ) or ( cl.feature_stop2 is not null "
                             . " and cl.feature_stop2>="
-                            . $slot_info->{$m_id}->[0] . " ))) ";
+                            . $db->quote( $slot_info->{$m_id}->[0] )
+                            . " ))) ";
                     }
                     elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
                         $r_m_str .= " and cl.feature_start2<="
-                            . $slot_info->{$m_id}->[1] . ") ";
+                            . $db->quote( $slot_info->{$m_id}->[1] ) . ") ";
                     }
                     else {
                         $r_m_str .= ") ";
@@ -872,14 +888,18 @@ original start and stop.
                 if (    $ignored_feature_type_accs
                     and @$ignored_feature_type_accs )
                 {
-                    $where .= " and cl.feature_type_acc1 not in ('"
-                        . join( "','", sort @$ignored_feature_type_accs )
-                        . "') ";
+                    $where .= " and cl.feature_type_acc1 not in ("
+                        . join( ",",
+                        map { $db->quote($_) }
+                            sort @$ignored_feature_type_accs )
+                        . ") ";
                     $where
                         .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
-                        . " or cl.feature_type_acc2 not in ('"
-                        . join( "','", sort @$ignored_feature_type_accs )
-                        . "') ) ";
+                        . " or cl.feature_type_acc2 not in ("
+                        . join( ",",
+                        map { $db->quote($_) }
+                            sort @$ignored_feature_type_accs )
+                        . ") ) ";
                 }
 
                 if (   @$included_evidence_type_accs
@@ -892,23 +912,27 @@ original start and stop.
                     $where .= " and ( ";
                     my @join_array;
                     if (@$included_evidence_type_accs) {
-                        push @join_array,
-                            " ce.evidence_type_acc in ('"
-                            . join( "','",
-                            sort @$included_evidence_type_accs )
-                            . "')";
+                        push @join_array, " ce.evidence_type_acc in ("
+                            . join( ",",
+                            map { $db->quote($_) }
+                                sort @$included_evidence_type_accs )
+                            . ")";
                     }
                     foreach my $et_acc ( sort @$less_evidence_type_accs ) {
                         push @join_array,
-                            " ( ce.evidence_type_acc = '$et_acc' "
+                            " ( ce.evidence_type_acc = "
+                            . $db->quote($et_acc) . " "
                             . " and ce.score <= "
-                            . $evidence_type_score->{$et_acc} . " ) ";
+                            . $db->quote( $evidence_type_score->{$et_acc} )
+                            . " ) ";
                     }
                     foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
                         push @join_array,
-                            " ( ce.evidence_type_acc = '$et_acc' "
+                            " ( ce.evidence_type_acc = "
+                            . $db->quote($et_acc) . " "
                             . " and ce.score >= "
-                            . $evidence_type_score->{$et_acc} . " ) ";
+                            . $db->quote( $evidence_type_score->{$et_acc} )
+                            . " ) ";
                     }
                     $where .= join( ' or ', @join_array ) . " ) ";
                 }
@@ -927,46 +951,51 @@ original start and stop.
                     $where .= " and m.map_set_id=ms.map_set_id ";
 
                     #Map set acc
-                    $acc_where .= "(ms.map_set_acc = '"
-                        . join( "' or ms.map_set_acc = '",
-                        sort keys( %{$map_sets} ) )
-                        . "')";
+                    $acc_where .= "(ms.map_set_acc = "
+                        . join( " or ms.map_set_acc = ",
+                        map { $db->quote($_) } sort keys( %{$map_sets} ) )
+                        . ")";
                 }
                 else {
                     $use_corr_restriction = 1 if ( $corr_restrict > 0 );
                     $acc_where .= ' or ' if ($acc_where);
-                    $acc_where .= " m.map_acc in ('"
-                        . join( "','", sort keys( %{$maps} ) ) . "')";
+                    $acc_where .= " m.map_acc in ("
+                        . join( ",",
+                        map { $db->quote($_) } sort keys( %{$maps} ) )
+                        . ")";
                     foreach my $map_acc ( keys %{$maps} ) {
                         if (    defined( $maps->{$map_acc}{'start'} )
                             and defined( $maps->{$map_acc}{'stop'} ) )
                         {
-                            $acc_where
-                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                            $acc_where .= qq[ and ( not (m.map_acc = ]
+                                . $db->quote($map_acc) . q[)  ]
                                 . " or (( cl.feature_start1>="
-                                . $maps->{$map_acc}{'start'}
+                                . $db->quote( $maps->{$map_acc}{'start'} )
                                 . " and cl.feature_start1<="
-                                . $maps->{$map_acc}{'stop'}
+                                . $db->quote( $maps->{$map_acc}{'stop'} )
                                 . " ) or ( cl.feature_stop1 is not null and "
                                 . "  cl.feature_start1<="
-                                . $maps->{$map_acc}{'start'}
+                                . $db->quote( $maps->{$map_acc}{'start'} )
                                 . " and cl.feature_stop1>="
-                                . $maps->{$map_acc}{'start'} . " ))) ";
+                                . $db->quote( $maps->{$map_acc}{'start'} )
+                                . " ))) ";
                         }
                         elsif ( defined( $maps->{$map_acc}{'start'} ) ) {
-                            $acc_where
-                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                            $acc_where .= qq[ and ( not (m.map_acc = ]
+                                . $db->quote($map_acc) . q[)  ]
                                 . " or (( cl.feature_start1>="
-                                . $maps->{$map_acc}{'start'}
+                                . $db->quote( $maps->{$map_acc}{'start'} )
                                 . " ) or ( cl.feature_stop1 is not null "
                                 . " and cl.feature_stop1>="
-                                . $maps->{$map_acc}{'start'} . " ))) ";
+                                . $db->quote( $maps->{$map_acc}{'start'} )
+                                . " ))) ";
                         }
                         elsif ( defined( $maps->{$map_acc}{'stop'} ) ) {
-                            $acc_where
-                                .= qq[ and ( not (m.map_acc = '$map_acc')  ]
+                            $acc_where .= qq[ and ( not (m.map_acc = ]
+                                . $db->quote($map_acc) . q[)  ]
                                 . " or cl.feature_start1<="
-                                . $maps->{$map_acc}{'stop'} . ") ";
+                                . $db->quote( $maps->{$map_acc}{'stop'} )
+                                . ") ";
                         }
                     }
                 }
@@ -980,7 +1009,8 @@ original start and stop.
                              m.map_acc
                         ];
                     $having = " having count(cl.feature_correspondence_id) "
-                        . ">=$applied_min_corrs ";
+                        . ">="
+                        . $db->quote($applied_min_corrs) . " ";
                 }
             }
         }
@@ -1223,12 +1253,12 @@ Not using cache because this query is quicker.
 
     if ($species_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " s.species_id = $species_id ";
+        $where_sql .= " s.species_id = " . $db->quote($species_id) . " ";
     }
     elsif (@$species_accs) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " s.species_acc in ('"
-            . join( "', '", sort @$species_accs ) . "') ";
+        $where_sql .= " s.species_acc in ("
+            . join( ", ", map { $db->quote($_) } sort @$species_accs ) . ") ";
     }
 
     if ($join_map_set) {
@@ -1240,10 +1270,12 @@ Not using cache because this query is quicker.
         $where_sql .= " s.species_id=ms.species_id ";
 
         if ( defined($is_relational_map) ) {
-            $where_sql .= " and ms.is_relational_map = $is_relational_map";
+            $where_sql .= " and ms.is_relational_map = "
+                . $db->quote($is_relational_map) . " ";
         }
         if ( defined($is_enabled) ) {
-            $where_sql .= " and ms.is_enabled = $is_enabled";
+            $where_sql
+                .= " and ms.is_enabled = " . $db->quote($is_enabled) . " ";
         }
     }
 
@@ -1317,7 +1349,8 @@ Not using cache because this query is quicker.
     ];
 
     if ($map_set_acc) {
-        $where_sql .= " and ms.map_set_acc = '$map_set_acc' ";
+        $where_sql
+            .= " and ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     else {
         return;
@@ -1739,41 +1772,44 @@ Array of Hashes:
     my $order_by_sql = '';
 
     if ($map_set_id) {
-        $where_sql .= " and ms.map_set_id = '$map_set_id' ";
+        $where_sql .= " and ms.map_set_id = " . $db->quote($map_set_id) . " ";
     }
     elsif (@$map_set_ids) {
         $where_sql .= " and ms.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     elsif ($map_set_acc) {
-        $where_sql .= " and ms.map_set_acc = '$map_set_acc' ";
+        $where_sql
+            .= " and ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     elsif (@$map_set_accs) {
-        $where_sql .= " and ms.map_set_acc in ('"
-            . join( "','", sort @$map_set_accs ) . "') ";
+        $where_sql .= " and ms.map_set_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_accs ) . ") ";
     }
     if ($species_id) {
-        $where_sql .= " and s.species_id= '$species_id' ";
+        $where_sql .= " and s.species_id= " . $db->quote($species_id) . " ";
     }
     elsif (@$species_ids) {
         $where_sql .= " and s.species_id in ("
-            . join( ",", sort @$species_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$species_ids ) . ") ";
     }
     elsif ( $species_acc and $species_acc ne '-1' ) {
-        $where_sql .= " and s.species_acc= '$species_acc' ";
+        $where_sql .= " and s.species_acc= " . $db->quote($species_acc) . " ";
     }
     if ($map_type_acc) {
-        $where_sql .= " and ms.map_type_acc = '$map_type_acc' ";
+        $where_sql
+            .= " and ms.map_type_acc = " . $db->quote($map_type_acc) . " ";
     }
     elsif (@$map_type_accs) {
-        $where_sql .= " and ms.map_type_acc in ('"
-            . join( "','", sort @$map_type_accs ) . "') ";
+        $where_sql .= " and ms.map_type_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$map_type_accs ) . ") ";
     }
     if ( defined($is_relational_map) ) {
-        $where_sql .= " and ms.is_relational_map = $is_relational_map ";
+        $where_sql .= " and ms.is_relational_map = "
+            . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) and $is_enabled =~ /\d/ ) {
-        $where_sql .= " and ms.is_enabled = $is_enabled ";
+        $where_sql .= " and ms.is_enabled = " . $db->quote($is_enabled) . " ";
     }
     if ($count_maps) {
         $select_sql .= ", count(map.map_id) as map_count ";
@@ -1954,33 +1990,34 @@ Not using cache because this query is quicker.
 
     if ($map_set_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_id = $map_set_id ";
+        $where_sql .= " ms.map_set_id = " . $db->quote($map_set_id) . " ";
     }
     elsif (@$map_set_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql
-            .= " ms.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+        $where_sql .= " ms.map_set_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     elsif ($map_set_acc) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_acc = '$map_set_acc' ";
+        $where_sql .= " ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     elsif (@$map_set_accs) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_acc in ('"
-            . join( "','", sort @$map_set_accs ) . "') ";
+        $where_sql .= " ms.map_set_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_accs ) . ") ";
     }
     if ($map_type_acc) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_type_acc = '$map_type_acc' ";
+        $where_sql .= " ms.map_type_acc = " . $db->quote($map_type_acc) . " ";
     }
     if ( defined($is_relational_map) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_relational_map = $is_relational_map ";
+        $where_sql .= " ms.is_relational_map = "
+            . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_enabled = $is_enabled ";
+        $where_sql .= " ms.is_enabled = " . $db->quote($is_enabled) . " ";
     }
 
     $sql_str .= $where_sql;
@@ -2072,7 +2109,7 @@ Not using cache because this query is quicker.
 
         # Only need to use one map id since all maps must
         # be from the same map set.
-        $sql_str .= " and map.map_id = " . $map_ids->[0] . " ";
+        $sql_str .= " and map.map_id = " . $db->quote( $map_ids->[0] ) . " ";
     }
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -2646,49 +2683,52 @@ Array of Hashes:
     my $order_by_sql = '';
 
     if ($map_id) {
-        $where_sql .= " and map.map_id = $map_id ";
+        $where_sql .= " and map.map_id = " . $db->quote($map_id) . " ";
     }
     elsif (@$map_ids) {
-        $where_sql
-            .= " and map.map_id in (" . join( ',', sort @$map_ids ) . ") ";
+        $where_sql .= " and map.map_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_ids ) . ") ";
     }
     if ($map_acc) {
-        $where_sql .= " and map.map_acc = '$map_acc' ";
+        $where_sql .= " and map.map_acc = " . $db->quote($map_acc) . " ";
     }
     elsif (@$map_accs) {
-        $where_sql .= " and map.map_acc in ('"
-            . join( q{','}, sort @$map_accs ) . "') ";
+        $where_sql .= " and map.map_acc in ("
+            . join( q{,}, map { $db->quote($_) } sort @$map_accs ) . ") ";
     }
     if ($map_name) {
-        $where_sql .= " and map.map_name='$map_name' ";
+        $where_sql .= " and map.map_name=" . $db->quote($map_name) . " ";
     }
     if ($map_length) {
-        $where_sql
-            .= " and (map.map_stop - map.map_start + 1 = $map_length) ";
+        $where_sql .= " and (map.map_stop - map.map_start + 1 = "
+            . $db->quote($map_length) . ") ";
     }
 
     if ($map_set_id) {
-        $where_sql .= " and ms.map_set_id = '$map_set_id' ";
+        $where_sql .= " and ms.map_set_id = " . $db->quote($map_set_id) . " ";
     }
     elsif ($map_set_acc) {
-        $where_sql .= " and ms.map_set_acc = '$map_set_acc' ";
+        $where_sql
+            .= " and ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     elsif (@$map_set_accs) {
-        $where_sql .= " and ms.map_set_acc in ('"
-            . join( "','", sort @$map_set_accs ) . "') ";
+        $where_sql .= " and ms.map_set_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_accs ) . ") ";
     }
 
     if ($species_acc) {
-        $where_sql .= qq[ and s.species_acc='$species_acc' ];
+        $where_sql .= q[ and s.species_acc=] . $db->quote($species_acc) . " ";
     }
     if ($map_type_acc) {
-        $where_sql .= qq[ and ms.map_type_acc='$map_type_acc' ];
+        $where_sql
+            .= q[ and ms.map_type_acc=] . $db->quote($map_type_acc) . " ";
     }
     if ( defined($is_relational_map) ) {
-        $where_sql .= " and ms.is_relational_map = $is_relational_map";
+        $where_sql .= " and ms.is_relational_map = "
+            . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) ) {
-        $where_sql .= " and ms.is_enabled = $is_enabled";
+        $where_sql .= " and ms.is_enabled = " . $db->quote($is_enabled) . " ";
     }
 
     if ($count_features) {
@@ -2838,15 +2878,15 @@ Not using cache because this query is quicker.
 
     if ($map_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map_id = $map_id ";
+        $where_sql .= " map_id = " . $db->quote($map_id) . " ";
     }
     elsif ($map_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map_acc = '$map_acc' ";
+        $where_sql .= " map_acc = " . $db->quote($map_acc) . " ";
     }
     elsif ($map_set_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map_set_id = $map_set_id ";
+        $where_sql .= " map_set_id = " . $db->quote($map_set_id) . " ";
     }
 
     $sql_str .= $where_sql;
@@ -3046,7 +3086,8 @@ Not Caching because the calling method will do that.
         $map_name =~ s/\*/%/g;
         my $comparison = $map_name =~ m/%/ ? 'like' : '=';
         if ( $map_name ne '%' ) {
-            $sql_str .= " and map.map_name $comparison '$map_name' ";
+            $sql_str .= " and map.map_name $comparison "
+                . $db->quote($map_name) . " ";
         }
     }
     $sql_str .= q[
@@ -3054,17 +3095,19 @@ Not Caching because the calling method will do that.
             map.map_start,map.map_stop,map.display_order
     ];
     if ( $min_correspondence_maps and $min_correspondences ) {
-        $sql_str
-            .= " having count(distinct(cl.map_id2)) >=$min_correspondence_maps "
-            . " and count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
+        $sql_str .= " having count(distinct(cl.map_id2)) >="
+            . $db->quote($min_correspondence_maps) . " "
+            . " and count(distinct(cl.feature_correspondence_id)) >="
+            . $db->quote($min_correspondences) . " ";
     }
     elsif ($min_correspondence_maps) {
-        $sql_str
-            .= " having count(distinct(cl.map_id2)) >='$min_correspondence_maps' ";
+        $sql_str .= " having count(distinct(cl.map_id2)) >="
+            . $db->quote($min_correspondence_maps) . " ";
     }
     elsif ($min_correspondences) {
         $sql_str .= " having count(distinct(cl.feature_correspondence_id)) "
-            . " >=$min_correspondences ";
+            . " >="
+            . $db->quote($min_correspondences) . " ";
     }
     $return_object
         = $db->selectall_hashref( $sql_str, 'map_id', { Columns => {} },
@@ -3421,7 +3464,7 @@ Array of Hashes:
 
     if ($map_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map_id = $map_id ";
+        $where_sql .= " map_id = " . $db->quote($map_id) . " ";
     }
 
     my $group_by_sql = " group by map_id ";
@@ -3661,8 +3704,9 @@ Not using cache because this query is quicker.
     ];
 
     if ( $feature_type_accs and @$feature_type_accs ) {
-        $where_sql .= " and f.feature_type_acc in ('"
-            . join( "','", sort @$feature_type_accs ) . "')";
+        $where_sql .= " and f.feature_type_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$feature_type_accs )
+            . ")";
     }
 
     if ( defined($feature_start) ) {
@@ -3684,12 +3728,12 @@ Not using cache because this query is quicker.
 
     }
     elsif ( $species_ids and @$species_ids ) {
-        $where_sql .= " and s.species_id in ('"
-            . join( "','", sort @$species_ids ) . "')";
+        $where_sql .= " and s.species_id in ("
+            . join( ",", map { $db->quote($_) } sort @$species_ids ) . ")";
     }
     elsif ( $species_accs and @$species_accs ) {
-        $where_sql .= " and s.species_acc in ('"
-            . join( "','", sort @$species_accs ) . "')";
+        $where_sql .= " and s.species_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$species_accs ) . ")";
     }
 
     # add the were clause for each possible identifier
@@ -3717,8 +3761,8 @@ Not using cache because this query is quicker.
         $where_sql .= " and map.map_set_id = ? ";
     }
     elsif (@$map_set_ids) {
-        $where_sql .= " and map.map_set_id in ('"
-            . join( "','", sort @$map_set_ids ) . "')";
+        $where_sql .= " and map.map_set_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ")";
     }
 
     # I'm defining the alias sql so late so they can have a true copy
@@ -3907,45 +3951,50 @@ Not using cache because this query is quicker.
 
     if ($feature_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_id = $feature_id ";
+        $where_sql .= " feature_id = " . $db->quote($feature_id) . " ";
     }
     elsif ($feature_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_acc = '$feature_acc' ";
+        $where_sql .= " feature_acc = " . $db->quote($feature_acc) . " ";
     }
     if ($min_feature_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_id >= $min_feature_id ";
+        $where_sql .= " feature_id >= " . $db->quote($min_feature_id) . " ";
     }
     if ($max_feature_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_id <= $max_feature_id ";
+        $where_sql .= " feature_id <= " . $db->quote($max_feature_id) . " ";
     }
     if ($map_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map_id = $map_id ";
+        $where_sql .= " map_id = " . $db->quote($map_id) . " ";
     }
     if ($feature_name) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
         if ( $feature_name ne '%' ) {
             $feature_name = uc $feature_name;
             $where_sql .= $where_sql ? " and " : " where ";
-            $where_sql .= " upper(feature_name) $comparison '$feature_name' ";
+            $where_sql .= " upper(feature_name) $comparison "
+                . $db->quote($feature_name) . " ";
         }
     }
     if ($feature_type_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_type_acc = '$feature_type_acc' ";
+        $where_sql
+            .= " feature_type_acc = " . $db->quote($feature_type_acc) . " ";
     }
     elsif (@$feature_type_accs) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_type_acc in ('"
-            . join( "','", sort @$feature_type_accs ) . "') ";
+        $where_sql .= " feature_type_acc in ("
+            . join( ",", map { $db->quote($_) } sort @$feature_type_accs )
+            . ") ";
     }
     if (@$ignore_feature_type_accs) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " feature_type_acc not in ('"
-            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
+        $where_sql .= " feature_type_acc not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignore_feature_type_accs )
+            . ") ";
     }
 
     $sql_str .= $where_sql;
@@ -4059,7 +4108,7 @@ Using Cache
     my $where_sql = ' where f.map_id = map.map_id ';
 
     if ($map_id) {
-        $where_sql .= "and map.map_id = $map_id ";
+        $where_sql .= "and map.map_id = " . $db->quote($map_id) . " ";
     }
     if ($get_sub_maps) {
         $where_sql .= "and !isNull(mtf.map_id) ";
@@ -4070,11 +4119,14 @@ Using Cache
     }
     if ($feature_type_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " f.feature_type_acc = '$feature_type_acc' ";
+        $where_sql
+            .= " f.feature_type_acc = " . $db->quote($feature_type_acc) . " ";
     }
     if (@$ignore_feature_type_accs) {
-        $where_sql .= " and f.feature_type_acc not in ('"
-            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
+        $where_sql .= " and f.feature_type_acc not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignore_feature_type_accs )
+            . ") ";
     }
 
     my $sql_str = $select_str
@@ -4226,11 +4278,13 @@ Not using cache because this query is quicker.
 
     if (@$map_set_ids) {
         $sql_str .= " and map.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     if (@$ignore_feature_type_accs) {
-        $sql_str .= " and f.feature_type_acc not in ('"
-            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
+        $sql_str .= " and f.feature_type_acc not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignore_feature_type_accs )
+            . ") ";
     }
 
     $return_object = $db->selectall_hashref( $sql_str, 'feature_id' );
@@ -4367,7 +4421,7 @@ Array of Hashes:
     my $return_object;
     my $sql_str;
 
-    my $select_sql = qq[
+    my $select_sql = q[
         select   distinct  
                  f.feature_id,
                  f.feature_acc,
@@ -4382,13 +4436,13 @@ Array of Hashes:
                  map.map_name,
                  ms.map_units
     ];
-    my $from_sql = qq[
+    my $from_sql = q[
         from     cmap_feature f,
                  cmap_map map,
                  cmap_map_set ms
     ];
-    my $where_sql = qq[
-        where    f.map_id=$map_id
+    my $where_sql = q[
+        where    f.map_id=] . $db->quote($map_id) . q[
         and      f.map_id=map.map_id
         and      map.map_set_id=ms.map_set_id
     ];
@@ -4412,8 +4466,10 @@ Array of Hashes:
         or @$ignored_feature_type_accs )
     {
         if (@$included_feature_type_accs) {
-            $corr_free_sql .= " and f.feature_type_acc in ('"
-                . join( "','", sort @$included_feature_type_accs ) . "')";
+            $corr_free_sql .= " and f.feature_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$included_feature_type_accs )
+                . ")";
         }
         else {    #return nothing
             $corr_free_sql .= " and f.feature_type_acc = -1 ";
@@ -4437,8 +4493,10 @@ Array of Hashes:
         if (   @$included_feature_type_accs
             or @$ignored_feature_type_accs )
         {
-            $with_corr_sql .= " and f.feature_type_acc in ('"
-                . join( "','", sort @$corr_only_feature_type_accs ) . "') ";
+            $with_corr_sql .= " and f.feature_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$corr_only_feature_type_accs )
+                . ") ";
         }
         $with_corr_sql .= $self->write_start_stop_sql_from_slot_info(
             slot_info_obj => {
@@ -4488,6 +4546,7 @@ Array of Hashes:
     # Add order to help sorting later
     $sql_str .= " order by feature_start, feature_stop";
 
+print STDERR "$sql_str\n";
     unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
 
         $return_object
@@ -4627,12 +4686,12 @@ Not using cache because this query is quicker.
 
     if ($map_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " f.map_id = $map_id ";
+        $where_sql .= " f.map_id = " . $db->quote($map_id) . " ";
     }
     elsif (@$map_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql
-            .= " f.map_id in ('" . join( "','", sort @$map_ids ) . "')";
+        $where_sql .= " f.map_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_ids ) . ")";
     }
     elsif ($this_slot_info) {
 
@@ -4647,31 +4706,34 @@ Not using cache because this query is quicker.
                 and defined( $this_slot_info->{$slot_map_id}->[1] ) )
             {
                 $restricted_sql .= " or (f.map_id="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( f.feature_start>="
-                    . $this_slot_info->{$slot_map_id}->[0]
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[0] )
                     . " and f.feature_start<="
-                    . $this_slot_info->{$slot_map_id}->[1]
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[1] )
                     . " ) or ( f.feature_stop is not null and "
                     . "  f.feature_start<="
-                    . $this_slot_info->{$slot_map_id}->[0]
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[0] )
                     . " and f.feature_stop>="
-                    . $this_slot_info->{$slot_map_id}->[0] . " )))";
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[0] )
+                    . " )))";
             }
             elsif ( defined( $this_slot_info->{$slot_map_id}->[0] ) ) {
                 $restricted_sql .= " or (f.map_id="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( f.feature_start>="
-                    . $this_slot_info->{$slot_map_id}->[0]
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[0] )
                     . " ) or ( f.feature_stop is not null "
                     . " and f.feature_stop>="
-                    . $this_slot_info->{$slot_map_id}->[0] . " )))";
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[0] )
+                    . " )))";
             }
             elsif ( defined( $this_slot_info->{$slot_map_id}->[1] ) ) {
                 $restricted_sql .= " or (f.map_id="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and f.feature_start<="
-                    . $this_slot_info->{$slot_map_id}->[1] . ") ";
+                    . $db->quote( $this_slot_info->{$slot_map_id}->[1] )
+                    . ") ";
             }
             else {
                 push @unrestricted_map_ids, $slot_map_id;
@@ -4679,7 +4741,9 @@ Not using cache because this query is quicker.
         }
         if (@unrestricted_map_ids) {
             $unrestricted_sql = " or f.map_id in ("
-                . join( ',', @unrestricted_map_ids ) . ") ";
+                . join( ",",
+                map { $db->quote($_) } sort @unrestricted_map_ids )
+                . ") ";
         }
 
         my $combined_sql = $restricted_sql . $unrestricted_sql;
@@ -4692,9 +4756,8 @@ Not using cache because this query is quicker.
     }
     elsif ($map_set_id) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= qq[
-            map.map_set_id = $map_set_id
-        ];
+        $where_sql .= q[
+            map.map_set_id = ] . $db->quote($map_set_id) . '';
         unless ($added_map_to_from) {
             $from_sql  .= ", cmap_map map ";
             $where_sql .= qq[
@@ -4709,7 +4772,8 @@ Not using cache because this query is quicker.
         my $comparison = $map_name =~ m/%/ ? 'like' : '=';
         if ( $map_name ne '%' ) {
             $where_sql .= $where_sql ? " and " : " where ";
-            $where_sql .= " map.map_name $comparison '$map_name' ";
+            $where_sql
+                .= " map.map_name $comparison " . $db->quote($map_name) . " ";
             unless ($added_map_to_from) {
                 $from_sql  .= ", cmap_map map ";
                 $where_sql .= qq[
@@ -5328,12 +5392,14 @@ Not using cache because this query is quicker.
         {
             push @feature_ids_sql_list, " and f.feature_id in ("
                 . join( ",",
-                sort @{$feature_ids}[ $i .. ( $group_size + $i ) ] )
+                map { $db->quote($_) }
+                    sort @{$feature_ids}[ $i .. ( $group_size + $i ) ] )
                 . ") ";
         }
-        push @feature_ids_sql_list,
-            " and f.feature_id in ("
-            . join( ",", sort @{$feature_ids}[ $i .. $#{$feature_ids} ] )
+        push @feature_ids_sql_list, " and f.feature_id in ("
+            . join( ",",
+            map { $db->quote($_) }
+                sort @{$feature_ids}[ $i .. $#{$feature_ids} ] )
             . ") ";
     }
     elsif ($feature_id) {
@@ -5379,11 +5445,13 @@ Not using cache because this query is quicker.
         $from_sql    .= ", cmap_map map ";
         $where_extra .= " and map.map_id = f.map_id "
             . " and map.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     if (@$ignore_feature_type_accs) {
-        $where_extra .= " and f.feature_type_acc not in ('"
-            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
+        $where_extra .= " and f.feature_type_acc not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignore_feature_type_accs )
+            . ") ";
     }
     my $order_by_sql = qq[
             order by alias
@@ -5959,31 +6027,31 @@ Not using cache because this query is quicker.
     ];
 
     if ($feature_correspondence_id) {
-        $sql_str
-            .= " and cl.feature_correspondence_id=$feature_correspondence_id ";
+        $sql_str .= " and cl.feature_correspondence_id="
+            . $db->quote($feature_correspondence_id) . " ";
     }
     if ($feature_id1) {
-        $sql_str .= " and cl.feature_id1=$feature_id1 ";
+        $sql_str .= " and cl.feature_id1=" . $db->quote($feature_id1) . " ";
     }
     if ($feature_id2) {
-        $sql_str .= " and cl.feature_id2=$feature_id2 ";
+        $sql_str .= " and cl.feature_id2=" . $db->quote($feature_id2) . " ";
     }
 
     if ($map_id1) {
-        $sql_str .= " and cl.map_id1='" . $map_id1 . "' ";
+        $sql_str .= " and cl.map_id1=" . $db->quote($map_id1) . " ";
     }
 
     if ($map_set_id2) {
-        $sql_str .= " and map2.map_set_id='" . $map_set_id2 . "' ";
+        $sql_str .= " and map2.map_set_id=" . $db->quote($map_set_id2) . " ";
     }
     elsif ($map_set_acc2) {
-        $sql_str .= " and ms2.map_set_acc='" . $map_set_acc2 . "' ";
+        $sql_str .= " and ms2.map_set_acc=" . $db->quote($map_set_acc2) . " ";
     }
     elsif ($map_id2) {
-        $sql_str .= " and cl.map_id2='" . $map_id2 . "' ";
+        $sql_str .= " and cl.map_id2=" . $db->quote($map_id2) . " ";
     }
     elsif ($map_acc2) {
-        $sql_str .= " and map2.map_acc='" . $map_acc2 . "' ";
+        $sql_str .= " and map2.map_acc=" . $db->quote($map_acc2) . " ";
     }
 
     if (!$disregard_evidence_type
@@ -5995,21 +6063,24 @@ Not using cache because this query is quicker.
         $sql_str .= " and ( ";
         my @join_array;
         if (@$included_evidence_type_accs) {
-            push @join_array,
-                " ce.evidence_type_acc in ('"
-                . join( "','", @$included_evidence_type_accs ) . "')";
+            push @join_array, " ce.evidence_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$included_evidence_type_accs )
+                . ")";
         }
         foreach my $et_acc (@$less_evidence_type_accs) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score <= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         foreach my $et_acc (@$greater_evidence_type_accs) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score >= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         $sql_str .= join( ' or ', @join_array ) . " ) ";
     }
@@ -6125,17 +6196,17 @@ Not using cache because this query is quicker.
     ];
 
     if ($feature_correspondence_id) {
-        $sql_str
-            .= " and fc.feature_correspondence_id = $feature_correspondence_id ";
+        $sql_str .= " and fc.feature_correspondence_id = "
+            . $db->quote($feature_correspondence_id) . " ";
     }
     if (@$map_set_ids1) {
         $sql_str .= " and map1.map_set_id in ("
-            . join( ",", sort @$map_set_ids1 ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids1 ) . ") ";
     }
 
     if (@$map_set_ids2) {
         $sql_str .= " and map2.map_set_id in ("
-            . join( ",", sort @$map_set_ids2 ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids2 ) . ") ";
     }
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -6330,21 +6401,24 @@ Array of Hashes:
         $sql_str .= " and ( ";
         my @join_array;
         if (@$included_evidence_type_accs) {
-            push @join_array,
-                " ce.evidence_type_acc in ('"
-                . join( "','", sort @$included_evidence_type_accs ) . "')";
+            push @join_array, " ce.evidence_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$included_evidence_type_accs )
+                . ")";
         }
         foreach my $et_acc (@$less_evidence_type_accs) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score <= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         foreach my $et_acc (@$greater_evidence_type_accs) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score >= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         $sql_str .= join( ' or ', @join_array ) . " ) ";
     }
@@ -6353,15 +6427,17 @@ Array of Hashes:
     }
 
     if (@$feature_type_accs) {
-        $sql_str .= " and cl.feature_type_acc1 in ('"
-            . join( "','", sort @$feature_type_accs ) . "')";
+        $sql_str .= " and cl.feature_type_acc1 in ("
+            . join( ",", map { $db->quote($_) } sort @$feature_type_accs )
+            . ")";
         $sql_str .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
-            . " or cl.feature_type_acc2 in ('"
-            . join( "','", sort @$feature_type_accs ) . "') )";
+            . " or cl.feature_type_acc2 in ("
+            . join( ",", map { $db->quote($_) } sort @$feature_type_accs )
+            . ") )";
     }
 
     unless ( $return_object
-        = $self->get_cached_results( 4, $sql_str . join( ',', @identifiers ) )
+        = $self->get_cached_results( 4, $sql_str . join( ",", @identifiers ) )
         )
     {
 
@@ -6389,7 +6465,8 @@ Array of Hashes:
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
                 {'evidence_type'};
         }
-        $self->store_cached_results( 4, $sql_str . $map_id, $return_object );
+        $self->store_cached_results( 4, $sql_str . join( ",", @identifiers ),
+            $return_object );
     }
 
     return $return_object;
@@ -6578,59 +6655,59 @@ Array of Hashes:
             and defined($this_stop) )
         {
             $restricted_sql_1 .= " or (cl.map_id1="
-                . $slot_map_id
+                . $db->quote($slot_map_id)
                 . " and (( cl.feature_start1>="
-                . $this_start
+                . $db->quote($this_start)
                 . " and cl.feature_start1<="
-                . $this_stop
+                . $db->quote($this_stop)
                 . " ) or ( cl.feature_stop1 is not null and "
                 . "  cl.feature_start1<="
-                . $this_start
+                . $db->quote($this_start)
                 . " and cl.feature_stop1>="
-                . $this_start . " )))";
+                . $db->quote($this_start) . " )))";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( cl.feature_start2>="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " and cl.feature_start2<="
-                    . $this_stop
+                    . $db->quote($this_stop)
                     . " ) or ( cl.feature_stop2 is not null and "
                     . "  cl.feature_start2<="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " and cl.feature_stop2>="
-                    . $this_start . " )))";
+                    . $db->quote($this_start) . " )))";
             }
 
         }
         elsif ( defined($this_start) ) {
             $restricted_sql_1 .= " or (cl.map_id1="
-                . $slot_map_id
+                . $db->quote($slot_map_id)
                 . " and (( cl.feature_start1>="
-                . $this_start
+                . $db->quote($this_start)
                 . " ) or ( cl.feature_stop1 is not null "
                 . " and cl.feature_stop1>="
-                . $this_start . " )))";
+                . $db->quote($this_start) . " )))";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( cl.feature_start2>="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " ) or ( cl.feature_stop2 is not null "
                     . " and cl.feature_stop2>="
-                    . $this_start . " )))";
+                    . $db->quote($this_start) . " )))";
             }
         }
         elsif ( defined($this_stop) ) {
             $restricted_sql_1 .= " or (cl.map_id1="
-                . $slot_map_id
+                . $db->quote($slot_map_id)
                 . " and cl.feature_start1<="
-                . $this_stop . ") ";
+                . $db->quote($this_stop) . ") ";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and cl.feature_start2<="
-                    . $this_stop . ") ";
+                    . $db->quote($this_stop) . ") ";
             }
         }
         else {
@@ -6639,10 +6716,13 @@ Array of Hashes:
     }
     if (@unrestricted_map_ids) {
         $unrestricted_sql_1 .= " or cl.map_id1 in ("
-            . join( ',', sort @unrestricted_map_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @unrestricted_map_ids )
+            . ") ";
         if ($show_intraslot_corr) {
             $unrestricted_sql_2 .= " or cl.map_id2 in ("
-                . join( ',', sort @unrestricted_map_ids ) . ") ";
+                . join( ",",
+                map { $db->quote($_) } sort @unrestricted_map_ids )
+                . ") ";
         }
     }
     my $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
@@ -6662,31 +6742,31 @@ Array of Hashes:
                 and defined($this_stop) )
             {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( cl.feature_start2>="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " and cl.feature_start2<="
-                    . $this_stop
+                    . $db->quote($this_stop)
                     . " ) or ( cl.feature_stop2 is not null and "
                     . "  cl.feature_start2<="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " and cl.feature_stop2>="
-                    . $this_start . " )))";
+                    . $db->quote($this_start) . " )))";
             }
             elsif ( defined($this_start) ) {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and (( cl.feature_start2>="
-                    . $this_start
+                    . $db->quote($this_start)
                     . " ) or ( cl.feature_stop2 is not null "
                     . " and cl.feature_stop2>="
-                    . $this_start . " )))";
+                    . $db->quote($this_start) . " )))";
             }
             elsif ( defined($this_stop) ) {
                 $restricted_sql_2 .= " or (cl.map_id2="
-                    . $slot_map_id
+                    . $db->quote($slot_map_id)
                     . " and cl.feature_start2<="
-                    . $this_stop . ") ";
+                    . $db->quote($this_stop) . ") ";
             }
             else {
                 push @unrestricted_map_ids, $slot_map_id;
@@ -6694,7 +6774,9 @@ Array of Hashes:
         }
         if (@unrestricted_map_ids) {
             $unrestricted_sql_2 .= " or cl.map_id2 in ("
-                . join( ',', sort @unrestricted_map_ids ) . ") ";
+                . join( ",",
+                map { $db->quote($_) } sort @unrestricted_map_ids )
+                . ") ";
         }
     }
     $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
@@ -6707,21 +6789,24 @@ Array of Hashes:
     {
         my @join_array;
         if (@$included_evidence_type_accs) {
-            push @join_array,
-                " ce.evidence_type_acc in ('"
-                . join( "','", sort @$included_evidence_type_accs ) . "')";
+            push @join_array, " ce.evidence_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$included_evidence_type_accs )
+                . ")";
         }
         foreach my $et_acc ( sort @$less_evidence_type_accs ) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score <= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score >= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         $where_sql .= " and ( " . join( ' or ', @join_array ) . " ) ";
     }
@@ -6917,13 +7002,14 @@ If $include_map1_data also has
 
     if (@$map_accs) {
         $use_map1_table = 1;
-        $where_sql .= " and map1.map_acc in ('"
-            . join( "','", sort @{$map_accs} ) . "') \n";
+        $where_sql .= " and map1.map_acc in ("
+            . join( ",", map { $db->quote($_) } sort @{$map_accs} ) . ") \n";
     }
 
     if (@$ignore_map_accs) {
-        $where_sql .= " and map2.map_acc not in ('"
-            . join( "','", sort @{$ignore_map_accs} ) . "') ";
+        $where_sql .= " and map2.map_acc not in ("
+            . join( ",", map { $db->quote($_) } sort @{$ignore_map_accs} )
+            . ") ";
     }
 
     my @unrestricted_map_ids;
@@ -6934,31 +7020,31 @@ If $include_map1_data also has
         my $ref_map_stop  = $slot_info->{$ref_map_id}[1];
         if ( defined($ref_map_start) and defined($ref_map_stop) ) {
             $restricted_sql .= " or (cl.map_id1="
-                . $ref_map_id
+                . $db->quote($ref_map_id)
                 . " and (( cl.feature_start1>="
-                . $ref_map_start
+                . $db->quote($ref_map_start)
                 . " and cl.feature_start1<="
-                . $ref_map_stop
+                . $db->quote($ref_map_stop)
                 . " ) or ( cl.feature_stop1 is not null and "
                 . "  cl.feature_start1<="
-                . $ref_map_start
+                . $db->quote($ref_map_start)
                 . " and cl.feature_stop1>="
-                . $ref_map_start . " )))";
+                . $db->quote($ref_map_start) . " )))";
         }
         elsif ( defined($ref_map_start) ) {
             $restricted_sql .= " or (cl.map_id1="
-                . $ref_map_id
+                . $db->quote($ref_map_id)
                 . " and (( cl.feature_start1>="
-                . $ref_map_start
+                . $db->quote($ref_map_start)
                 . " ) or ( cl.feature_stop1 is not null and "
                 . " cl.feature_stop1>="
-                . $ref_map_start . " )))";
+                . $db->quote($ref_map_start) . " )))";
         }
         elsif ( defined($ref_map_stop) ) {
             $restricted_sql .= " or (cl.map_id1="
-                . $ref_map_id
+                . $db->quote($ref_map_id)
                 . " and cl.feature_start1<="
-                . $ref_map_stop . ") ";
+                . $db->quote($ref_map_stop) . ") ";
         }
         else {
             push @unrestricted_map_ids, $ref_map_id;
@@ -6966,7 +7052,8 @@ If $include_map1_data also has
     }
     if (@unrestricted_map_ids) {
         $unrestricted_sql = " or cl.map_id1 in ("
-            . join( ',', sort @unrestricted_map_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @unrestricted_map_ids )
+            . ") ";
     }
     my $from_restriction = $restricted_sql . $unrestricted_sql;
     $from_restriction =~ s/^\s+or//;
@@ -6984,21 +7071,24 @@ If $include_map1_data also has
             and  ( ];
         my @join_array;
         if (@$included_evidence_type_accs) {
-            push @join_array,
-                " ce.evidence_type_acc in ('"
-                . join( "','", sort @$included_evidence_type_accs ) . "')";
+            push @join_array, " ce.evidence_type_acc in ("
+                . join( ",",
+                map { $db->quote($_) } sort @$included_evidence_type_accs )
+                . ")";
         }
         foreach my $et_acc ( sort @$less_evidence_type_accs ) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score <= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
             push @join_array,
-                " ( ce.evidence_type_acc = '$et_acc' "
+                " ( ce.evidence_type_acc = "
+                . $db->quote($et_acc) . " "
                 . " and ce.score >= "
-                . $evidence_type_score->{$et_acc} . " ) ";
+                . $db->quote( $evidence_type_score->{$et_acc} ) . " ) ";
         }
         $where_sql .= join( ' or ', @join_array ) . " ) ";
     }
@@ -7009,17 +7099,20 @@ If $include_map1_data also has
     }
 
     if (@$ignored_feature_type_accs) {
-        $where_sql .= " and cl.feature_type_acc2 not in ('"
-            . join( "','", sort @$ignored_feature_type_accs ) . "') ";
+        $where_sql .= " and cl.feature_type_acc2 not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignored_feature_type_accs )
+            . ") ";
         $where_sql .= " and ( cl.feature_type_acc1=cl.feature_type_acc2 "
-            . " or cl.feature_type_acc1 not in ('"
-            . join( "','", sort @$ignored_feature_type_accs ) . "') )";
+            . " or cl.feature_type_acc1 not in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$ignored_feature_type_accs )
+            . ") )";
     }
 
     if ($min_correspondences) {
-        $having_sql .= qq[
-              having count(cl.feature_correspondence_id)>$min_correspondences
-            ];
+        $having_sql .= " having count(cl.feature_correspondence_id)>"
+            . $db->quote($min_correspondences) . " ";
     }
 
     if ($use_map1_table) {
@@ -7602,8 +7695,10 @@ Not using cache because this query is quicker.
     my $correspondence_evidence_id = $args{'correspondence_evidence_id'};
     my $evidence_type_acc          = $args{'evidence_type_acc'};
     my $order_by                   = $args{'order_by'};
-    my $db                         = $self->db;
-    my $evidence_type_data         = $self->evidence_type_data();
+    die "Order by clause ($order_by) has SQL code in it\n"
+        if ( has_sql_command($order_by) );
+    my $db                 = $self->db;
+    my $evidence_type_data = $self->evidence_type_data();
     my $return_object;
 
     my @identifiers = ();
@@ -7730,9 +7825,9 @@ Not using cache because this query is quicker.
             and    f2.map_id=map2.map_id
         ];
         $sql_str .= " and map1.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
         $sql_str .= " and map2.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
@@ -8135,15 +8230,19 @@ Not using cache because this query is quicker.
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
-    my $object_type     = $args{'object_type'};
+    my $object_type = $args{'object_type'};
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $attribute_id    = $args{'attribute_id'};
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
     my $attribute_value = $args{'attribute_value'};
     my $object_id       = $args{'object_id'};
     my $order_by        = $args{'order_by'};
-    my $get_all         = $args{'get_all'} || 0;
-    my $db              = $self->db;
+    die "Order by clause ($order_by) has SQL code in it\n"
+        if ( has_sql_command($order_by) );
+    my $get_all = $args{'get_all'} || 0;
+    my $db = $self->db;
     my $return_object;
     my $table_name;
     my @identifiers = ();
@@ -8284,10 +8383,12 @@ Attribute id
     my $db = $self->db;
     my $attribute_id = $self->next_number( object_type => 'attribute', )
         or return $self->error('No next number for attribute ');
-    my $display_order   = $args{'display_order'} || 1;
-    my $object_type     = $args{'object_type'};
-    my $is_public       = $args{'is_public'} || 1;
-    my $attribute_name  = $args{'attribute_name'} || q{};
+    my $display_order = $args{'display_order'} || 1;
+    my $object_type = $args{'object_type'};
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $is_public      = $args{'is_public'}      || 1;
+    my $attribute_name = $args{'attribute_name'} || q{};
     my $attribute_value =
         defined( $args{'attribute_value'} )
         ? $args{'attribute_value'}
@@ -8390,9 +8491,11 @@ If you don't want CMap to update into your database, make this a dummy method.
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
-    my $attribute_id    = $args{'attribute_id'} or return;
-    my $display_order   = $args{'display_order'};
-    my $object_type     = $args{'object_type'};
+    my $attribute_id  = $args{'attribute_id'} or return;
+    my $display_order = $args{'display_order'};
+    my $object_type   = $args{'object_type'};
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
     my $attribute_value = $args{'attribute_value'};
@@ -8508,10 +8611,12 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $db           = $self->db;
     my $attribute_id = $args{'attribute_id'};
     my $object_type  = $args{'object_type'};
-    my $object_id    = $args{'object_id'};
-    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
-    my @delete_args  = ();
-    my $delete_sql   = qq[
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $object_id   = $args{'object_id'};
+    my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
+    my @delete_args = ();
+    my $delete_sql  = qq[
         delete from cmap_attribute
     ];
     my $where_sql = '';
@@ -8622,12 +8727,16 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $object_type = $args{'object_type'};
-    my $xref_id     = $args{'xref_id'};
-    my $xref_name   = $args{'xref_name'};
-    my $xref_url    = $args{'xref_url'};
-    my $object_id   = $args{'object_id'};
-    my $order_by    = $args{'order_by'};
-    my $db          = $self->db;
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $xref_id   = $args{'xref_id'};
+    my $xref_name = $args{'xref_name'};
+    my $xref_url  = $args{'xref_url'};
+    my $object_id = $args{'object_id'};
+    my $order_by  = $args{'order_by'};
+    die "Order by clause ($order_by) has SQL code in it\n"
+        if ( has_sql_command($order_by) );
+    my $db = $self->db;
     my $return_object;
     my @identifiers = ();
 
@@ -8759,8 +8868,12 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $object_type = $args{'object_type'};
-    my $order_by    = $args{'order_by'};
-    my $db          = $self->db;
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $order_by = $args{'order_by'};
+    die "Order by clause ($order_by) has SQL code in it\n"
+        if ( has_sql_command($order_by) );
+    my $db = $self->db;
     my $return_object;
 
     my $sql_str = qq[
@@ -8775,7 +8888,7 @@ Not using cache because this query is quicker.
     ];
     if ($object_type) {
         my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
-        $sql_str .= " and table_name = '$table_name' ";
+        $sql_str .= " and table_name = " . $db->quote($table_name) . " ";
     }
 
     if ($order_by) {
@@ -8854,10 +8967,12 @@ Xref id
     my $xref_id = $self->next_number( object_type => 'xref', )
         or return $self->error('No next number for xref ');
     my $display_order = $args{'display_order'} || 1;
-    my $object_type   = $args{'object_type'};
-    my $xref_name     = $args{'xref_name'} || q{};
-    my $xref_url      = $args{'xref_url'} || q{};
-    my $object_id     = $args{'object_id'};
+    my $object_type = $args{'object_type'};
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $xref_name = $args{'xref_name'} || q{};
+    my $xref_url  = $args{'xref_url'}  || q{};
+    my $object_id = $args{'object_id'};
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
 
     unless ( defined($display_order) ) {
@@ -8958,11 +9073,13 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $xref_id       = $args{'xref_id'} or return;
     my $display_order = $args{'display_order'};
     my $object_type   = $args{'object_type'};
-    my $xref_name     = $args{'xref_name'};
-    my $xref_url      = $args{'xref_url'};
-    my $object_id     = $args{'object_id'};
-    my $is_public     = $args{'is_public'};
-    my $db            = $self->db;
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    my $xref_name = $args{'xref_name'};
+    my $xref_url  = $args{'xref_url'};
+    my $object_id = $args{'object_id'};
+    my $is_public = $args{'is_public'};
+    my $db        = $self->db;
 
     my $table_name;
     if ($object_type) {
@@ -9073,6 +9190,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $db          = $self->db;
     my $xref_id     = $args{'xref_id'};
     my $object_type = $args{'object_type'};
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $object_id   = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @delete_args = ();
@@ -9505,20 +9624,22 @@ Array of Hashes:
 
     if (@$map_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql
-            .= " f.map_id in ('" . join( "','", sort @$map_ids ) . "')";
+        $where_sql .= " f.map_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_ids ) . ")";
     }
     if (@$map_set_ids) {
         $sql_str   .= ", cmap_map map ";
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " f.map_id = map.map_id ";
-        $where_sql .= " and map.map_set_id in ('"
-            . join( "','", sort @$map_set_ids ) . "')";
+        $where_sql .= " and map.map_set_id in ("
+            . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ")";
     }
     if (@$included_feature_type_accs) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " f.feature_type_acc in ('"
-            . join( "','", sort @$included_feature_type_accs ) . "') ";
+        $where_sql .= " f.feature_type_acc in ("
+            . join( ",",
+            map { $db->quote($_) } sort @$included_feature_type_accs )
+            . ") ";
     }
 
     $sql_str .= $where_sql;
@@ -9620,11 +9741,12 @@ Array of Hashes:
     my $where_sql = '';
     if ( defined($is_relational_map) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_relational_map = $is_relational_map ";
+        $where_sql .= " ms.is_relational_map = "
+            . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_enabled = $is_enabled ";
+        $where_sql .= " ms.is_enabled = " . $db->quote($is_enabled) . " ";
     }
 
     $sql_str .= $where_sql;
@@ -9695,7 +9817,8 @@ Not using cache because this query is quicker.
     my $where_sql = '';
 
     if ($map_set_acc) {
-        $where_sql .= " where ms.map_set_acc = '$map_set_acc' ";
+        $where_sql
+            .= " where ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     else {
         return;
@@ -9828,9 +9951,9 @@ Not using cache because this query is quicker.
         ];
         $from_sql  .= ", cmap_map_set ms ";
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= qq[
-                cm.reference_map_set_acc='$map_set_acc'
-            and cm.link_map_set_acc='$link_map_set_acc'
+        $where_sql .= q[
+                cm.reference_map_set_acc=] . $db->quote($map_set_acc) . q[
+            and cm.link_map_set_acc=] . $db->quote($link_map_set_acc) . q[
             and cm.reference_map_set_acc=ms.map_set_acc
             and ms.is_enabled=1
         ];
@@ -9840,8 +9963,8 @@ Not using cache because this query is quicker.
         $select_sql .= " , cm.reference_map_acc ";
         $from_sql   .= ", cmap_map_set ms ";
         $where_sql  .= $where_sql ? " and " : " where ";
-        $where_sql  .= qq[
-                cm.reference_map_set_acc='$map_set_acc'
+        $where_sql  .= q[
+                cm.reference_map_set_acc=] . $db->quote($map_set_acc) . q[
             and cm.reference_map_set_acc=ms.map_set_acc
         ];
         $group_by .= ", cm.reference_map_acc ";
@@ -9849,11 +9972,12 @@ Not using cache because this query is quicker.
 
     if ($species_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " cm.reference_species_acc='$species_acc' ";
+        $where_sql
+            .= " cm.reference_species_acc=" . $db->quote($species_acc) . " ";
     }
     if ($map_name) {
         $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " cm.reference_map_name='$map_name' ";
+        $where_sql .= " cm.reference_map_name=" . $db->quote($map_name) . " ";
     }
     my $sql_str = $select_sql . $from_sql . $where_sql . $group_by;
 
@@ -10136,7 +10260,9 @@ Array of Hashes:
         $from_sql .= q[,
             cmap_map map
         ];
-        $where_sql .= q[ and map.map_set_id = ] . $map_set_id . q[ and (
+        $where_sql .= q[ and map.map_set_id = ]
+            . $db->quote($map_set_id)
+            . q[ and (
             a.map_id1 = map.map_id
             or a.map_id2 = map.map_id ) 
         ];
@@ -10212,7 +10338,9 @@ Again if you don't want CMap to mess with your db, make this a dummy method.
         $from_sql .= q[,
             cmap_map map
         ];
-        $where_sql .= q[ and map.map_set_id = ] . $map_set_id . q[ and (
+        $where_sql .= q[ and map.map_set_id = ]
+            . $db->quote($map_set_id)
+            . q[ and (
             cl.map_id1 = map.map_id
             or cl.map_id2 = map.map_id ) 
         ];
@@ -10289,8 +10417,9 @@ Array of correspondence_evidence_ids
         from   cmap_correspondence_evidence ce1
         left join cmap_correspondence_evidence ce2
             on ce1.evidence_type_acc=ce2.evidence_type_acc
-           and ce2.feature_correspondence_id=$original_id
-        where  ce1.feature_correspondence_id=$duplicate_id
+           and ce2.feature_correspondence_id=] . $db->quote($original_id) . q[
+        where  ce1.feature_correspondence_id=]
+        . $db->quote($duplicate_id) . q[
            and ce2.feature_correspondence_id is NULL
     ];
     $return_object = $db->selectcol_arrayref( $evidence_move_sql, {}, () );
@@ -10702,6 +10831,8 @@ that db has auto incrementing.
 
     my $db          = $self->db            or return;
     my $object_type = $args{'object_type'} or return;
+    die "Object type: $object_type not valid.\n"
+        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $no_requested = $args{'requested'} || 1;
     my $id_field     = $self->pk_name($object_type);
     my $table_name   = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
@@ -11040,6 +11171,7 @@ Not using cache because this query is quicker.
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
+    my $db = $self->db or return;
 
     my $map_start    = $args{'map_start'};
     my $map_stop     = $args{'map_stop'};
@@ -11054,25 +11186,29 @@ Not using cache because this query is quicker.
     if ( defined $map_start && defined $map_stop ) {
         $sql_str .= qq[
         (
-        ( $start_column>=$map_start and 
-            $start_column<=$map_stop )
+        ( $start_column>=]
+            . $db->quote($map_start)
+            . qq[ and $start_column<=]
+            . $db->quote($map_stop) . qq[ )
           or   (
             $stop_column is not null and
-            $start_column<=$map_start and
-            $stop_column>=$map_start
+            $start_column<=]
+            . $db->quote($map_start)
+            . qq[ and $stop_column>=]
+            . $db->quote($map_start) . qq[
             )
          )
          ];
     }
     elsif ( defined($map_start) ) {
         $sql_str .= " (( $start_column>="
-            . $map_start
+            . $db->quote($map_start)
             . " ) or ( $stop_column is not null and "
             . " $stop_column>="
-            . $map_start . " ))";
+            . $db->quote($map_start) . " ))";
     }
     elsif ( defined($map_stop) ) {
-        $sql_str .= " $start_column<=" . $map_stop . " ";
+        $sql_str .= " $start_column<=" . $db->quote($map_stop) . " ";
     }
     return $sql_str;
 }
