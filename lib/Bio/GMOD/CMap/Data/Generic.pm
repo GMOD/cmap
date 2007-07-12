@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.168 2007-07-11 21:20:10 mwz444 Exp $
+# $Id: Generic.pm,v 1.169 2007-07-12 20:52:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.168 $)[-1];
+$VERSION = (qw$Revision: 1.169 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4546,7 +4546,6 @@ Array of Hashes:
     # Add order to help sorting later
     $sql_str .= " order by feature_start, feature_stop";
 
-print STDERR "$sql_str\n";
     unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
 
         $return_object
