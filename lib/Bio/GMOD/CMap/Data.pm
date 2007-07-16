@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.287 2007-07-02 15:16:27 mwz444 Exp $
+# $Id: Data.pm,v 1.288 2007-07-16 14:52:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.287 $)[-1];
+$VERSION = (qw$Revision: 1.288 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1655,6 +1655,31 @@ Retrieve the data for a feature correspondence.
 
 Gets the names, IDs, etc., of the maps in the slots.
 
+Returns:
+
+  [   
+    {   map_set_acc       => $map_set_acc,
+        species_acc       => $species_acc,
+        description       => $description,
+        min_corrs         => $min_corrs,
+        stack_slot        => $stack_slot,
+        is_reference_slot => $is_reference_slot,
+        slot_no           => $slot_no,
+        maps              => {
+            $map_acc => {
+                map_order     => $map_order,
+                map_name      => $map_name,
+                ori_map_start => $ori_map_start,
+                ori_map_stop  => $ori_map_stop,
+                start         => $start,
+                stop          => $stop,
+                flip          => $flip,
+                bgcolor       => $bgcolor,
+            },
+        },
+    },
+  ]
+
 =cut
 
 sub fill_out_slots {
@@ -1689,6 +1714,8 @@ sub fill_out_slots {
             map_ids => [ keys(%$slot_info) ], );
         my %desc_by_species;
         foreach my $row (@$map_sets) {
+            $filled_slot->{'map_set_acc'} = $row->{'map_set_acc'};
+            $filled_slot->{'species_acc'} = $row->{'species_acc'};
             if ( $desc_by_species{ $row->{'species_common_name'} } ) {
                 $desc_by_species{ $row->{'species_common_name'} }
                     .= "," . $row->{'map_set_short_name'};

@@ -209,6 +209,15 @@ function stringify_form(form) {
   }
   return query_string;
 }
+
+function check_radio_for_additional_buttons(radio,val){
+  for (var i=0; i < radio.length; i++){
+    if (radio[i].value == val){
+      radio[i].checked=true;
+    }
+  }
+  return;
+}
 </script>
 [%- IF extra_code -%]
   [%- extra_code -%]
@@ -444,6 +453,14 @@ function stringify_form(form) {
     <BR/>
     **Eliminate Orphans - Remove comparison maps that don't have correspondences to a reference map.
     <BR/>
+
+    [%- FOREACH additional_button=additional_buttons -%]
+        <input type="submit" 
+          onClick="[% additional_button.javascript %]" 
+          value="[% additional_button.text %]" 
+          name="sub"
+        >
+    [%- END -%]
     
     <table>
       <tr>

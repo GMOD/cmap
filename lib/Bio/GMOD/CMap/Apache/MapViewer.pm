@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.137 2007-07-02 15:16:28 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.138 2007-07-16 14:52:26 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -341,6 +341,18 @@ sub handler {
                     };
             }
 
+            my $additional_buttons = $self->additional_buttons(
+                form_data                 => $form_data,
+                parsed_url_options        => \%parsed_url_options,
+                evidence_type_menu_select => \%evidence_type_menu_select,
+                display_feature_types     => {
+                    map { $_, 1 }
+                        @{ $parsed_url_options{'included_feature_types'} }
+                },
+                corr_only_feature_types => \%included_corr_only_features,
+                ignored_feature_types   => \%ignored_feature_types,
+            );
+
             $t->process(
                 TEMPLATE,
                 {   apr            => $apr,
@@ -353,8 +365,9 @@ sub handler {
                     data_sources   => $self->data_sources,
                     title          => $self->config_data('cmap_title')
                         || 'cmap',
-                    stylesheet    => $self->stylesheet,
-                    selected_maps => {
+                    stylesheet         => $self->stylesheet,
+                    additional_buttons => $additional_buttons,
+                    selected_maps      => {
                         map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
                     },
                     included_features => {

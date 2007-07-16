@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.115 2007-07-09 15:11:37 mwz444 Exp $
+# $Id: CMap.pm,v 1.116 2007-07-16 14:52:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -1066,6 +1066,284 @@ Get the image cache directory using the web document root
     }
     return $self->{'web_image_cache_dir'};
 
+}
+
+# ----------------------------------------------------
+sub additional_buttons {
+
+=pod
+
+=head3 additional_buttons
+
+Read additional buttons from the config file and return the javascript.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $parsed_url_options        = $args{'parsed_url_options'};
+    my $form_data                 = $args{'form_data'};
+    my $display_feature_types     = $args{'display_feature_types'} || {};
+    my $corr_only_feature_types   = $args{'corr_only_feature_types'} || {};
+    my $ignored_feature_types     = $args{'ignored_feature_types'} || {};
+    my $evidence_type_menu_select = $args{'evidence_type_menu_select'} || {};
+
+    my @button_data;
+    my $additional_buttons = $self->config_data('additional_buttons');
+    return unless ($additional_buttons);
+    if ( ref $additional_buttons->{'button'} ne 'ARRAY' ) {
+        $additional_buttons->{'button'} = [ $additional_buttons->{'button'} ];
+    }
+
+    #print STDERR Dumper($additional_buttons)."\n";
+
+    my %radio_button = (
+        label_features          => 1,
+        collapse_features       => 1,
+        aggregate               => 1,
+        corrs_to_map            => 1,
+        show_intraslot_corr     => 1,
+        split_agg_ev            => 1,
+        phrb                    => 1,
+        font_size               => 1,
+        image_type              => 1,
+        clean_view              => 1,
+        hide_legend             => 1,
+        scale_maps              => 1,
+        omit_area_boxes         => 1,
+        comp_menu_order         => 1,
+        ignore_image_map_sanity => 1,
+    );
+
+    # Special cases: ft_* and evidence_type_*
+
+    my %check_boxes = ( stack_maps => 1, );
+
+    # Special Cases: stack_slot_*, map_flip_*
+
+    my %hidden_or_text = (
+        pixel_height      => 1,
+        highlight         => 1,
+        dotplot           => 1,
+        eliminate_orphans => 1,
+        mapMenu           => 1,
+        featureMenu       => 1,
+        corrMenu          => 1,
+        displayMenu       => 1,
+        advancedMenu      => 1,
+    );
+
+BUTTON:
+    foreach my $button ( @{ $additional_buttons->{'button'} || [] } ) {
+        if ( $button->{'if'} ) {
+            next BUTTON
+                unless $self->check_if_all_true(
+                values_hash               => $button->{'if'},
+                parsed_url_options        => $parsed_url_options,
+                form_data                 => $form_data,
+                display_feature_types     => $display_feature_types,
+                corr_only_feature_types   => $corr_only_feature_types,
+                ignored_feature_types     => $ignored_feature_types,
+                evidence_type_menu_select => $evidence_type_menu_select,
+                );
+            my $js = '';
+            foreach my $param ( keys %{ $button->{'set'} || {} } ) {
+                next unless ( $param =~ /^\S+/ );
+                my $value = $button->{'set'}{$param};
+                if (   $radio_button{$param}
+                    or $param =~ /^ft_/
+                    or $param =~ /^evidence_type_/ )
+                {
+                    $js .= "check_radio_for_additional_buttons("
+                        . "document.comparative_map_form."
+                        . $param . ","
+                        . $value . ");";
+                }
+                elsif ($check_boxes{$param}
+                    or $param =~ /^stack_slot_/
+                    or $param =~ /^map_flip_/ )
+                {
+                    if ($value) {
+                        $js .= "document.comparative_map_form." . $param
+                            . ".checked=true;";
+                    }
+                    else {
+                        $js .= "document.comparative_map_form." . $param
+                            . ".checked=false;";
+                    }
+                }
+                elsif ( $hidden_or_text{$param} ) {
+                    $js .= "document.comparative_map_form." . $param
+                        . ".value='"
+                        . $button->{'set'}{$param} . "';";
+                }
+            }
+            push @button_data,
+                { text => $button->{'text'}, javascript => $js, };
+        }
+    }
+
+    return \@button_data;
+
+}
+
+# ----------------------------------------------------
+sub check_if_all_true {
+
+=pod
+
+=head3 check_if_all_true
+
+Check to see if all these form values are set to true.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $values_hash               = $args{'values_hash'} || {};
+    my $parsed_url_options        = $args{'parsed_url_options'};
+    my $form_data                 = $args{'form_data'};
+    my $display_feature_types     = $args{'display_feature_types'} || {};
+    my $corr_only_feature_types   = $args{'corr_only_feature_types'} || {};
+    my $ignored_feature_types     = $args{'ignored_feature_types'} || {};
+    my $evidence_type_menu_select = $args{'evidence_type_menu_select'} || {};
+    my $slots                     = $parsed_url_options->{'slots'};
+
+    # Boolean
+    my %boolean_params = (
+        highlight               => 1,
+        collapse_features       => 1,
+        scale_maps              => 1,
+        stack_maps              => 1,
+        omit_area_boxes         => 1,
+        show_intraslot_corr     => 1,
+        split_agg_ev            => 1,
+        clean_view              => 1,
+        corrs_to_map            => 1,
+        ignore_image_map_sanity => 1,
+        dotplot                 => 1,
+    );
+
+    # Strings
+    my %string_params = (
+        prev_ref_species_acc => 1,
+        prev_ref_map_set_acc => 1,
+        ref_species_acc      => 1,
+        ref_map_set_acc      => 1,
+        image_type           => 1,
+        label_features       => 1,
+        aggregate            => 1,
+        comp_menu_order      => 1,
+        data_source          => 1,
+        ref_map_start        => 1,
+        ref_map_stop         => 1,
+        font_size            => 1,
+        pixel_height         => 1,
+    );
+
+    #Special Slot parameters
+    my %slot_params = ( stack_slot => 'stack_slot', );
+
+    #Special Evidence Type
+    my %evidence_type_params = (
+        included_evidence_type => 1,
+        ignored_evidence_type  => 1,
+        less_evidence_type     => 1,
+        greater_evidence_type  => 1,
+    );
+    my %evidence_type_codes = (
+        ignored_evidence_type  => 0,
+        included_evidence_type => 1,
+        less_evidence_type     => 2,
+        greater_evidence_type  => 3,
+    );
+
+    #Special Feature Types
+    my %feature_type_params = (
+        display_feature_type   => 1,
+        corr_only_feature_type => 1,
+        ignored_feature_type   => 1,
+    );
+    my %feature_type_hashes = (
+        display_feature_type   => $display_feature_types,
+        corr_only_feature_type => $corr_only_feature_types,
+        ignored_feature_type   => $ignored_feature_types,
+    );
+
+    # GET TO
+    #evidence_type_score
+
+    # Leave out:
+    # session_id, next_step, new_session, slot_min_corrs, ref_map_accs,
+    # ref_map_order, left_min_corrs, right_min_corrs, general_min_corrs
+    # menu_min_corrs, url_feature_default_display, refMenu, compMenu,
+    # optionMenu, addOpMenu, flip,
+
+    foreach my $param ( keys %{$values_hash} ) {
+
+        # Boolean
+        if ( $boolean_params{$param} ) {
+            unless (
+                ( $values_hash->{$param} and $parsed_url_options->{$param} )
+                or (    not $values_hash->{$param}
+                    and not $parsed_url_options->{$param} )
+                )
+            {
+                return 0;
+            }
+        }
+
+        # String
+        elsif ( $string_params{$param} ) {
+            unless ( $values_hash->{$param} eq $parsed_url_options->{$param} )
+            {
+                return 0;
+            }
+        }
+        elsif ( $param eq 'map_set_acc' or $param eq 'species_acc' ) {
+            unless ( grep { $values_hash->{$param} eq $_->{'map_set_acc'} }
+                @{ $form_data->{'slot_info'} || [] } )
+            {
+                return 0;
+            }
+        }
+        elsif ( $param eq 'map_acc' ) {
+            unless (
+                grep { ( $_->{'maps'}{ $values_hash->{$param} } ) ? 1 : () }
+                @{ $form_data->{'slot_info'} || [] } )
+            {
+                return 0;
+            }
+        }
+
+        #Special Slot parameters
+        #elsif ( $slot_params{$param} ) {
+        #unless ( $values_hash->{$param} eq $parsed_url_options->{$param} )
+        #{
+        #return 0;
+        #}
+        #}
+
+        #Special Evidence Type
+        # ignored_evidence_type ANB
+        elsif ( $evidence_type_params{$param} ) {
+            my $evidence_type = $values_hash->{$param};
+            unless ( $evidence_type_codes{$param} eq
+                $evidence_type_menu_select->{$evidence_type} )
+            {
+                return 0;
+            }
+        }
+
+        #Special Feature Type
+        # ignored_feature_type read
+        elsif ( $feature_type_params{$param} ) {
+            my $feature_type = $values_hash->{$param};
+            unless ( $feature_type_hashes{$param}->{$feature_type} ) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }
 
 # ----------------------------------------------------
