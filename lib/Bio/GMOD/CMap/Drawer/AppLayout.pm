@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.42 2007-07-25 14:20:41 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.43 2007-07-25 17:21:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -283,16 +283,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
             $new_zone_bounds = $zone_layout->{'bounds'};
         }
 
-        if (    $force_relayout
-            and $depth <=> 0
-            and @{ $new_zone_bounds || [] } )
-        {
-            $zone_width = $new_zone_bounds->[2] - $new_zone_bounds->[0];
-        }
-        else {
-            $zone_width
-                = $zone_layout->{'bounds'}[2] - $zone_layout->{'bounds'}[0];
-        }
+        $zone_width = $new_zone_bounds->[2] - $new_zone_bounds->[0];
 
         # This is being layed out again
         # Meaning we can reuse some of the work that has been done.
