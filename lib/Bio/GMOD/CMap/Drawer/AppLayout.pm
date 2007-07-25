@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.41 2007-07-02 15:16:29 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.42 2007-07-25 14:20:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -129,10 +129,11 @@ sub layout_overview {
     my %args             = @_;
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
-    my $width            = $args{'width'} || 500;
-
-    #BF DEBUG
-    return;
+    my $width            =
+           $args{'width'}
+        || $app_display_data->{'window_layout'}{$window_key}{'width'}
+        ? ( $app_display_data->{'window_layout'}{$window_key}{'width'} - 400 )
+        : 500;
 
     my $overview_layout = $app_display_data->{'overview_layout'}{$window_key};
     my $head_zone_key
@@ -166,10 +167,14 @@ sub layout_overview {
     $top_overview_zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0 ];
 
     # Get the scale diff between the overview and the main view
-    my $top_pixel_factor = overview_scale_factor_from_main(
+    my ($top_pixel_factor,
+        $overview_vis_x1_in_main_coords,
+        $overview_vis_x2_in_main_coords
+        )
+        = overview_scale_and_visible_regions_from_main(
         overview_zone_layout => $top_overview_zone_layout,
         main_zone_layout     => $main_zone_layout,
-    );
+        );
 
     # Sort maps according to height.  This way, maps can be drawn from top to
     # bottom
@@ -184,16 +189,24 @@ sub layout_overview {
     my $last_y
         = $app_display_data->{'map_layout'}{ $sorted_map_keys[0] }{'bounds'}
         [1];
+MAP:
     foreach my $map_key (@sorted_map_keys) {
         my $map_layout = $app_display_data->{'map_layout'}{$map_key};
+        if (   $overview_vis_x1_in_main_coords > $map_layout->{'bounds'}[2]
+            or $overview_vis_x2_in_main_coords < $map_layout->{'bounds'}[0] )
+        {
+            next MAP;
+        }
         unless ( $last_y == $map_layout->{'bounds'}[1] ) {
             $zone_max_y += $map_height + $overview_layout->{'map_buffer_y'};
 
             $last_y = $map_layout->{'bounds'}[1];
         }
 
-        my $o_map_x1 = $top_pixel_factor * $map_layout->{'bounds'}[0];
-        my $o_map_x2 = $top_pixel_factor * $map_layout->{'bounds'}[2];
+        my $o_map_x1 = $top_pixel_factor * (
+            $map_layout->{'bounds'}[0] - $overview_vis_x1_in_main_coords );
+        my $o_map_x2 = $top_pixel_factor * (
+            $map_layout->{'bounds'}[2] - $overview_vis_x1_in_main_coords );
 
         my $draw_sub_ref = $map_layout->{'shape_sub_ref'};
 
@@ -212,81 +225,6 @@ sub layout_overview {
     $top_overview_zone_layout->{'changed'}     = 1;
     $top_overview_zone_layout->{'sub_changed'} = 1;
     $zone_max_y += $map_height + $zone_buffer_y;
-
-    foreach my $child_zone_key ( @{ $overview_layout->{'child_zone_order'} } )
-    {
-        $main_zone_layout
-            = $app_display_data->{'zone_layout'}{$child_zone_key};
-        my $child_overview_zone_layout
-            = $overview_layout->{'zones'}{$child_zone_key};
-        $child_overview_zone_layout->{'bounds'}[0]
-            = $main_zone_layout->{'bounds'}[0] * $top_pixel_factor;
-        $child_overview_zone_layout->{'bounds'}[1]
-            = $zone_max_y - $overview_layout->{'map_buffer_y'};
-        $child_overview_zone_layout->{'bounds'}[2]
-            = $main_zone_layout->{'bounds'}[2] * $top_pixel_factor;
-        $zone_width = $child_overview_zone_layout->{'bounds'}[2]
-            - $child_overview_zone_layout->{'bounds'}[1];
-        $child_overview_zone_layout->{'internal_bounds'}
-            = [ 0, 0, $zone_width, 0 ];
-
-        my $child_pixel_factor = overview_scale_factor_from_main(
-            overview_zone_layout => $child_overview_zone_layout,
-            main_zone_layout     => $main_zone_layout,
-        );
-
-        # Sort maps according to height.  This way, maps can be drawn from top
-        # to bottom
-        @sorted_map_keys = sort {
-            $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
-                <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
-
-        } @{ $app_display_data->{'map_order'}{$child_zone_key} };
-
-        next unless (@sorted_map_keys);
-
-        my $last_y = $app_display_data->{'map_layout'}{ $sorted_map_keys[0] }
-            {'bounds'}[1];
-        foreach my $map_key (@sorted_map_keys) {
-            my $map_layout = $app_display_data->{'map_layout'}{$map_key};
-            unless ( $last_y == $map_layout->{'bounds'}[1] ) {
-                $zone_max_y
-                    += $map_height + $overview_layout->{'map_buffer_y'};
-                $last_y = $map_layout->{'bounds'}[1];
-            }
-            my $o_map_x1 = $child_pixel_factor * $map_layout->{'bounds'}[0];
-
-            my $o_map_x2 = $child_pixel_factor * $map_layout->{'bounds'}[2];
-
-            my $draw_sub_ref
-                = _map_shape_sub_ref( map_layout => $map_layout, );
-
-            my ( $bounds, $map_coords ) = &$draw_sub_ref(
-                map_layout => $child_overview_zone_layout->{'maps'}{$map_key},
-                app_display_data => $app_display_data,
-                min_x            => $o_map_x1,
-                min_y            => $zone_max_y,
-                max_x            => $o_map_x2,
-                color            => $map_layout->{'color'},
-                thickness        => $map_height,
-            );
-
-            $child_overview_zone_layout->{'maps'}{$map_key}{'changed'} = 1;
-        }
-
-        $zone_max_y += $map_height;
-        $child_overview_zone_layout->{'bounds'}[3]   = $zone_max_y;
-        $child_overview_zone_layout->{'changed'}     = 1;
-        $child_overview_zone_layout->{'sub_changed'} = 1;
-        $zone_max_y += $zone_buffer_y;
-
-        # create selected region
-        overview_selected_area(
-            zone_key         => $child_zone_key,
-            window_key       => $window_key,
-            app_display_data => $app_display_data,
-        );
-    }
 
     $top_overview_zone_layout->{'bounds'}[3]
         += $zone_max_y + $overview_layout->{'map_buffer_y'};
@@ -833,6 +771,12 @@ MAP:
 
     $zone_layout->{'sub_changed'} = 1;
     $zone_layout->{'changed'}     = 1;
+
+    #layout_overview(
+    #    window_key       => $window_key,
+    #    app_display_data => $app_display_data,
+    #);
+    $app_display_data->recreate_overview( window_key => $window_key, );
 
     return $height_change;
 }
@@ -1726,8 +1670,8 @@ Also, destroys the features.
     }
 
     # Remove the map
-    $map_layout->{'bounds'} = [ 0, 0, 0, 0 ];
-    $map_layout->{'coords'} = [ 0, 0, 0, 0 ];
+    #$map_layout->{'bounds'} = [ 0, 0, 0, 0 ];
+    #$map_layout->{'coords'} = [ 0, 0, 0, 0 ];
     $app_display_data->destroy_items(
         items      => $map_layout->{'items'},
         window_key => $window_key,
@@ -2106,19 +2050,21 @@ Shows the selected region.
     my $bracket_y1 = $overview_zone_layout->{'internal_bounds'}[1];
     my $bracket_y2 = $overview_zone_layout->{'internal_bounds'}[3];
 
-    my $scale_factor_from_main = overview_scale_factor_from_main(
+    my ($scale_factor_from_main,
+        $overview_vis_x1_in_main_coords,
+        $overview_vis_x2_in_main_coords
+        )
+        = overview_scale_and_visible_regions_from_main(
         overview_zone_layout => $overview_zone_layout,
         main_zone_layout     => $main_zone_layout,
-    );
+        );
     my $min_x = $main_zone_layout->{'viewable_internal_x1'};
     my $max_x = $main_zone_layout->{'viewable_internal_x2'};
 
-    my $bracket_x1 = $min_x * $scale_factor_from_main;
-    my $bracket_x2 = $max_x * $scale_factor_from_main;
-
-    my $bracket_width = 5;
-
-    my $use_brackets = 0;
+    my $bracket_x1 = ( $min_x - $overview_vis_x1_in_main_coords )
+        * $scale_factor_from_main;
+    my $bracket_x2 = ( $max_x - $overview_vis_x1_in_main_coords )
+        * $scale_factor_from_main;
 
     # rectangle
     push @{ $overview_zone_layout->{'viewed_region'} },
@@ -2332,13 +2278,14 @@ Returns the map's tick mark interval.
 }
 
 # ----------------------------------------------------
-sub overview_scale_factor_from_main {
+sub overview_scale_and_visible_regions_from_main {
 
 =pod
 
-=head2 overview_scale_factor_from_main
+=head2 overview_scale_and_visible_regions_from_main
 
-Get the scale value between the main layout and the overview
+Get the scale value between the main layout and the overview.  And get the
+region that the overview will be displaying.
 
 =cut
 
@@ -2346,14 +2293,66 @@ Get the scale value between the main layout and the overview
     my $overview_zone_layout = $args{'overview_zone_layout'};
     my $main_zone_layout     = $args{'main_zone_layout'};
 
-    #BF DEBUG
-    return 1;
+    my $scale_of_zoom                  = .5;
+    my $pixel_scale                    = .5;
+    my $overview_vis_x1_in_main_coords = 0;
+    my $overview_vis_x2_in_main_coords = 0;
 
-    my $return_val = ( $overview_zone_layout->{'internal_bounds'}[2]
-            - $overview_zone_layout->{'internal_bounds'}[1] + 1 ) /
-        ( $main_zone_layout->{'internal_bounds'}[2]
+    my $overview_size = $overview_zone_layout->{'internal_bounds'}[2]
+        - $overview_zone_layout->{'internal_bounds'}[0] + 1;
+    my $main_size = ( $main_zone_layout->{'internal_bounds'}[2]
             - $main_zone_layout->{'internal_bounds'}[0] + 1 );
-    return $return_val;
+    my $scale_difference = $overview_size / $main_size;
+    if ( $scale_of_zoom < $scale_difference ) {
+
+        # Overview can hold the entire thing.
+        $pixel_scale = $scale_difference;
+        $overview_vis_x1_in_main_coords
+            = $main_zone_layout->{'internal_bounds'}[0];
+        $overview_vis_x2_in_main_coords
+            = $main_zone_layout->{'internal_bounds'}[2];
+    }
+    else {
+
+        # Need to figure out what the overview can show.
+        my $mid_viewable_main = ( $main_zone_layout->{'viewable_internal_x2'}
+                + $main_zone_layout->{'viewable_internal_x1'} ) / 2;
+        my $viewable_size = $main_zone_layout->{'viewable_internal_x2'}
+            - $main_zone_layout->{'viewable_internal_x1'} + 1;
+        my $overview_viewable_zize_in_main_coords
+            = $viewable_size / $scale_of_zoom;
+        $pixel_scale
+            = $overview_size / $overview_viewable_zize_in_main_coords;
+        my $half_viewable_for_overview
+            = $overview_viewable_zize_in_main_coords / 2;
+        $overview_vis_x1_in_main_coords
+            = $mid_viewable_main - $half_viewable_for_overview;
+        $overview_vis_x2_in_main_coords
+            = $mid_viewable_main + $half_viewable_for_overview;
+
+        if ( $overview_vis_x1_in_main_coords
+            < $main_zone_layout->{'internal_bounds'}[0] )
+        {
+            my $offset = $main_zone_layout->{'internal_bounds'}[0]
+                - $overview_vis_x1_in_main_coords;
+            $overview_vis_x1_in_main_coords += $offset;
+            $overview_vis_x2_in_main_coords += $offset;
+        }
+        elsif ( $overview_vis_x2_in_main_coords
+            > $main_zone_layout->{'internal_bounds'}[2] )
+        {
+            my $offset = $main_zone_layout->{'internal_bounds'}[2]
+                - $overview_vis_x2_in_main_coords;
+            $overview_vis_x1_in_main_coords += $offset;
+            $overview_vis_x2_in_main_coords += $offset;
+        }
+    }
+
+    return (
+        $pixel_scale,
+        $overview_vis_x1_in_main_coords,
+        $overview_vis_x2_in_main_coords,
+    );
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.54 2007-07-06 16:03:56 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.55 2007-07-25 14:20:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -212,10 +212,11 @@ Adds the first slot
         head_zone_key    => $zone_key,
         app_display_data => $self,
     );
-    layout_overview(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
+
+    #layout_overview(
+    #    window_key       => $window_key,
+    #    app_display_data => $self,
+    #);
 
     $self->change_selected_zone( zone_key => $zone_key, );
 
@@ -480,10 +481,11 @@ sub dd_load_save_in_new_window {
         head_zone_key    => $zone_key,
         app_display_data => $self,
     );
-    layout_overview(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
+
+    #layout_overview(
+    #    window_key       => $window_key,
+    #    app_display_data => $self,
+    #);
 
     $self->change_selected_zone( zone_key => $zone_key, );
 
@@ -1317,11 +1319,12 @@ canvases.
         head_zone_key    => $head_zone_key,
         app_display_data => $self,
     );
-    layout_overview(
-        window_key       => $window_key,
-        app_display_data => $self,
-        width            => $width - 400,
-    );
+
+    #layout_overview(
+    #    window_key       => $window_key,
+    #    app_display_data => $self,
+    #    width            => $width - 400,
+    #);
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
@@ -1574,6 +1577,8 @@ sub change_selected_zone {
         window_key       => $window_key,
         app_display_data => $self,
     );
+    return if ( $self->{'debug_thing'} );
+    $self->{'debug_thing'} = 1;
 
     return;
 }
@@ -1988,13 +1993,10 @@ Destroys then recreates the overview
     my $window_key = $args{'window_key'} or return;
 
     #BF DEBUG
-    return;
+    #return;
     my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
-    # Destroy zone information and drawings
-    foreach my $zone_key ( $top_zone_key,
-        @{ $self->{'overview_layout'}{$window_key}{'child_zone_order'} } )
-    {
+    foreach my $zone_key ( $top_zone_key, ) {
         foreach my $map_key (
             keys %{
                 $self->{'overview_layout'}{$window_key}{'zones'}{$zone_key}
@@ -2065,18 +2067,7 @@ Initializes overview_layout
         child_zone_order => [],
     };
 
-    # Create an ordered list of the zones in the overview.
-    my @child_zones;
-    foreach my $child_zone_key (
-        @{ $self->{'scaffold'}{$top_zone_key}{'children'} || [] } )
-    {
-        push @child_zones, $child_zone_key;
-    }
-
-    $self->{'overview_layout'}{$window_key}{'child_zone_order'}
-        = \@child_zones;
-
-    foreach my $zone_key ( $top_zone_key, @child_zones, ) {
+    foreach my $zone_key ( $top_zone_key, ) {
         $self->initialize_overview_zone_layout( $window_key, $zone_key, );
     }
 

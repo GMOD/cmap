@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.57 2007-07-06 14:42:04 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.58 2007-07-25 14:20:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -691,6 +691,24 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
+    my $debug_button = $controls_pane->Button(
+        -text    => "Debug",
+        -command => sub {
+            print STDERR "---------------------------------\n";
+            $self->app_controller()->zoom_zone(
+                window_key => $window_key,
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                zoom_value => 2,
+            );
+            $self->app_controller()->scroll_zone(
+                window_key   => $window_key,
+                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
+                scroll_value => 200,
+            );
+            $self->app_controller()->new_selected_zone( zone_key => 3, );
+        },
+        -font => $font,
+    );
     Tk::grid(
         $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
         '-',                                  $corr_menu_button,
@@ -701,9 +719,10 @@ Adds control buttons to the controls_pane.
         $scroll_far_left_button, $scroll_left_button,
         $zoom_button1,           $zoom_button2,
         $scroll_type_1,          $scroll_far_type_1,
-
         $expand_button,                  # $show_features_check_box,
         $refresh_button,
+
+        #$debug_button,
 
         # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
@@ -844,8 +863,6 @@ Draws and re-draws on the overview zinc
 
     my ( $self, %args ) = @_;
 
-    #BF DEBUG
-    return;
     my $window_key = $args{'window_key'}
         or die 'no panel key for draw_overview';
     my $app_display_data = $args{'app_display_data'};
@@ -868,9 +885,7 @@ Draws and re-draws on the overview zinc
     }
     if ( $overview_layout->{'sub_changed'} ) {
 
-        foreach my $zone_key ( $top_zone_key,
-            @{ $overview_layout->{'child_zone_order'} || [] } )
-        {
+        foreach my $zone_key ( $top_zone_key, ) {
             $self->draw_overview_zone(
                 window_key           => $window_key,
                 zone_key             => $zone_key,
@@ -1015,6 +1030,8 @@ Draws and re-draws on the zinc
 
     my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
     if ( $zone_layout->{'changed'} ) {
+
+        # Move the zone to where it is supposed to be
         $zinc->coords(
             $zone_group_id,
             [   $parent_zone_x_offset + $zone_layout->{'bounds'}[0],
