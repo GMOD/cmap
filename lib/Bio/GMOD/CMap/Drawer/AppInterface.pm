@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.58 2007-07-25 14:20:41 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.59 2007-08-01 21:28:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -695,16 +695,38 @@ Adds control buttons to the controls_pane.
         -text    => "Debug",
         -command => sub {
             print STDERR "---------------------------------\n";
+            print STDERR
+                "           --------------BEFORE ZOOM-------------------\n";
             $self->app_controller()->zoom_zone(
                 window_key => $window_key,
                 zone_key   => ${ $self->{'selected_zone_key_scalar'} },
                 zoom_value => 2,
             );
+            print STDERR
+                "            --------------AFTER ZOOM BEFORE SELECT-------------------\n";
+            my $zinc = $self->zinc( window_key => $window_key, );
+            $self->add_object_selection(
+                zinc       => $zinc,
+                zone_key   => 3,
+                map_key    => 8,
+                window_key => $window_key,
+            );
+            $self->add_object_selection(
+                zinc       => $zinc,
+                zone_key   => 3,
+                map_key    => 9,
+                window_key => $window_key,
+            );
+            print STDERR
+                "            ----------------AFTER SELECT-----------------\n";
+
             $self->app_controller()->scroll_zone(
                 window_key   => $window_key,
                 zone_key     => ${ $self->{'selected_zone_key_scalar'} },
                 scroll_value => 200,
             );
+            print STDERR
+                "            ----------------AFTER SCROLL BEFORE SELECT-----------------\n";
             $self->app_controller()->new_selected_zone( zone_key => 3, );
         },
         -font => $font,
@@ -2995,6 +3017,141 @@ sub password_box {
 }
 
 # ----------------------------------------------------
+sub start_menu {
+
+    #print STDERR "AI_NEEDS_MODDED 37\n";
+
+=pod
+
+=head2 start_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $data_source = $args{'data_source'};
+    my $remote_url  = $args{'remote_url'};
+
+    my $start_window = $self->main_window()->Toplevel( -takefocus => 1 );
+    $start_window->title('Start CMAE');
+
+    my $button_items = [
+        {   -text    => 'Open a Saved View',
+            -command => sub {
+                my $saved_view = $self->main_window()->getOpenFile();
+
+                my $saved_view_data = $self->app_controller()
+                    ->open_saved_view( saved_view => $saved_view, );
+
+                return {
+                    saved_view_data => $saved_view_data,
+                    remote_url      => $saved_view_data->{'remote_url'},
+                    data_source     => $saved_view_data->{'data_source'},
+                };
+            },
+        },
+        {   -text    => 'Browse a Data Source',
+            -command => sub {
+                if ($data_source) {
+                    $self->app_controller->finish_init(
+                        remote_url  => $remote_url,
+                        data_source => $data_source,
+                    );
+                    $start_window->destroy();
+                }
+                else {
+                    $self->select_data_source(
+                        remote_url  => $remote_url,
+                        data_source => $data_source,
+                    );
+                    $start_window->destroy();
+                }
+            },
+            -button_handles_finishing => 1,
+        },
+    ];
+
+    $self->app_controller()->plugin_set()
+        ->modify_start_up_menu( button_items => $button_items, );
+
+    push @$button_items, {
+        -text    => 'Exit',
+        -command => sub {
+            exit;
+        },
+    };
+
+    foreach my $button_item ( @{$button_items} ) {
+        $start_window->Button(
+            -text    => $button_item->{'-text'},
+            -command => $button_item->{'-button_handles_finishing'}
+            ? sub {
+                &{  $button_item->{'-command'}
+                        || sub { }
+                    };
+                }
+            : sub {
+                my $returned_data = &{
+                    $button_item->{'-command'}
+                        || sub { }
+                    } || {};
+                $self->app_controller->finish_init(
+                    saved_view_data => $returned_data->{'saved_view_data'},
+                    remote_url      => $returned_data->{'remote_url'},
+                    data_source     => $returned_data->{'data_source'},
+                );
+                $start_window->destroy();
+            },
+        )->pack( -side => 'top', -anchor => 'nw' );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub select_data_source {
+
+=pod
+
+=head2 select_data_source
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $remote_url  = $args{'remote_url'};
+    my $data_source = $args{'data_source'};
+
+    my $data_sources = $self->data_sources();
+
+    my $data_source_window
+        = $self->main_window()->Toplevel( -takefocus => 1 );
+    $data_source_window->title('Select Data Source');
+
+    foreach my $data_source_info ( @{ $data_sources || [] } ) {
+        my $data_source_name = $data_source_info->{'name'};
+        $data_source_window->Button(
+            -text    => $data_source_name,
+            -command => sub {
+                $self->app_controller->finish_init(
+                    remote_url  => $remote_url,
+                    data_source => $data_source_name,
+                );
+                $data_source_window->destroy();
+            },
+        )->pack( -side => 'top', -anchor => 'nw' );
+    }
+    $data_source_window->Button(
+        -text    => 'Exit',
+        -command => sub {
+            exit;
+        },
+    )->pack( -side => 'bottom', -anchor => 'nw' );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub select_reference_maps {
 
     #print STDERR "AI_NEEDS_MODDED 37\n";
@@ -3009,7 +3166,7 @@ sub select_reference_maps {
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'}
         or die 'no window key for new reference_maps';
-    my $controller = $args{'controller'};
+    my $app_controller = $self->app_controller();
 
     my $reference_maps_by_species
         = $self->app_data_module()->get_reference_maps_by_species();
@@ -3051,7 +3208,7 @@ sub select_reference_maps {
         -command => sub {
 
             if ( $map_listbox->curselection() ) {
-                $controller->load_new_window(
+                $app_controller->load_new_window(
                     selectable_ref_map_ids => $selectable_ref_map_ids,
                     selections => [ $map_listbox->curselection() ],
                     window_key => $window_key,
@@ -3066,7 +3223,7 @@ sub select_reference_maps {
     $ref_selection_window->Button(
         -text    => 'Cancel',
         -command => sub {
-            $self->app_controller->close_window( window_key => $window_key, );
+            $app_controller->close_window( window_key => $window_key, );
             $ref_selection_window->destroy();
         },
     )->pack( -side => 'bottom', -anchor => 's' );

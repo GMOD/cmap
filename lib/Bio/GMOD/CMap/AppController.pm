@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.36 2007-07-06 14:42:03 mwz444 Exp $
+# $Id: AppController.pm,v 1.37 2007-08-01 21:28:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -47,27 +47,80 @@ Initializes the object.
 
 =cut
 
-    my ( $self, $config ) = @_;
-
-    my $saved_view_data;
-    if ( $config->{'saved_view'} ) {
-        $saved_view_data
-            = $self->open_saved_view( saved_view => $config->{'saved_view'}, )
-            or die "Failed to open file: " . $config->{'saved_view'};
-        $self->{'remote_url'} = $saved_view_data->{'remote_url'};
-        $self->data_source( $saved_view_data->{'data_source'}
-                || $config->{'data_source'} );
-    }
-    else {
-        $self->params( $config, qw[ config_dir data_source ] );
-        $self->{'remote_url'} = $config->{'remote_url'};
-    }
-
-    # The app_data_module will have the remote config if it is needed
-    $self->config( $self->app_data_module()->config() );
+    my ( $self, $init_params ) = @_;
 
     # Initiate AppPluginSet
-    $self->plugin_set( $config->{'plugins'}, );
+    $self->plugin_set( $init_params->{'plugins'}, );
+    $self->{'remote_url'} = $init_params->{'remote_url'};
+
+    my $config = $self->app_data_module()->config();
+    $self->config($config);
+    $self->app_interface()->config($config);
+
+    my $saved_view_data;
+    if ( $init_params->{'saved_view'} ) {
+        $saved_view_data = $self->open_saved_view(
+            saved_view => $init_params->{'saved_view'}, )
+            or die "Failed to open file: " . $init_params->{'saved_view'};
+        $self->{'remote_url'} = $saved_view_data->{'remote_url'};
+        $self->data_source( $saved_view_data->{'data_source'}
+                || $init_params->{'data_source'} );
+        $self->finish_init(
+            saved_view_data => $saved_view_data,
+            remote_url      => $saved_view_data->{'remote_url'},
+            data_source     => $saved_view_data->{'data_source'},
+        );
+    }
+    elsif ( $init_params->{'remote_url'} or $init_params->{'data_source'} ) {
+        $self->params( $init_params, qw[ config_dir data_source ] );
+        $self->{'remote_url'} = $init_params->{'remote_url'};
+        $self->finish_init(
+            remote_url  => $self->{'remote_url'},
+            data_source => $init_params->{'data_source'},
+        );
+    }
+    else {
+        $self->app_interface->start_menu(
+            data_source => $init_params->{'data_source'},
+            remote_url  => $init_params->{'remote_url'},
+        );
+    }
+
+    MainLoop();
+    return;
+}
+
+# ----------------------------------------------------
+sub finish_init {
+
+=pod
+
+=head2 finish_init
+
+Initializes the object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $saved_view_data = $args{'saved_view_data'};
+    my $new_data_source = $args{'data_source'};
+    my $new_remote_url  = $args{'remote_url'};
+
+    if ($new_data_source) {
+        $self->data_source($new_data_source);
+        $self->app_data_module()->data_source($new_data_source);
+        $self->app_interface()->data_source($new_data_source);
+        $self->app_display_data()->data_source($new_data_source);
+    }
+    if ($new_remote_url) {
+        $self->{'remote_url'} = $new_remote_url;
+        $self->app_data_module()->{'remote_url'} = $new_remote_url;
+        my $config = $self->app_data_module()->get_remote_config();
+        $self->config($config);
+        $self->app_data_module()->config($config);
+        $self->app_interface()->config($config);
+        $self->app_display_data()->config($config);
+    }
 
     $self->data_source( $self->{'data_source'} );
     my $window_key = $self->start_application();
@@ -79,10 +132,9 @@ Initializes the object.
         );
     }
     else {
-        $self->new_reference_maps( window_key => $window_key, );
+        $self->launch_menu( window_key => $window_key, );
     }
 
-    MainLoop();
     return $self;
 }
 
@@ -166,7 +218,7 @@ sub plugin_set {
 
 =pod
 
-=head3 app_data_module
+=head3 plugin_set
 
 Returns a handle to the data module.
 
@@ -271,18 +323,18 @@ Returns a handle to the data module.
 }
 
 # ----------------------------------------------------
-sub new_reference_maps {
+sub launch_menu {
 
 =pod
 
-=head2 new_reference_maps
+=head2 launch_menu
 
 
 =cut
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'}
-        or die "no window acc for new_reference_maps";
+        or die "no window acc for launch_menu";
 
     $self->app_interface()->select_reference_maps(
         window_key => $window_key,
@@ -843,42 +895,6 @@ Save the view information to a file.
 =head1 Extra Methods
 
 =cut
-
-# ----------------------------------------------------
-sub xcheck_datasource_credentials {
-
-=pod
-
-=head2 check_datasource_credentials
-
-See if we need to prompt for user/pass for the given datasource.  
-
-This seems like it will be useful in the application too.  We'll keep it around
-for now.
-
-=cut
-
-    my $self    = shift;
-    my $ds      = $self->data_source() or return;
-    my $config  = $self->config or return;
-    my $db_conf = $config->get_config('database');
-
-    #    if ( my $passwd_file = $db_conf->{'passwd_file'} ) {
-    #        if ( my $cookie = $apr->cookie('CMAP_LOGIN') ) {
-    #            my $sekrit = 'r1ce1sn2c3';
-    #            my ( $user, $ds2, $auth ) = split( /:/, $cookie );
-    #            return $ds                          eq $ds2
-    #                && md5( $user . $ds . $sekrit ) eq $auth;
-    #        }
-    #        else {
-    #            return 0;
-    #        }
-    #    }
-    #    else {
-    return 1;
-
-    #    }
-}
 
 sub _order_out_from_zero {
     ###Return the sort in this order (0,1,-1,-2,2,-3,3,)

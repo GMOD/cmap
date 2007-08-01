@@ -15,8 +15,8 @@ $args{'saved_view'}  = $ARGV[2] || '';
 $args{'plugins'} = [];
 if (0) {
     $args{'plugins'} = [
-        'ExampleModifyMainMenu', 'ExampleModifyRightClickMenu',
-        'ExampleModifyCommitChanges',
+        'ExampleModifyMainMenu',      'ExampleModifyRightClickMenu',
+        'ExampleModifyCommitChanges', 'ExampleModifyStartUpMenu',
     ];
 }
 

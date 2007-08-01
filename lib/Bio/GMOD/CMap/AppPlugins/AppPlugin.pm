@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.6 2007-07-02 15:16:28 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.7 2007-08-01 21:28:14 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME
@@ -38,9 +38,11 @@ CMap currently recognizes 1 distinct types of plugins:
 
 =item 1) modify_main_menu
 
-=item 2) modify_right_click_menu
+=item 2) modify_start_up_menu
 
-=item 3) modify_commit_changes
+=item 3) modify_right_click_menu
+
+=item 4) modify_commit_changes
 
 
 =back
@@ -83,9 +85,9 @@ button.
 =item $type = $self->type()
 
 This tells gbrowse what the plugin's type is.  It must return one of the types
-"modify_main_menu" or "modify_right_click_menu" or "modify_commit_changes"  as
-described in the introduction to this documentation.  If the method is not
-overridden, type() will return "generic."
+"modify_main_menu" or "modify_start_up_menu" or "modify_right_click_menu" or
+"modify_commit_changes"  as described in the introduction to this
+documentation.  If the method is not overridden, type() will return "generic."
 
 =item $self->init()
 
@@ -118,6 +120,17 @@ described in this section.
 =over 4
 
 =item $self->modify_main_menu()
+
+=back
+
+=head2 METHODS TO BE IMPLEMENTED IN Start Up Menu Adders 
+
+All plugins that modify_start_up_menu should override one or more of the
+methods described in this section.
+
+=over 4
+
+=item $self->modify_start_up_menu()
 
 =back
 
@@ -242,6 +255,12 @@ sub type {
 sub modify_main_menu {
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
+    return;
+}
+
+sub modify_start_up_menu {
+    my ( $self, %args ) = @_;
+    my $button_items = $args{'button_items'};
     return;
 }
 

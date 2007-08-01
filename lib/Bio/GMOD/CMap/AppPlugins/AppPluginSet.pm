@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.7 2007-07-02 15:16:28 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.8 2007-08-01 21:28:15 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -145,6 +145,16 @@ sub modify_main_menu {
     for my $p ( $self->plugins ) {
         next unless $p->type eq 'modify_main_menu';
         $p->modify_main_menu( window_key => $window_key, );
+    }
+}
+
+sub modify_start_up_menu {
+    my ( $self, %args ) = @_;
+    my $button_items = $args{'button_items'};
+
+    for my $p ( $self->plugins ) {
+        next unless $p->type eq 'modify_start_up_menu';
+        $p->modify_start_up_menu( button_items => $button_items, );
     }
 }
 

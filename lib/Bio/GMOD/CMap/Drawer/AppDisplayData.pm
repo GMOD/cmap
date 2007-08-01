@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.55 2007-07-25 14:20:41 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.56 2007-08-01 21:28:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -64,7 +64,6 @@ use Bio::GMOD::CMap::Drawer::AppLayout qw[
     layout_sub_maps
     add_correspondences
     add_zone_separator
-    move_zone
     set_zone_bgcolor
     destroy_map_for_relayout
 ];
@@ -1567,6 +1566,8 @@ sub change_selected_zone {
     my $map_set_data = $self->app_data_module()
         ->get_map_set_data( map_set_id => $map_set_id, );
 
+    #return if ( $self->{'debug_thing'} );
+    #$self->{'debug_thing'} = 1;
     $self->app_interface()->int_new_selected_zone(
         map_set_data     => $map_set_data,
         zone_key         => $zone_key,
@@ -1577,8 +1578,6 @@ sub change_selected_zone {
         window_key       => $window_key,
         app_display_data => $self,
     );
-    return if ( $self->{'debug_thing'} );
-    $self->{'debug_thing'} = 1;
 
     return;
 }
@@ -3968,33 +3967,45 @@ Controls how the parent map is highlighted
     # coords
     my $center_x
         = int( ( $highlight_bounds->[2] + $highlight_bounds->[0] ) / 2 + 0.5 )
-        - $parent_main_x_offset + $parent_x_offset;
+        - ( $parent_main_x_offset + $parent_x_offset );
 
     # Work out x coords
-    my $x1 = $center_x - int( $feature_pixel_length / 2 ) + $mouse_dx;
-    my $x2 = $x1 + $feature_pixel_length;
+    my $x1_on_parent
+        = $center_x - int( $feature_pixel_length / 2 ) + $mouse_dx;
+    my $x2_on_parent = $x1_on_parent + $feature_pixel_length;
+    my $x1           = $highlight_bounds->[0];
+    my $x2           = $highlight_bounds->[2];
 
-    if (    $parent_map_layout->{'coords'}[0] > $x1
-        and $parent_map_layout->{'coords'}[2] < $x2 )
+    if (    $parent_map_layout->{'coords'}[0] > $x1_on_parent
+        and $parent_map_layout->{'coords'}[2] < $x2_on_parent )
     {
 
         # Feature bigger than the map, shrink the feature to the map length.
-        $x1 = $parent_map_layout->{'coords'}[0];
-        $x2 = $parent_map_layout->{'coords'}[2];
+        my $x1_offset = $parent_map_layout->{'coords'}[0] - $x1_on_parent;
+        my $x2_offset = $parent_map_layout->{'coords'}[2] - $x2_on_parent;
+
+        $x1_on_parent += $x1_offset;
+        $x2_on_parent += $x2_offset;
+        $x1           += $x1_offset;
+        $x2           += $x2_offset;
     }
-    elsif ( $parent_map_layout->{'coords'}[0] > $x1 ) {
+    elsif ( $parent_map_layout->{'coords'}[0] > $x1_on_parent ) {
 
         # Not on the map to the right, push to the left
-        my $offset = $parent_map_layout->{'coords'}[0] - $x1;
-        $x1 += $offset;
-        $x2 += $offset;
+        my $offset = $parent_map_layout->{'coords'}[0] - $x1_on_parent;
+        $x1_on_parent += $offset;
+        $x2_on_parent += $offset;
+        $x1           += $offset;
+        $x2           += $offset;
     }
-    elsif ( $parent_map_layout->{'coords'}[2] < $x2 ) {
+    elsif ( $parent_map_layout->{'coords'}[2] < $x2_on_parent ) {
 
         # Not on the map to the left, push to the right
-        my $offset = $x2 - $parent_map_layout->{'coords'}[2];
-        $x1 -= $offset;
-        $x2 -= $offset;
+        my $offset = $x2_on_parent - $parent_map_layout->{'coords'}[2];
+        $x1_on_parent -= $offset;
+        $x2_on_parent -= $offset;
+        $x1           -= $offset;
+        $x2           -= $offset;
     }
 
     # Get y coords
@@ -4002,8 +4013,8 @@ Controls how the parent map is highlighted
     my $y2 = $parent_map_layout->{'coords'}[3];
 
     my $visible = 1;
-    if (   $x2 < $parent_zone_layout->{'viewable_internal_x1'}
-        or $x1 > $parent_zone_layout->{'viewable_internal_x2'} )
+    if (   $x2_on_parent < $parent_zone_layout->{'viewable_internal_x1'}
+        or $x1_on_parent > $parent_zone_layout->{'viewable_internal_x2'} )
     {
         $visible = 0;
     }

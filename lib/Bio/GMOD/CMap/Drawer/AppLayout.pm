@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.43 2007-07-25 17:21:55 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.44 2007-08-01 21:28:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -55,7 +55,6 @@ my @subs = qw[
     add_zone_separator
     add_correspondences
     set_zone_bgcolor
-    move_zone
     move_map
     destroy_map_for_relayout
 ];
@@ -331,14 +330,13 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                     == $zone_layout->{'viewable_internal_x2'} )
                 {
 
-                    # Visibility hasn't changed, simpley move the zone
-                    move_zone(
+                    # Visibility hasn't changed, simpley move the zone image
+                    $app_display_data->app_interface()->int_move_zone(
                         zone_key         => $zone_key,
                         window_key       => $window_key,
+                        x                => $move_offset_x,
+                        y                => $move_offset_y,
                         app_display_data => $app_display_data,
-                        app_interface => $app_display_data->app_interface(),
-                        x             => $move_offset_x,
-                        y             => $move_offset_y,
                     );
                     return 0;
                 }
@@ -2077,45 +2075,6 @@ Shows the selected region.
 }
 
 # ----------------------------------------------------
-sub move_zone {
-
-=pod
-
-=head2 move_zone
-
-Move a zone
-
-=cut
-
-    my %args             = @_;
-    my $zone_key         = $args{'zone_key'};
-    my $window_key       = $args{'window_key'};
-    my $app_display_data = $args{'app_display_data'};
-    my $app_interface    = $args{'app_interface'};
-    my $x                = $args{'x'} || 0;
-    my $y                = $args{'y'} || 0;
-
-    my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
-
-    $zone_layout->{'bounds'}[0] += $x;
-    $zone_layout->{'bounds'}[1] += $y;
-    $zone_layout->{'bounds'}[2] += $x;
-    $zone_layout->{'bounds'}[3] += $y;
-
-    $app_interface->int_move_zone(
-        zone_key         => $zone_key,
-        window_key       => $window_key,
-        x                => $x,
-        y                => $y,
-        app_display_data => $app_display_data,
-    );
-
-    # Don't mark changed because it has already been redrawn above.
-    # $zone_layout->{'changed'}     = 1;
-    # $zone_layout->{'sub_changed'} = 1;
-}
-
-# ----------------------------------------------------
 sub move_map {
 
 =pod
@@ -2164,13 +2123,14 @@ Move a map
         )
         )
     {
-        move_zone(
+
+        # Move the zone image
+        $app_interface->int_move_zone(
             zone_key         => $child_zone_key,
             window_key       => $window_key,
-            app_display_data => $app_display_data,
-            app_interface    => $app_interface,
             x                => $x,
             y                => $y,
+            app_display_data => $app_display_data,
         );
     }
 }
