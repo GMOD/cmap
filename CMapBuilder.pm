@@ -32,7 +32,7 @@ sub ACTION_build {
     # Rebuild files with configuration options
     foreach my $PL_file ( 'cgi-bin/cmap.PL', 'conf/global.conf.PL',
         'lib/Bio/GMOD/CMap/Constants.pm.PL',
-        )
+      )
     {
         $self->run_perl_script($PL_file);
     }
@@ -61,16 +61,15 @@ sub ACTION_install {
             my $to_conf   = catfile( $conf_dir, $conf_file );
             my $copy_conf = 1;
             if ( -e $to_conf ) {
-                $copy_conf
-                    = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
+                $copy_conf =
+                  $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
             }
 
             $self->copy_if_modified(
                 from    => $from_conf,
                 to      => $to_conf,
                 flatten => 0,
-                )
-                if $copy_conf;
+            ) if $copy_conf;
         }
     }
 
@@ -78,7 +77,7 @@ sub ACTION_install {
     # Install the CGI script.
     #
     my $from_cgi = 'cgi-bin/cmap';
-    my $to_cgi   = catfile( $self->notes('CGIBIN'), 'cmap' );
+    my $to_cgi = catfile( $self->notes('CGIBIN'), 'cmap' );
 
     my $copy_cgi = 1;
     if ( -e $to_cgi ) {
@@ -89,8 +88,7 @@ sub ACTION_install {
         from    => $from_cgi,
         to      => $to_cgi,
         flatten => 0,
-        )
-        if $copy_cgi;
+    ) if $copy_cgi;
     chmod 0755, $to_cgi or die "Cannot make '$to_cgi' executable: $!\n";
 
     #
@@ -102,7 +100,7 @@ sub ACTION_install {
 
         # mkpath won't give more permissive permissions than the parent
         chmod 0777, $cache_dir
-            or die "Cannot make '$cache_dir' read/write/executable: $!\n";
+          or die "Cannot make '$cache_dir' read/write/executable: $!\n";
         warn "Can't create image cache dir $cache_dir: $@\n" if $@;
     }
 
@@ -115,34 +113,34 @@ sub ACTION_install {
 
         # mkpath won't give more permissive permissions than the parent
         chmod 0777, $session_dir
-            or die "Cannot make '$session_dir' read/write/executable: $!\n";
+          or die "Cannot make '$session_dir' read/write/executable: $!\n";
         warn "Can't create image session dir $session_dir: $@\n" if $@;
     }
 
     $self->SUPER::ACTION_install;
 
-    if ($self->y_n(
-            "Would you like to set up a demo datasource?  This will require you to have access to a database system.",
+    if (
+        $self->y_n(
+"Would you like to set up a demo datasource?  This will require you to have access to a database system.",
             'n'
         )
-        )
+      )
     {
         $self->ACTION_demo();
     }
     else {
-        print
-            q[If you would like to set up the demo in the future, simply run ]
-            . q["./Build demo" with aministrator privileges.\n];
+        print q[If you would like to set up the demo in the future, simply run ]
+          . q["./Build demo" with aministrator privileges.\n];
     }
 
     chomp( my $host = `hostname` || 'localhost' );
     print join( "\n\n",
         '',
         'CMap has been installed at http://$host/cmap',
-        "Please, read http://$host/cmap/INSTALL.html to find out how to complete the installation process.",
+"Please, read http://$host/cmap/INSTALL.html to find out how to complete the installation process.",
         "Then refer to http://$host/cmap/ADMINISTRATION.html "
-            . "for information on how to configure CMap, load data "
-            . "and purge the cache.!",
+          . "for information on how to configure CMap, load data "
+          . "and purge the cache.!",
         '' );
     return;
 }
@@ -160,14 +158,12 @@ sub ACTION_html {
     my $cwd  = cwd();
 
     my $cgi_dir = "/"
-        . abs2rel( $self->notes('CGIBIN'),
-        $self->notes('WEB_DOCUMENT_ROOT') );
+      . abs2rel( $self->notes('CGIBIN'), $self->notes('WEB_DOCUMENT_ROOT') );
     if ( $cgi_dir =~ /\.\./ ) {
         $cgi_dir = '/cgi-bin';
     }
     my $cmap_htdoc_dir = "/"
-        . abs2rel( $self->notes('HTDOCS'),
-        $self->notes('WEB_DOCUMENT_ROOT') );
+      . abs2rel( $self->notes('HTDOCS'), $self->notes('WEB_DOCUMENT_ROOT') );
 
     #
     # Turn all POD files into HTML and install into "htdocs."
@@ -177,7 +173,7 @@ sub ACTION_html {
         sub {
             return if ( $File::Find::name =~ /upgrade/ );
             push @pod_files, $File::Find::name
-                if -f $_ && $File::Find::name =~ /\.pod$/;
+              if -f $_ && $File::Find::name =~ /\.pod$/;
         },
         $cwd
     );
@@ -202,8 +198,7 @@ sub ACTION_html {
         print "pod2html $pod -> $outpath\n";
         pod2html(
             $pod, "--outfile=$outpath", "--backlink=Back to Top",
-            "--title=$filename",
-            "--css=" . $cmap_htdoc_dir . "/pod-style.css",
+            "--title=$filename", "--css=" . $cmap_htdoc_dir . "/pod-style.css",
         );
         push @html_links, [ $outfile, $filename ];
         push @cleanup, $outpath;
@@ -216,7 +211,7 @@ sub ACTION_html {
     find(
         sub {
             push @doc_files, $File::Find::name
-                if -f $_ && $File::Find::name =~ /\.(png|html)$/;
+              if -f $_ && $File::Find::name =~ /\.(png|html)$/;
         },
         'docs'
     );
@@ -243,10 +238,10 @@ sub ACTION_html {
     my $navbar = join(
         '&nbsp;|&nbsp;',
         map {
-                  $_->[1]
-                ? $q->a( { -href => $_->[1] }, $_->[0] )
-                : $q->b( $_->[0] )
-            } (
+                $_->[1]
+              ? $q->a( { -href => $_->[1] }, $_->[0] )
+              : $q->b( $_->[0] )
+          } (
             [ 'CMap Home'      => '' ],
             [ 'Maps'           => $cgi_dir . '/cmap/viewer' ],
             [ 'Map Search'     => $cgi_dir . '/cmap/map_search' ],
@@ -260,7 +255,7 @@ sub ACTION_html {
             [ 'Saved Links'    => $cgi_dir . '/cmap/saved_link' ],
             [ 'Help'           => $cgi_dir . '/cmap/help' ],
             [ 'Tutorial'       => $cmap_htdoc_dir . '/tutorial' ],
-            )
+          )
     );
 
     print "Creating htdocs/index.html\n";
@@ -274,46 +269,45 @@ sub ACTION_html {
         "<!-- End CMap navbar -->",
         $q->p('Congratulations!  CMap has been installed.'),
         $q->p(
-                  'Eventually you will want to create your own content '
-                . 'for this intro page.'
+                'Eventually you will want to create your own content '
+              . 'for this intro page.'
         ),
         $q->p('Start using CMap with one of the following options.'),
         $q->ul(
             $q->li(
                 $q->a( { -href => $cgi_dir . '/cmap/viewer' }, 'Maps' )
-                    . " - Use a menu to select your starting maps\n"
+                  . " - Use a menu to select your starting maps\n"
             ),
             $q->li(
                 $q->a( { -href => $cgi_dir . '/cmap/map_search' },
                     'Map Search' )
-                    . " - If the map set is quite large, the Map Search page can be quicker than sorting through menus.\n"
+                  . " - If the map set is quite large, the Map Search page can be quicker than sorting through menus.\n"
             ),
             $q->li(
                 $q->a( { -href => $cgi_dir . '/cmap/feature_search' },
                     'Feature Search' )
-                    . " - Search for a specific feature and display it on a map.\n"
+                  . " - Search for a specific feature and display it on a map.\n"
             ),
             $q->li(
                 $q->a( { -href => $cgi_dir . '/cmap/matrix' }, 'Matrix' )
-                    . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
+                  . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
             ),
             $q->li(
                 $q->a( { -href => $cgi_dir . '/cmap/saved_link' },
                     'Saved Links' )
-                    . " - View pages previously saved or imported.\n"
+                  . " - View pages previously saved or imported.\n"
             ),
         ),
         $q->p(
             'For an introduction to the basic consepts of CMap, please see the '
-                . $q->a( { -href => $cgi_dir . '/cmap/help' }, 'help pages' )
-                . ' or the '
-                . $q->a( { -href => $cmap_htdoc_dir . '/tutorial' },
-                'tutorial' )
-                . ".\n"
+              . $q->a( { -href => $cgi_dir . '/cmap/help' }, 'help pages' )
+              . ' or the '
+              . $q->a( { -href => $cmap_htdoc_dir . '/tutorial' }, 'tutorial' )
+              . ".\n"
         ),
         $q->p(
             'We would appreciate you would include an acknowlegement of CMap '
-                . 'on this page, e.g.:'
+              . 'on this page, e.g.:'
         ),
         $q->p(
             $q->a(
@@ -322,13 +316,13 @@ sub ACTION_html {
             )
         ),
         $q->p(
-                  'For the mean time, here are some links to the installed '
-                . 'application and supporting docs:'
+                'For the mean time, here are some links to the installed '
+              . 'application and supporting docs:'
         ),
         $q->ul(
-            (   map {
-                    $q->li( $q->a( { -href => $_->[0] }, $_->[1] ) ) . "\n"
-                    } @html_links
+            (
+                map { $q->li( $q->a( { -href => $_->[0] }, $_->[1] ) ) . "\n" }
+                  @html_links
             )
         ),
         'CMap was installed on ' . scalar localtime,
@@ -336,7 +330,8 @@ sub ACTION_html {
         $q->a(
             { -href => 'http://www.gmod.org' },
             $q->img(
-                {   -src => 'gmod_logo.jpg',
+                {
+                    -src => 'gmod_logo.jpg',
                     -alt => 'Powered by GMOD',
                 }
             )
@@ -404,58 +399,59 @@ sub ACTION_demo {
 
     # Get DB info and create config
     my $windows = $Config{osname} =~ /mswin/i;
-    if (!$windows
+    if (
+        !$windows
         and $self->y_n(
             "\nSet up a new mysql database "
-                . "(must have root access to a current MySQL system)?",
+              . "(must have root access to a current MySQL system)?",
             'n'
         )
-        )
+      )
     {
         $self->ACTION_create_mysql_db()
-            or die "Failed to create the mysql database\n";
+          or die "Failed to create the mysql database\n";
     }
     else {
         unless (
             $self->y_n(
                 "\nIf you have set up a database for the demo to use, "
-                    . "you may proceed.\n"
-                    . "If not, please create a database and create the CMap "
-                    . "tables in it.  To do this in MySQL, it looks like this:\n"
-                    . "    \$ mysql -uroot -p -e 'create database CMAP'\n"
-                    . "    \$ mysql -uroot -p CMAP < sql/cmap.create.mysql\n"
-                    . "    \$ mysql -uroot -p CMAP -e 'grant select, insert, "
-                    . "update, delete\n"
-                    . "      on CMAP.* to joe\@localhost identified by \"foobar\"'\n"
-                    . "    \$ mysqladmin -uroot -p flush-privileges\n\n"
-                    . "Have you set up a database for CMap?",
+                  . "you may proceed.\n"
+                  . "If not, please create a database and create the CMap "
+                  . "tables in it.  To do this in MySQL, it looks like this:\n"
+                  . "    \$ mysql -uroot -p -e 'create database CMAP'\n"
+                  . "    \$ mysql -uroot -p CMAP < sql/cmap.create.mysql\n"
+                  . "    \$ mysql -uroot -p CMAP -e 'grant select, insert, "
+                  . "update, delete\n"
+                  . "      on CMAP.* to joe\@localhost identified by \"foobar\"'\n"
+                  . "    \$ mysqladmin -uroot -p flush-privileges\n\n"
+                  . "Have you set up a database for CMap?",
                 'y'
             )
-            )
+          )
         {
             die "I'm sorry but to set up a CMap demo, "
-                . "you must have a database system.\n  When you "
-                . "have done so, please run \"Build demo\" "
-                . "to set up the demo.\n";
+              . "you must have a database system.\n  When you "
+              . "have done so, please run \"Build demo\" "
+              . "to set up the demo.\n";
         }
 
         my $dns_str = $self->prompt(
             "\nThe DNS string is the string passed to DBI to connect to the "
-                . "database, e.g.,\n"
-                . "   MySQL: \"dbi:mysql:CMAP\" \n"
-                . "   PostgreSQL: \"dbi:Pg:dbname=cmap\" \n"
-                . "What is the DNS string for the database you wish to "
-                . "store the demo data in (required)?\n",
+              . "database, e.g.,\n"
+              . "   MySQL: \"dbi:mysql:CMAP\" \n"
+              . "   PostgreSQL: \"dbi:Pg:dbname=cmap\" \n"
+              . "What is the DNS string for the database you wish to "
+              . "store the demo data in (required)?\n",
             'dbi:mysql:CMAP_DEMO'
         );
         die "Need a DNS string to continue\n" unless ($dns_str);
         my $db_user = $self->prompt(
-            "\nWhat is the user name that will be used to connect with the database (required)?\n",
+"\nWhat is the user name that will be used to connect with the database (required)?\n",
             'mysql'
         );
         die "Need a database username to continue\n" unless ($db_user);
         my $db_pass = $self->prompt(
-            "\nWhat is the password that will be used to connect with the database?\n",
+"\nWhat is the password that will be used to connect with the database?\n",
             q{}
         );
         $self->notes( 'DNS_STR', $dns_str, );
@@ -464,8 +460,8 @@ sub ACTION_demo {
     }
     my $datasource = $self->prompt(
         "\nThe data source name is what this database will be refered to as "
-            . "in CMap.  You may name it any word you like.\n"
-            . "What should the demo data source be named? ",
+          . "in CMap.  You may name it any word you like.\n"
+          . "What should the demo data source be named? ",
         'CMAP_DEMO'
     );
     die "Need a data source to continue\n" unless ($datasource);
@@ -485,16 +481,15 @@ sub ACTION_demo {
     # Add data
     my $admin = Bio::GMOD::CMap::Admin->new( data_source => $datasource, );
     die
-        "The config file for the new Data Source ($datasource) did not get properly installed\n"
-        unless ( $datasource eq $admin->data_source() );
+"The config file for the new Data Source ($datasource) did not get properly installed\n"
+      unless ( $datasource eq $admin->data_source() );
 
     # Create the Species
     my $species_id = $admin->species_create(
         species_acc         => 'TEST_SPECIES',
         species_common_name => 'Test Species',
         species_full_name   => 'Testus speciesus',
-        )
-        or die "Error: ", $admin->error, "\n";
+    ) or die "Error: ", $admin->error, "\n";
 
     # Create Map Sets
     my $map_set_id1 = $admin->map_set_create(
@@ -503,20 +498,18 @@ sub ACTION_demo {
         species_id         => $species_id,
         map_type_acc       => 'Seq',
         map_set_acc        => 'TD1',
-        )
-        or die "Error: ", $admin->error, "\n";
+    ) or die "Error: ", $admin->error, "\n";
     my $map_set_id2 = $admin->map_set_create(
         map_set_name       => 'Test Data 2',
         map_set_short_name => 'Test Data 2',
         species_id         => $species_id,
         map_type_acc       => 'Seq',
         map_set_acc        => 'TD2',
-        )
-        or die "Error: ", $admin->error, "\n";
+    ) or die "Error: ", $admin->error, "\n";
 
     # Import Files
-    my $importer
-        = Bio::GMOD::CMap::Admin::Import->new( data_source => $datasource, );
+    my $importer =
+      Bio::GMOD::CMap::Admin::Import->new( data_source => $datasource, );
     my %maps;    #stores the maps info between each file
     my $file1 = catfile( 'data', 'tabtest1' );
     my $file2 = catfile( 'data', 'tabtest2' );
@@ -528,8 +521,7 @@ sub ACTION_demo {
         overwrite    => 1,
         allow_update => 0,
         maps         => \%maps,
-        )
-        or die "Error: ", $importer->error, "\n";
+    ) or die "Error: ", $importer->error, "\n";
     $fh = IO::File->new($file2) or die "Can't read $file2: $!";
     $importer->import_tab(
         map_set_id   => $map_set_id2,
@@ -538,11 +530,11 @@ sub ACTION_demo {
         overwrite    => 1,
         allow_update => 0,
         maps         => \%maps,
-        )
-        or die "Error: ", $importer->error, "\n";
+    ) or die "Error: ", $importer->error, "\n";
 
     # Create Correspondences
-    my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
+    my $corr_maker =
+      Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
         data_source => $datasource, );
 
     my @skip_feature_type_accs = ( 'read_depth', );
@@ -554,12 +546,11 @@ sub ACTION_demo {
         quiet                  => 1,
         name_regex             => '(\S+)\.\w\d$',
         allow_update           => 0,
-        )
-        or die "Error: ", $corr_maker->error, "\n";
+    ) or die "Error: ", $corr_maker->error, "\n";
 
     # Load the Matrix
     $admin->reload_correspondence_matrix
-        or die "Error: ", $admin->error, "\n";
+      or die "Error: ", $admin->error, "\n";
 
     # Purge Cache 'cause what the heck.
     $admin->purge_cache(1);
@@ -576,15 +567,15 @@ sub ACTION_demo {
 sub ACTION_create_mysql_db {
     my $self = shift;
     my $command;
-    my $db_name = $self->prompt(
-        "\nWhat should the name of the database be (required)?\n",
+    my $db_name =
+      $self->prompt( "\nWhat should the name of the database be (required)?\n",
         'CMAP_DEMO' );
     die "Need a database username to continue\n" unless ($db_name);
     my $dns_str_no_db = $self->prompt(
         "\nWhat is the DNS string to be passed to DBI to connect to the "
-            . "MySQL server (without the database name), e.g.,"
-            . " \"dbi:mysql\" "
-            . "(required)?\n",
+          . "MySQL server (without the database name), e.g.,"
+          . " \"dbi:mysql\" "
+          . "(required)?\n",
         'dbi:mysql:'
     );
     die "Need a DNS string to continue\n" unless ($dns_str_no_db);
@@ -600,32 +591,46 @@ sub ACTION_create_mysql_db {
     };
 
     my $db_user = $self->prompt(
-        "\nWhat is the user name that will be used to connect with the database (required)?\n",
+"\nWhat is the user name that will be used to connect with the database (required)?\n",
         'mysql'
     );
     die "Need a database username to continue\n" unless ($db_user);
     my $db_pass = $self->prompt(
-        "\nWhat is the password that will be used to connect with the database?\n",
+"\nWhat is the password that will be used to connect with the database?\n",
         q{}
     );
-
 
     print "Dropping the database $db_name if it exists...\n";
     eval qq{system("mysql -uroot -p -e 'drop database $db_name'")};
     foreach my $command_list (
-        [   qq{mysql -uroot -p -e 'create database $db_name'},
+        [
+            qq{mysql -uroot -p -e 'create database $db_name'},
             "Problem creating database: "
         ],
-        [   qq{mysql -uroot -p $db_name < sql/cmap.create.mysql},
+        [
+            qq{mysql -uroot -p $db_name < sql/cmap.create.mysql},
             "Problem reading sql file: "
         ],
-        [   qq{mysql -uroot -p $db_name -e 'grant select, insert, update, delete on $db_name.* to $db_user\@localhost identified by "$db_pass"'},
+        [
+            (
+                $db_pass
+                ? qq{mysql -uroot -p $db_name -e }
+                  . qq{'grant select, insert, update, delete }
+                  . qq{on $db_name.* to $db_user}
+                  . q{@localhost}
+                  . qq{ identified by "$db_pass"'}
+                : qq{mysql -uroot -p $db_name -e }
+                  . qq{'grant select, insert, update, delete }
+                  . qq{on $db_name.* to $db_user}
+                  . q{@localhost'}
+            ),
             "Problem granting privileges: "
         ],
-        [   qq{mysqladmin -uroot -p flush-privileges},
+        [
+            qq{mysqladmin -uroot -p flush-privileges},
             "Problem flushing privileges: "
         ],
-        )
+      )
     {
         $command = $command_list->[0];
         print "Running: $command\n";
@@ -651,7 +656,7 @@ sub read_dir {
     find(
         sub {
             push @files, $File::Find::name
-                if -f $_ && $File::Find::name !~ /CVS/;
+              if -f $_ && $File::Find::name !~ /CVS/;
         },
         $dir
     );
