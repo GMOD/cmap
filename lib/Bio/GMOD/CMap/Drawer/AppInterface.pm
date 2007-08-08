@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.59 2007-08-01 21:28:15 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.60 2007-08-08 15:43:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -705,12 +705,13 @@ Adds control buttons to the controls_pane.
             print STDERR
                 "            --------------AFTER ZOOM BEFORE SELECT-------------------\n";
             my $zinc = $self->zinc( window_key => $window_key, );
-            $self->add_object_selection(
-                zinc       => $zinc,
-                zone_key   => 3,
-                map_key    => 8,
-                window_key => $window_key,
-            );
+
+            #$self->add_object_selection(
+            #    zinc       => $zinc,
+            #    zone_key   => 3,
+            #    map_key    => 8,
+            #    window_key => $window_key,
+            #);
             $self->add_object_selection(
                 zinc       => $zinc,
                 zone_key   => 3,
@@ -720,14 +721,14 @@ Adds control buttons to the controls_pane.
             print STDERR
                 "            ----------------AFTER SELECT-----------------\n";
 
-            $self->app_controller()->scroll_zone(
-                window_key   => $window_key,
-                zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-                scroll_value => 200,
-            );
-            print STDERR
-                "            ----------------AFTER SCROLL BEFORE SELECT-----------------\n";
-            $self->app_controller()->new_selected_zone( zone_key => 3, );
+           #$self->app_controller()->scroll_zone(
+           #    window_key   => $window_key,
+           #    zone_key     => ${ $self->{'selected_zone_key_scalar'} },
+           #    scroll_value => 200,
+           #);
+           #print STDERR
+           #    "            ----------------AFTER SCROLL BEFORE SELECT---\n";
+           #$self->app_controller()->new_selected_zone( zone_key => 3, );
         },
         -font => $font,
     );

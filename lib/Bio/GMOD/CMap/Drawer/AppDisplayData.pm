@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.56 2007-08-01 21:28:15 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.57 2007-08-08 15:43:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2364,9 +2364,17 @@ Move a map from one place on a parent to another
         highlight_bounds => $ghost_bounds,
     );
 
+    # Get parent offsets
+    my ( $parent_main_x_offset, $parent_main_y_offset )
+        = $self->get_main_zone_offsets( zone_key => $parent_zone_key, );
+    my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
+
     my $new_parent_map_key = $ghost_location_data{'parent_map_key'};
     $parent_zone_key = $ghost_location_data{'parent_zone_key'};
     my $new_location_coords = $ghost_location_data{'location_coords'};
+
+    $new_location_coords->[0] -= ( $parent_main_x_offset + $parent_x_offset );
+    $new_location_coords->[2] -= ( $parent_main_x_offset + $parent_x_offset );
 
     my $parent_map_coords
         = $self->{'map_layout'}{$new_parent_map_key}{'coords'};
@@ -3965,16 +3973,17 @@ Controls how the parent map is highlighted
 
     # Get the center x of the ghost bounds and translate into the parents
     # coords
+    my $ghost_center_x = int(
+        ( $highlight_bounds->[2] + $highlight_bounds->[0] ) / 2 + 0.5 );
     my $center_x
-        = int( ( $highlight_bounds->[2] + $highlight_bounds->[0] ) / 2 + 0.5 )
-        - ( $parent_main_x_offset + $parent_x_offset );
+        = $ghost_center_x - ( $parent_main_x_offset + $parent_x_offset );
 
     # Work out x coords
     my $x1_on_parent
         = $center_x - int( $feature_pixel_length / 2 ) + $mouse_dx;
     my $x2_on_parent = $x1_on_parent + $feature_pixel_length;
-    my $x1           = $highlight_bounds->[0];
-    my $x2           = $highlight_bounds->[2];
+    my $x1 = $ghost_center_x - int( $feature_pixel_length / 2 ) + $mouse_dx;
+    my $x2 = $x1 + $feature_pixel_length;
 
     if (    $parent_map_layout->{'coords'}[0] > $x1_on_parent
         and $parent_map_layout->{'coords'}[2] < $x2_on_parent )
@@ -4071,6 +4080,7 @@ Controls how the ghost map moves.
         ghost_zone_key    => $zone_key,
         ghost_map_key     => $map_key,
         parent_map_set_id => $parent_map_set_id,
+        parent_zone_key   => $parent_zone_key,
         mouse_x           => $mouse_x,
         mouse_y           => $mouse_y,
     );
@@ -4187,6 +4197,7 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
     my $ghost_zone_key    = $args{'ghost_zone_key'};
     my $ghost_map_key     = $args{'ghost_map_key'};
     my $parent_map_set_id = $args{'parent_map_set_id'};
+    my $parent_zone_key   = $args{'parent_zone_key'};
     my $mouse_x           = $args{'mouse_x'};
     my $mouse_y           = $args{'mouse_y'};
 
@@ -4199,6 +4210,7 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
    # the other parents trigger space (their bounds).
     foreach my $ghost_parent_map ( @{ $ghost_parent_maps || [] } ) {
         if ($self->point_in_box(
+                zone_key   => $parent_zone_key,
                 x          => $mouse_x,
                 y          => $mouse_y,
                 box_coords => $ghost_parent_map->{'main_bounds'},
@@ -4297,11 +4309,14 @@ Given box coords and x and y coords, figure out if the mouse is in a the box.
     my $x          = $args{'x'};
     my $y          = $args{'y'};
     my $box_coords = $args{'box_coords'};
+    my $zone_key   = $args{'zone_key'};
+    my $x_offset   = $self->{'scaffold'}{$zone_key}{'x_offset'} || 0;
+    my $y_offset   = $self->{'scaffold'}{$zone_key}{'y_offset'} || 0;
 
-    return (    $x >= $box_coords->[0]
-            and $y >= $box_coords->[1]
-            and $x <= $box_coords->[2]
-            and $y <= $box_coords->[3] );
+    return (    $x >= $box_coords->[0] + $x_offset
+            and $y >= $box_coords->[1] + $y_offset
+            and $x <= $box_coords->[2] + $x_offset
+            and $y <= $box_coords->[3] + $y_offset );
 }
 
 # ----------------------------------------------------
