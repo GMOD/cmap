@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.68 2007-05-18 20:27:41 mwz444 Exp $
+# $Id: Build.PL,v 1.69 2007-08-12 04:01:41 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -15,13 +15,13 @@ if ( $@ =~ /Can't locate/ ) {
 # HTDOCS must be after WEB_DOCUMENT_ROOT
 # CACHE and SESSIONS must be after HTDOCS
 my @OPTION_LIST = qw[
-    CONF
-    CGIBIN
-    TEMPLATES
-    WEB_DOCUMENT_ROOT
-    HTDOCS
-    CACHE
-    SESSIONS
+  CONF
+  CGIBIN
+  TEMPLATES
+  WEB_DOCUMENT_ROOT
+  HTDOCS
+  CACHE
+  SESSIONS
 ];
 my @ARGS = ( qw[ PREFIX ], @OPTION_LIST );
 my %ARGS = (
@@ -78,8 +78,8 @@ my $USAGE = join(
                 : ( $_ eq 'CACHE' or $_ eq 'SESSIONS' ) ? '$HTDOCS + '
                 : '$PREFIX + ',
                 $ARGS{$_}{'default'}
-                )
-            } @ARGS
+              )
+          } @ARGS
     ),
     "e.g., 'perl Build.PL PREFIX=/usr/local/apache'",
     '',
@@ -114,8 +114,8 @@ if ( !%OPTIONS ) {
     if ( -e $install_conf ) {
         my $yes = Module::Build->y_n(
             "It looks like you have installed cmap before.\n"
-                . "Should I use the settings in '"
-                . $install_conf . "'?",
+              . "Should I use the settings in '"
+              . $install_conf . "'?",
             'y'
         );
 
@@ -134,10 +134,9 @@ if ( !%OPTIONS ) {
     }
     else {
         print "No arguments to Build.PL.  Using defaults.\n",
-            "Execute 'perl Build.PL --help' for help.\n";
+          "Execute 'perl Build.PL --help' for help.\n";
     }
 }
-
 
 unless ($using_install_conf) {
 
@@ -155,62 +154,67 @@ unless ($using_install_conf) {
     if ($prefix) {
         $OPTIONS{'CONF'}   ||= catdir( $prefix, $ARGS{'CONF'}{'default'} );
         $OPTIONS{'CGIBIN'} ||= catdir( $prefix, $ARGS{'CGIBIN'}{'default'} );
-        $OPTIONS{'TEMPLATES'}
-            ||= catdir( $prefix, $ARGS{'TEMPLATES'}{'default'} );
-        $OPTIONS{'WEB_DOCUMENT_ROOT'}
-            ||= catdir( $prefix, $ARGS{'WEB_DOCUMENT_ROOT'}{'default'} );
+        $OPTIONS{'TEMPLATES'} ||=
+          catdir( $prefix, $ARGS{'TEMPLATES'}{'default'} );
+        $OPTIONS{'WEB_DOCUMENT_ROOT'} ||=
+          catdir( $prefix, $ARGS{'WEB_DOCUMENT_ROOT'}{'default'} );
     }
 
-    $OPTIONS{'CONF'}              ||= GuessDirectories->conf();
-    $OPTIONS{'CGIBIN'}            ||= GuessDirectories->cgibin();
-    $OPTIONS{'TEMPLATES'}         ||= GuessDirectories->templates();
-    $OPTIONS{'WEB_DOCUMENT_ROOT'} ||= GuessDirectories->web_document_root();
+    $OPTIONS{'CONF'} ||= GuessDirectories->conf()
+      || ask_about_dir( "\nCannot guess the correct CONF directory.\n"
+          . "Please specify the CONF directory.\n" );
+    $OPTIONS{'CGIBIN'} ||= GuessDirectories->cgibin()
+      || ask_about_dir( "\nCannot guess the correct CGIBIN directory.\n"
+          . "Please specify the CGIBIN directory.\n" );
+    $OPTIONS{'TEMPLATES'} ||= GuessDirectories->templates()
+      || ask_about_dir( "\nCannot guess the correct TEMPLATES directory.\n"
+          . "Please specify the TEMPLATES directory.\n" );
+    $OPTIONS{'WEB_DOCUMENT_ROOT'} ||= GuessDirectories->web_document_root()
+      || ask_about_dir(
+            "\nCannot guess the correct WEB_DOCUMENT_ROOT directory.\n"
+          . "Please specify the WEB_DOCUMENT_ROOT directory.\n" );
 
     # These options are dependent on other options
-    $OPTIONS{'HTDOCS'} ||= catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'},
-        $ARGS{'HTDOCS'}{'default'} );
-    $OPTIONS{'CACHE'}
-        ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} );
-    $OPTIONS{'SESSIONS'}
-        ||= catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} );
+    $OPTIONS{'HTDOCS'} ||=
+      catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{'HTDOCS'}{'default'} );
+    $OPTIONS{'CACHE'} ||=
+      catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} );
+    $OPTIONS{'SESSIONS'} ||=
+      catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} );
 
     print "The following install options have been inferred:\n",
-        join( "\n",
+      join( "\n",
         '', ( map { sprintf( "%18s: %-s", $_, $OPTIONS{$_} ) } @OPTION_LIST ),
         '', '' ),
-        ;
+      ;
 
     # Let the user define them if they need to.
     my $use_values = Module::Build->y_n( "Use these values?", 'y' );
     if ( !$use_values ) {
-        foreach
-            my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES', 'WEB_DOCUMENT_ROOT', )
+        foreach my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES', 'WEB_DOCUMENT_ROOT', )
         {
-            $OPTIONS{$opt} = Module::Build->prompt(
-                "What should the value of $opt be?\n",
+            $OPTIONS{$opt} =
+              Module::Build->prompt( "What should the value of $opt be?\n",
                 $OPTIONS{$opt}, );
         }
         $OPTIONS{'HTDOCS'} = Module::Build->prompt(
             "What should the value of HTDOCS be?\n",
-            catdir(
-                $OPTIONS{'WEB_DOCUMENT_ROOT'},
-                $ARGS{'HTDOCS'}{'default'}
-            )
+            catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{'HTDOCS'}{'default'} )
         );
-        $OPTIONS{'CACHE'}
-            = Module::Build->prompt( "What should the value of CACHE be?\n",
+        $OPTIONS{'CACHE'} =
+          Module::Build->prompt( "What should the value of CACHE be?\n",
             catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} ) );
-        $OPTIONS{'SESSIONS'} = Module::Build->prompt(
-            "What should the value of SESSIONS be?\n",
+        $OPTIONS{'SESSIONS'} =
+          Module::Build->prompt( "What should the value of SESSIONS be?\n",
             catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} ) );
     }
 }
 
 print "The following options will be used to install CMap:\n",
-    join( "\n",
+  join( "\n",
     '', ( map { sprintf( "%18s: %-s", $_, $OPTIONS{$_} ) } @OPTION_LIST ),
     '', '' ),
-    ;
+  ;
 
 #
 # Write out our current config options.
@@ -283,6 +287,16 @@ $builder->create_build_script;
 print "Now run './Build' and './Build install'\n";
 print "(Other Build targets include 'html' and 'templates')\n";
 exit(0);
+
+sub ask_about_dir {
+    my $prompt = shift;
+    while (1) {
+        my $answer = Module::Build->prompt( $prompt . "\n", 'quit', );
+        exit(0) if ( $answer =~ /^q$/i or $answer =~ /^quit$/i );
+        return $answer if ( -d $answer );
+        print "\n$answer is not a directory.\n";
+    }
+}
 
 # ----------------------------------------------------
 # If others had not been foolish, we should be so.

@@ -117,6 +117,7 @@ sub web_document_root {
             '/var/www/html',                   # RedHat linux
             '/var/www/htdocs',                 # Slackware linux
             '/Library/Webserver/Documents',    # MacOSX
+            '/var/www',                        # Ubuntu
             )
         {
             return $_ if -d $_;
@@ -143,6 +144,7 @@ sub cgibin {
             '/usr/local/apache2/cgi-bin',           # standard apache2 install
             '/var/www/cgi-bin',                     # RedHat & Slackware linux
             '/Library/Webserver/CGI-Executables',   # MacOSX
+            '/usr/lib/cgi-bin',                     # Ubuntu
             )
         {
             return $_ if -d $_;
