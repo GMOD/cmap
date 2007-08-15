@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.37 2007-08-01 21:28:14 mwz444 Exp $
+# $Id: AppController.pm,v 1.38 2007-08-15 20:45:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -59,7 +59,8 @@ Initializes the object.
 
     my $saved_view_data;
     if ( $init_params->{'saved_view'} ) {
-        $saved_view_data = $self->open_saved_view(
+        $saved_view_data
+            = $self->open_saved_view(
             saved_view => $init_params->{'saved_view'}, )
             or die "Failed to open file: " . $init_params->{'saved_view'};
         $self->{'remote_url'} = $saved_view_data->{'remote_url'};
@@ -111,6 +112,7 @@ Initializes the object.
         $self->app_data_module()->data_source($new_data_source);
         $self->app_interface()->data_source($new_data_source);
         $self->app_display_data()->data_source($new_data_source);
+        $self->plugin_set()->modify_data_source($new_data_source);
     }
     if ($new_remote_url) {
         $self->{'remote_url'} = $new_remote_url;
@@ -120,9 +122,9 @@ Initializes the object.
         $self->app_data_module()->config($config);
         $self->app_interface()->config($config);
         $self->app_display_data()->config($config);
+        $self->plugin_set()->modify_config($config);
     }
 
-    $self->data_source( $self->{'data_source'} );
     my $window_key = $self->start_application();
 
     if ($saved_view_data) {
@@ -262,10 +264,9 @@ Returns a handle to the data module.
         $self->{'app_data_module'} = Bio::GMOD::CMap::Data::AppData->new(
             app_controller => $self,
             data_source    => $self->{'data_source'},
-            config         => $self->{'remote_url'} ? undef: $self->config,
+            config         => $self->{'remote_url'} ? undef : $self->config,
             remote_url     => $self->{'remote_url'},
-            )
-            or $self->error( Bio::GMOD::CMap::Data::AppData->error );
+        ) or $self->error( Bio::GMOD::CMap::Data::AppData->error );
     }
 
     return $self->{'app_data_module'};
@@ -287,7 +288,8 @@ Returns a handle to the data module.
     $self->{'app_interface'} = shift if @_;
 
     unless ( $self->{'app_interface'} ) {
-        $self->{'app_interface'} = Bio::GMOD::CMap::Drawer::AppInterface->new(
+        $self->{'app_interface'}
+            = Bio::GMOD::CMap::Drawer::AppInterface->new(
             app_controller => $self, )
             or die "Couldn't initialize AppInterface\n";
     }
@@ -315,8 +317,7 @@ Returns a handle to the data module.
             app_data_module => $self->app_data_module,
             app_interface   => $self->app_interface,
             config          => $self->config,
-            )
-            or die "failed to create app_display_data\n";
+            ) or die "failed to create app_display_data\n";
     }
 
     return $self->{'app_display_data'};
@@ -591,7 +592,8 @@ Create the text to go into the info box when a map is clicked.
 #        . "Location: "
 #        . $feature_data->{'feature_start'} . "-"
 #        . $feature_data->{'feature_stop'} . "\n";
-    my $map_info_str = $map_data->{'map_type'} . ": "
+    my $map_info_str
+        = $map_data->{'map_type'} . ": "
         . $map_data->{'map_name'} . "\n"
         . "Start: "
         . $map_data->{'map_start'} . "\n"
@@ -600,7 +602,8 @@ Create the text to go into the info box when a map is clicked.
 
     my $sub_map_data = $app_display_data->{'sub_maps'}{$map_key};
     if ($sub_map_data) {
-        $map_info_str .= "Start on Parent: "
+        $map_info_str
+            .= "Start on Parent: "
             . $sub_map_data->{'feature_start'} . "\n"
             . "Stop on Parent: "
             . $sub_map_data->{'feature_stop'} . "\n";
@@ -773,7 +776,7 @@ Commit the changes made to the cmap db.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'} or return;
+    my $window_key = $args{'window_key'} or return;
     my $app_display_data = $self->app_display_data();
 
     my $window_actions
@@ -814,7 +817,7 @@ Export the map moves to a file.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'} or return;
+    my $window_key = $args{'window_key'} or return;
     my $app_display_data = $self->app_display_data();
 
     my $condenced_actions = $app_display_data->condenced_window_actions(

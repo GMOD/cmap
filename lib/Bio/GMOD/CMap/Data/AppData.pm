@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.26 2007-07-10 18:23:00 mwz444 Exp $
+# $Id: AppData.pm,v 1.27 2007-08-15 20:45:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -203,8 +203,7 @@ Note: the maps are stored by id so any map_accs will hit the database no matter 
         my $new_maps = $self->sql_get_maps(
             map_ids  => \@new_map_ids,
             map_accs => $map_accs,
-            )
-            || [];
+        ) || [];
 
         foreach my $new_map (@$new_maps) {
             $self->{'map_data'}{ $new_map->{'map_id'} } = $new_map;
@@ -280,8 +279,7 @@ features.  These do NOT include the sub-maps.
         my $features = $self->sql_get_features_sub_maps_version(
             map_id      => $map_id,
             no_sub_maps => 1,
-            )
-            || [];
+        ) || [];
         if ( @{ $features || [] } ) {
             $self->{'feature_data_by_map'}{$map_id} = $features;
             foreach my $feature (@$features) {
@@ -348,7 +346,7 @@ Given a list of feature_accs, move them in memory
 
     my ( $self, %args ) = @_;
     my $feature_acc_array = $args{'feature_acc_array'} || [];
-    my $offset            = $args{'offset'};
+    my $offset = $args{'offset'};
 
     foreach my $feature_acc (@$feature_acc_array) {
         $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'}
@@ -417,8 +415,7 @@ sub-maps.  These do NOT include the regular features;
         my $features = $self->sql_get_features_sub_maps_version(
             map_id       => $map_id,
             get_sub_maps => 1,
-            )
-            || [];
+        ) || [];
         if (@$features) {
             $self->{'sub_map_data'}{$map_id} = $features;
         }
@@ -529,8 +526,7 @@ Requires zone_key1 to be less than zone_key2.
             slot_info      => $slot_info1,
             slot_info2     => $slot_info2,
             allow_intramap => $allow_intramap,
-            )
-            || [];
+        ) || [];
         $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'corrs'} = $corrs;
         $self->{'zone_corr_data'}{$zone_key1}{$zone_key2}{'cache_key'}
             = $cache_key;
@@ -796,16 +792,18 @@ Does the actual call for the data
             return $thaw ? thaw($content) : $content;
         }
         else {
-            return $want_hash ? {}
-                : $thaw       ? []
-                : '';
+            return
+                  $want_hash ? {}
+                : $thaw      ? []
+                :              '';
         }
     }
     else {
         print STDERR $res->status_line, "\n";
-        return $want_hash ? {}
-            : $thaw       ? []
-            : '';
+        return
+              $want_hash ? {}
+            : $thaw      ? []
+            :              '';
     }
 }
 
@@ -879,8 +877,7 @@ Calls get_maps either locally or remotely
             map_id   => $map_id,
             map_ids  => $map_ids,
             map_accs => $map_accs,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -921,8 +918,7 @@ Calls get_features_sub_maps_version either locally or remotely
             map_id       => $map_id,
             no_sub_maps  => $no_sub_maps,
             get_sub_maps => $get_sub_maps,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -944,7 +940,8 @@ Calls get_feature_correspondence_for_counting either locally or remotely
     my $allow_intramap = $args{'allow_intramap'} || 0;
 
     if ( my $url = $self->{'remote_url'} ) {
-        $url .= ';action=get_feature_correspondence_for_counting;'
+        $url
+            .= ';action=get_feature_correspondence_for_counting;'
             . 'allow_intramap='
             . $allow_intramap . ';';
         $url .= $self->stringify_slot_info(
@@ -963,8 +960,7 @@ Calls get_feature_correspondence_for_counting either locally or remotely
             slot_info      => $slot_info,
             slot_info2     => $slot_info2,
             allow_intramap => $allow_intramap,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -1054,8 +1050,7 @@ Calls get_species either locally or remotely
         return $self->sql()->get_species(
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -1101,8 +1096,7 @@ Calls get_map_sets either locally or remotely
             map_set_id        => $map_set_id,
             is_relational_map => $is_relational_map,
             is_enabled        => $is_enabled,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -1164,8 +1158,7 @@ sub generic_get_data {
         return $self->sql()->generic_get_data(
             method_name => $method_name,
             parameters  => $parameters,
-            )
-            || [];
+        ) || [];
     }
 
 }
@@ -1354,6 +1347,98 @@ Data Structure
     $self->sql_update_features( features => $features, );
 
     return;
+}
+
+# ----------------------------------------------------
+sub map_correspondence_report_data {
+
+=pod
+
+=head2 map_correspondence_report_data
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_ids = $args{'map_ids'} or return;
+
+    my @report_cells;
+    push @report_cells,
+        [
+        'Map Name',
+        'Corresponding Map',
+        'Feature Type1',
+        'Feature Type2',
+        'Evidence Type',
+        'Correspondences',
+        ];
+    my @map_names;
+    foreach my $map_id (@$map_ids) {
+        my $map_data = $self->map_data( map_id => $map_id, );
+        push @map_names, $map_data->{'map_name'};
+        my $corr_data = $self->generic_get_data(
+            method_name => 'get_feature_correspondence_details',
+            parameters =>
+                { disregard_evidence_type => 1, map_id1 => $map_id, }
+        );
+        my ($map_name2,     $map_id2, $feature_type1,
+            $feature_type2, $evidence_type,
+        );
+        my $corr_count       = 0;
+        my @sorted_corr_data = sort {
+                   return $a->{'map_id2'} cmp $b->{'map_id2'}
+                || $a->{'feature_type1'} cmp $b->{'feature_type1'}
+                || $a->{'feature_type2'} cmp $b->{'feature_type2'}
+                || $a->{'evidence_type'} cmp $b->{'evidence_type'}
+
+        } @{ $corr_data || [] };
+
+        # Aggregate the corrs
+        foreach my $corr (@sorted_corr_data) {
+            if (    $map_id2
+                and $map_id2 == $corr->{'map_id2'}
+                and $feature_type1 eq
+                ( $corr->{'feature_type1'} || $corr->{'feature_type_acc1'} )
+                and $feature_type2 eq
+                ( $corr->{'feature_type2'} || $corr->{'feature_type_acc2'} )
+                and $evidence_type eq
+                ( $corr->{'evidence_type'} || $corr->{'evidence_type_acc'} ) )
+            {
+                $corr_count++;
+            }
+            else {
+                if ($map_id2) {
+                    push @report_cells,
+                        [
+                        $map_data->{'map_name'}, $map_name2,
+                        $feature_type1,          $feature_type2,
+                        $evidence_type,          $corr_count,
+                        ];
+                }
+                $map_id2       = $corr->{'map_id2'};
+                $map_name2     = $corr->{'map_name2'};
+                $feature_type1 = ( $corr->{'feature_type1'}
+                        || $corr->{'feature_type_acc1'} );
+                $feature_type2 = ( $corr->{'feature_type2'}
+                        || $corr->{'feature_type_acc2'} );
+                $evidence_type = ( $corr->{'evidence_type'}
+                        || $corr->{'evidence_type_acc1'} );
+                $corr_count = 1;
+            }
+        }
+
+        if ($map_id2) {
+            push @report_cells,
+                [
+                $map_data->{'map_name'}, $map_name2,
+                $feature_type1,          $feature_type2,
+                $evidence_type,          $corr_count,
+                ];
+        }
+    }
+    my $report_string
+        = "This is the correspondence report for the following maps:\n" . "  "
+        . join( "\n  ", @map_names ) . "\n";
+    return ( $report_string, \@report_cells );
 }
 
 1;

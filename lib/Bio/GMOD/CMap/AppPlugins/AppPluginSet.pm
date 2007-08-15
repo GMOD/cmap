@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.8 2007-08-01 21:28:15 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.9 2007-08-15 20:45:27 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -71,6 +71,50 @@ PLUGIN:
     }
 
     return $self;
+}
+
+# ----------------------------------------------------
+sub modify_data_source {
+
+=pod
+
+=head3 app_data_module
+
+Returns a handle to the data module.
+
+=cut
+
+    my $self = shift;
+    my $new_data_source = shift or return;
+
+    $self->data_source($new_data_source);
+    foreach my $plugin ( values %{ $self->{'plugins'} || {} } ) {
+        $plugin->data_source($new_data_source);
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub modify_config {
+
+=pod
+
+=head3 app_data_module
+
+Returns a handle to the data module.
+
+=cut
+
+    my $self = shift;
+    my $new_config = shift or return;
+
+    $self->config($new_config);
+    foreach my $plugin ( values %{ $self->{'plugins'} || {} } ) {
+        $plugin->config($new_config);
+    }
+
+    return;
 }
 
 # ----------------------------------------------------
@@ -160,14 +204,16 @@ sub modify_start_up_menu {
 
 sub modify_right_click_menu {
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $menu_items = $args{'menu_items'};
+    my $window_key        = $args{'window_key'};
+    my $menu_items        = $args{'menu_items'};
+    my $report_menu_items = $args{'report_menu_items'};
 
     for my $p ( $self->plugins ) {
         next unless $p->type eq 'modify_right_click_menu';
         $p->modify_right_click_menu(
-            window_key => $window_key,
-            menu_items => $menu_items,
+            window_key        => $window_key,
+            menu_items        => $menu_items,
+            report_menu_items => $report_menu_items,
         );
     }
 }

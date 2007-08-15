@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.60 2007-08-08 15:43:34 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.61 2007-08-15 20:45:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -37,6 +37,7 @@ use Tk::Zinc;
 use Tk::Pane;
 use Tk::Dialog;
 use Tk::LabEntry;
+use Tk::TableMatrix::Spreadsheet;
 
 use constant BETWEEN_SLOT_BUFFER => 5;
 use constant TOP_LAYER_ZONE_KEY  => -1;
@@ -71,7 +72,7 @@ This method will create the Application.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'} or return;
+    my $window_key = $args{'window_key'} or return;
     my $app_display_data = $args{'app_display_data'};
 
     my $title = $app_display_data->{'window_layout'}{$window_key}{'title'}
@@ -910,10 +911,10 @@ Draws and re-draws on the overview zinc
 
         foreach my $zone_key ( $top_zone_key, ) {
             $self->draw_overview_zone(
-                window_key           => $window_key,
-                zone_key             => $zone_key,
-                zinc                 => $zinc,
-                app_display_data     => $app_display_data,
+                window_key       => $window_key,
+                zone_key         => $zone_key,
+                zinc             => $zinc,
+                app_display_data => $app_display_data,
                 overview_zone_layout =>
                     $overview_layout->{'zones'}{$zone_key},
             );
@@ -1039,8 +1040,8 @@ Draws and re-draws on the zinc
         = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
     my $zone_y_offset = 0;
 
-    my $parent_zone_x_offset =
-        ($parent_zone_key)
+    my $parent_zone_x_offset
+        = ($parent_zone_key)
         ? $app_display_data->{'scaffold'}{$parent_zone_key}->{'x_offset'}
         : 0;
 
@@ -1398,7 +1399,7 @@ group.
         or die 'no zone key for draw';
     my $zinc = $args{'zinc'}
         || $self->zinc( window_key => $args{'window_key'}, );
-    my $overview         = $args{'overview'} || 0;
+    my $overview = $args{'overview'} || 0;
     my $app_display_data = $args{'app_display_data'};
 
     my $storage_key = $overview ? 'ov_zone_group_id' : 'zone_group_id';
@@ -1577,7 +1578,7 @@ Item structure:
 
     my ( $self, %args ) = @_;
     my $map_key = $args{'map_key'};
-    my $items   = $args{'items'} || return;
+    my $items = $args{'items'} || return;
 
     $self->{'map_key_to_drawn_ids'}{$map_key} = [];
     for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
@@ -2210,7 +2211,7 @@ sub popup_map_menu {
             and not $app_display_data->{'scaffold'}{$zone_key}{'is_top'} )
         {
             push @$menu_items, [
-                Button => 'Move Map',
+                Button   => 'Move Map',
                 -command => sub {
                     $self->move_map_popup(
                         map_key    => $map_key,
@@ -2221,7 +2222,7 @@ sub popup_map_menu {
             ];
         }
         push @$menu_items, [
-            Button => 'New Window',
+            Button   => 'New Window',
             -command => sub {
                 my @object_selection_keys
                     = $self->object_selection_keys($window_key);
@@ -2241,7 +2242,7 @@ sub popup_map_menu {
         if ( !$moved ) {
             if ( $map_num == 1 ) {
                 push @$menu_items, [
-                    Button => 'Split Map',
+                    Button   => 'Split Map',
                     -command => sub {
                         $self->split_map_popup(
                             map_key    => $map_key,
@@ -2256,7 +2257,7 @@ sub popup_map_menu {
                 my @object_selection_keys
                     = $self->object_selection_keys($window_key);
                 push @$menu_items, [
-                    Button => 'Merge Maps',
+                    Button   => 'Merge Maps',
                     -command => sub {
                         $self->merge_maps_popup(
                             map_key1   => $object_selection_keys[0],
@@ -2267,18 +2268,42 @@ sub popup_map_menu {
                     },
                 ];
             }
-
         }
-
     }
 
+    my $report_menu_items = [];
+    push @$report_menu_items, [
+        Button   => 'Correspondences',
+        -command => sub {
+            my @map_ids = map { $app_display_data->map_key_to_id($_) }
+                $self->object_selection_keys($window_key);
+            my ( $report_string, $table_data, )
+                = $controller->app_data_module()
+                ->map_correspondence_report_data( map_ids => \@map_ids, );
+            $self->display_report(
+                table_data      => $table_data,
+                report_string   => $report_string,
+                table_title_row => 1,
+            );
+
+            return;
+        },
+    ];
+
     $self->app_controller()->plugin_set()->modify_right_click_menu(
-        window_key => $window_key,
-        menu_items => $menu_items,
+        window_key        => $window_key,
+        menu_items        => $menu_items,
+        report_menu_items => $report_menu_items,
     );
 
+    push @$menu_items,
+        [
+         cascade   => 'Reports',
+        -tearoff   => 0,
+        -menuitems => $report_menu_items,
+        ];
     push @$menu_items, [
-        Button => 'Cancel',
+        Button   => 'Cancel',
         -command => sub {
             return;
         },
@@ -2295,8 +2320,7 @@ sub popup_map_menu {
             $self->reset_object_selections(
                 zinc       => $zinc,
                 window_key => $window_key,
-                )
-                if ($moved);
+            ) if ($moved);
             $menu->destroy();
         },
     );
@@ -2327,11 +2351,11 @@ sub popup_corr_menu {
 
     my $menu_items = [];
     push @$menu_items, [
-        Button => 'Show All Correspondences',
+        Button   => 'Show All Correspondences',
         -command => sub {
             $app_display_data->set_corrs_map_set(
-                zone_key    => $zone_key,
-                window_key  => $window_key,
+                zone_key   => $zone_key,
+                window_key => $window_key,
                 map_set_ids =>
                     [ map { $_->{'map_set_id'} } @$corr_menu_data ],
                 corrs_on => 1,
@@ -2339,11 +2363,11 @@ sub popup_corr_menu {
         },
     ];
     push @$menu_items, [
-        Button => 'Hide All Correspondences',
+        Button   => 'Hide All Correspondences',
         -command => sub {
             $app_display_data->set_corrs_map_set(
-                zone_key    => $zone_key,
-                window_key  => $window_key,
+                zone_key   => $zone_key,
+                window_key => $window_key,
                 map_set_ids =>
                     [ map { $_->{'map_set_id'} } @$corr_menu_data ],
                 corrs_on => 0,
@@ -2352,7 +2376,7 @@ sub popup_corr_menu {
     ];
 
     my $map_set_id = $zone_map_set_data->{'map_set_id'};
-    my $corrs_on   = ( $zone_map_set_data->{'corrs_on'} ) ? 1 : 0;
+    my $corrs_on = ( $zone_map_set_data->{'corrs_on'} ) ? 1 : 0;
 
     push @$menu_items, [
         'checkbutton' => '',
@@ -2360,7 +2384,7 @@ sub popup_corr_menu {
         -onvalue      => 1,
         -offvalue     => 0,
         -label        => 'Self',
-        -command => sub {
+        -command      => sub {
             $app_display_data->set_corrs_map_set(
                 zone_key   => $zone_key,
                 window_key => $window_key,
@@ -2378,7 +2402,7 @@ sub popup_corr_menu {
         )
     {
         my $map_set_id = $individual_corr_data->{'map_set_id'};
-        my $corrs_on   = ( $individual_corr_data->{'corrs_on'} ) ? 1 : 0;
+        my $corrs_on = ( $individual_corr_data->{'corrs_on'} ) ? 1 : 0;
 
         push @$menu_items, [
             'checkbutton' => '',
@@ -2398,7 +2422,7 @@ sub popup_corr_menu {
     }
 
     push @$menu_items, [
-        Button => 'Cancel',
+        Button   => 'Cancel',
         -command => sub {
             return;
         },
@@ -2445,14 +2469,14 @@ sub popup_display_options_menu {
         -onvalue      => 1,
         -offvalue     => 0,
         -label        => 'Display Map Labels',
-        -command => sub {
+        -command      => sub {
             $app_display_data->set_map_labels_visibility( $zone_key,
                 $map_labels_visible, );
         },
     ];
 
     push @$menu_items, [
-        Button => 'Cancel',
+        Button   => 'Cancel',
         -command => sub {
             return;
         },
@@ -2684,7 +2708,7 @@ sub commit_changes {
 
     my $answer = $self->main_window()->Dialog(
         -title => 'Commit Changes?',
-        -text  =>
+        -text =>
             'Would you like to commit the changes you have made to the database?  This cannot be undone.',
         -default_button => 'Cancel',
         -buttons        => [ 'OK', 'Cancel', ],
@@ -2748,6 +2772,88 @@ sub popup_warning {
         -default_button => 'OK',
         -buttons        => [ 'OK', ],
     )->Show();
+
+    return;
+}
+
+# ----------------------------------------------------
+sub display_report {
+
+=pod
+
+=head2 display_report
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $title            = $args{'title'} || 'Report';
+    my $report_string    = $args{'report_string'};
+    my $table_data       = $args{'table_data'};
+    my $table_title_rows = $args{'table_title_row'} ? 1 : 0;
+    my $table_title_cols = $args{'table_title_col'} ? 1 : 0;
+
+    my $report_window = $self->main_window()->Toplevel( -takefocus => 1 );
+    $report_window->title($title);
+    if ($report_string) {
+        my $font = [ 'Times', 12, ];
+        my $text_box = $report_window->Scrolled(
+            'Text',
+            -font       => $font,
+            -background => "white",
+            -width      => 40,
+            -height     => 8,
+        )->pack( -fill => 'both' );
+        $text_box->insert( 'end', $report_string );
+        $text_box->configure( -state => 'disabled', );
+    }
+    if ($table_data) {
+        my $cells     = {};
+        my $row_index = 0;
+        my $col_num   = 0;
+        my $row_num   = 0;
+        my @col_width;
+        foreach my $report_row ( @{ $table_data || [] } ) {
+            my $cell_index = 0;
+            foreach my $report_cell ( @{ $report_row || [] } ) {
+                $cells->{ $row_index . ',' . $cell_index } = $report_cell;
+                if ( !$col_width[$cell_index]
+                    or $col_width[$cell_index] < length($report_cell) )
+                {
+                    $col_width[$cell_index] = length($report_cell);
+                }
+                $cell_index++;
+            }
+            $col_num = $cell_index if ( $cell_index > $col_num );
+            $row_index++;
+        }
+        $row_num = $row_index;
+        my $spreadsheet = $report_window->Scrolled(
+            'Spreadsheet',
+            -cols           => $col_num,
+            -rows           => $row_num,
+            -rowheight      => 2,
+            -titlerows      => $table_title_rows,
+            -titlecols      => $table_title_cols,
+            -variable       => $cells,
+            -borderwidth    => [ 0, 1, 0, 1, ],
+            -selecttype     => 'cell',
+            -background     => 'white',
+            -justify        => 'left',
+            -drawmode       => 'compatible',
+            -wrap           => 1,
+            -relief         => 'solid',
+            -colstretchmode => 'all',
+            -rowstretchmode => 'all',
+            -state          => 'disabled',
+        )->pack( -fill => 'both' );
+        $spreadsheet->rowHeight( 0, 2 );
+        $spreadsheet->tagRow( 'title', 0 ) if ($table_title_rows);
+        $spreadsheet->tagCol( 'title', 0 ) if ($table_title_cols);
+        $spreadsheet->tagConfigure( 'title', -bd => 2, -relief => 'raised' );
+
+        #$spreadsheet->colWidth(@col_width);
+
+    }
 
     return;
 }
@@ -3452,8 +3558,8 @@ Deletes all widgets in the provided list
     my $items       = $args{'items'} || return;
     my $is_overview = $args{'is_overview'};
 
-    my $zinc =
-          $is_overview
+    my $zinc
+        = $is_overview
         ? $self->overview_zinc( window_key => $window_key, )
         : $self->zinc( window_key => $window_key, );
 
@@ -4256,9 +4362,9 @@ Add map or feature selection
     if ($map_key) {
         $self->{'object_selections'}{$window_key}{$object_key}
             {'highlight_loc'} = $self->create_highlight_location_on_map(
-            zinc             => $zinc,
-            map_key          => $map_key,
-            window_key       => $self->{'drag_window_key'},
+            zinc       => $zinc,
+            map_key    => $map_key,
+            window_key => $self->{'drag_window_key'},
             highlight_bounds =>
                 $self->{'object_selections'}{$window_key}{$object_key}
                 {'highlight_bounds'},
@@ -4481,7 +4587,8 @@ Create the highlight box on the parent map
 
     my $highlight_color = 'red';
 
-    my %highlight_location_data = $self->app_controller()->app_display_data()
+    my %highlight_location_data
+        = $self->app_controller()->app_display_data()
         ->place_ghost_location_on_parent_map(
         map_key          => $map_key,
         highlight_bounds => $highlight_bounds,
@@ -4614,7 +4721,7 @@ Draw a highlight over the object
 
         # Make highlight a different color.
         $zinc->itemconfigure(
-            $highlight_id,
+             $highlight_id,
             -linecolor => $highlight_color,
             -fillcolor => $highlight_color,
         );
@@ -4764,7 +4871,7 @@ Handle the ghost map dragging
 
         # Make ghost a different color.
         $zinc->itemconfigure(
-            $ghost_id,
+             $ghost_id,
             -linecolor => $ghost_color,
             -fillcolor => $ghost_color,
         );
@@ -5258,7 +5365,7 @@ sub text_dimensions {
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $text       = $args{'text'} | q{};
+    my $text = $args{'text'} | q{};
 
     my $font_name = $self->get_font_name( window_key => $window_key, );
     my $zinc      = $self->zinc( window_key          => $window_key, );

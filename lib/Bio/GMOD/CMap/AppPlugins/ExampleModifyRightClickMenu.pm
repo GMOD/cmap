@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.6 2007-07-10 18:23:00 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.7 2007-08-15 20:45:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -36,11 +36,12 @@ sub type {
 
 sub modify_right_click_menu {
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'};
-    my $menu_items       = $args{'menu_items'};
-    my $app_interface    = $self->app_interface();
-    my $app_display_data = $self->app_display_data();
-    my $app_data_module  = $self->data_module();
+    my $window_key        = $args{'window_key'};
+    my $menu_items        = $args{'menu_items'};
+    my $report_menu_items = $args{'report_menu_items'};
+    my $app_interface     = $self->app_interface();
+    my $app_display_data  = $self->app_display_data();
+    my $app_data_module   = $self->data_module();
 
     return
         unless (
@@ -48,7 +49,7 @@ sub modify_right_click_menu {
 
     # Using Attributes Example
     push @{$menu_items}, [
-        Button => 'Use Search Terms',
+        Button   => 'Use Search Terms',
         -command => sub {
             my $selected_type = $app_interface->object_selected_type(
                 window_key => $window_key, );
@@ -61,7 +62,8 @@ sub modify_right_click_menu {
                     my $map_id = $app_display_data->map_key_to_id($map_key);
 
                     # Get the Attributes
-                    my $attribs = $app_display_data->app_data_module()
+                    my $attribs
+                        = $app_display_data->app_data_module()
                         ->generic_get_data(
                         method_name => 'get_attributes',
                         parameters  => {
@@ -94,7 +96,8 @@ sub modify_right_click_menu {
                     my $feature_id = $feature_data->{'feature_id'};
 
                     # Get the Xrefs
-                    my $attribs = $app_display_data->app_data_module()
+                    my $attribs
+                        = $app_display_data->app_data_module()
                         ->generic_get_data(
                         method_name => 'get_attributes',
                         parameters  => {
@@ -130,7 +133,7 @@ sub modify_right_click_menu {
 
     # External Links Example
     push @{$menu_items}, [
-        Button => 'Open External Links',
+        Button   => 'Open External Links',
         -command => sub {
             my $selected_type = $app_interface->object_selected_type(
                 window_key => $window_key, );
@@ -143,7 +146,8 @@ sub modify_right_click_menu {
                     my $map_id = $app_display_data->map_key_to_id($map_key);
 
                     # Get the Xrefs
-                    my $xrefs = $app_display_data->app_data_module()
+                    my $xrefs
+                        = $app_display_data->app_data_module()
                         ->generic_get_data(
                         method_name => 'get_xrefs',
                         parameters  => {
@@ -177,7 +181,8 @@ sub modify_right_click_menu {
                     my $feature_id = $feature_data->{'feature_id'};
 
                     # Get the Xrefs
-                    my $xrefs = $app_display_data->app_data_module()
+                    my $xrefs
+                        = $app_display_data->app_data_module()
                         ->generic_get_data(
                         method_name => 'get_xrefs',
                         parameters  => {
