@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.22 $
+$Revision: 1.23 $
 
 =head1 QUICK START
 
@@ -60,9 +60,11 @@ There are quite a number of prerequisites to getting CMap running:
 
 =item * Perl (5.6.1 or higher)
 
-=item * Various CPAN modules (listed below)
-
 =item * A web server, Apache version 1.3.x or 2.x suggested
+
+=item * Directories for CMap components
+
+=item * Various CPAN modules (listed below)
 
 =back
 
@@ -70,9 +72,38 @@ Versions prior to 0.10 required mod_perl, but this is no longer the
 case.  As such, CMap should actually work with any web server that
 supports CGI, not just Apache (e.g., Microsoft IIS, Netscape, etc.).
 
+=head2 Using the package manager
+
+If you are using a modern version of Linux, you should be able to use
+a package manager to install at least some of these packages.
+
+It is sometimes helpful to see a list of available packages.  On a
+Fedora/Red Hat machine, the command "$ sudo yum list all | less" will
+give you a list of the packages.  In Ubuntu, using the graphical synaptic
+package manager is easier ("$ sudo synaptic").
+
+=head3 Example Command Line Installs
+
+=over 4
+
+=item * Red Hat, Fedora
+
+$ sudo yum install gd.i386
+
+=item * Debian, Ubuntu
+
+$ sudo apt-get install libgd2-xpm
+
+=back
+
 =head2 LIBGD
 
-Unfortunately, you're pretty much on your own for installing libgd.
+NOTE: To get GD.pm to install when using a packaged libgd, you may
+have to install the gd-devel package as well (fedora: gd-devel.i386,
+Ubundu: libgd2-xpm-dev).
+
+Unfortunately, unless your operating system can install libgd via a
+package manager, you're pretty much on your own for installing libgd.
 Versions of CMap before 0.10 would work with either the 1.x or 2.x
 version of libgd, but the new dependency on GD::SVG for creating SVG
 output necessitates libgd 2.x.  With any luck, you may already have it
@@ -94,8 +125,8 @@ way to see if you do is to check the directories "/usr/lib" and
 you could try the "locate" command for each of these (without the star
 as it does wildcard searching on its own).
 
-To install libgd, retrieve the source (tar.gz package) from Paul
-Boutell's (author of libgd) website.  When you go to build libgd, it
+To install libgd, retrieve the source (tar.gz package) from the
+libgd.org website.  When you go to build libgd, it
 should tell you which libraries it can and can't find.  You definitely
 won't get far without zlib installed, so you need to do that first.
 Then you can look to see which kinds of files libgd will be able to
@@ -107,7 +138,7 @@ Here are URLs to help you track down everything you need to install libgd:
 
 =over 4
 
-=item * libgd: http://www.boutell.com/gd/
+=item * libgd: http://www.libgd.org/
 
 =item * libpng: http://www.libpng.org/pub/png/pngcode.html
 
@@ -276,6 +307,56 @@ therefore run on most any modern web server, including Microsoft IIS.
 If you have any problems (or success) using a web server other than
 Apache, please contact the author.
 
+=head2 Directories for CMap Components
+
+This is likely only a problem for Ubuntu users, as the CGI script
+directory that Ubuntu uses, is not created by default.  To create this
+file run "sudo mkdir /usr/lib/cgi-bin".
+
+Here is a lits of directories needed for the CMap install.  The
+installer should find these automatically (with the exception of the
+Ubuntu issue described above).  These can be specified as arguments to
+Build.pl as well.
+
+=over 4
+
+=item * CONF
+
+The location of the config files.  The final directory in the path will be
+cmap.conf.  Meaning that "/usr/local/apache/conf/" will become
+"/usr/local/apache/conf/cmap.conf/".
+
+=item * CGIBIN
+
+The location of the directory where the web server runs CGI scripts.
+
+=item * TEMPLATES
+
+The location where Template Toolkit templates are stored.  (These can
+be altered after install to suit individual needs.)
+
+=item * WEB_DOCUMENT_ROOT
+
+This is the root directory for the web server.  For example
+"/var/www/" or "/usr/local/apache/htdocs/".
+
+=item * HTDOCS
+
+This is the base directory for the cmap files.  It is generally
+"WEB_DOCUMENT_ROOT/cmap".
+
+=item * CACHE
+
+The location where CMap stores it's cache files.  Usually
+"HTDOCS/tmp".
+
+=item * SESSIONS
+
+The location where CMap stores it's sessions files.  Usually
+"CACHE/sessions".
+
+=back
+
 =head2 CPAN MODULES
 
 There are a number of CPAN modules required by the CMap application.
@@ -285,6 +366,14 @@ modules are listed in the "requires" section in the Build.PL build
 script included with this distribution.  It is possible to install the
 CMap application without installing these modules, but you will see a
 lot of errors, and, of course, things won't work in the end.  
+
+To get the majority of these modules, use the Bundle::CMap module that
+is available using the CPAN interface.  To do this run 
+
+    $ sudo perl -MCPAN -e "install Bundle::CMap"
+
+After running this, see which modules failed to install by running
+"perl Build.pl".  Install any missing modules individually.
 
 Required Modules:
 
@@ -492,8 +581,9 @@ directory specified to Build.PL.
 
 =item *
 
-The "CACHE" diretory specified will be created and have its
-permissions set so that files can be written and deleted from it.
+The "CACHE" and "SESSIONS" diretories specified will be created and
+have their permissions set so that files can be written and deleted
+from it.
 
 =item *
 
@@ -503,12 +593,54 @@ permissions will be changed to make it executable.
 
 =back
 
-It is probably easiest to simply give an argument like
-"PREFIX=/usr/local/apache2" and place all the CMap files in the default
+The CMap installation script will make a guess at where to install
+components.  These can be modified during installation or by giving
+arguments like "PREFIX=/usr/local/apache2".
 locations.  If you choose to specify "PREFIX," then any other build
 arguments will be relative to the prefix.  If you do not specify a
 "PREFIX," then all paths with be considered absolute.  The final
 installation paths will be reported to you before installation occurs.
+
+Other build options are
+
+=over 4
+
+=item * CONF
+
+The location of the config files.  The final directory in the path will be
+cmap.conf.  Meaning that "/usr/local/apache/conf/" will become
+"/usr/local/apache/conf/cmap.conf/".
+
+=item * CGIBIN
+
+The location of the directory where the web server runs CGI scripts.
+
+=item * TEMPLATES
+
+The location where Template Toolkit templates are stored.  (These can
+be altered after install to suit individual needs.)
+
+=item * WEB_DOCUMENT_ROOT
+
+This is the root directory for the web server.  For example
+"/var/www/" or "/usr/local/apache/htdocs/".
+
+=item * HTDOCS
+
+This is the base directory for the cmap files.  It is generally
+"WEB_DOCUMENT_ROOT/cmap".
+
+=item * CACHE
+
+The location where CMap stores it's cache files.  Usually
+"HTDOCS/tmp".
+
+=item * SESSIONS
+
+The location where CMap stores it's sessions files.  Usually
+"CACHE/sessions".
+
+=back
 
 Be sure to update your database specific config files located in
 "cmap.conf/" after installation with the correct database connection
