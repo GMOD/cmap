@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.27 2007-08-15 20:45:27 mwz444 Exp $
+# $Id: AppData.pm,v 1.28 2007-09-14 20:44:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -317,15 +317,18 @@ Given a hash of feature_accs, copy them in memory to a new map_id
         $i++
         )
     {
-        if ($feature_acc_hash->{ $self->{'feature_data_by_map'}{$old_map_id}
-                    [$i] } )
+        if ($feature_acc_hash->{
+                $self->{'feature_data_by_map'}{$old_map_id}[$i]{'feature_acc'}
+            }
+            )
         {
             push @{ $self->{'feature_data_by_map'}{$new_map_id} },
                 $self->{'feature_data_by_map'}{$old_map_id}[$i];
 
-           # uncomment the following to make this a move instead of a copy.
-           #splice( @{ $self->{'feature_data_by_map'}{$old_map_id} }, $i, 1,);
-           #$i--;
+            # uncomment the following to make this a move instead of a copy.
+            splice( @{ $self->{'feature_data_by_map'}{$old_map_id} }, $i, 1,
+            );
+            $i--;
         }
     }
     $self->{'sorted_feature_data'}{$old_map_id} = undef;
@@ -346,7 +349,8 @@ Given a list of feature_accs, move them in memory
 
     my ( $self, %args ) = @_;
     my $feature_acc_array = $args{'feature_acc_array'} || [];
-    my $offset = $args{'offset'};
+    my $map_id            = $args{'map_id'}            || [];
+    my $offset            = $args{'offset'};
 
     foreach my $feature_acc (@$feature_acc_array) {
         $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'}
@@ -354,6 +358,14 @@ Given a list of feature_accs, move them in memory
         $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'}
             += $offset;
     }
+
+    # Resort the features
+    $self->{'feature_data_by_map'}{$map_id} = [
+        sort {
+                   $a->{'feature_start'} <=> $b->{'feature_start'}
+                || $a->{'feature_stop'} <=> $b->{'feature_stop'}
+            } @{ $self->{'feature_data_by_map'}{$map_id} || [] }
+    ];
 
     return 1;
 }
@@ -436,6 +448,8 @@ sub sorted_feature_data {
 
 Given a map accessions, return the information required to draw the
 features.  These do NOT include the sub-maps.
+
+$return_data = { $lane_number => [ $feature_data, ] };
 
 =cut
 
@@ -1347,6 +1361,80 @@ Data Structure
     $self->sql_update_features( features => $features, );
 
     return;
+}
+
+# ----------------------------------------------------
+sub find_closest_feature_gap {
+
+=pod
+
+=head2 find_closest_feature_gap
+
+Finds the gap between features of the specified type that is closest to the map position supplied.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_type_acc = $args{'feature_type_acc'} or return;
+    my $map_position     = $args{'map_position'};
+    my $map_id           = $args{'map_id'} or return;
+
+    my $features          = $self->feature_data_by_map( map_id => $map_id, );
+    my $last_feature_stop = undef;
+    my $last_feature_id   = undef;
+    my $gap_start         = undef;
+    my $gap_stop          = undef;
+    my $need_gap_stop     = 0;
+    my $feature_id1       = undef;
+    my $feature_id2       = undef;
+FEATURE:
+
+    foreach my $feature (@$features) {
+
+        # We only consider features of the defined feature_type_acc
+        next FEATURE
+            unless ( $feature_type_acc eq $feature->{'feature_type_acc'} );
+
+        # We only need to get the end of the gap from this feature
+        if ($need_gap_stop) {
+            $feature_id2 = $feature->{'feature_id'};
+            $gap_stop    = $feature->{'feature_start'};
+            last FEATURE;
+        }
+
+        # Map Position is in this feature
+        elsif ( $map_position >= $feature->{'feature_start'}
+            and $map_position <= $feature->{'feature_stop'} )
+        {
+            my $feature_middle
+                = int(
+                ( $feature->{'feature_start'} + $feature->{'feature_stop'} ) /
+                    2 );
+            if ( $map_position < $feature_middle ) {
+                $gap_start   = $last_feature_stop;
+                $gap_stop    = $feature->{'feature_start'};
+                $feature_id1 = $last_feature_id;
+                $feature_id2 = $feature->{'feature_id'};
+                last FEATURE;
+            }
+            else {
+                $gap_start     = $feature->{'feature_stop'};
+                $feature_id1   = $feature->{'feature_id'};
+                $need_gap_stop = 1;
+            }
+        }
+        elsif ( $map_position < $feature->{'feature_start'} ) {
+            $gap_start   = $last_feature_stop;
+            $gap_stop    = $feature->{'feature_start'};
+            $feature_id1 = $last_feature_id;
+            $feature_id2 = $feature->{'feature_id'};
+            last FEATURE;
+        }
+        $last_feature_stop = $feature->{'feature_stop'};
+        $last_feature_id   = $feature->{'feature_id'};
+    }
+
+    return ( $gap_start, $gap_stop, $feature_id1, $feature_id2, );
 }
 
 # ----------------------------------------------------

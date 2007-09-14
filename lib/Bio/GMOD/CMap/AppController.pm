@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.38 2007-08-15 20:45:27 mwz444 Exp $
+# $Id: AppController.pm,v 1.39 2007-09-14 20:44:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -73,11 +73,12 @@ Initializes the object.
         );
     }
     elsif ( $init_params->{'remote_url'} or $init_params->{'data_source'} ) {
+        my $data_source = $init_params->{'data_source'};
         $self->params( $init_params, qw[ config_dir data_source ] );
         $self->{'remote_url'} = $init_params->{'remote_url'};
         $self->finish_init(
             remote_url  => $self->{'remote_url'},
-            data_source => $init_params->{'data_source'},
+            data_source => $data_source,
         );
     }
     else {

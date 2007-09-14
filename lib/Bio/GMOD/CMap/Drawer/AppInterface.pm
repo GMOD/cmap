@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.61 2007-08-15 20:45:28 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.62 2007-09-14 20:44:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2210,16 +2210,35 @@ sub popup_map_menu {
         if ( $moved
             and not $app_display_data->{'scaffold'}{$zone_key}{'is_top'} )
         {
-            push @$menu_items, [
-                Button   => 'Move Map',
-                -command => sub {
-                    $self->move_map_popup(
-                        map_key    => $map_key,
-                        window_key => $window_key,
-                        zinc       => $zinc,
-                    );
-                },
-            ];
+            my $map_id = $self->app_controller()->app_display_data()
+                ->map_key_to_id($map_key);
+            my $map_data
+                = $self->app_data_module()->map_data( map_id => $map_id, );
+            my $map_type_acc = $map_data->{'map_type_acc'};
+            if ( $self->map_type_data( $map_type_acc, 'subsection' ) ) {
+                push @$menu_items, [
+                    Button   => 'Move Subsection',
+                    -command => sub {
+                        $self->move_map_subsection_popup(
+                            map_key    => $map_key,
+                            window_key => $window_key,
+                            zinc       => $zinc,
+                        );
+                    },
+                ];
+            }
+            else {
+                push @$menu_items, [
+                    Button   => 'Move Map',
+                    -command => sub {
+                        $self->move_map_popup(
+                            map_key    => $map_key,
+                            window_key => $window_key,
+                            zinc       => $zinc,
+                        );
+                    },
+                ];
+            }
         }
         push @$menu_items, [
             Button   => 'New Window',
@@ -2530,10 +2549,11 @@ sub fill_info_box {
             my $zone_key
                 = $self->{'first_object_selection_zone_key'}{$window_key};
 
-            $new_text = $controller->get_map_info_text(
+            $new_text = "$map_key: "
+                . $controller->get_map_info_text(
                 map_key    => $map_key,
                 window_key => $window_key,
-            );
+                );
         }
         else {
             $new_text = $self->number_of_object_selections( $window_key, )
@@ -2874,12 +2894,13 @@ sub move_map_popup {
     my $controller = $self->app_controller();
 
     my $move_map_data = $controller->app_display_data->get_move_map_data(
-        map_key      => $map_key,
-        ghost_bounds => $self->highlight_bounds(
+        map_key          => $map_key,
+        highlight_bounds => $self->highlight_bounds(
             window_key => $window_key,
             object_key => $map_key,
         ),
     );
+    return unless ( $move_map_data and %$move_map_data );
 
     my $new_parent_map_key = $move_map_data->{'new_parent_map_key'};
     my $new_feature_start  = $move_map_data->{'new_feature_start'};
@@ -2911,6 +2932,66 @@ sub move_map_popup {
             new_parent_map_key => $new_parent_map_key,
             new_feature_start  => $new_feature_start,
             new_feature_stop   => $new_feature_stop,
+        );
+    }
+    $self->reset_object_selections(
+        zinc       => $zinc,
+        window_key => $window_key,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub move_map_subsection_popup {
+
+=pod
+
+=head2 move_map_subsection_popup
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key    = $args{'map_key'};
+    my $window_key = $args{'window_key'};
+    my $zinc       = $args{'zinc'};
+    my $controller = $self->app_controller();
+
+    my $move_map_data
+        = $controller->app_display_data->get_move_subsection_data(
+        map_key          => $map_key,
+        highlight_bounds => $self->highlight_bounds(
+            window_key => $window_key,
+            object_key => $map_key,
+        ),
+        );
+    return unless ( $move_map_data and %$move_map_data );
+
+    my $new_parent_map_key = $move_map_data->{'new_parent_map_key'};
+    my $gap_start          = $move_map_data->{'gap_start'};
+    my $gap_stop           = $move_map_data->{'gap_stop'};
+    my $text               = q{};
+    if ( defined $gap_stop ) {
+        $text = "Insert this map subsection at position " . $gap_stop . "?";
+    }
+    else {
+        $text = "Insert this map subsection at position " . $gap_start . "?";
+    }
+
+    my $popup = $self->main_window()->Dialog(
+        -title          => 'Move Map',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+        -text           => $text,
+    );
+    my $answer = $popup->Show();
+
+    if ( $answer eq 'OK' ) {
+        $controller->app_display_data->move_map_subsection(
+            subsection_map_key  => $map_key,
+            destination_map_key => $new_parent_map_key,
+            gap_start           => $gap_start,
+            gap_stop            => $gap_stop,
         );
     }
     $self->reset_object_selections(
@@ -4076,14 +4157,30 @@ Handle the drag event
             }
 
             $self->{'highlight_map_moved'}{ $self->{'drag_window_key'} } = 1;
-
-            $self->drag_highlight(
-                zinc => $zinc,
-                x    => $x,
-                y    => $y,
-                dx   => $dx,
-                dy   => $dy,
-            );
+            my $map_key = $self->{'drag_map_key'};
+            my $map_id  = $self->app_controller()->app_display_data()
+                ->map_key_to_id($map_key);
+            my $map_data
+                = $self->app_data_module()->map_data( map_id => $map_id, );
+            my $map_type_acc = $map_data->{'map_type_acc'};
+            if ( $self->map_type_data( $map_type_acc, 'subsection' ) ) {
+                $self->drag_subsection_highlight(
+                    zinc => $zinc,
+                    x    => $x,
+                    y    => $y,
+                    dx   => $dx,
+                    dy   => $dy,
+                );
+            }
+            else {
+                $self->drag_highlight(
+                    zinc => $zinc,
+                    x    => $x,
+                    y    => $y,
+                    dx   => $dx,
+                    dy   => $dy,
+                );
+            }
         }
         elsif ( $self->{'drag_obj'} eq 'background' ) {
             $self->app_controller()->scroll_zone(
@@ -4514,8 +4611,11 @@ Remove selected object from the selection list
         $zinc->remove($highlight_id);
     }
 
-    $zinc->remove( $selection_info->{'highlight_loc'}{'highlight_loc_id'} )
-        if $selection_info->{'highlight_loc'}{'highlight_loc_id'};
+    foreach my $highlight_loc_id (
+        @{ $selection_info->{'highlight_loc'}{'highlight_loc_ids'} || [] } )
+    {
+        $zinc->remove($highlight_loc_id);
+    }
 
     delete $self->{'object_selections'}{$window_key}{$object_key};
     $self->{'first_object_selection_zone_key'}{$window_key} = undef;
@@ -4525,6 +4625,19 @@ Remove selected object from the selection list
     unless ( keys %{ $self->{'object_selections'}{$window_key} || {} } ) {
         $self->{'highlight_map_moved'}{$window_key}  = undef;
         $self->{'object_selected_type'}{$window_key} = undef;
+    }
+
+    # If a subsection move was started, remove the location marker
+    if ( $selection_info->{'subsection_highlight_loc'} ) {
+        foreach my $subsection_location_id (
+            @{  $selection_info->{'subsection_highlight_loc'}
+                    {'subsection_loc_ids'} || []
+            }
+            )
+        {
+            $zinc->remove($subsection_location_id);
+        }
+        $self->{'subsection_highlight_loc'} = undef;
     }
 
     return;
@@ -4557,6 +4670,8 @@ Remove all selected objects from the selection list
             window_key => $window_key,
         );
         if ( $selected_type eq 'map' ) {
+
+            # Unhighlight the correspondences for the map
             $self->highlight_map_corrs(
                 zinc    => $zinc,
                 map_key => $object_key,
@@ -4566,6 +4681,70 @@ Remove all selected objects from the selection list
     }
 
     return;
+}
+
+# ----------------------------------------------------
+sub create_subsection_location_on_map {
+
+=pod
+
+=head2 create_subsection_location_on_map
+
+Create the subsection line on the parent map
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc             = $args{'zinc'};
+    my $map_key          = $args{'map_key'};
+    my $window_key       = $args{'window_key'};
+    my $highlight_bounds = $args{'highlight_bounds'};
+
+    my $subsection_color = 'purple';
+
+    my %subsection_location_data
+        = $self->app_controller()->app_display_data()
+        ->place_subsection_location_on_parent_map(
+        map_key          => $map_key,
+        highlight_bounds => $highlight_bounds,
+        initiate         => 1,
+        );
+
+    return unless (%subsection_location_data);
+
+    my $parent_group_id = $self->get_zone_group_id(
+        window_key       => $subsection_location_data{'window_key'},
+        zone_key         => $subsection_location_data{'parent_zone_key'},
+        zinc             => $zinc,
+        app_display_data => $self->app_controller()->app_display_data(),
+    );
+
+    my @subsection_loc_ids;
+    my $subsection_loc_id;
+    my $coords = [
+        $subsection_location_data{'location_coords'}->[0] - 4,
+        $subsection_location_data{'location_coords'}->[1] - 6,
+        $subsection_location_data{'location_coords'}->[2] + 4,
+        $subsection_location_data{'location_coords'}->[3] + 6,
+    ];
+    $subsection_loc_id = $zinc->add(
+        'rectangle',
+        $parent_group_id,
+        $coords,
+        -linecolor => $subsection_color,
+        -linewidth => 2,
+        -filled    => 0,
+        -visible   => $subsection_location_data{'visible'},
+
+    );
+    push @subsection_loc_ids, $subsection_loc_id;
+    $zinc->addtag( 'tmp_on_top', 'withtag', $subsection_loc_id );
+
+    return {
+        subsection_loc_ids => \@subsection_loc_ids,
+        location_coords    => $subsection_location_data{'location_coords'},
+        parent_zone_key    => $subsection_location_data{'parent_zone_key'},
+    };
 }
 
 # ----------------------------------------------------
@@ -4589,7 +4768,7 @@ Create the highlight box on the parent map
 
     my %highlight_location_data
         = $self->app_controller()->app_display_data()
-        ->place_ghost_location_on_parent_map(
+        ->place_highlight_location_on_parent_map(
         map_key          => $map_key,
         highlight_bounds => $highlight_bounds,
         initiate         => 1,
@@ -4604,7 +4783,8 @@ Create the highlight box on the parent map
         app_display_data => $self->app_controller()->app_display_data(),
     );
 
-    my $highlight_loc_id = $zinc->add(
+    my @highlight_loc_ids;
+    push @highlight_loc_ids, $zinc->add(
         'rectangle',
         $parent_group_id,
         $highlight_location_data{'location_coords'},
@@ -4614,11 +4794,11 @@ Create the highlight box on the parent map
         -visible   => $highlight_location_data{'visible'},
 
     );
-    $zinc->addtag( 'tmp_on_top', 'withtag', $highlight_loc_id );
+    $zinc->addtag( 'tmp_on_top', 'withtag', $highlight_loc_ids[0] );
 
     return {
-        highlight_loc_id => $highlight_loc_id,
-        parent_zone_key  => $highlight_location_data{'parent_zone_key'}
+        highlight_loc_ids => \@highlight_loc_ids,
+        parent_zone_key   => $highlight_location_data{'parent_zone_key'}
     };
 }
 
@@ -4643,7 +4823,7 @@ Handle the ghost map dragging
     my $ghost_color = 'red';
 
     my %ghost_location_data = $self->app_controller()->app_display_data()
-        ->place_ghost_location_on_parent_map( map_key => $map_key, );
+        ->place_highlight_location_on_parent_map( map_key => $map_key, );
 
     return unless (%ghost_location_data);
 
@@ -4760,6 +4940,25 @@ Access the highlight location object.
 
     return $self->{'object_selections'}{$window_key}{$object_key}
         {'highlight_loc'};
+}
+
+# ----------------------------------------------------
+sub subsection_highlight_loc {
+
+=pod
+
+=head2 highlight_loc
+
+Access the highlight location object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $object_key = $args{'object_key'};
+    my $window_key = $args{'window_key'};
+
+    return $self->{'object_selections'}{$window_key}{$object_key}
+        {'subsection_highlight_loc'};
 }
 
 # ----------------------------------------------------
@@ -4916,27 +5115,8 @@ Handle the highlight map dragging
     my $dy   = $args{'dy'};
     return unless ( $dx or $dy );
 
-    my $window_key       = $self->{'drag_window_key'};
-    my $map_key          = $self->{'drag_map_key'};
-    my $highlight_bounds = $self->highlight_bounds(
-        window_key => $window_key,
-        object_key => $map_key,
-    );
-    my %highlight_data
-        = $self->app_controller()->app_display_data()->move_ghosts(
-        map_key         => $map_key,
-        mouse_x         => $x,
-        mouse_y         => $y,
-        mouse_dx        => $dx,
-        mouse_dy        => $dy,
-        ghost_bounds    => $highlight_bounds,
-        mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
-        );
-    return unless (%highlight_data);
-
-    my $new_dx = $highlight_data{'ghost_dx'};
-    my $new_dy = $highlight_data{'ghost_dy'};
-    return unless ( $new_dx or $new_dy );
+    my $window_key = $self->{'drag_window_key'};
+    my $map_key    = $self->{'drag_map_key'};
 
     # Move the highlight
     foreach my $highlight_id (
@@ -4948,55 +5128,72 @@ Handle the highlight map dragging
         }
         )
     {
-        $zinc->translate( $highlight_id, $new_dx, $new_dy, );
+        $zinc->translate( $highlight_id, $dx, $dy, );
     }
 
-    #Move the bounds
-    $self->highlight_bounds(
+    # Move the bounds and get the new ones
+    my $new_highlight_bounds = $self->highlight_bounds(
         window_key => $window_key,
         object_key => $map_key,
-        dx         => $new_dx,
+        dx         => $dx,
     );
+    my %location_highlight_data
+        = $self->app_controller()->app_display_data()
+        ->move_location_highlights(
+        map_key          => $map_key,
+        mouse_x          => $x,
+        mouse_y          => $y,
+        highlight_bounds => $new_highlight_bounds,
+        mouse_to_edge_x  => $self->{'drag_mouse_to_edge_x'},
+        );
+    return unless (%location_highlight_data);
 
     # Move the highlight loc
     my $highlight_loc = $self->highlight_loc(
         window_key => $window_key,
         object_key => $map_key,
     );
-    unless ( $highlight_data{'ghost_loc_parent_zone_key'}
+    my $selection_info = $self->{'object_selections'}{$window_key}{$map_key};
+    unless ( $location_highlight_data{'highlight_loc_parent_zone_key'}
         == $highlight_loc->{'parent_zone_key'} )
     {
         $highlight_loc->{'parent_zone_key'}
-            = $highlight_data{'ghost_loc_parent_zone_key'};
+            = $location_highlight_data{'highlight_loc_parent_zone_key'};
 
         my $parent_group_id = $self->get_zone_group_id(
-            window_key       => $window_key,
-            zone_key         => $highlight_data{'ghost_loc_parent_zone_key'},
+            window_key => $window_key,
+            zone_key =>
+                $location_highlight_data{'highlight_loc_parent_zone_key'},
             zinc             => $zinc,
             app_display_data => $self->app_controller()->app_display_data(),
         );
-        $zinc->chggroup( $highlight_loc->{'highlight_loc_id'},
-            $parent_group_id, 1, );
+        foreach my $highlight_loc_id (
+            @{ $selection_info->{'highlight_loc'}{'highlight_loc_ids'}
+                    || [] } )
+        {
+            $zinc->chggroup( $highlight_loc_id, $parent_group_id, 1, );
+        }
     }
-    $zinc->coords(
-        $highlight_loc->{'highlight_loc_id'},
-        $highlight_data{'ghost_loc_location_coords'},
-    );
-    $zinc->itemconfigure( $highlight_loc->{'highlight_loc_id'},
-        -visible => $highlight_data{'ghost_loc_visible'}, );
+    foreach my $highlight_loc_id (
+        @{ $selection_info->{'highlight_loc'}{'highlight_loc_ids'} || [] } )
+    {
+        $zinc->coords( $highlight_loc_id,
+            $location_highlight_data{'highlight_loc_location_coords'},
+        );
+        $zinc->itemconfigure( $highlight_loc_id,
+            -visible => $location_highlight_data{'highlight_loc_visible'}, );
+    }
 
 }
 
 # ----------------------------------------------------
-sub drag_ghost {
-
-    #print STDERR "AI_NEEDS_MODDED 54\n";
+sub drag_subsection_highlight {
 
 =pod
 
-=head2 drag_ghost
+=head2 drag_subsection_highlight
 
-Handle the ghost map dragging
+Handle the highlight map dragging
 
 =cut
 
@@ -5008,60 +5205,113 @@ Handle the ghost map dragging
     my $dy   = $args{'dy'};
     return unless ( $dx or $dy );
 
-    my %ghost_data = $self->app_controller()->app_display_data()->move_ghosts(
-        map_key      => $self->drawn_id_to_map_key( $self->{'drag_ori_id'} ),
-        mouse_x      => $x,
-        mouse_y      => $y,
-        mouse_dx     => $dx,
-        mouse_dy     => $dy,
-        ghost_bounds => $self->{'ghost_bounds'}{ $self->{'drag_window_key'} },
-        mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
-    );
-    return unless (%ghost_data);
+    my $window_key = $self->{'drag_window_key'};
+    my $map_key    = $self->{'drag_map_key'};
 
-    my $new_dx = $ghost_data{'ghost_dx'};
-    my $new_dy = $ghost_data{'ghost_dy'};
-    return unless ( $new_dx or $new_dy );
-
-    # Move the ghost
-    foreach my $ghost_id (
-        @{ $self->{'ghost_ids'}{ $self->{'drag_window_key'} } || [] } )
+    # Move the highlight
+    foreach my $highlight_id (
+        @{  $self->highlight_ids(
+                window_key => $window_key,
+                object_key => $map_key,
+                )
+                || []
+        }
+        )
     {
-        $zinc->translate( $ghost_id, $new_dx, $new_dy, );
+        $zinc->translate( $highlight_id, $dx, $dy, );
     }
 
-    #Move the ghost bounds
-    $self->{'ghost_bounds'}{ $self->{'drag_window_key'} }[0] += $new_dx;
-    $self->{'ghost_bounds'}{ $self->{'drag_window_key'} }[2] += $new_dx;
+    # Move the bounds and get the new ones
+    my $new_highlight_bounds = $self->highlight_bounds(
+        window_key => $window_key,
+        object_key => $map_key,
+        dx         => $dx,
+    );
 
-    # Move the ghost loc
-    unless ( $ghost_data{'ghost_loc_parent_zone_key'}
-        == $self->{'ghost_loc_parent_zone_key'}
-        { $self->{'drag_window_key'} } )
+    my $selection_info = $self->{'object_selections'}{$window_key}{$map_key};
+
+    # Change the color of the highlight loc to
+    # black to indicate it would be missing.
+    foreach my $highlight_loc_id (
+        @{ $selection_info->{'highlight_loc'}{'highlight_loc_ids'} || [] } )
     {
-        $self->{'ghost_loc_parent_zone_key'}{ $self->{'drag_window_key'} }
-            = $ghost_data{'ghost_loc_parent_zone_key'};
-
-        my $parent_group_id = $self->get_zone_group_id(
-            window_key       => $ghost_data{'window_key'},
-            zone_key         => $ghost_data{'ghost_loc_parent_zone_key'},
-            zinc             => $zinc,
-            app_display_data => $self->app_controller()->app_display_data(),
-        );
-        $zinc->chggroup(
-            $self->{'ghost_loc_id'}{ $self->{'drag_window_key'} },
-            $parent_group_id, 1, );
+        $zinc->itemconfigure( $highlight_loc_id,
+            ( '-linecolor' => 'black' ) );
     }
-    $zinc->coords(
-        $self->{'ghost_loc_id'}{ $self->{'drag_window_key'} },
-        $ghost_data{'ghost_loc_location_coords'},
-    );
-    $zinc->itemconfigure(
-        $self->{'ghost_loc_id'}{ $self->{'drag_window_key'} },
-        -visible => $ghost_data{'ghost_loc_visible'},
-    );
 
-}    # end drag_ghost
+    # Create or Move the subsection loc
+    my $subsection_location;
+    if ( $subsection_location
+        = $self->{'object_selections'}{$window_key}{$map_key}
+        {'subsection_highlight_loc'} )
+    {
+        my %subsection_location_highlight_data
+            = $self->app_controller()->app_display_data()
+            ->move_subsection_location_highlights(
+            map_key          => $map_key,
+            mouse_x          => $x,
+            mouse_y          => $y,
+            highlight_bounds => $new_highlight_bounds,
+            previous_subsection_location_coords =>
+                $subsection_location->{'location_coords'},
+            mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
+            );
+        return unless (%subsection_location_highlight_data);
+        $subsection_location->{'location_coords'}
+            = $subsection_location_highlight_data{'subsection_loc_coords'};
+        unless (
+            $subsection_location_highlight_data{
+                'subsection_loc_parent_zone_key'}
+            == $subsection_location->{'parent_zone_key'} )
+        {
+            $subsection_location->{'parent_zone_key'}
+                = $subsection_location_highlight_data{
+                'subsection_loc_parent_zone_key'};
+
+            my $parent_group_id = $self->get_zone_group_id(
+                window_key => $window_key,
+                zone_key   => $subsection_location_highlight_data{
+                    'subsection_loc_parent_zone_key'},
+                zinc => $zinc,
+                app_display_data =>
+                    $self->app_controller()->app_display_data(),
+            );
+            foreach my $subsection_loc_id (
+                @{ $subsection_location->{'subsection_loc_ids'} || [] } )
+            {
+                $zinc->chggroup( $subsection_loc_id, $parent_group_id, 1, );
+            }
+        }
+
+        # Move the subsection location marker
+        foreach my $subsection_loc_id (
+            @{ $subsection_location->{'subsection_loc_ids'} || [] } )
+        {
+            $zinc->translate(
+                $subsection_loc_id,
+                $subsection_location_highlight_data{'dx'},
+                $subsection_location_highlight_data{'dy'}
+            );
+            $zinc->itemconfigure( $subsection_loc_id,
+                -visible => $subsection_location_highlight_data{
+                    'subsection_loc_visible'}, );
+        }
+    }
+    else {
+        $subsection_location
+            = $self->{'object_selections'}{$window_key}{$map_key}
+            {'subsection_highlight_loc'}
+            = $self->create_subsection_location_on_map(
+            zinc       => $zinc,
+            map_key    => $map_key,
+            window_key => $self->{'drag_window_key'},
+            highlight_bounds =>
+                $self->{'object_selections'}{$window_key}{$map_key}
+                {'highlight_bounds'},
+            );
+    }
+
+}
 
 # ----------------------------------------------------
 sub mouse_wheel_event {
