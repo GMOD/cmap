@@ -140,6 +140,10 @@ unless ( eval "use GD 2.35; 1" ) {
         }
         else {
             die "GD could not be installed.\n"
+                . "This may be due to libgd not being properly installed.  "
+                . "Libgd can be obtained at www.libgd.org.  If using some "
+                . "package managers, the dev version of libgd may "
+                . "need to be installed (libgd2-xpm-dev when using apt-get).\n"
                 . "Please install and try again\n";
         }
     }
