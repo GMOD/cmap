@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.58 2007-09-14 20:44:16 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.59 2007-09-19 21:50:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -3266,6 +3266,11 @@ Create new maps and hide the original maps
     my $starting_map_id    = $self->map_key_to_id($starting_map_key);
     my $destination_map_id = $self->map_key_to_id($destination_map_key);
 
+    my $starting_map_data
+        = $self->app_data_module()->map_data( map_id => $starting_map_id );
+    my $destination_map_data
+        = $self->app_data_module()->map_data( map_id => $destination_map_id );
+
     my $same_parent_map = ( $starting_map_id == $destination_map_id ) ? 1 : 0;
 
     my $starting_feature_data = $self->app_data_module()
@@ -3335,10 +3340,12 @@ Create new maps and hide the original maps
     if ($same_parent_map) {
         $destination_map_id  = $new_starting_map_id;
         $destination_map_key = $new_starting_map_key;
+
+        if ( $subsection_feature_stop < $insertion_point ) {
+            $insertion_point += $excision_data->{'map_back_offset'};
+        }
     }
 
-    my $starting_map_data
-        = $self->app_data_module()->map_data( map_id => $starting_map_id );
     my $subsection_offset = $insertion_point
         - ( $subsection_feature_start - $starting_map_data->{'map_start'} );
     my $insertion_data = $self->insert_map_subsection(
@@ -3383,40 +3390,47 @@ Create new maps and hide the original maps
         destination_map_id      => $self->map_key_to_id($destination_map_key),
         new_destination_map_key => $new_destination_map_key,
         new_destination_map_id  => $new_destination_map_id,
+        subsection_offset       => $subsection_offset,
+        starting_back_offset    => $starting_back_offset,
+        destination_back_offset => $destination_back_offset,
+        destination_gap_start   => $destination_gap_start,
+        destination_gap_stop    => $destination_gap_stop,
+        same_parent_map         => $same_parent_map,
+        insertion_point         => $insertion_point,
         excision_point          => $excision_data->{'excision_point'},
         insertion_start         => $insertion_data->{'insertion_start'},
         insertion_stop          => $insertion_data->{'insertion_stop'},
         starting_front_sub_map_keys    => $starting_front_sub_map_keys,
         starting_back_sub_map_keys     => $starting_back_sub_map_keys,
         subsection_sub_map_keys        => $subsection_sub_map_keys,
+        subsection_feature_start       => $subsection_feature_start,
+        subsection_feature_stop        => $subsection_feature_stop,
         destination_front_sub_map_keys => $destination_front_sub_map_keys,
         destination_back_sub_map_keys  => $destination_back_sub_map_keys,
-        subsection_offset              => $subsection_offset,
-        starting_back_offset           => $starting_back_offset,
-        destination_back_offset        => $destination_back_offset,
-        destination_gap_start          => $destination_gap_start,
-        destination_gap_stop           => $destination_gap_stop,
     );
     $self->add_action(
         window_key  => $window_key,
         action_data => \%action_data,
     );
 
-    #
-    #    # Create the new pedigree
-    #    $self->merge_map_pedigrees(
-    #        merged_map_key    => $merged_map_key,
-    #        merged_map_start  => $merged_map_start,
-    #        merged_map_stop   => $merged_map_stop,
-    #        first_map_key     => $first_map_key,
-    #        first_map_start   => $first_map_start,
-    #        first_map_stop    => $first_map_stop,
-    #        second_map_key    => $second_map_key,
-    #        second_map_start  => $second_map_start,
-    #        second_map_stop   => $second_map_stop,
-    #        second_map_offset => $second_map_offset,
-    #    );
-    #
+    # Create the new pedigree
+    $self->move_subsection_pedigree(
+        starting_map_key         => $starting_map_key,
+        starting_map_start       => $starting_map_data->{'map_start'},
+        starting_map_stop        => $starting_map_data->{'map_stop'},
+        new_starting_map_key     => $new_starting_map_key,
+        destination_map_key      => $destination_map_key,
+        destination_map_start    => $destination_map_data->{'map_start'},
+        destination_map_stop     => $destination_map_data->{'map_stop'},
+        new_destination_map_key  => $new_destination_map_key,
+        subsection_feature_start => $subsection_feature_start,
+        subsection_feature_stop  => $subsection_feature_stop,
+        insertion_point          => $insertion_point,
+        starting_back_offset     => $starting_back_offset,
+        destination_back_offset  => $destination_back_offset,
+        subsection_offset        => $subsection_offset,
+        same_parent_map          => $same_parent_map,
+    );
 
     # Redraw
     $self->redraw_the_whole_window( window_key => $window_key, );
@@ -3685,7 +3699,7 @@ Create new map and hide the original map.
     my $original_map_key             = $args{'original_map_key'};
     my $original_zone_key            = $args{'original_zone_key'};
     my $insertion_point              = $args{'insertion_point'};
-    my $insert_gap                   = $args{'insert_gap'} || 1;
+    my $insert_gap                   = $args{'insert_gap'} || 2;
 
     my $map_id     = $self->map_key_to_id($map_key);
     my $zone_key   = $self->map_key_to_zone_key($map_key);
@@ -4416,7 +4430,7 @@ sub merge_map_pedigrees {
             push @merged_map_pedigree,
                 [
                 $fragment_start, $fragment_stop, $ancestor_map_id,
-                $ancestor_start, $ancestor_stop
+                $ancestor_start, $ancestor_stop,
                 ];
         }
     }
@@ -4440,7 +4454,7 @@ sub merge_map_pedigrees {
             push @merged_map_pedigree,
                 [
                 $fragment_start, $fragment_stop, $ancestor_map_id,
-                $ancestor_start, $ancestor_stop
+                $ancestor_start, $ancestor_stop,
                 ];
         }
     }
@@ -4457,6 +4471,290 @@ sub merge_map_pedigrees {
 
     # Save the new pedigree
     $self->map_pedigree( $merged_map_key, \@merged_map_pedigree, );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub move_subsection_pedigree {
+
+=pod
+
+=head2 move_subsection_pedigree
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $starting_map_key      = $args{'starting_map_key'} or return undef;
+    my $starting_map_start    = $args{'starting_map_start'};
+    my $starting_map_stop     = $args{'starting_map_stop'};
+    my $new_starting_map_key  = $args{'new_starting_map_key'} or return undef;
+    my $destination_map_key   = $args{'destination_map_key'} or return undef;
+    my $destination_map_start = $args{'destination_map_start'};
+    my $destination_map_stop  = $args{'destination_map_stop'};
+    my $new_destination_map_key = $args{'new_destination_map_key'}
+        or return undef;
+    my $subsection_feature_start = $args{'subsection_feature_start'};
+    my $subsection_feature_stop  = $args{'subsection_feature_stop'};
+    my $insertion_point          = $args{'insertion_point'};
+    my $starting_back_offset     = $args{'starting_back_offset'};
+    my $destination_back_offset  = $args{'destination_back_offset'};
+    my $subsection_offset        = $args{'subsection_offset'};
+    my $same_parent_map          = $args{'same_parent_map'};
+
+    my $starting_map_id       = $self->map_key_to_id($starting_map_key);
+    my $starting_map_pedigree = $self->map_pedigree( $starting_map_key, );
+    my $starting_map_data
+        = $self->app_data_module()->map_data( map_id => $starting_map_id );
+
+    my $unit_granularity
+        = $self->map_type_data( $starting_map_data->{'map_type_acc'},
+        'unit_granularity' )
+        || DEFAULT->{'unit_granularity'};
+
+    my @new_starting_map_pedigree;
+    my @subsection_pedigree;
+    unless ($starting_map_pedigree) {
+        $starting_map_pedigree = [];
+        push @$starting_map_pedigree,
+            [
+            $starting_map_start, $starting_map_stop, $starting_map_id,
+            $starting_map_start, $starting_map_stop,
+            ];
+    }
+
+    # Excise the subsection from the starting pedigree
+    foreach my $fragment (@$starting_map_pedigree) {
+        my $fragment_start  = $fragment->[0];
+        my $fragment_stop   = $fragment->[1];
+        my $ancestor_map_id = $fragment->[2];
+        my $ancestor_start  = $fragment->[3];
+        my $ancestor_stop   = $fragment->[4];
+
+        # Does this fragment end before the subsection
+        if ( $fragment_stop < $subsection_feature_start ) {
+            push @new_starting_map_pedigree,
+                [
+                $fragment_start, $fragment_stop, $ancestor_map_id,
+                $ancestor_start, $ancestor_stop,
+                ];
+        }
+
+        # Does this fragment start after the subsection
+        elsif ( $fragment_start > $subsection_feature_stop ) {
+            push @new_starting_map_pedigree,
+                [
+                $fragment_start + $starting_back_offset,
+                $fragment_stop + $starting_back_offset,
+                $ancestor_map_id,
+                $ancestor_start,
+                $ancestor_stop,
+                ];
+        }
+
+        # Else the subsection and fragment overlap in some way.
+        else {
+
+            # Does the subsection cover the fragment
+            if (    $subsection_feature_start <= $fragment_start
+                and $subsection_feature_stop >= $fragment_stop )
+            {
+                push @subsection_pedigree,
+                    [
+                    $fragment_start, $fragment_stop, $ancestor_map_id,
+                    $ancestor_start, $ancestor_stop,
+                    ];
+            }
+
+            # Does the subsection overlap the start of the fragment
+            elsif ( $subsection_feature_start <= $fragment_start ) {
+                push @subsection_pedigree,
+                    [
+                    $fragment_start,
+                    $subsection_feature_stop,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_stop
+                        - ( $fragment_stop - $subsection_feature_stop ),
+                    ];
+                push @new_starting_map_pedigree,
+                    [
+                    $subsection_feature_stop + $unit_granularity,
+                    $fragment_stop,
+                    $ancestor_map_id,
+                    $ancestor_start
+                        + ( $subsection_feature_stop - $fragment_start )
+                        + $unit_granularity,
+                    $ancestor_stop,
+                    ];
+            }
+
+            # Does the subsection overlap the stop of the fragment
+            elsif ( $subsection_feature_stop >= $fragment_stop ) {
+                push @new_starting_map_pedigree,
+                    [
+                    $fragment_start,
+                    $subsection_feature_stop - $unit_granularity,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_stop
+                        - ( $fragment_stop - $subsection_feature_start )
+                        - $unit_granularity,
+                    ];
+                push @subsection_pedigree,
+                    [
+                    $subsection_feature_start,
+                    $fragment_stop,
+                    $ancestor_map_id,
+                    $ancestor_start
+                        + ( $subsection_feature_start - $fragment_start ),
+                    $ancestor_stop,
+                    ];
+            }
+
+            # Else the subsection is encased in this fragment
+            else {
+                push @new_starting_map_pedigree,
+                    [
+                    $fragment_start,
+                    $subsection_feature_start - $unit_granularity,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_stop
+                        - ( $fragment_stop - $subsection_feature_start )
+                        - $unit_granularity,
+                    ];
+                push @subsection_pedigree,
+                    [
+                    $subsection_feature_start,
+                    $subsection_feature_stop,
+                    $ancestor_map_id,
+                    $ancestor_start
+                        + ( $subsection_feature_start - $fragment_start ),
+                    $ancestor_stop
+                        - ( $fragment_stop - $subsection_feature_stop ),
+                    ];
+                push @new_starting_map_pedigree,
+                    [
+                    $subsection_feature_stop + $unit_granularity,
+                    $fragment_stop,
+                    $ancestor_map_id,
+                    $ancestor_start
+                        + ( $subsection_feature_stop - $fragment_start )
+                        + $unit_granularity,
+                    $ancestor_stop,
+                    ];
+            }
+        }
+    }
+
+    # Prepare the subsection pedigree for insertion
+    foreach my $fragment (@subsection_pedigree) {
+        $fragment->[0] += $subsection_offset;
+        $fragment->[1] += $subsection_offset;
+    }
+
+    # Insert the subsection into the destination map pedigree
+    my $destination_map_pedigree;
+    my $destination_map_id = $self->map_key_to_id($destination_map_key);
+    if ($same_parent_map) {
+        $destination_map_pedigree = \@new_starting_map_pedigree;
+    }
+    else {
+        $destination_map_pedigree
+            = $self->map_pedigree( $destination_map_key, );
+    }
+
+    unless ($destination_map_pedigree) {
+        $destination_map_pedigree = [];
+        push @$destination_map_pedigree,
+            [
+            $destination_map_start, $destination_map_stop,
+            $destination_map_id,    $destination_map_start,
+            $destination_map_stop,
+            ];
+    }
+
+    my @new_destination_map_pedigree;
+    foreach my $fragment (@$destination_map_pedigree) {
+        my $fragment_start  = $fragment->[0];
+        my $fragment_stop   = $fragment->[1];
+        my $ancestor_map_id = $fragment->[2];
+        my $ancestor_start  = $fragment->[3];
+        my $ancestor_stop   = $fragment->[4];
+
+        # Does this fragment end before the subsection
+        if ( $fragment_stop < $insertion_point ) {
+            push @new_destination_map_pedigree,
+                [
+                $fragment_start, $fragment_stop, $ancestor_map_id,
+                $ancestor_start, $ancestor_stop,
+                ];
+        }
+
+        # Does this fragment start after the subsection
+        elsif ( $fragment_start > $subsection_feature_stop ) {
+            push @new_destination_map_pedigree,
+                [
+                $fragment_start + $destination_back_offset,
+                $fragment_stop + $destination_back_offset,
+                $ancestor_map_id,
+                $ancestor_start,
+                $ancestor_stop,
+                ];
+        }
+
+        # Else the subsection and fragment overlap in some way.
+        else {
+            if ( $fragment_start == $insertion_point ) {
+                push @new_destination_map_pedigree, @subsection_pedigree;
+                push @new_destination_map_pedigree,
+                    [
+                    $fragment_start + $destination_back_offset,
+                    $fragment_stop + $destination_back_offset,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_stop,
+                    ];
+            }
+            elsif ( $fragment_stop == $insertion_point ) {
+                push @new_destination_map_pedigree, $fragment;
+                push @new_destination_map_pedigree, @subsection_pedigree;
+            }
+            else {
+                push @new_destination_map_pedigree,
+                    [
+                    $fragment_start,
+                    $insertion_point - $unit_granularity,
+                    $ancestor_map_id,
+                    $ancestor_start,
+                    $ancestor_stop 
+                        - ( $fragment_stop - $insertion_point )
+                        - $unit_granularity,
+                    ];
+                push @new_destination_map_pedigree, @subsection_pedigree;
+                push @new_destination_map_pedigree,
+                    [
+                    $insertion_point + $unit_granularity,
+                    $fragment_stop,
+                    $ancestor_map_id,
+                    $ancestor_start 
+                        + ( $insertion_point - $fragment_start )
+                        + $unit_granularity,
+                    $ancestor_stop,
+                    ];
+            }
+        }
+    }
+
+    # Save the new pedigrees
+    $self->map_pedigree( $new_destination_map_key,
+        \@new_destination_map_pedigree,
+    );
+    unless ($same_parent_map) {
+        $self->map_pedigree( $new_starting_map_key,
+            \@new_starting_map_pedigree, );
+    }
 
     return 1;
 }
@@ -6222,6 +6520,34 @@ Returns the number of remaining windows.
 }
 
 # ----------------------------------------------------
+sub replace_temp_map_ids {
+
+=pod
+
+=head2 replace_temp_map_ids
+
+Replace the temp map ids with the ones found in the database (or more specifically, the ones in the data structure that is passed).
+
+=cut
+
+    my $self = shift;
+    my $temp_id_to_real_map_id = shift || {};
+
+    foreach my $temp_id ( keys %$temp_id_to_real_map_id ) {
+        my $real_map_id = $temp_id_to_real_map_id->{$temp_id};
+
+        $self->{'map_id_to_keys'}{$real_map_id} = undef;
+        foreach my $map_key ( @{ $self->map_id_to_keys($temp_id) || [] } ) {
+            my $zone_key = $self->map_key_to_zone_key($map_key);
+
+            $self->map_id_to_keys( $real_map_id, $map_key );
+            $self->map_key_to_id( $map_key, $real_map_id );
+            $self->map_id_to_key_by_zone( $real_map_id, $zone_key, $map_key );
+        }
+    }
+}
+
+# ----------------------------------------------------
 sub refresh_program_from_database {
 
 =pod
@@ -6355,7 +6681,7 @@ sub refresh_zone_children_from_database {
 
     # Get any remaining in the old list
     for ( my $i = $old_index; $i <= $#old_sub_map_ids; $i++ ) {
-        $map_ids_lost_in_db{$old_map_id} = 1;
+        $map_ids_lost_in_db{ $old_sub_map_ids[$i] } = 1;
     }
 
     # Handle the maps in the db

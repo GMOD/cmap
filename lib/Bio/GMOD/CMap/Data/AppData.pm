@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.28 2007-09-14 20:44:16 mwz444 Exp $
+# $Id: AppData.pm,v 1.29 2007-09-19 21:50:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -1196,12 +1196,12 @@ Update the db.
 
         $url .= ';change_actions=' . nfreeze($actions);
 
-        return $self->request_remote_data( url => $url, thaw => 0, );
+        return $self->request_remote_data( url => $url, thaw => 1, );
     }
     else {
         my $admin = Bio::GMOD::CMap::Admin->new(
             data_source => $self->data_source() );
-        $admin->commit_changes($actions);
+        return $admin->commit_changes($actions);
     }
 
 }
@@ -1325,9 +1325,7 @@ sub commit_changes {
     my ( $self, %args ) = @_;
     my $actions = $args{'actions'} or return;
 
-    $self->sql_commit_changes( actions => $actions, );
-
-    return;
+    return $self->sql_commit_changes( actions => $actions, );
 }
 
 # ----------------------------------------------------

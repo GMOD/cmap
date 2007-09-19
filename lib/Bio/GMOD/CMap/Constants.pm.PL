@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.50 2007-04-24 16:31:21 briano Exp $
+# $Id: Constants.pm.PL,v 1.51 2007-09-19 21:50:18 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -539,9 +539,9 @@ use constant DEFAULT => {
     # For example, the granularity of a base pair is 1.  Some data will have a
     # certain number of signifigant digits for example data in cenitMorgans
     # might have granularity of 0.01.
-    # Default: 0.001
+    # Default: 0.01
     #
-    unit_granularity => 0.001,
+    unit_granularity => 0.01,
 
     #
     # What to name the cookie containing user preferences.

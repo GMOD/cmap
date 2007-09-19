@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.99 2007-07-03 16:33:05 mwz444 Exp $
+# $Id: Admin.pm,v 1.100 2007-09-19 21:50:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -161,8 +161,7 @@ The name of the table being reference.
                     is_public     => $is_public,
                 },
             ],
-            )
-            or return $self->error;
+        ) or return $self->error;
     }
 
     return $attribute_id;
@@ -1035,8 +1034,8 @@ If not defined, the object_id will be assigned to it.
         $sql_object->insert_feature_correspondence( threshold => 0, );
     }
 
-    my $allow_update =
-        defined( $args{'allow_update'} )
+    my $allow_update
+        = defined( $args{'allow_update'} )
         ? $args{'allow_update'}
         : 1;
 
@@ -1494,17 +1493,17 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
 
     my @results = ();
     if ( $order_by =~ /position/ ) {
-        @results =
-            map  { $_->[1] }
-            sort { $a->[0] <=> $b->[0] }
-            map  { [ $_->{$order_by}, $_ ] } values %features;
+        @results
+            = map { $_->[1] }
+            sort  { $a->[0] <=> $b->[0] }
+            map { [ $_->{$order_by}, $_ ] } values %features;
     }
     else {
         my @sort_fields = split( /,/, $order_by );
-        @results =
-            map  { $_->[1] }
-            sort { $a->[0] cmp $b->[0] }
-            map  { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
+        @results
+            = map { $_->[1] }
+            sort  { $a->[0] cmp $b->[0] }
+            map { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
     }
 
     #
@@ -2114,10 +2113,10 @@ The name of the object being reference.
     }
 
     for my $attr (@attributes) {
-        my $attr_id    = $attr->{'attribute_id'};
-        my $attr_name  = $attr->{'name'} || $attr->{'attribute_name'};
-        my $attr_value =
-            defined( $attr->{'value'} )
+        my $attr_id = $attr->{'attribute_id'};
+        my $attr_name = $attr->{'name'} || $attr->{'attribute_name'};
+        my $attr_value
+            = defined( $attr->{'value'} )
             ? $attr->{'value'}
             : $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
@@ -2125,9 +2124,9 @@ The name of the object being reference.
 
         next
             unless defined $attr_name
-            && $attr_name ne ''
-            && defined $attr_value
-            && $attr_value ne '';
+                && $attr_name ne ''
+                && defined $attr_value
+                && $attr_value ne '';
 
         unless ($attr_id) {
 
@@ -2245,9 +2244,9 @@ The name of the object being reference.
 
         next
             unless defined $xref_name
-            && $xref_name ne ''
-            && defined $xref_url
-            && $xref_url ne '';
+                && $xref_name ne ''
+                && defined $xref_url
+                && $xref_url ne '';
 
         unless ($xref_id) {
 
@@ -2355,15 +2354,14 @@ If not defined, the object_id will be assigned to it.
     }
 
     my $display_order = $args{'display_order'} || 1;
-    my $species_acc   = $args{'species_acc'};
+    my $species_acc = $args{'species_acc'};
 
     my $species_id = $sql_object->insert_species(
         species_acc         => $species_acc,
         species_full_name   => $species_full_name,
         species_common_name => $species_common_name,
         display_order       => $display_order,
-        )
-        or return $sql_object->error;
+    ) or return $sql_object->error;
 
     return $species_id;
 }
@@ -2536,8 +2534,7 @@ The name of the table being reference.
                     display_order => $display_order,
                 },
             ],
-            )
-            or return $self->error;
+        ) or return $self->error;
     }
 
     return $xref_id;
@@ -3002,10 +2999,122 @@ The primary key of the object.
             $self->map_delete( map_id => $second_map_id, );
 
         }
+        elsif ( $action->{'action'} eq 'move_map_subsection' ) {
+
+            my $subsection_feature_start
+                = $action->{'subsection_feature_start'};
+            my $subsection_feature_stop
+                = $action->{'subsection_feature_stop'};
+            my $insertion_point      = $action->{'insertion_point'};
+            my $starting_back_offset = $action->{'starting_back_offset'};
+            my $destination_back_offset
+                = $action->{'destination_back_offset'};
+            my $subsection_offset = $action->{'subsection_offset'};
+
+            # STARTING MAP
+            # Get map data for the starting map
+            my $starting_map_id
+                = $self->_translate_map_id( $action->{'starting_map_id'},
+                $temp_to_real_map_id );
+            my $starting_map_data
+                = $sql_object->get_maps( map_id => $starting_map_id, );
+            next unless $starting_map_data;
+            $starting_map_data = $starting_map_data->[0];
+
+            # Move features
+            my $starting_feature_data = $sql_object->get_features_simple(
+                map_id => $starting_map_id, );
+            my @subsection_features;
+            foreach my $feature ( @{ $starting_feature_data || [] } ) {
+                if ( $feature->{'feature_stop'} < $subsection_feature_start )
+                {
+                    next;
+                }
+                elsif (
+                    $feature->{'feature_start'} > $subsection_feature_stop )
+                {
+                    $sql_object->update_feature(
+                        feature_id    => $feature->{'feature_id'},
+                        feature_start => $feature->{'feature_start'}
+                            + $starting_back_offset,
+                        feature_stop => $feature->{'feature_stop'}
+                            + $starting_back_offset,
+                    );
+                }
+                else {
+                    push @subsection_features, $feature;
+                }
+            }
+
+            # Shrink Starting Map
+            $sql_object->update_map(
+                map_id   => $starting_map_id,
+                map_stop => $starting_map_data->{'map_stop'}
+                    + $starting_back_offset,
+            );
+
+            # Validate the start and stop of the new map
+            $self->validate_update_map_start_stop($starting_map_id);
+
+            # DESTINATION MAP
+            # Get map data for the destination map
+            my $destination_map_id
+                = $self->_translate_map_id( $action->{'destination_map_id'},
+                $temp_to_real_map_id );
+            my $destination_map_data
+                = $sql_object->get_maps( map_id => $destination_map_id, );
+            next unless $destination_map_data;
+            $destination_map_data = $destination_map_data->[0];
+
+            # Move features
+            my $destination_feature_data = $sql_object->get_features_simple(
+                map_id => $destination_map_id, );
+            foreach my $feature ( @{ $destination_feature_data || [] } ) {
+                if ( $feature->{'feature_stop'} < $insertion_point ) {
+                    next;
+                }
+                elsif ( $feature->{'feature_start'} >= $insertion_point ) {
+                    $sql_object->update_feature(
+                        feature_id    => $feature->{'feature_id'},
+                        feature_start => $feature->{'feature_start'}
+                            + $destination_back_offset,
+                        feature_stop => $feature->{'feature_stop'}
+                            + $destination_back_offset,
+                    );
+                }
+            }
+
+            # Now Move the subsection features
+            foreach my $feature (@subsection_features) {
+                $sql_object->update_feature(
+                    feature_id    => $feature->{'feature_id'},
+                    map_id        => $destination_map_id,
+                    feature_start => $feature->{'feature_start'}
+                        + $subsection_offset,
+                    feature_stop => $feature->{'feature_stop'}
+                        + $subsection_offset,
+                );
+            }
+
+            # Enlarge the Destination Map
+            $sql_object->update_map(
+                map_id   => $destination_map_id,
+                map_stop => $destination_map_data->{'map_stop'}
+                    + $destination_back_offset,
+            );
+
+            # Validate the start and stop of the new map
+            $self->validate_update_map_start_stop($destination_map_id);
+
+            $temp_to_real_map_id->{ $action->{'new_starting_map_id'} }
+                = $starting_map_id;
+            $temp_to_real_map_id->{ $action->{'new_destination_map_id'} }
+                = $destination_map_id;
+        }
     }
     $sql_object->commit_transaction();
 
-    return 1;
+    return $temp_to_real_map_id;
 }
 
 sub _translate_map_id {

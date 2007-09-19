@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.13 2007-07-10 18:23:00 mwz444 Exp $
+# $Id: Remote.pm,v 1.14 2007-09-19 21:50:19 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -156,8 +156,7 @@ sub handler {
         my $data        = $self->sql->generic_get_data(
             parameters  => $parameters,
             method_name => $method_name,
-            )
-            || [];
+        ) || [];
 
         unless ( @{ $data || [] } ) {
             $data = [];
@@ -189,17 +188,17 @@ sub handler {
                 || undef;
 
             # These options can be defined as false.
-            my $is_landmark   = $feature_data{'is_landmark'};
-            my $feature_start =
-                defined( $feature_data{'feature_start'} )
+            my $is_landmark = $feature_data{'is_landmark'};
+            my $feature_start
+                = defined( $feature_data{'feature_start'} )
                 ? $feature_data{'feature_start'}
                 : $feature_data{'start'};
-            my $feature_stop =
-                defined( $feature_data{'feature_stop'} )
+            my $feature_stop
+                = defined( $feature_data{'feature_stop'} )
                 ? $feature_data{'feature_stop'}
                 : $feature_data{'stop'};
-            my $default_rank =
-                defined( $feature_data{'default_rank'} )
+            my $default_rank
+                = defined( $feature_data{'default_rank'} )
                 ? $feature_data{'default_rank'}
                 : $feature_data{'rank'};
 
@@ -224,8 +223,8 @@ sub handler {
         my $change_actions = thaw $apr->param('change_actions');
         my $admin          = Bio::GMOD::CMap::Admin->new(
             data_source => $self->data_source() );
-        $admin->commit_changes($change_actions);
-        print 1;
+        my $temp_to_real_map_id = $admin->commit_changes($change_actions);
+        print nfreeze($temp_to_real_map_id);
     }
 
     return 1;
@@ -254,7 +253,7 @@ sub unstringify_slot_info {
     my ( $self, %args ) = @_;
     my $slot_info_str = $args{'slot_info_str'};
 
-    my $return_obj      = {};
+    my $return_obj = {};
     my @slot_info_array = split /:/, $slot_info_str;
 
     foreach my $map_info_str (@slot_info_array) {

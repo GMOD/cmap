@@ -16,7 +16,8 @@ $args{'plugins'} = [];
 if (0) {
     $args{'plugins'} = [
         'ExampleModifyMainMenu',      'ExampleModifyRightClickMenu',
-        'ExampleModifyCommitChanges', 'ExampleModifyStartUpMenu',
+        #'ExampleModifyCommitChanges', 
+        'ExampleModifyStartUpMenu',
     ];
 }
 

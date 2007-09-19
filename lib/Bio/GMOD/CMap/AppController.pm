@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.39 2007-09-14 20:44:15 mwz444 Exp $
+# $Id: AppController.pm,v 1.40 2007-09-19 21:50:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -799,7 +799,9 @@ Commit the changes made to the cmap db.
         return;
     }
 
-    $self->app_data_module->commit_changes( actions => $actions, );
+    my $temp_id_to_real_map_id
+        = $self->app_data_module->commit_changes( actions => $actions, );
+    $self->app_display_data->replace_temp_map_ids($temp_id_to_real_map_id);
 
     $app_display_data->refresh_program_from_database();
 
