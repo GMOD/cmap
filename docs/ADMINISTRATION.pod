@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.36 $
+$Revision: 1.37 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1076,6 +1076,165 @@ feature types.  Each extra_form has one field called 'extra_form' which
 takes standard html and will insert it into the main CMap viewer form. 
 These can be used for anything from hidden fields that store data to 
 buttons that submit the page to a different place.  
+
+=back
+
+=head3 Configuration Defined Buttons
+
+CMap allows the creation of buttons to modify options in the CMap viewer menu.
+Conditions can be set that would need to be met before the button will appear.
+
+A simple example would be to add a "For Publication" button that would set the
+"clean_view" option and would only appear when the "clean_view" option was off.
+
+The impitus for adding this feature was for creating a button that would toggle
+between an overview style view and a more detailed view.  Clicking the
+"Overview" button would set the feature display options to "corr_only" of all
+but a select set of feature types which would have the effect of de-cluttering
+the view.  A "Detailed" button could set all the feature display options to
+always "display".
+
+
+=head4 Configuration Structure
+
+All buttons are enclosed in an <additional_buttons> tag.
+
+The following is the configuration for the "clean_view" buttons mentioned
+above.
+
+  <additional_buttons>
+      <button>
+          text For Publication
+          <if>
+              clean_view 0
+          </if>
+          <set>
+              clean_view 1
+          </set>
+      </button>
+      <button>
+          text Return Navigation Buttons
+          <if>
+              clean_view 1
+          </if>
+          <set>
+              clean_view 0
+          </set>
+      </button>
+  </additional_buttons>
+
+Note that there are two buttons, one for when "clean_view" is set and one for
+when it is not.  They work together.
+
+Each <button> is it's own element with the following fields.
+
+=over4
+
+=item* text
+
+The text written on the button.  This should be short, otherwise there will be
+some ugly buttons. 
+
+=item* if (Optional)
+
+This section contains one or more tests for menu items.  All options must match
+for the button to be displayed.
+
+The individual options are described later in the Testable Parameters section.
+
+=item* if_not (Optional)
+
+This section contains one or more tests for menu items.  All options must not
+match for the button to be displayed.
+
+The following is an alternate configuration for the "For Publication" button.
+
+  <button>
+      text For Publication
+      <if_not>
+          clean_view 1
+      </if_not>
+      <set>
+          clean_view 1
+      </set>
+  </button>
+
+The individual options are described later in the Testable Parameters section.
+
+=item* set
+
+This is where the action of the button is defined.  It will set the value of
+the defined parameters to the value supplied.  The defined parameter must be
+the name of a menu option.  If you are unsure of the menu option name, simpley
+view source on a CMap page and look for the option that you wish to set.
+
+=back
+
+=head4 Testable Parameters
+
+=over 4
+
+=item- Boolean Parameters
+
+These parameters can be tested using 1 or 0 (or blank).
+
+    highlight
+    collapse_features
+    scale_maps
+    stack_maps
+    omit_area_boxes
+    show_intraslot_corr
+    split_agg_ev
+    clean_view
+    corrs_to_map
+    ignore_image_map_sanity
+    dotplot
+
+=item- String Parameters
+
+These parameters are a little more than boolean.  They may be numbers (for
+isntance, the radio button" aggregate" values are 0,1 or 2).  View page source
+of the CMap viewer to see the options of radio buttons.  
+
+    prev_ref_species_acc
+    prev_ref_map_set_acc
+    ref_species_acc
+    ref_map_set_acc
+    image_type
+    label_features
+    aggregate
+    comp_menu_order
+    data_source
+    ref_map_start
+    ref_map_stop
+    font_size
+    pixel_height
+
+=item- Feature and Evidence Type Parameters
+
+These parameters are a little different.  To query if a feature type is
+displayed, that feature type must be included as a display_feature_type.
+
+    display_feature_type feature_type_acc
+    corr_only_feature_type feature_type_acc
+    ignored_feature_type feature_type_acc
+
+    included_evidence_type evidence_type_acc
+    ignored_evidence_type evidence_type_acc
+    less_evidence_type evidence_type_acc
+    greater_evidence_type evidence_type_acc
+
+An example button:
+
+    <button>
+        text No Marker
+        <if>
+            display_feature_type marker
+        </if>
+        <set>
+            ft_marker 0
+        </set>
+    </button>
 
 =back
 
