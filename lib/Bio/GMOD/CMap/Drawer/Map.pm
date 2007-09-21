@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.204 2007-04-24 16:24:47 briano Exp $
+# $Id: Map.pm,v 1.205 2007-09-21 20:09:38 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.204 $)[-1];
+$VERSION = (qw$Revision: 1.205 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -39,8 +39,7 @@ use Bio::GMOD::CMap::Utils qw[
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS =
-    qw[ drawer base_x base_y slot_no maps config aggregate
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate
     clean_view scale_maps stack_maps ];
 
 my %SHAPE = (
@@ -653,12 +652,12 @@ such as the units.
         = $drawer->data_module->magnification( $slot_no, $map_id );
     my $slot_info           = $drawer->data_module->slot_info->{$slot_no};
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
-    my $start_pos           =
-        defined( $slot_info->{$map_id}->[0] )
+    my $start_pos
+        = defined( $slot_info->{$map_id}->[0] )
         ? $slot_info->{$map_id}->[0]
         : "''";
-    my $stop_pos =
-        defined( $slot_info->{$map_id}->[1] )
+    my $stop_pos
+        = defined( $slot_info->{$map_id}->[1] )
         ? $slot_info->{$map_id}->[1]
         : "''";
     my $x;
@@ -718,7 +717,8 @@ such as the units.
         );
 
         # Minus side
-        my $mag_minus_url = $self->create_viewer_link(
+        my $mag_minus_url
+            = $self->create_viewer_link(
             $drawer->create_minimal_link_params(),
             session_mod => "mag=$slot_no=$map_acc=$mag_minus_val", );
         push @$drawing_data,
@@ -764,7 +764,8 @@ such as the units.
         $x += ( $font->width * length($mag_mid_str) );
 
         # Plus Side
-        my $mag_plus_url = $self->create_viewer_link(
+        my $mag_plus_url
+            = $self->create_viewer_link(
             $drawer->create_minimal_link_params(),
             session_mod => "mag=$slot_no=$map_acc=$mag_plus_val", );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
@@ -1234,6 +1235,20 @@ Variable Info:
     my $label_features = $drawer->label_features;
     my $config         = $self->config or return;
 
+    # Remove any map ids that aren't going to be drawn.
+    for ( my $i = 0; $i <= $#map_ids; $i++ ) {
+        my $map_id = $map_ids[$i];
+        if ($stack_rel_maps) {
+            unless (
+                %{ $drawer->map_correspondences( $slot_no, $map_id ) || {} } )
+            {
+                $drawer->map_not_displayed( $slot_no, $map_id, 1 );
+                splice( @map_ids, $i, 1 );
+                $i--;
+            }
+        }
+    }
+
     #
     # The title is often the widest thing we'll draw, so we need
     # to figure out which is the longest and take half its length
@@ -1277,11 +1292,11 @@ Variable Info:
         = $drawer->config_data('feature_highlight_bg_color');
 
     my ($last_map_x);
-    my $last_map_y  = $base_y;
-    my $show_labels =
-          $is_compressed ? 0
+    my $last_map_y = $base_y;
+    my $show_labels
+        = $is_compressed ? 0
         : $label_features eq 'none' ? 0
-        : 1;
+        :                             1;
     my $show_ticks     = !$stack_rel_maps;        # Show ticks unless stacking
     my $show_map_title = $is_compressed ? 0 : 1;
     my $show_map_units = $is_compressed ? 0 : 1;
@@ -1312,7 +1327,8 @@ Variable Info:
         font => $reg_font,
     );
     my $slot_title_width
-        = $slot_title_info{'bounds'}->[2] - $slot_title_info{'bounds'}->[0]
+        = $slot_title_info{'bounds'}->[2] 
+        - $slot_title_info{'bounds'}->[0]
         + ( $slot_title_buffer * 2 );
     $drawer->slot_title(
         slot_no => $slot_no,
@@ -1345,7 +1361,10 @@ Variable Info:
         # Find the units to pixels ratio.
         my $total_map_units = 0;
         for my $map_id (@map_ids) {
-            $total_map_units += $self->map_length($map_id);
+            if (%{ $drawer->map_correspondences( $slot_no, $map_id ) || {} } )
+            {
+                $total_map_units += $self->map_length($map_id);
+            }
         }
         $stacking_units_per_pixel
             = $total_map_units / $drawer->pixel_height();
@@ -1369,7 +1388,7 @@ MAP:
         $map_area_data{$map_id}    = [];
 
         my $actual_map_length = $self->map_length($map_id);
-        my $map_length        = $actual_map_length || 1;
+        my $map_length = $actual_map_length || 1;
 
         #
         # Find out if it flipped
@@ -1419,6 +1438,15 @@ MAP:
             map_aggregate_corr => \%map_aggregate_corr,
             map_placement_data => \%map_placement_data,
             );
+
+        # If the map wasn't placed, go to the next map
+        # Mark the map as not displayed (I'm doing this in two places because
+        # I've become paranoid in my old age.
+        unless ( defined $placed_y1 ) {
+            $drawer->map_not_displayed( $slot_no, $map_id, 1 );
+            next MAP;
+        }
+
         $map_placement_data{$map_id}{'bounds'}
             = [ 0, $placed_y1, 0, $placed_y2 ];
         $map_placement_data{$map_id}{'map_coords'}
@@ -1434,8 +1462,7 @@ MAP:
             map_area_data      => \%map_area_data,
             map_placement_data => \%map_placement_data,
             is_flipped         => $is_flipped,
-            )
-            unless ($stack_rel_maps);
+        ) unless ($stack_rel_maps);
 
         # Draw the actual Map
         my $mid_x         = 0;
@@ -1539,11 +1566,11 @@ MAP:
                 };
 
                 my $lane = $lanes{$lane};
-                $map_base_x =
-                      $lane->{'furthest'}
+                $map_base_x
+                    = $lane->{'furthest'}
                     ? $label_side eq RIGHT
-                    ? $lane->{'furthest'} + 2
-                    : $lane->{'furthest'} - ( $map_width + 4 )
+                        ? $lane->{'furthest'} + 2
+                        : $lane->{'furthest'} - ( $map_width + 4 )
                     : $map_base_x;
             }
 
@@ -1578,7 +1605,7 @@ MAP:
                     $color,     $label_y,    $glyph_drawn
                     )
                     = $self->add_feature_to_map(
-                    base_x     => $map_base_x,
+                    base_x => $map_base_x,
                     map_base_y =>
                         $map_placement_data{$map_id}{'map_coords'}[1],
                     drawer            => $drawer,
@@ -1619,7 +1646,7 @@ MAP:
                         has_corr       => $has_corr,
                         is_highlighted => $is_highlighted,
                         label_y        => $label_y,
-                        map_base_y     =>
+                        map_base_y =>
                             $map_placement_data{$map_id}{'map_coords'}[1],
                         show_labels => $show_labels,
                     );
@@ -1692,11 +1719,8 @@ MAP:
                 or $map_placement_data{$map_id}{'bounds'}[1] < $slot_min_y )
             );
         $slot_max_y = $map_placement_data{$map_id}{'bounds'}[3]
-            if (
-            not $stack_rel_maps
-            and ( not defined $slot_max_y
-                or $map_placement_data{$map_id}{'bounds'}[3] > $slot_max_y )
-            );
+            if ( not defined $slot_max_y
+            or $map_placement_data{$map_id}{'bounds'}[3] > $slot_max_y );
 
         $last_map_id = $map_id;
     }
@@ -1752,7 +1776,7 @@ MAP:
         # Set the lane width if this map is wider than any previous
         if (not defined( $lane_width[ $map_lane{$map_id} ] )
             or $lane_width[ $map_lane{$map_id} ] < (
-                $map_placement_data{$map_id}{'bounds'}[2]
+                      $map_placement_data{$map_id}{'bounds'}[2]
                     - $map_placement_data{$map_id}{'bounds'}[0]
             )
             )
@@ -1784,7 +1808,9 @@ MAP:
 
         # maps are placed from left to right
         for my $i ( 1 .. $#map_columns ) {
-            $lane_base_x[$i] = $lane_base_x[ $i - 1 ] + $lane_width[ $i - 1 ]
+            $lane_base_x[$i]
+                = $lane_base_x[ $i - 1 ] 
+                + $lane_width[ $i - 1 ]
                 + $lane_buffer;
         }
         $slot_min_x = $base_x;
@@ -1866,16 +1892,16 @@ MAP:
                     evidence_type_acc => $ref_connect->[4],
                 );
 
-                my $this_map_x =
-                      $label_side eq RIGHT
+                my $this_map_x
+                    = $label_side eq RIGHT
                     ? $map_coords->[0] - 4
                     : $map_coords->[2] + 4;
-                my $this_map_x2 =
-                      $label_side eq RIGHT
+                my $this_map_x2
+                    = $label_side eq RIGHT
                     ? $map_coords->[0]
                     : $map_coords->[2];
-                my $this_map_y =
-                    $flipped_maps{$map_id}
+                my $this_map_y
+                    = $flipped_maps{$map_id}
                     ? ( ( 1 - ( $ref_connect->[3] / $map_length ) )
                     * ( $map_coords->[3] - $map_coords->[1] ) )
                     + $map_coords->[1]
@@ -1937,14 +1963,14 @@ MAP:
                             $map_id2 );
 
                         # average of corr on map1
-                        my $avg_mid1 =
-                            defined( $corr->{'avg_mid1'} )
+                        my $avg_mid1
+                            = defined( $corr->{'avg_mid1'} )
                             ? $corr->{'avg_mid1'}
                             : $corr->{'start_avg1'};
 
                         # average of corr on map 2
-                        my $avg_mid2 =
-                            defined( $corr->{'avg_mid2'} )
+                        my $avg_mid2
+                            = defined( $corr->{'avg_mid2'} )
                             ? $corr->{'avg_mid2'}
                             : $corr->{'start_avg2'};
 
@@ -1958,8 +1984,8 @@ MAP:
                             - $map2_pos->{'map_start'};
 
                         # Set the avg location of the corr on the ref map
-                        my $map1_mid_y =
-                            $map1_pos->{'is_flipped'}
+                        my $map1_mid_y
+                            = $map1_pos->{'is_flipped'}
                             ? (
                             $map1_pos->{'y2'} - (
                                 ( $avg_mid1 - $map1_pos->{'map_start'} ) /
@@ -1972,8 +1998,8 @@ MAP:
                                     $map1_unit_len
                                 ) * $map1_pixel_len
                             );
-                        my $map2_mid_y =
-                            $map2_pos->{'is_flipped'}
+                        my $map2_mid_y
+                            = $map2_pos->{'is_flipped'}
                             ? (
                             $map2_pos->{'y2'} - (
                                 ( $avg_mid2 - $map2_pos->{'map_start'} ) /
@@ -1986,60 +2012,60 @@ MAP:
                                     $map2_unit_len
                                 ) * $map2_pixel_len
                             );
-                        my $map1_y1 =
-                            $map1_pos->{'is_flipped'}
+                        my $map1_y1
+                            = $map1_pos->{'is_flipped'}
                             ? (
                             $map1_pos->{'y2'} - (
-                                (   $corr->{'min_start1'}
+                                (         $corr->{'min_start1'}
                                         - $map1_pos->{'map_start'}
                                 ) / $map1_unit_len
                                 ) * $map1_pixel_len
                             )
                             : (
                             $map1_pos->{'y1'} + (
-                                (   $corr->{'min_start1'}
+                                (         $corr->{'min_start1'}
                                         - $map1_pos->{'map_start'}
                                 ) / $map1_unit_len
                                 ) * $map1_pixel_len
                             );
-                        my $map2_y1 =
-                            $map2_pos->{'is_flipped'}
+                        my $map2_y1
+                            = $map2_pos->{'is_flipped'}
                             ? (
                             $map2_pos->{'y2'} - (
-                                (   $corr->{'min_start2'}
+                                (         $corr->{'min_start2'}
                                         - $map2_pos->{'map_start'}
                                 ) / $map2_unit_len
                                 ) * $map2_pixel_len
                             )
                             : (
                             $map2_pos->{'y1'} + (
-                                (   $corr->{'min_start2'}
+                                (         $corr->{'min_start2'}
                                         - $map2_pos->{'map_start'}
                                 ) / $map2_unit_len
                                 ) * $map2_pixel_len
                             );
-                        my $map1_y2 =
-                            $map1_pos->{'is_flipped'}
+                        my $map1_y2
+                            = $map1_pos->{'is_flipped'}
                             ? $map1_pos->{'y2'} + (
-                            (   $corr->{'max_start1'}
+                            (         $corr->{'max_start1'}
                                     - $map1_pos->{'map_start'}
                             ) / $map1_unit_len
                             ) * $map1_pixel_len
                             : $map1_pos->{'y1'} + (
-                            (   $corr->{'max_start1'}
+                            (         $corr->{'max_start1'}
                                     - $map1_pos->{'map_start'}
                             ) / $map1_unit_len
                             ) * $map1_pixel_len;
 
-                        my $map2_y2 =
-                            $map2_pos->{'is_flipped'}
+                        my $map2_y2
+                            = $map2_pos->{'is_flipped'}
                             ? $map2_pos->{'y2'} + (
-                            (   $corr->{'max_start2'}
+                            (         $corr->{'max_start2'}
                                     - $map2_pos->{'map_start'}
                             ) / $map2_unit_len
                             ) * $map2_pixel_len
                             : $map2_pos->{'y1'} + (
-                            (   $corr->{'max_start2'}
+                            (         $corr->{'max_start2'}
                                     - $map2_pos->{'map_start'}
                             ) / $map2_unit_len
                             ) * $map2_pixel_len;
@@ -2049,20 +2075,20 @@ MAP:
                             = $map_placement_data{$map_id1}{'map_coords'};
                         my $map2_coords
                             = $map_placement_data{$map_id2}{'map_coords'};
-                        my $left_side = my $map1_x =
-                              $label_side eq LEFT
+                        my $left_side = my $map1_x
+                            = $label_side eq LEFT
                             ? $map1_coords->[0] - $drawing_offset
                             : $map1_coords->[2] + $drawing_offset;
-                        my $map2_x =
-                              $label_side eq LEFT
+                        my $map2_x
+                            = $label_side eq LEFT
                             ? $map2_coords->[0]
                             : $map2_coords->[2];
-                        my $map1_x2 =
-                              $label_side eq LEFT
+                        my $map1_x2
+                            = $label_side eq LEFT
                             ? $map1_x - $line_cushion
                             : $map1_x + $line_cushion;
-                        my $map2_x2 =
-                              $label_side eq LEFT
+                        my $map2_x2
+                            = $label_side eq LEFT
                             ? $map2_x - ( $line_cushion * 3 )
                             : $map2_x + ( $line_cushion * 3 );
                         my $line_color = $drawer->aggregated_line_color(
@@ -2200,7 +2226,8 @@ sub get_map_height {
     {
         $pixel_height
             = ( $self->map_stop($map_id) - $self->map_start($map_id) )
-            * ( $drawer->pixel_height() / $drawer->{'data'}{'ref_unit_size'}
+            * ( $drawer->pixel_height() /
+                $drawer->{'data'}{'ref_unit_size'}
                 { $self->map_units($map_id) } );
 
     }
@@ -2273,6 +2300,24 @@ sub place_map_y {
 
         # Use Correspondences to figure out where to put this vertically.
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
+
+        # Make the maps disappear if they don't have corrs or if their ref map
+        # doesn't have corrs
+        if ($stack_rel_maps) {
+            my $ref_map_displayed = 0;
+            for my $ref_map_id ( sort keys( %{ $ref_corrs || {} } ) ) {
+                unless (
+                    $drawer->map_not_displayed( $ref_slot_no, $ref_map_id ) )
+                {
+                    $ref_map_displayed = 1;
+                }
+            }
+            unless ($ref_map_displayed) {
+                $drawer->map_not_displayed( $slot_no, $map_id, 1 );
+                return undef;
+            }
+        }
+
         my ( $min_ref_y, $max_ref_y );
         my $placed = 0;
 
@@ -2319,11 +2364,11 @@ sub place_map_y {
                     } @{ $all_ref_corrs->[0]{'map_corrs'} || [] };
                     my $inc_stack_sub = sub {
                         return (
-                            (   (   $_[0]->{'feature_start2'}
+                            (   (         $_[0]->{'feature_start2'}
                                         + $_[0]->{'feature_stop2'}
                                 ) / 2
                             ) < (
-                                (   $_[1]->{'feature_start2'}
+                                (         $_[1]->{'feature_start2'}
                                         + $_[1]->{'feature_stop2'}
                                 ) / 2
                             )
@@ -2333,11 +2378,11 @@ sub place_map_y {
                         = longest_run( \@sorted_corrs, $inc_stack_sub );
                     my $dec_stack_sub = sub {
                         return (
-                            (   (   $_[0]->{'feature_start2'}
+                            (   (         $_[0]->{'feature_start2'}
                                         + $_[0]->{'feature_stop2'}
                                 ) / 2
                             ) > (
-                                (   $_[1]->{'feature_start2'}
+                                (         $_[1]->{'feature_start2'}
                                         + $_[1]->{'feature_stop2'}
                                 ) / 2
                             )
@@ -2394,8 +2439,8 @@ sub place_map_y {
                     = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
 
                 # Set the avg location of the corr on the ref map
-                my $ref_map_mid_y =
-                    $ref_pos->{'is_flipped'}
+                my $ref_map_mid_y
+                    = $ref_pos->{'is_flipped'}
                     ? (
                     $ref_pos->{'y2'} - (
                         ( $ref_avg_mid - $ref_pos->{'map_start'} ) /
@@ -2408,24 +2453,24 @@ sub place_map_y {
                             $ref_map_unit_len
                         ) * $ref_map_pixel_len
                     );
-                my $ref_map_y1 =
-                    $ref_pos->{'is_flipped'}
+                my $ref_map_y1
+                    = $ref_pos->{'is_flipped'}
                     ? (
                     $ref_pos->{'y2'} - (
-                        (   $ref_corr->{'min_position2'}
+                        (         $ref_corr->{'min_position2'}
                                 - $ref_pos->{'map_start'}
                         ) / $ref_map_unit_len
                         ) * $ref_map_pixel_len
                     )
                     : (
                     $ref_pos->{'y1'} + (
-                        (   $ref_corr->{'min_position2'}
+                        (         $ref_corr->{'min_position2'}
                                 - $ref_pos->{'map_start'}
                         ) / $ref_map_unit_len
                         ) * $ref_map_pixel_len
                     );
-                my $ref_map_y2 =
-                    $ref_pos->{'is_flipped'}
+                my $ref_map_y2
+                    = $ref_pos->{'is_flipped'}
                     ? $ref_pos->{'y2'} + (
                     (   $ref_corr->{'max_position2'} - $ref_pos->{'map_start'}
                     ) / $ref_map_unit_len
@@ -2435,8 +2480,8 @@ sub place_map_y {
                     ) / $ref_map_unit_len
                     ) * $ref_map_pixel_len;
 
-                my $ref_map_x =
-                      ( $slot_no > 0 )
+                my $ref_map_x
+                    = ( $slot_no > 0 )
                     ? ( $ref_pos->{'x2'} + $drawing_offset )
                     : ( $ref_pos->{'x1'} - $drawing_offset );
 
@@ -2525,8 +2570,8 @@ sub place_map_y {
     else {
 
         # Ref map
-        my $next_to_last_map =
-            ( defined($last_map_id)
+        my $next_to_last_map
+            = ( defined($last_map_id)
                 and
                 $drawer->data_module->ref_maps_equal( $last_map_id, $map_id )
             )
@@ -2628,8 +2673,8 @@ sub add_topper {
     if ( scalar(@$buttons) ) {
         my $button_y_buffer = 4;
         my $button_x_buffer = 6;
-        my $button_height   =
-            ( scalar @$buttons )
+        my $button_height
+            = ( scalar @$buttons )
             ? $font_height + ( $button_y_buffer * 2 )
             : 0;
 
@@ -2904,8 +2949,8 @@ sub add_tick_marks {
     my $interval_start = int( $map_start / ( 10**( $map_scale - 1 ) ) )
         * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = $clean_view ? 8 : 15;
-    my @intervals =
-        map { int( $interval_start + ( $_ * $interval ) ) }
+    my @intervals
+        = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
     my $min_tick_distance = $self->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;
@@ -2925,17 +2970,18 @@ sub add_tick_marks {
 
         $last_tick_rel_pos = $rel_position;
 
-        my $y_pos = $is_flipped
+        my $y_pos
+            = $is_flipped
             ? $map_coords->[3] - ( $pixel_height * $rel_position )
             : $map_coords->[1] + ( $pixel_height * $rel_position );
 
-        my $tick_start =
-              $label_side eq RIGHT
+        my $tick_start
+            = $label_side eq RIGHT
             ? $base_x - $tick_overhang
             : $base_x;
 
-        my $tick_stop =
-              $label_side eq RIGHT
+        my $tick_stop
+            = $label_side eq RIGHT
             ? $base_x + $map_width
             : $base_x + $map_width + $tick_overhang;
 
@@ -2953,8 +2999,8 @@ sub add_tick_marks {
             my $clip_arrow_y2_up   = $clip_arrow_y1_up - 3;
             my $clip_arrow_y3_down = $clip_arrow_y2_down + 5;
             my $clip_arrow_y3_up   = $clip_arrow_y2_up - 5;
-            my $clip_arrow_x1      =
-                  $label_side eq LEFT
+            my $clip_arrow_x1
+                = $label_side eq LEFT
                 ? $tick_stop - $clip_arrow_width
                 : $tick_start;
             my $clip_arrow_x2   = $clip_arrow_x1 + $clip_arrow_width;
@@ -3048,8 +3094,8 @@ sub add_tick_marks {
                 $up_session_mod_str   = 'stop' . $session_mod_info_str;
                 $down_session_mod_str = 'start' . $session_mod_info_str;
             }
-            my $magnification =
-                defined( $slot_info->{$map_id}->[4] )
+            my $magnification
+                = defined( $slot_info->{$map_id}->[4] )
                 ? $slot_info->{$map_id}->[4]
                 : "'1'";
 
@@ -3090,8 +3136,8 @@ sub add_tick_marks {
                 }
                 unless ($omit_all_area_boxes);
         }
-        my $label_x =
-              $label_side eq RIGHT
+        my $label_x
+            = $label_side eq RIGHT
             ? $tick_start - $font_height - 2
             : $tick_stop + 2;
 
@@ -3099,9 +3145,10 @@ sub add_tick_marks {
         # Figure out how many signifigant figures the number needs by
         # going down to the $interval size.
         #
-        my $sig_figs = $tick_pos
-            ? int( '' . ( log( abs($tick_pos) ) / log(10) ) ) -
-            int( '' . ( log( abs($interval) ) / log(10) ) ) + 1
+        my $sig_figs
+            = $tick_pos
+            ? int( '' . ( log( abs($tick_pos) ) / log(10) ) )
+            - int( '' . ( log( abs($interval) ) / log(10) ) ) + 1
             : 1;
         my $tick_pos_str = presentable_number( $tick_pos, $sig_figs );
         my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
@@ -3150,28 +3197,29 @@ sub add_feature_to_map {
     my $fstart        = $feature->{'feature_start'} || 0;
     my $feature_shape = $feature->{'shape'}         || LINE;
     my $shape_is_triangle = $feature_shape =~ /triangle$/;
-    my $fstop = $shape_is_triangle ? undef: $feature->{'feature_stop'};
+    my $fstop = $shape_is_triangle ? undef : $feature->{'feature_stop'};
     $fstop = undef if $fstop < $fstart;
 
     my $rstart = ( $fstart - $map_start ) / $map_length;
     $rstart = $rstart > 1 ? 1 : $rstart < 0 ? 0 : $rstart;
-    my $rstop =
-        defined $fstop
+    my $rstop
+        = defined $fstop
         ? ( $fstop - $map_start ) / $map_length
         : undef;
     if ( defined $rstop ) {
         $rstop = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
     }
 
-    my $y_pos1 = $is_flipped
+    my $y_pos1
+        = $is_flipped
         ? $map_base_y + $pixel_height - ( $pixel_height * $rstart )
         : $map_base_y + ( $pixel_height * $rstart );
 
-    my $y_pos2 =
-          defined $rstop
+    my $y_pos2
+        = defined $rstop
         ? $is_flipped
-        ? $map_base_y + $pixel_height - ( $pixel_height * $rstop )
-        : $map_base_y + ( $pixel_height * $rstop )
+            ? $map_base_y + $pixel_height - ( $pixel_height * $rstop )
+            : $map_base_y + ( $pixel_height * $rstop )
         : $y_pos1;
 
     if ( $is_flipped && defined $y_pos2 ) {
@@ -3189,7 +3237,8 @@ sub add_feature_to_map {
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
 
-    my $color = $has_corr
+    my $color
+        = $has_corr
         ? $drawer->config_data('feature_correspondence_color') || ''
         : '';
     $color ||= $feature->{'color'}
@@ -3202,7 +3251,8 @@ sub add_feature_to_map {
     # However, if a feature has a correspondence, we want to
     # make sure to draw it so it will show up highlighted.
     #
-    my $glyph_key = int($y_pos1)
+    my $glyph_key
+        = int($y_pos1)
         . $feature_shape
         . int($y_pos2) . '_'
         . $has_corr . '_'
@@ -3273,8 +3323,8 @@ sub add_feature_to_map {
                 my $offset = ( $column_index + 1 ) * 7;
                 my $vert_line_x1
                     = $label_side eq RIGHT ? $tick_start : $tick_stop;
-                my $vert_line_x2 =
-                      $label_side eq RIGHT
+                my $vert_line_x2
+                    = $label_side eq RIGHT
                     ? $tick_stop + $offset
                     : $tick_start - $offset;
 
@@ -3305,7 +3355,8 @@ sub add_feature_to_map {
                     my $code = '';
                     my $url
                         = $feature_details_url . $feature->{'feature_acc'};
-                    my $alt = 'Feature Details: '
+                    my $alt
+                        = 'Feature Details: '
                         . $feature->{'feature_name'} . ' ['
                         . $feature->{'feature_acc'} . ']';
                     eval $self->feature_type_data(
@@ -3408,10 +3459,10 @@ sub collect_labels_to_display {
         )
     {
 
-        my $even_label_key =
-              $is_highlighted ? 'highlights'
+        my $even_label_key
+            = $is_highlighted ? 'highlights'
             : $has_corr       ? 'correspondences'
-            : 'normal';
+            :                   'normal';
         push @{ $even_labels->{$even_label_key} },
             {
             feature        => $feature,
@@ -3480,20 +3531,21 @@ sub add_labels_to_map {
         start_y     => $base_y,
     );
     my $label_offset = 20;
-    $base_x =
-          $label_side eq RIGHT
-        ? $rightmostf > $base_x ? $rightmostf : $base_x
-        : $leftmostf < $base_x
-        ? $leftmostf
-        : $base_x;
+    $base_x
+        = $label_side eq RIGHT
+        ? $rightmostf > $base_x 
+            ? $rightmostf 
+            : $base_x
+        : $leftmostf < $base_x ? $leftmostf
+        :                        $base_x;
 
     for my $label (@$accepted_labels) {
         my $text      = $label->{'text'};
         my $feature   = $label->{'feature'};
         my $label_y   = $label->{'y'};
         my $label_len = $font_width * length($text);
-        my $label_x   =
-              $label_side eq RIGHT
+        my $label_x
+            = $label_side eq RIGHT
             ? $base_x + $label_offset
             : $base_x - ( $label_offset + $label_len );
         my $label_end = $label_x + $label_len;
@@ -3527,7 +3579,8 @@ sub add_labels_to_map {
 
         my $code = '';
         my $url  = $feature_details_url . $feature->{'feature_acc'};
-        my $alt  = 'Feature Details: '
+        my $alt
+            = 'Feature Details: '
             . $feature->{'feature_name'} . ' ['
             . $feature->{'feature_acc'} . ']';
         eval $self->feature_type_data( $feature->{'feature_type_acc'},
@@ -3551,23 +3604,23 @@ sub add_labels_to_map {
         # Now connect the label to the middle of the feature.
         #
         my @coords = @{ $label->{'feature_coords'} || [] };
-        my $label_connect_x1 =
-              $label_side eq RIGHT
+        my $label_connect_x1
+            = $label_side eq RIGHT
             ? $coords[2]
             : $label_end + $buffer;
 
-        my $label_connect_y1 =
-              $label_side eq RIGHT
+        my $label_connect_y1
+            = $label_side eq RIGHT
             ? $feature->{'mid_y'}
             : $label_y + $font_height / 2;
 
-        my $label_connect_x2 =
-              $label_side eq RIGHT
+        my $label_connect_x2
+            = $label_side eq RIGHT
             ? $label_x - $buffer
             : $coords[0];
 
-        my $label_connect_y2 =
-              $label_side eq RIGHT
+        my $label_connect_y2
+            = $label_side eq RIGHT
             ? $label_y + $font_height / 2
             : $feature->{'mid_y'};
 
@@ -3683,7 +3736,7 @@ Returns the map's length (stop - start).
 
 =cut
 
-    my $self   = shift;
+    my $self = shift;
     my $map_id = shift or return;
 
     return $self->map_stop($map_id) - $self->map_start($map_id);
@@ -3904,7 +3957,7 @@ Button options:
     # Buttons
     #
 
-    my $ref_map           = $slots->{0} or next;
+    my $ref_map = $slots->{0} or next;
     my $ref_map_accs_hash = $ref_map->{'maps'};
 
     #
@@ -3940,7 +3993,7 @@ Button options:
             $this_map_info{ $self->map_acc($map_id) } = {
                 start => $self->map_start($map_id),
                 stop  => $self->map_stop($map_id),
-                mag   =>
+                mag =>
                     $drawer->data_module->magnification( $slot_no, $map_id ),
             };
         }
@@ -4104,7 +4157,7 @@ Button options:
             $this_map_info{ $self->map_acc($map_id) } = {
                 start => $self->map_start($map_id),
                 stop  => $self->map_stop($map_id),
-                mag   =>
+                mag =>
                     $drawer->data_module->magnification( $slot_no, $map_id ),
             };
         }
@@ -4221,8 +4274,8 @@ MAP_ID:
                     = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
 
                 # Set the avg location of the corr on the ref map
-                my $ref_map_mid_y =
-                    $ref_pos->{'is_flipped'}
+                my $ref_map_mid_y
+                    = $ref_pos->{'is_flipped'}
                     ? (
                     $ref_pos->{'y2'} - (
                         ( $ref_avg_mid - $ref_pos->{'map_start'} ) /

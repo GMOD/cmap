@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.139 2007-07-09 15:11:37 mwz444 Exp $
+# $Id: Drawer.pm,v 1.140 2007-09-21 20:09:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.139 $)[-1];
+$VERSION = (qw$Revision: 1.140 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -650,8 +650,7 @@ Draws a line from one point to another.
 
     my ($self,  $x1,       $y1,         $x2, $y2,
         $color, $same_map, $label_side, $line_type
-        )
-        = @_;
+    ) = @_;
     my $layer = 0;      # bottom-most layer of image
     my @lines = ();
     my $line  = LINE;
@@ -1295,8 +1294,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             clean_view => $self->clean_view,
             scale_maps => $self->scale_maps,
             stack_maps => $self->stack_maps,
-            )
-            or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
+        ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
         my ( $bounds, $corrs_aggregated_tmp ) = $map->layout
             or return $self->error( $map->error );
@@ -1420,8 +1418,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         ],
         url => CMAP_URL,
         alt => 'GMOD-CMap website',
-        )
-        unless ($omit_all_area_boxes);
+    ) unless ($omit_all_area_boxes);
 
     $max_y += $font->height;
 
@@ -1505,9 +1502,9 @@ Lays out the legend.  Used in draw().
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types,
                 {
-                seen         => 1,
-                shape        => '',
-                color        => $corr_color,
+                seen  => 1,
+                shape => '',
+                color => $corr_color,
                 feature_type =>
                     "Features in $corr_color have correspondences",
                 correspondence_color => 1,
@@ -1515,8 +1512,8 @@ Lays out the legend.  Used in draw().
         }
 
         for my $ft (@feature_types) {
-            my $color =
-                $ft->{'seen'}
+            my $color
+                = $ft->{'seen'}
                 ? ( $ft->{'color'} || $self->config_data('feature_color') )
                 : 'grey';
             my $label     = $ft->{'feature_type'} or next;
@@ -1641,7 +1638,8 @@ Lays out the legend.  Used in draw().
             for my $et (@evidence_types) {
                 my $color = $et->{'line_color'}
                     || $self->config_data('connecting_line_color');
-                my $string = ucfirst($color)
+                my $string
+                    = ucfirst($color)
                     . ' line denotes '
                     . $et->{'evidence_type'};
 
@@ -1657,8 +1655,7 @@ Lays out the legend.  Used in draw().
                     url => $et_details_url . $et->{'evidence_type_acc'},
                     alt => 'Evidence Type Details for '
                         . $et->{'evidence_type'},
-                    )
-                    unless ($omit_all_area_boxes);
+                ) unless ($omit_all_area_boxes);
 
                 $max_y += $font->height + 5;
             }
@@ -1794,12 +1791,14 @@ Do the actual drawing.
     my $img       = $img_class->new( $width, $height );
     my %colors    = (
         (   map {
-                $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
+                $_,
+                    $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
                 }
                 keys %{ +COLORS }
         ),
         (   map {
-                $_, $img->colorAllocate( @{ $self->{'custom_colors'}{$_} } )
+                $_,
+                    $img->colorAllocate( @{ $self->{'custom_colors'}{$_} } )
                 }
                 keys %{ $self->{'custom_colors'} }
         ),
@@ -1868,8 +1867,7 @@ necessary data for drawing.
             less_evidence_type_accs     => $self->less_evidence_types,
             greater_evidence_type_accs  => $self->greater_evidence_types,
             evidence_type_score         => $self->evidence_type_score,
-            )
-            or return $self->error( $data->error );
+        ) or return $self->error( $data->error );
 
         return $self->error("Problem getting data") unless $self->{'data'};
 
@@ -1904,8 +1902,8 @@ Returns a distinct list of all the correspondence evidence types seen.
 
     my $self = shift;
     unless ( $self->{'correspondence_evidence_seen'} ) {
-        my %types =
-            map { $_->{'evidence_type'}, $_ }
+        my %types
+            = map { $_->{'evidence_type'}, $_ }
             values %{ $self->{'data'}{'correspondence_evidence'} };
 
         $self->{'correspondence_evidence_seen'} = [
@@ -2036,8 +2034,8 @@ to connect corresponding features on two maps.
     my ( $self, %args ) = @_;
     my $slot_no     = $args{'slot_no'};
     my $ref_slot_no = $self->reference_slot_no($slot_no);
-    my $ref_side    = $slot_no > 0 ? RIGHT: LEFT;
-    my $cur_side    = $slot_no > 0 ? LEFT: RIGHT;
+    my $ref_side    = $slot_no > 0 ? RIGHT : LEFT;
+    my $cur_side    = $slot_no > 0 ? LEFT : RIGHT;
 
     # Return unless ref slot no is is defined and not ""
     unless ( defined($ref_slot_no) and ( $ref_slot_no or $ref_slot_no == 0 ) )
@@ -2369,14 +2367,14 @@ and everything else on the left.
         my $side;
         if ( $slot_no == 0 && $self->total_no_slots == 2 ) {
             my $slot_data = $self->slot_data;
-            $side = defined $slot_data->{-1} ? RIGHT: LEFT;
+            $side = defined $slot_data->{-1} ? RIGHT : LEFT;
         }
         elsif ( $slot_no == 0 && $self->total_no_slots == 1 ) {
             $side = RIGHT;
         }
         elsif ( $slot_no == 0 ) {
             my $slot_data = $self->slot_data;
-            $side = defined $slot_data->{1} ? LEFT: RIGHT;
+            $side = defined $slot_data->{1} ? LEFT : RIGHT;
         }
         elsif ( $slot_no > 0 ) {
             $side = RIGHT;
@@ -2408,6 +2406,33 @@ Returns the correspondences from a slot no to its reference slot.
     }
     elsif ( defined $slot_no ) {
         return $self->{'data'}{'map_correspondences'}{$slot_no};
+    }
+    else {
+        return {};
+    }
+}
+
+# ----------------------------------------------------
+sub map_not_displayed {
+
+=pod
+
+=head2 map_not_displayed
+
+Stores and returns whether a map has been skipped in the drawing phase.
+
+=cut
+
+    my ( $self, $slot_no, $map_id, $value ) = @_;
+    if ( defined $slot_no and defined $map_id and $value ) {
+        $self->{'data'}{'map_not_displayed'}{$slot_no}{$map_id} = $value;
+        return $self->{'data'}{'map_not_displayed'}{$slot_no}{$map_id};
+    }
+    if ( defined $slot_no && $map_id ) {
+        return $self->{'data'}{'map_not_displayed'}{$slot_no}{$map_id};
+    }
+    elsif ( defined $slot_no ) {
+        return $self->{'data'}{'map_not_displayed'}{$slot_no};
     }
     else {
         return {};
@@ -2831,10 +2856,10 @@ Returns the reference slot number for a given slot number.
     my ( $self, $slot_no ) = @_;
     return unless defined $slot_no;
 
-    my $ref_slot_no =
-          $slot_no > 0 ? $slot_no - 1
+    my $ref_slot_no
+        = $slot_no > 0 ? $slot_no - 1
         : $slot_no < 0 ? $slot_no + 1
-        : undef;
+        :                undef;
     return undef unless defined $ref_slot_no;
 
     my $slot_data = $self->slot_data;
@@ -2893,8 +2918,7 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
     my ($self, $slot_no, $map_id, $start, $stop,
         $x1,   $y1,      $x2,     $y2,    $is_flipped
-        )
-        = @_;
+    ) = @_;
     $self->{'map_coords'}{$slot_no}{$map_id} = {
         map_start  => $start,
         map_stop   => $stop,
@@ -3547,7 +3571,7 @@ Message to be printed out on top of the image.
 
 =cut
 
-    my $self          = shift;
+    my $self = shift;
     my $rgb_array_ref = shift or return;
 
     my $color_key = join( '_', @{ $rgb_array_ref || [] } ) or return;
