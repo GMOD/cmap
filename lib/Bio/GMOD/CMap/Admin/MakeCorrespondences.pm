@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.60 2007-07-02 15:16:28 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.61 2007-09-21 02:04:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -305,6 +305,7 @@ FROM_MAP:
 
     TO_MAP:
         for my $to_map_id (@$to_map_ids) {
+            my %corrs_made = ();
             if ($comparing_map_set_to_self) {
                 foreach my $from_map_id (@from_group_map_ids) {
                     if (   $processed_map_pair{$from_map_id}{$to_map_id}++
@@ -330,8 +331,8 @@ FROM_MAP:
 
             my $num_to_features = scalar keys %$to_features;
 
-            my ( $smaller_hr, $larger_hr ) =
-                  ( $num_from_features < $num_to_features )
+            my ( $smaller_hr, $larger_hr )
+                = ( $num_from_features < $num_to_features )
                 ? ( $from_features, $to_features )
                 : ( $to_features, $from_features );
 
@@ -360,6 +361,14 @@ FROM_MAP:
                         {
                             next FEATURE_ID2;
                         }
+
+                        # Check if the corr has already been made
+                        # This is to keep duplicate corrs from being
+                        if ( $corrs_made{$fid1}{$fid2} ) {
+                            next FEATURE_ID2;
+                        }
+
+                        $corrs_made{$fid1}{$fid2} = 1;
 
                         my $fc_id
                             = $self->{'admin'}->feature_correspondence_create(
