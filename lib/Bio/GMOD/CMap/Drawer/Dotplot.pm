@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Dotplot;
 
 # vim: set ft=perl:
 
-# $Id: Dotplot.pm,v 1.2 2007-01-17 19:40:15 mwz444 Exp $
+# $Id: Dotplot.pm,v 1.3 2007-09-21 21:35:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ The Dot plot drawer. See Bio::GMOD::CMap::Drawer
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Utils qw[ commify ];
 use Bio::GMOD::CMap::Constants;
@@ -96,25 +96,67 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     my $omit_all_area_boxes = ( $self->omit_area_boxes == 2 );
 
-    my $ref_slot_data        = $self->slot_data(0);
-    my $right_comp_slot_data = $self->slot_data(1);
-    my $left_comp_slot_data  = $self->slot_data(-1);
+    my $ref_slot_no        = 0;
+    my $right_comp_slot_no = 1;
+    my $left_comp_slot_no  = -1;
 
-    my @ref_map_ids
-        = @{ $self->data_module()->sorted_map_ids( 0, $ref_slot_data ) };
-    my @right_comp_map_ids
-        = @{ $self->data_module()->sorted_map_ids( 1, $right_comp_slot_data )
-        };
-    my @left_comp_map_ids
-        = @{ $self->data_module()->sorted_map_ids( -1, $left_comp_slot_data )
-        };
+    my $ref_slot_data        = $self->slot_data($ref_slot_no);
+    my $right_comp_slot_data = $self->slot_data($right_comp_slot_no);
+    my $left_comp_slot_data  = $self->slot_data($left_comp_slot_no);
+
+    my @ref_map_ids = @{ $self->data_module()
+            ->sorted_map_ids( $ref_slot_no, $ref_slot_data ) };
+    my @right_comp_map_ids = @{ $self->data_module()
+            ->sorted_map_ids( $right_comp_slot_no, $right_comp_slot_data ) };
+    my @left_comp_map_ids = @{ $self->data_module()
+            ->sorted_map_ids( $left_comp_slot_no, $left_comp_slot_data ) };
+
+    # Remove any map ids that aren't going to be drawn.
+    for ( my $i = 0; $i <= $#right_comp_map_ids; $i++ ) {
+        my $map_id = $right_comp_map_ids[$i];
+        unless (
+            %{  $self->map_correspondences( $right_comp_slot_no, $map_id )
+                    || {}
+            }
+            )
+        {
+            $self->map_not_displayed( $right_comp_slot_no, $map_id, 1 );
+            splice( @right_comp_map_ids, $i, 1 );
+            $i--;
+        }
+    }
+    for ( my $i = 0; $i <= $#left_comp_map_ids; $i++ ) {
+        my $map_id = $left_comp_map_ids[$i];
+        unless (
+            %{  $self->map_correspondences( $left_comp_slot_no, $map_id )
+                    || {}
+            }
+            )
+        {
+            $self->map_not_displayed( $left_comp_slot_no, $map_id, 1 );
+            splice( @left_comp_map_ids, $i, 1 );
+            $i--;
+        }
+    }
+
+    # If there aren't any comparative maps with corrs, give the user a msg and
+    # quit
+    unless ( @right_comp_map_ids, @left_comp_map_ids ) {
+        $self->message(
+                  "Can't display a dotplot without comparison maps with "
+                . "correspondences to the reference maps.<BR>\n"
+                . "Please add maps to the left or right of the reference maps."
+        );
+        $self->draw_image();
+        return $self;
+    }
 
     #get the pixels for each map
     my %map_pixels;
     foreach my $map_id (@ref_map_ids) {
         next if $map_pixels{$map_id};
         $map_pixels{$map_id} = $self->get_map_pixel_size(
-            slot_no   => 0,
+            slot_no   => $ref_slot_no,
             slot_data => $ref_slot_data,
             map_id    => $map_id,
         );
@@ -122,7 +164,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     foreach my $map_id (@right_comp_map_ids) {
         next if $map_pixels{$map_id};
         $map_pixels{$map_id} = $self->get_map_pixel_size(
-            slot_no   => 1,
+            slot_no   => $right_comp_slot_no,
             slot_data => $right_comp_slot_data,
             map_id    => $map_id,
         );
@@ -130,7 +172,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     foreach my $map_id (@left_comp_map_ids) {
         next if $map_pixels{$map_id};
         $map_pixels{$map_id} = $self->get_map_pixel_size(
-            slot_no   => -1,
+            slot_no   => $left_comp_slot_no,
             slot_data => $left_comp_slot_data,
             map_id    => $map_id,
         );
@@ -139,21 +181,19 @@ Lays out the image and writes it to the file system, set the "image_name."
     my ( $max_x, $max_y ) = ( $base_x, $base_y );
     my ( $min_x, $min_y ) = ( $base_x, $base_y );
 
-    my $plot_base_y = $max_y + $row_buffer;
-
     # Draw the Dot Plots first.
     foreach my $ref_map_id (@ref_map_ids) {
         my $row_base_y = $max_y;
         $max_x = $base_x;
-        foreach my $comp_map_id (@right_comp_map_ids) {
+        foreach my $comp_map_id (@left_comp_map_ids) {
             ( $max_x, $max_y ) = $self->draw_map_dotplot(
                 base_x         => $max_x,
                 base_y         => $row_base_y,
                 max_x          => $max_x,
                 max_y          => $max_y,
-                comp_slot_no   => 1,
+                comp_slot_no   => $left_comp_slot_no,
                 comp_map_id    => $comp_map_id,
-                comp_slot_data => $right_comp_slot_data,
+                comp_slot_data => $left_comp_slot_data,
                 comp_map_width => $map_pixels{$comp_map_id},
                 ref_map_id     => $ref_map_id,
                 ref_slot_data  => $ref_slot_data,
@@ -161,15 +201,15 @@ Lays out the image and writes it to the file system, set the "image_name."
             );
             $max_x += $column_buffer;
         }
-        foreach my $comp_map_id (@left_comp_map_ids) {
+        foreach my $comp_map_id (@right_comp_map_ids) {
             ( $max_x, $max_y ) = $self->draw_map_dotplot(
                 base_x         => $max_x,
                 base_y         => $row_base_y,
                 max_x          => $max_x,
                 max_y          => $max_y,
-                comp_slot_no   => -1,
+                comp_slot_no   => $right_comp_slot_no,
                 comp_map_id    => $comp_map_id,
-                comp_slot_data => $left_comp_slot_data,
+                comp_slot_data => $right_comp_slot_data,
                 comp_map_width => $map_pixels{$comp_map_id},
                 ref_map_id     => $ref_map_id,
                 ref_slot_data  => $ref_slot_data,
@@ -181,20 +221,20 @@ Lays out the image and writes it to the file system, set the "image_name."
     }
     $self->draw_comp_labels(
         slot_base_y => $base_y - $row_buffer,
-        slot_no     => 1,
+        slot_no     => $right_comp_slot_no,
         slot_data   => $right_comp_slot_data,
         map_ids     => \@right_comp_map_ids,
     );
     $self->draw_comp_labels(
         slot_base_y => $base_y - $row_buffer,
-        slot_no     => -1,
+        slot_no     => $left_comp_slot_no,
         slot_data   => $left_comp_slot_data,
         map_ids     => \@left_comp_map_ids,
     );
 
     $self->draw_ref_labels(
         slot_base_x => $base_x - $column_buffer,
-        slot_no     => 0,
+        slot_no     => $ref_slot_no,
         slot_data   => $ref_slot_data,
         map_ids     => \@ref_map_ids,
     );
@@ -256,8 +296,8 @@ Get the pixel_size of each map
 
     # Draw the Comp map titles
     my $map_base_y = $slot_min_y;
+    $slot_min_y -= $buffer;
     foreach my $map_id ( @{ $map_ids || [] } ) {
-        $slot_min_y -= $buffer;
         $slot_min_y = $self->draw_comp_map_labels(
             map_base_y => $map_base_y,
             min_y      => $slot_min_y,
@@ -625,16 +665,20 @@ Draw the actual dotplot for each map
             foreach $comp_to_ref_corrs (
                 @{ $comp_to_ref_corrs->{'map_corrs'} || [] } )
             {
-                my $start_y = (
+                my $start_y
+                    = (
                     $comp_to_ref_corrs->{'feature_start2'} - $ref_map_start )
                     * $ref_factor;
-                my $start_x = (
+                my $start_x
+                    = (
                     $comp_to_ref_corrs->{'feature_start1'} - $comp_map_start )
                     * $comp_factor;
-                my $stop_y = (
+                my $stop_y
+                    = (
                     $comp_to_ref_corrs->{'feature_stop2'} - $ref_map_start )
                     * $ref_factor;
-                my $stop_x = (
+                my $stop_x
+                    = (
                     $comp_to_ref_corrs->{'feature_stop1'} - $comp_map_start )
                     * $comp_factor;
                 push @drawing_data,
