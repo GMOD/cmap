@@ -430,22 +430,22 @@ function check_radio_for_additional_buttons(radio,val){
   <form name="comparative_map_form" onSubmit="beforeSubmit();">
     [%- IF dotplot -%]
       <input type="hidden" name="dotplot" id="dotplot" value="[%- dotplot -%]">
-      <input type="submit" 
-        onClick="document.comparative_map_form.dotplot.value='0'" 
+      <input type="button" 
+        onClick="document.comparative_map_form.dotplot.value='0';document.comparative_map_form.submit()" 
         value="Map View" 
         name="sub"
       >
     [%- ELSE -%]
       <input type="hidden" name="dotplot" id="dotplot" value="[%- dotplot -%]">
-      <input type="submit" 
-        onClick="document.comparative_map_form.dotplot.value='1'" 
+      <input type="button" 
+        onClick="document.comparative_map_form.dotplot.value='1';document.comparative_map_form.submit()" 
         value="Dotplot" 
         name="sub"
       >
     [%- END -%]
     <input type="hidden" name="eliminate_orphans" id="eliminate_orphans" value=0>
-    <input type="submit" 
-      onClick="document.comparative_map_form.eliminate_orphans.value='1'" 
+    <input type="button" 
+      onClick="document.comparative_map_form.eliminate_orphans.value='1';document.comparative_map_form.submit()" 
       value="Eliminate Orphans**" 
       name="sub"
     >
@@ -455,8 +455,8 @@ function check_radio_for_additional_buttons(radio,val){
     <BR/>
 
     [%- FOREACH additional_button=additional_buttons -%]
-        <input type="submit" 
-          onClick="[% additional_button.javascript %]" 
+        <input type="button" 
+          onClick="[% additional_button.javascript %];document.comparative_map_form.submit()" 
           value="[% additional_button.text %]" 
           name="sub"
         >
@@ -529,8 +529,8 @@ function check_radio_for_additional_buttons(radio,val){
                     [% IF slot.is_reference_slot %]   
                       (Reference Set)
                     [% ELSE -%]
-                      <input type="submit" 
-                        onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]'" 
+                      <input type="button" 
+                        onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]';document.comparative_map_form.submit()" 
                         value="Delete Set" 
                         name="sub"
                       >
@@ -628,8 +628,8 @@ function check_radio_for_additional_buttons(radio,val){
                         [% slot.maps.$map_acc.map_name %]
                         [% IF slot.maps.keys.size>1 %]   
                           <br>
-                          <input type="submit" 
-                            onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]=[% map_acc %]'" 
+                          <input type="button" 
+                            onClick="document.comparative_map_form.session_mod.value='del=[% slot.slot_no %]=[% map_acc %]';document.comparative_map_form.submit()" 
                             value="Delete" 
                             name="sub"
                           >
