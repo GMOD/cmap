@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.59 2007-09-19 21:50:20 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.60 2007-09-26 17:44:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2450,19 +2450,21 @@ another
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key          = $args{'map_key'};
-    my $highlight_bounds = $args{'highlight_bounds'};
-    my $zone_key         = $self->map_key_to_zone_key($map_key);
-    my $window_key       = $self->{'scaffold'}{$zone_key}{'window_key'};
-    my $parent_zone_key  = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
-    my $old_map_coords   = $self->{'map_layout'}{$map_key}{'coords'};
+    my $map_key         = $args{'map_key'};
+    my $zone_key        = $self->map_key_to_zone_key($map_key);
+    my $window_key      = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $parent_zone_key = $self->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    my $old_map_coords  = $self->{'map_layout'}{$map_key}{'coords'};
+    my $mouse_x         = $args{'mouse_x'};
+    my $mouse_y         = $args{'mouse_y'};
 
     # Get pixel location on parent map
     my %subsection_location_data
         = $self->place_subsection_location_on_parent_map(
-        map_key          => $map_key,
-        zone_key         => $zone_key,
-        highlight_bounds => $highlight_bounds,
+        map_key  => $map_key,
+        zone_key => $zone_key,
+        mouse_x  => $mouse_x,
+        mouse_y  => $mouse_y,
         );
     return () unless (%subsection_location_data);
 
@@ -3400,6 +3402,9 @@ Create new maps and hide the original maps
         excision_point          => $excision_data->{'excision_point'},
         insertion_start         => $insertion_data->{'insertion_start'},
         insertion_stop          => $insertion_data->{'insertion_stop'},
+        delete_starting_map     => $excision_data->{'delete_starting_map'},
+        starting_map_order_index =>
+            $excision_data->{'starting_map_order_index'},
         starting_front_sub_map_keys    => $starting_front_sub_map_keys,
         starting_back_sub_map_keys     => $starting_back_sub_map_keys,
         subsection_sub_map_keys        => $subsection_sub_map_keys,
@@ -3509,6 +3514,13 @@ Create new map and hide the original map.
         }
     }
 
+    # If there are no features outside of the subsection
+    # Delete the starting map
+    my $delete_starting_map = 0;
+    unless ( @map_front_feature_accs or @map_back_feature_accs ) {
+        $delete_starting_map = 1;
+    }
+
     my $map_data = $self->app_data_module()->map_data( map_id => $map_id );
 
     my $unit_granularity = $self->map_type_data( $map_data->{'map_type_acc'},
@@ -3529,129 +3541,149 @@ Create new map and hide the original map.
         cascade          => 1,
     );
 
-    # The new maps info
-    my $new_map_start = $map_data->{'map_start'};
-    my $new_map_stop  = $map_data->{'map_stop'} - $subsection_length;
-    my $new_map_name  = $map_data->{'map_name'};
-
-    # Initialize the new maps
-    my $new_map_id  = $self->create_temp_id();
-    my $new_map_key = $self->initialize_map(
-        map_id   => $new_map_id,
-        zone_key => $zone_key,
-    );
-
-    # create hashes out of the feature acc lists
-    my %map_front_feature_accs = map { ( $_ => 1 ) } @map_front_feature_accs;
-    my %map_back_feature_accs  = map { ( $_ => 1 ) } @map_back_feature_accs;
-    my %subsection_feature_accs
-        = map { ( $_ => 1 ) } @subsection_feature_accs;
-
     my $map_back_offset = -1 * $subsection_length;
 
-    # Copy the features onto the new maps and then move them apropriately
-    $self->app_data_module()->copy_feature_data_to_new_map(
-        old_map_id => $map_id,
-        new_map_id => $new_map_id,
-        feature_acc_hash =>
-            { %map_front_feature_accs, %map_back_feature_accs, },
-    );
-    $self->app_data_module()->move_feature_data_on_map(
-        feature_acc_array => \@map_back_feature_accs,
-        map_id            => $new_map_id,
-        offset            => $map_back_offset,
-    );
-
-    # Handle sub map information if they are sub_maps
-    if ( $self->{'sub_maps'}{$map_key} ) {
-        my $feature_start = $self->{'sub_maps'}{$map_key}{'feature_start'};
-        my $feature_type_acc
-            = $self->{'sub_maps'}{$map_key}{'feature_type_acc'};
-
-        my $feature_id = $self->create_temp_id();
-
-        $self->{'sub_maps'}{$map_key} = {
-            parent_map_key => $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-            feature_start  => $self->{'sub_maps'}{$map_key}{'feature_start'},
-            feature_stop   => $self->{'sub_maps'}{$map_key}{'feature_stop'},
-            feature_id     => $self->{'sub_maps'}{$map_key}{'feature_id'},
-            feature_type_acc =>
-                $self->{'sub_maps'}{$map_key}{'feature_type_acc'},
-            feature_length => $self->{'sub_maps'}{$map_key}{'feature_length'},
-        };
-
-        # BF Potentially link to the oritinal feature
-    }
-
+    my $new_map_id  = undef;
+    my $new_map_key = undef;
     my @map_front_sub_map_keys;
     my @map_back_sub_map_keys;
+    my $starting_map_order_index;
 
-    # Move the sub maps over to the new maps
-    foreach my $child_zone_key (
-        $self->get_children_zones_of_map(
+    if ($delete_starting_map) {
+        $starting_map_order_index = $self->remove_from_map_order(
             map_key  => $map_key,
             zone_key => $zone_key,
-        ),
-        )
-    {
-
-        my @map_front_args_list;
-        my @map_back_args_list;
-        foreach my $sub_map_key (
-            @{ $self->{'map_order'}{$child_zone_key} || [] } )
-        {
-            my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
-            next unless ($sub_map_info);
-            my $feature_acc
-                = $feature_id_to_acc{ $sub_map_info->{'feature_id'} };
-            if ( $map_front_feature_accs{$feature_acc} ) {
-                push @map_front_sub_map_keys, $sub_map_key;
-                push @map_front_args_list,
-                    {
-                    window_key     => $window_key,
-                    sub_map_key    => $sub_map_key,
-                    parent_map_key => $new_map_key,
-                    feature_start  => $sub_map_info->{'feature_start'},
-                    feature_stop   => $sub_map_info->{'feature_stop'},
-                    };
-            }
-            elsif ( $map_back_feature_accs{$feature_acc} ) {
-                push @map_back_sub_map_keys, $sub_map_key;
-                push @map_back_args_list,
-                    {
-                    window_key     => $window_key,
-                    sub_map_key    => $sub_map_key,
-                    parent_map_key => $new_map_key,
-                    feature_start  => $sub_map_info->{'feature_start'}
-                        + $map_back_offset,
-                    feature_stop => $sub_map_info->{'feature_stop'}
-                        + $map_back_offset,
-                    };
-            }
-        }
-        foreach my $sub_map_move_args (@map_front_args_list) {
-            $self->move_sub_map_on_parents_in_memory( %$sub_map_move_args, );
-        }
-        foreach my $sub_map_move_args (@map_back_args_list) {
-            $self->move_sub_map_on_parents_in_memory( %$sub_map_move_args, );
-        }
+        );
     }
+    else {
 
-    # Create the new map data
-    $self->app_data_module()->generate_map_data(
-        old_map_id => $map_id,
-        new_map_id => $new_map_id,
-        map_start  => $new_map_start,
-        map_stop   => $new_map_stop,
-        map_name   => $new_map_name,
-    );
+        # The new maps info
+        my $new_map_start = $map_data->{'map_start'};
+        my $new_map_stop  = $map_data->{'map_stop'} - $subsection_length;
+        my $new_map_name  = $map_data->{'map_name'};
 
-    # Cut the ties with the other zones so the maps don't get re-drawn
-    $self->replace_in_map_order(
-        old_map_key => $map_key,
-        new_map_key => $new_map_key,
-        zone_key    => $zone_key,
-    );
+        # Initialize the new maps
+        $new_map_id  = $self->create_temp_id();
+        $new_map_key = $self->initialize_map(
+            map_id   => $new_map_id,
+            zone_key => $zone_key,
+        );
+
+        # Create the new map data
+        $self->app_data_module()->generate_map_data(
+            old_map_id => $map_id,
+            new_map_id => $new_map_id,
+            map_start  => $new_map_start,
+            map_stop   => $new_map_stop,
+            map_name   => $new_map_name,
+        );
+
+        # create hashes out of the feature acc lists
+        my %map_front_feature_accs
+            = map { ( $_ => 1 ) } @map_front_feature_accs;
+        my %map_back_feature_accs
+            = map { ( $_ => 1 ) } @map_back_feature_accs;
+        my %subsection_feature_accs
+            = map { ( $_ => 1 ) } @subsection_feature_accs;
+
+        # Copy the features onto the new maps and then move them apropriately
+        $self->app_data_module()->copy_feature_data_to_new_map(
+            old_map_id => $map_id,
+            new_map_id => $new_map_id,
+            feature_acc_hash =>
+                { %map_front_feature_accs, %map_back_feature_accs, },
+        );
+        $self->app_data_module()->move_feature_data_on_map(
+            feature_acc_array => \@map_back_feature_accs,
+            map_id            => $new_map_id,
+            offset            => $map_back_offset,
+        );
+
+        # Handle sub map information if they are sub_maps
+        if ( $self->{'sub_maps'}{$map_key} ) {
+            my $feature_start
+                = $self->{'sub_maps'}{$map_key}{'feature_start'};
+            my $feature_type_acc
+                = $self->{'sub_maps'}{$map_key}{'feature_type_acc'};
+
+            my $feature_id = $self->create_temp_id();
+
+            $self->{'sub_maps'}{$map_key} = {
+                parent_map_key =>
+                    $self->{'sub_maps'}{$map_key}{'parent_map_key'},
+                feature_start =>
+                    $self->{'sub_maps'}{$map_key}{'feature_start'},
+                feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+                feature_id   => $self->{'sub_maps'}{$map_key}{'feature_id'},
+                feature_type_acc =>
+                    $self->{'sub_maps'}{$map_key}{'feature_type_acc'},
+                feature_length =>
+                    $self->{'sub_maps'}{$map_key}{'feature_length'},
+            };
+
+            # BF Potentially link to the oritinal feature
+        }
+
+        # Move the sub maps over to the new maps
+        foreach my $child_zone_key (
+            $self->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            ),
+            )
+        {
+
+            my @map_front_args_list;
+            my @map_back_args_list;
+            foreach my $sub_map_key (
+                @{ $self->{'map_order'}{$child_zone_key} || [] } )
+            {
+                my $sub_map_info = $self->{'sub_maps'}{$sub_map_key};
+                next unless ($sub_map_info);
+                my $feature_acc
+                    = $feature_id_to_acc{ $sub_map_info->{'feature_id'} };
+                if ( $map_front_feature_accs{$feature_acc} ) {
+                    push @map_front_sub_map_keys, $sub_map_key;
+                    push @map_front_args_list,
+                        {
+                        window_key     => $window_key,
+                        sub_map_key    => $sub_map_key,
+                        parent_map_key => $new_map_key,
+                        feature_start  => $sub_map_info->{'feature_start'},
+                        feature_stop   => $sub_map_info->{'feature_stop'},
+                        };
+                }
+                elsif ( $map_back_feature_accs{$feature_acc} ) {
+                    push @map_back_sub_map_keys, $sub_map_key;
+                    push @map_back_args_list,
+                        {
+                        window_key     => $window_key,
+                        sub_map_key    => $sub_map_key,
+                        parent_map_key => $new_map_key,
+                        feature_start  => $sub_map_info->{'feature_start'}
+                            + $map_back_offset,
+                        feature_stop => $sub_map_info->{'feature_stop'}
+                            + $map_back_offset,
+                        };
+                }
+            }
+            foreach my $sub_map_move_args (@map_front_args_list) {
+                $self->move_sub_map_on_parents_in_memory( %$sub_map_move_args,
+                );
+            }
+            foreach my $sub_map_move_args (@map_back_args_list) {
+                $self->move_sub_map_on_parents_in_memory( %$sub_map_move_args,
+                );
+            }
+        }
+
+        # Cut the ties with the other zones so the maps don't get re-drawn
+        $self->replace_in_map_order(
+            old_map_key => $map_key,
+            new_map_key => $new_map_key,
+            zone_key    => $zone_key,
+        );
+    }
 
     # Remove any drawn correspondences
     $self->remove_corrs_to_map(
@@ -3668,6 +3700,8 @@ Create new map and hide the original map.
         map_back_sub_map_keys        => \@map_back_sub_map_keys,
         map_back_offset              => $map_back_offset,
         excision_point               => $subsection_feature_start,
+        delete_starting_map          => $delete_starting_map,
+        starting_map_order_index     => $starting_map_order_index,
     };
 
 }
@@ -3732,7 +3766,7 @@ Create new map and hide the original map.
                     . 'overlap the insertion position.', );
             return undef;
         }
-        elsif ( $feature->{'feature_stop'} < $insertion_point ) {
+        elsif ( $feature->{'feature_stop'} <= $insertion_point ) {
             push @map_front_feature_accs, $feature->{'feature_acc'};
         }
         else {
@@ -3769,6 +3803,15 @@ Create new map and hide the original map.
     my $new_map_key = $self->initialize_map(
         map_id   => $new_map_id,
         zone_key => $zone_key,
+    );
+
+    # Create the new map data
+    $self->app_data_module()->generate_map_data(
+        old_map_id => $map_id,
+        new_map_id => $new_map_id,
+        map_start  => $new_map_start,
+        map_stop   => $new_map_stop,
+        map_name   => $new_map_name,
     );
 
     # create hashes out of the feature acc lists
@@ -3898,15 +3941,6 @@ Create new map and hide the original map.
         }
     }
 
-    # Create the new map data
-    $self->app_data_module()->generate_map_data(
-        old_map_id => $map_id,
-        new_map_id => $new_map_id,
-        map_start  => $new_map_start,
-        map_stop   => $new_map_stop,
-        map_name   => $new_map_name,
-    );
-
     # Cut the ties with the other zones so the maps don't get re-drawn
     $self->replace_in_map_order(
         old_map_key => $map_key,
@@ -3961,6 +3995,8 @@ Destroy the new map and show the original
     my $starting_front_sub_map_keys = $args{'starting_front_sub_map_keys'};
     my $starting_back_sub_map_keys  = $args{'starting_back_sub_map_keys'};
     my $subsection_sub_map_keys     = $args{'subsection_sub_map_keys'};
+    my $delete_starting_map         = $args{'delete_starting_map'};
+    my $starting_map_order_index    = $args{'starting_map_order_index'};
     my $destination_front_sub_map_keys
         = $args{'destination_front_sub_map_keys'};
     my $destination_back_sub_map_keys
@@ -3982,37 +4018,57 @@ Destroy the new map and show the original
 
     if ($same_parent_map) {
 
-        # Replace the new map with the original in the map order
-        $self->replace_in_map_order(
-            old_map_key => $new_destination_map_key,
-            new_map_key => $starting_map_key,
-            zone_key    => $starting_zone_key,
-        );
-        destroy_map_for_relayout(
-            app_display_data => $self,
-            map_key          => $new_starting_map_key,
-            window_key       => $window_key,
-            cascade          => 1,
-        );
+        if ($delete_starting_map) {
+            $self->insert_into_map_order(
+                map_key  => $starting_map_key,
+                index    => $starting_map_order_index,
+                zone_key => $starting_zone_key,
+            );
+        }
+        else {
+
+            # Replace the new map with the original in the map order
+            $self->replace_in_map_order(
+                old_map_key => $new_destination_map_key,
+                new_map_key => $starting_map_key,
+                zone_key    => $starting_zone_key,
+            );
+            destroy_map_for_relayout(
+                app_display_data => $self,
+                map_key          => $new_starting_map_key,
+                window_key       => $window_key,
+                cascade          => 1,
+            );
+        }
     }
     else {
 
-        # Replace the new maps with the original in the map order
-        $self->replace_in_map_order(
-            old_map_key => $new_starting_map_key,
-            new_map_key => $starting_map_key,
-            zone_key    => $starting_zone_key,
-        );
+        if ($delete_starting_map) {
+            $self->insert_into_map_order(
+                map_key  => $starting_map_key,
+                index    => $starting_map_order_index,
+                zone_key => $starting_zone_key,
+            );
+        }
+        else {
+
+            # Replace the new maps with the original in the map order
+            $self->replace_in_map_order(
+                old_map_key => $new_starting_map_key,
+                new_map_key => $starting_map_key,
+                zone_key    => $starting_zone_key,
+            );
+            destroy_map_for_relayout(
+                app_display_data => $self,
+                map_key          => $new_starting_map_key,
+                window_key       => $window_key,
+                cascade          => 1,
+            );
+        }
         $self->replace_in_map_order(
             old_map_key => $new_destination_map_key,
             new_map_key => $destination_map_key,
             zone_key    => $destination_zone_key,
-        );
-        destroy_map_for_relayout(
-            app_display_data => $self,
-            map_key          => $new_starting_map_key,
-            window_key       => $window_key,
-            cascade          => 1,
         );
         destroy_map_for_relayout(
             app_display_data => $self,
@@ -4028,17 +4084,22 @@ Destroy the new map and show the original
     my @subsection_feature_accs;
     my @destination_map_front_feature_accs;
     my @destination_map_back_feature_accs;
-    foreach my $feature (
-        @{  $self->app_data_module()
-                ->feature_data_by_map( map_id => $new_starting_map_id, ) || []
-        }
-        )
-    {
-        if ( $feature->{'feature_start'} < $excision_point ) {
-            push @starting_map_front_feature_accs, $feature->{'feature_acc'};
-        }
-        else {
-            push @starting_map_back_feature_accs, $feature->{'feature_acc'};
+    unless ($delete_starting_map) {
+        foreach my $feature (
+            @{  $self->app_data_module()
+                    ->feature_data_by_map( map_id => $new_starting_map_id, )
+                    || []
+            }
+            )
+        {
+            if ( $feature->{'feature_start'} < $excision_point ) {
+                push @starting_map_front_feature_accs,
+                    $feature->{'feature_acc'};
+            }
+            else {
+                push @starting_map_back_feature_accs,
+                    $feature->{'feature_acc'};
+            }
         }
     }
     foreach my $feature (
@@ -4062,18 +4123,20 @@ Destroy the new map and show the original
     }
 
     # Copy the features back onto the original maps
-    $self->app_data_module()->copy_feature_data_to_new_map(
-        old_map_id => $new_starting_map_id,
-        new_map_id => $starting_map_id,
-        feature_acc_hash =>
-            { map { ( $_ => 1 ) } @starting_map_front_feature_accs },
-    );
-    $self->app_data_module()->copy_feature_data_to_new_map(
-        old_map_id => $new_starting_map_id,
-        new_map_id => $starting_map_id,
-        feature_acc_hash =>
-            { map { ( $_ => 1 ) } @starting_map_back_feature_accs },
-    );
+    unless ($delete_starting_map) {
+        $self->app_data_module()->copy_feature_data_to_new_map(
+            old_map_id => $new_starting_map_id,
+            new_map_id => $starting_map_id,
+            feature_acc_hash =>
+                { map { ( $_ => 1 ) } @starting_map_front_feature_accs },
+        );
+        $self->app_data_module()->copy_feature_data_to_new_map(
+            old_map_id => $new_starting_map_id,
+            new_map_id => $starting_map_id,
+            feature_acc_hash =>
+                { map { ( $_ => 1 ) } @starting_map_back_feature_accs },
+        );
+    }
     $self->app_data_module()->copy_feature_data_to_new_map(
         old_map_id       => $new_destination_map_id,
         new_map_id       => $starting_map_id,
@@ -4138,22 +4201,28 @@ Destroy the new map and show the original
         }
     }
 
-    delete $self->{'sub_maps'}{$new_starting_map_key};
+    unless ($delete_starting_map) {
+        delete $self->{'sub_maps'}{$new_starting_map_key};
+    }
     delete $self->{'sub_maps'}{$new_destination_map_key};
 
     # Delete temporary Biological data for the new map
-    $self->app_data_module()
-        ->remove_map_data( map_id => $self->map_key_to_id($starting_map_key),
-        );
+    unless ($delete_starting_map) {
+        $self->app_data_module()
+            ->remove_map_data(
+            map_id => $self->map_key_to_id($new_starting_map_key), );
+    }
     $self->app_data_module()
         ->remove_map_data(
-        map_id => $self->map_key_to_id($destination_map_key), );
+        map_id => $self->map_key_to_id($new_destination_map_key), );
 
     # Detach new map from the zone
-    $self->uninitialize_map(
-        map_key  => $new_starting_map_key,
-        zone_key => $starting_zone_key,
-    );
+    unless ($delete_starting_map) {
+        $self->uninitialize_map(
+            map_key  => $new_starting_map_key,
+            zone_key => $starting_zone_key,
+        );
+    }
     $self->uninitialize_map(
         map_key  => $new_destination_map_key,
         zone_key => $destination_zone_key,
@@ -5035,6 +5104,9 @@ Undo the action that was just performed.
             insertion_point      => $last_action->{'insertion_point'},
             subsection_offset    => $last_action->{'subsection_offset'},
             starting_back_offset => $last_action->{'starting_back_offset'},
+            delete_starting_map  => $last_action->{'delete_starting_map'},
+            starting_map_order_index =>
+                $last_action->{'starting_map_order_index'},
             destination_back_offset =>
                 $last_action->{'destination_back_offset'},
             starting_front_sub_map_keys =>
@@ -5185,6 +5257,7 @@ sub remove_from_map_order {
     my $map_key  = $args{'map_key'};
     my $zone_key = $args{'zone_key'};
 
+    my $old_index;
     for (
         my $i = 0;
         $i <= $#{ $self->{'map_order'}{$zone_key} || [] };
@@ -5192,12 +5265,36 @@ sub remove_from_map_order {
         )
     {
         if ( $map_key == $self->{'map_order'}{$zone_key}[$i] ) {
+            $old_index = $i;
             splice @{ $self->{'map_order'}{$zone_key} }, $i, 1;
             $i--;
         }
     }
 
-    return;
+    return $old_index;
+}
+
+# ----------------------------------------------------
+sub insert_into_map_order {
+
+=pod
+
+=head2 insert_into_map_order
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key  = $args{'map_key'};
+    my $index    = $args{'index'};
+    my $zone_key = $args{'zone_key'};
+
+    unless ( defined $index ) {
+        $index = @{ $self->{'map_order'}{$zone_key} };
+    }
+
+    splice @{ $self->{'map_order'}{$zone_key} }, $index, 0, $map_key;
+
+    return $index;
 }
 
 # ----------------------------------------------------
@@ -5477,10 +5574,11 @@ The main highlight bounds must already have been moved.
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key          = $args{'map_key'};
-    my $highlight_bounds = $args{'highlight_bounds'};
-    my $initiate         = $args{'initiate'} || 0;
-    my $zone_key         = $args{'$zone_key'}
+    my $map_key  = $args{'map_key'};
+    my $mouse_x  = $args{'mouse_x'};
+    my $mouse_y  = $args{'mouse_y'};
+    my $initiate = $args{'initiate'} || 0;
+    my $zone_key = $args{'$zone_key'}
         || $self->map_key_to_zone_key($map_key);
     my $map_id = $self->map_key_to_id($map_key);
     my $parent_map_key
@@ -5523,10 +5621,7 @@ The main highlight bounds must already have been moved.
 
     # Get the center x of the highlight bounds and translate into the parents
     # coords
-    my $highlight_center_x = int(
-        ( $highlight_bounds->[2] + $highlight_bounds->[0] ) / 2 + 0.5 );
-    my $center_x
-        = $highlight_center_x - ( $parent_main_x_offset + $parent_x_offset );
+    my $center_x = $mouse_x - ( $parent_main_x_offset + $parent_x_offset );
 
     my $center_in_parent_units = $self->convert_pixel_position_to_map_units(
         position => $center_x,
@@ -5784,10 +5879,9 @@ Controls how the highlight map moves on the parents.
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_key          = $args{'map_key'};
-    my $mouse_x          = $args{'mouse_x'};
-    my $mouse_y          = $args{'mouse_y'};
-    my $highlight_bounds = $args{'highlight_bounds'};
+    my $map_key = $args{'map_key'};
+    my $mouse_x = $args{'mouse_x'};
+    my $mouse_y = $args{'mouse_y'};
     my $previous_subsection_location_coords
         = $args{'previous_subsection_location_coords'};
     my $mouse_to_edge_x = $args{'mouse_to_edge_x'};
@@ -5819,10 +5913,11 @@ Controls how the highlight map moves on the parents.
 
     my %subsection_location_data
         = $self->place_subsection_location_on_parent_map(
-        map_key          => $map_key,
-        zone_key         => $zone_key,
-        highlight_bounds => $highlight_bounds,
-        parent_zone_key  => $highlight_parent_zone_key,
+        map_key         => $map_key,
+        zone_key        => $zone_key,
+        mouse_x         => $mouse_x,
+        mouse_y         => $mouse_y,
+        parent_zone_key => $highlight_parent_zone_key,
         );
     return () unless (%subsection_location_data);
     my $dx = $subsection_location_data{'location_coords'}->[0]

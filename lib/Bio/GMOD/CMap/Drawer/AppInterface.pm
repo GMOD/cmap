@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.62 2007-09-14 20:44:17 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.63 2007-09-26 17:44:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2223,6 +2223,8 @@ sub popup_map_menu {
                             map_key    => $map_key,
                             window_key => $window_key,
                             zinc       => $zinc,
+                            mouse_x    => $mouse_x,
+                            mouse_y    => $mouse_y,
                         );
                     },
                 ];
@@ -2956,10 +2958,14 @@ sub move_map_subsection_popup {
     my $window_key = $args{'window_key'};
     my $zinc       = $args{'zinc'};
     my $controller = $self->app_controller();
+    my $mouse_x    = $args{'mouse_x'};
+    my $mouse_y    = $args{'mouse_y'};
 
     my $move_map_data
         = $controller->app_display_data->get_move_subsection_data(
         map_key          => $map_key,
+        mouse_x          => $mouse_x,
+        mouse_y          => $mouse_y,
         highlight_bounds => $self->highlight_bounds(
             window_key => $window_key,
             object_key => $map_key,
@@ -4699,15 +4705,18 @@ Create the subsection line on the parent map
     my $map_key          = $args{'map_key'};
     my $window_key       = $args{'window_key'};
     my $highlight_bounds = $args{'highlight_bounds'};
+    my $mouse_x          = $args{'mouse_x'};
+    my $mouse_y          = $args{'mouse_y'};
 
     my $subsection_color = 'purple';
 
     my %subsection_location_data
         = $self->app_controller()->app_display_data()
         ->place_subsection_location_on_parent_map(
-        map_key          => $map_key,
-        highlight_bounds => $highlight_bounds,
-        initiate         => 1,
+        map_key  => $map_key,
+        initiate => 1,
+        mouse_x  => $mouse_x,
+        mouse_y  => $mouse_y,
         );
 
     return unless (%subsection_location_data);
@@ -5248,10 +5257,9 @@ Handle the highlight map dragging
         my %subsection_location_highlight_data
             = $self->app_controller()->app_display_data()
             ->move_subsection_location_highlights(
-            map_key          => $map_key,
-            mouse_x          => $x,
-            mouse_y          => $y,
-            highlight_bounds => $new_highlight_bounds,
+            map_key => $map_key,
+            mouse_x => $x,
+            mouse_y => $y,
             previous_subsection_location_coords =>
                 $subsection_location->{'location_coords'},
             mouse_to_edge_x => $self->{'drag_mouse_to_edge_x'},
@@ -5305,9 +5313,8 @@ Handle the highlight map dragging
             zinc       => $zinc,
             map_key    => $map_key,
             window_key => $self->{'drag_window_key'},
-            highlight_bounds =>
-                $self->{'object_selections'}{$window_key}{$map_key}
-                {'highlight_bounds'},
+            mouse_x    => $x,
+            mouse_y    => $y,
             );
     }
 
@@ -5615,7 +5622,7 @@ sub text_dimensions {
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $text = $args{'text'} | q{};
+    my $text = $args{'text'} || q{};
 
     my $font_name = $self->get_font_name( window_key => $window_key, );
     my $zinc      = $self->zinc( window_key          => $window_key, );

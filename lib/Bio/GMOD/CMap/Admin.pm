@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.100 2007-09-19 21:50:17 mwz444 Exp $
+# $Id: Admin.pm,v 1.101 2007-09-26 17:44:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1493,16 +1493,14 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
 
     my @results = ();
     if ( $order_by =~ /position/ ) {
-        @results
-            = map { $_->[1] }
-            sort  { $a->[0] <=> $b->[0] }
+        @results = map { $_->[1] }
+            sort { $a->[0] <=> $b->[0] }
             map { [ $_->{$order_by}, $_ ] } values %features;
     }
     else {
         my @sort_fields = split( /,/, $order_by );
-        @results
-            = map { $_->[1] }
-            sort  { $a->[0] cmp $b->[0] }
+        @results = map { $_->[1] }
+            sort { $a->[0] cmp $b->[0] }
             map { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
     }
 
@@ -3005,6 +3003,7 @@ The primary key of the object.
                 = $action->{'subsection_feature_start'};
             my $subsection_feature_stop
                 = $action->{'subsection_feature_stop'};
+            my $delete_starting_map  = $action->{'delete_starting_map'};
             my $insertion_point      = $action->{'insertion_point'};
             my $starting_back_offset = $action->{'starting_back_offset'};
             my $destination_back_offset
@@ -3046,15 +3045,21 @@ The primary key of the object.
                 }
             }
 
-            # Shrink Starting Map
-            $sql_object->update_map(
-                map_id   => $starting_map_id,
-                map_stop => $starting_map_data->{'map_stop'}
-                    + $starting_back_offset,
-            );
+            if ($delete_starting_map) {
+                $sql_object->delete_map( map_id => $starting_map_id, );
+            }
+            else {
 
-            # Validate the start and stop of the new map
-            $self->validate_update_map_start_stop($starting_map_id);
+                # Shrink Starting Map
+                $sql_object->update_map(
+                    map_id   => $starting_map_id,
+                    map_stop => $starting_map_data->{'map_stop'}
+                        + $starting_back_offset,
+                );
+
+                # Validate the start and stop of the new map
+                $self->validate_update_map_start_stop($starting_map_id);
+            }
 
             # DESTINATION MAP
             # Get map data for the destination map
@@ -3107,7 +3112,8 @@ The primary key of the object.
             $self->validate_update_map_start_stop($destination_map_id);
 
             $temp_to_real_map_id->{ $action->{'new_starting_map_id'} }
-                = $starting_map_id;
+                = $starting_map_id
+                unless ($delete_starting_map);
             $temp_to_real_map_id->{ $action->{'new_destination_map_id'} }
                 = $destination_map_id;
         }
