@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.40 2007-09-19 21:50:18 mwz444 Exp $
+# $Id: AppController.pm,v 1.41 2007-09-26 20:15:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -894,6 +894,43 @@ Save the view information to a file.
     }
 
     return;
+}
+
+# ----------------------------------------------------
+sub print_benchmark {
+
+=pod
+
+=head2 print_benchmark
+
+=cut
+
+    use Benchmark;
+    my ( $self, %args ) = @_;
+    my $text       = $args{'text'} || q{};
+    my $reset      = $args{'reset'};
+    my $return_str = '';
+
+    if ( $reset or not $self->{'benchmark_start'} ) {
+        $self->{'benchmark_start'} = new Benchmark;
+        $self->{'last_benchmark'}  = $self->{'benchmark_start'};
+    }
+
+    my $current_benchmark = new Benchmark;
+    $return_str .= "$text\n";
+    $return_str
+        .= "Segment Total: "
+        . timestr( timediff( $current_benchmark, $self->{'last_benchmark'} ) )
+        . "\n";
+    $return_str
+        .= "Current Total: "
+        . timestr(
+        timediff( $current_benchmark, $self->{'benchmark_start'} ) )
+        . "\n";
+
+    $self->{'last_benchmark'} = $current_benchmark;
+
+    return $return_str;
 }
 
 =pod
