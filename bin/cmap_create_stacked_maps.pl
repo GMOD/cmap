@@ -120,8 +120,7 @@ GetOptions(
     'evidence_type_accs|e:s'                      => \$evidence_type_accs_str,
     'correspondence_cutoff|c:s'                   => \$corr_cutoff,
     'alignment_file|a:s'                          => \$alignment_file,
-    )
-    or pod2usage;
+) or pod2usage;
 
 pod2usage(0) if $help;
 
@@ -184,7 +183,7 @@ if ($alignment_file) {
     my $line;
     my @la;
     open $fh, $alignment_file
-        or die "couldn't open alignment file: $alignment_file\n";
+        or die "Couldn't open alignment file: $alignment_file\n";
     while (<$fh>) {
         my $line = $_;
         chomp($line);
@@ -331,10 +330,10 @@ print "Done Reading Maps\n";
 die "Script Failed\n" if ($kill_script);
 
 foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
-    print "-------------------------------------- \n ";
-    print " Reference Map: "
+    print "--------------------------------------\n";
+    print "Reference Map: "
         . $ref_map_lookup{$ref_map_id}->{'map_name'}
-        . " ($ref_map_id) \n ";
+        . " ($ref_map_id)\n";
     my @stack_map_ids;
     if ($alignment_file) {
         @stack_map_ids
@@ -359,7 +358,7 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
         map_start     => 1,
         map_stop      => 2,
     );
-    print " Stacking " . scalar(@stack_map_ids) . " Maps \n ";
+    print "Stacking " . scalar(@stack_map_ids) . " Maps\n";
     my $current_composite_length = 0;
     $count        = 1;
     $report_count = 10;
@@ -390,13 +389,13 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
             )
         {
             $sql_object->insert_attribute(
-                display_order   => $drawing_order,
-                object_type     => 'feature',
-                object_id       => $new_feature_id,
-                is_public       => 1,
-                attribute_name  => 'Reference Map Correspondences',
+                display_order  => $drawing_order,
+                object_type    => 'feature',
+                object_id      => $new_feature_id,
+                is_public      => 1,
+                attribute_name => 'Reference Map Correspondences',
                 attribute_value =>
-                    $ref_map_lookup{$corr_ref_map_id}->{'map_name'} . " : "
+                    $ref_map_lookup{$corr_ref_map_id}->{'map_name'} . ":"
                     . $corrs_to_refs_for_map{$stack_map_id}{$corr_ref_map_id},
             );
             $drawing_order++;
@@ -470,7 +469,7 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
 
         $current_composite_length = $new_composite_end;
 
-        print " Added " . $report_count . " Maps \n "
+        print "Added " . $report_count . " Maps\n"
             unless ( $count % $report_count );
         $count++;
     }
@@ -484,9 +483,9 @@ foreach my $ref_map_id ( keys %stack_maps_on_ref_map ) {
 
 }
 my $cache_level = 1;
-print " Purging cache at level $cache_level. \n ";
+print "Purging cache at level $cache_level.\n";
 $cmap_admin->purge_cache($cache_level);
-print " Cache Purged \n ";
+print "Cache Purged\n";
 
 sub validate_params {
 
@@ -507,7 +506,7 @@ sub validate_params {
         );
         unless ($query_map_set_id) {
             print STDERR
-                " Map set Accession, '$stack_map_set_acc' is not valid . \n ";
+                "Map set Accession, '$stack_map_set_acc' is not valid.\n";
             push @missing, 'stack_map_set_acc';
         }
     }
@@ -521,7 +520,7 @@ sub validate_params {
         );
         unless ($query_map_set_id) {
             print STDERR
-                " Map set Accession, '$ref_map_set_acc' is not valid . \n ";
+                "Map set Accession, '$ref_map_set_acc' is not valid.\n";
             push @missing, 'reference_map_set';
         }
     }
@@ -535,7 +534,7 @@ sub validate_params {
         );
         unless ($query_map_set_id) {
             print STDERR
-                " Map set Accession, '$new_map_set_acc' is not valid . \n ";
+                "Map set Accession, '$new_map_set_acc' is not valid.\n";
             push @missing, 'new_map_set';
         }
     }
@@ -544,8 +543,8 @@ sub validate_params {
     }
     if ( defined($stack_feature_type_acc) ) {
         unless ( $cmap_admin->feature_type_data($stack_feature_type_acc) ) {
-            print STDERR " The feature_type_acc,
-    '$stack_feature_type_acc' is not valid . \n ";
+            print STDERR
+                "The feature_type_acc, '$stack_feature_type_acc' is not valid.\n";
             push @missing, 'valid feature_type_acc';
         }
     }
@@ -555,15 +554,15 @@ sub validate_params {
     if ( @{ $evidence_type_accs || [] } ) {
         foreach my $evidence_type_acc ( @{ $evidence_type_accs || [] } ) {
             unless ( $cmap_admin->evidence_type_data($evidence_type_acc) ) {
-                print STDERR " The evidence_type_acc,
-    '$evidence_type_acc' is not valid . \n ";
+                print STDERR
+                    "The evidence_type_acc, '$evidence_type_acc' is not valid.\n";
                 push @missing, 'valid evidence_type_acc';
             }
         }
     }
     if (@missing) {
-        print STDERR " Missing the following arguments: \n ";
-        print STDERR join( " \n ", sort @missing ) . " \n ";
+        print STDERR "Missing the following arguments:\n";
+        print STDERR join( "\n", sort @missing ) . "\n";
         return 0;
     }
     return 1;
