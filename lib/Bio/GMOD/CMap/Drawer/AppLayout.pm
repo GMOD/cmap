@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.44 2007-08-01 21:28:16 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.45 2007-09-28 16:22:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -128,8 +128,8 @@ sub layout_overview {
     my %args             = @_;
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
-    my $width            =
-           $args{'width'}
+    my $width
+        = $args{'width'}
         || $app_display_data->{'window_layout'}{$window_key}{'width'}
         ? ( $app_display_data->{'window_layout'}{$window_key}{'width'} - 400 )
         : 500;
@@ -202,9 +202,13 @@ MAP:
             $last_y = $map_layout->{'bounds'}[1];
         }
 
-        my $o_map_x1 = $top_pixel_factor * (
+        my $o_map_x1
+            = $top_pixel_factor
+            * (
             $map_layout->{'bounds'}[0] - $overview_vis_x1_in_main_coords );
-        my $o_map_x2 = $top_pixel_factor * (
+        my $o_map_x2
+            = $top_pixel_factor
+            * (
             $map_layout->{'bounds'}[2] - $overview_vis_x1_in_main_coords );
 
         my $draw_sub_ref = $map_layout->{'shape_sub_ref'};
@@ -312,7 +316,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                 {
                     $new_viewable_internal_x1
                         = $zone_layout->{'internal_bounds'}[0]
-                        + ( $parent_zone_layout->{'viewable_internal_x1'}
+                        + (   $parent_zone_layout->{'viewable_internal_x1'}
                             - $new_zone_bounds->[0] );
                 }
 
@@ -321,7 +325,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                 {
                     $new_viewable_internal_x2
                         = $zone_layout->{'internal_bounds'}[2]
-                        - ( $new_zone_bounds->[2]
+                        - (   $new_zone_bounds->[2]
                             - $parent_zone_layout->{'viewable_internal_x1'} );
                 }
                 if ( $new_viewable_internal_x1
@@ -477,7 +481,8 @@ Lays out head maps in a zone
     return 0 unless ($active_zone_width);
 
     # Get map data for the zone
-    my @ordered_map_ids = map { $app_display_data->map_key_to_id($_) }
+    my @ordered_map_ids
+        = map { $app_display_data->map_key_to_id($_) }
         @{ $app_display_data->{'map_order'}{$zone_key} || [] }
         or return 0;
     my $map_data_hash = $app_display_data->app_data_module()
@@ -494,7 +499,8 @@ Lays out head maps in a zone
     # Set the background color
     $app_display_data->zone_bgcolor( zone_key => $zone_key, );
 
-    my $unit_granularity = $app_display_data->map_type_data(
+    my $unit_granularity
+        = $app_display_data->map_type_data(
         $map_data_hash->{ $ordered_map_ids[0] }{'map_type_acc'},
         'unit_granularity' )
         || DEFAULT->{'unit_granularity'};
@@ -793,6 +799,10 @@ Lays out sub maps in a slot.
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
 
+    # Is this simply a move?  This will offer speed advantages.
+    my $simple_move
+        = ( $move_offset_x or $move_offset_y or $force_relayout ) ? 0 : 1;
+
     # Get the parent zone info
     my $parent_zone_key
         = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'};
@@ -816,16 +826,18 @@ Lays out sub maps in a slot.
     {
         $zone_layout->{'viewable_internal_x1'}
             = $zone_layout->{'internal_bounds'}[0]
-            + ( $parent_zone_layout->{'viewable_internal_x1'}
-                - $zone_layout->{'bounds'}[0] ) - $x_offset;
+            + (   $parent_zone_layout->{'viewable_internal_x1'}
+                - $zone_layout->{'bounds'}[0] )
+            - $x_offset;
     }
     if ( $parent_zone_layout->{'viewable_internal_x2'}
         < $zone_layout->{'bounds'}[2] )
     {
         $zone_layout->{'viewable_internal_x2'}
             = $zone_layout->{'internal_bounds'}[2]
-            - ( $zone_layout->{'bounds'}[2]
-                - $parent_zone_layout->{'viewable_internal_x2'} ) - $x_offset;
+            - (   $zone_layout->{'bounds'}[2]
+                - $parent_zone_layout->{'viewable_internal_x2'} )
+            - $x_offset;
     }
 
     # Sort maps for easier layout
@@ -844,7 +856,8 @@ Lays out sub maps in a slot.
 
     # If needed, get the map set id
     unless ( $app_display_data->{'scaffold'}{$zone_key}{'map_set_id'} ) {
-        my $first_map_data = $app_display_data->app_data_module()
+        my $first_map_data
+            = $app_display_data->app_data_module()
             ->map_data(
             map_id => $app_display_data->map_key_to_id( $sub_map_keys[0] ), );
         $app_display_data->{'scaffold'}{$zone_key}{'map_set_id'}
@@ -943,7 +956,8 @@ Lays out sub maps in a slot.
             # Set map_pixels_per_unit
             $map_pixels_per_unit
                 = $app_display_data->{'map_pixels_per_unit'}{$sub_map_key}
-                = ( $x2 - $x1 + 1 ) / (
+                = ( $x2 - $x1 + 1 ) /
+                (
                 $sub_map_data->{'map_stop'} - $sub_map_data->{'map_start'} );
 
             # Set bounds so overview can access it later even if it
@@ -1072,14 +1086,15 @@ sub set_zone_bgcolor {
     my $app_display_data = $args{'app_display_data'};
 
     my $bgcolor = $app_display_data->zone_bgcolor( zone_key => $zone_key, );
-    my $border_color =
-        (       $app_display_data->{'selected_zone_key'}
+    my $border_color
+        = (     $app_display_data->{'selected_zone_key'}
             and $zone_key == $app_display_data->{'selected_zone_key'} )
         ? "black"
         : $bgcolor;
 
-    my $background_id =
-        defined( $app_display_data->{'zone_layout'}{$zone_key}{'background'} )
+    my $background_id
+        = defined(
+        $app_display_data->{'zone_layout'}{$zone_key}{'background'} )
         ? $app_display_data->{'zone_layout'}{$zone_key}{'background'}[0][1]
         : undef;
     my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
@@ -1178,11 +1193,12 @@ Lays out a maps in a contained area.
         # simply move the map
         if (    !$force_relayout
             and @{ $map_layout->{'bounds'} || [] }
-            and ( $map_layout->{'coords'}[0] - $map_layout->{'bounds'}[0]
+            and ( $map_layout->{'coords'}[0] 
+                - $map_layout->{'bounds'}[0]
                 == ( ( $min_x > $viewable_x1 ) ? $min_x : $viewable_x1 )
                 - $min_x )
-            and ( $map_layout->{'bounds'}[2] - $map_layout->{'coords'}[2]
-                == $max_x
+            and ( $map_layout->{'bounds'}[2] 
+                - $map_layout->{'coords'}[2] == $max_x
                 - ( ( $max_x < $viewable_x2 ) ? $max_x : $viewable_x2 ) )
             )
         {
@@ -1330,7 +1346,8 @@ Lays out a maps in a contained area.
                 force_relayout   => $force_relayout,
                 depth            => $depth + 1,
             );
-            $max_y += $app_display_data->{'zone_layout'}{$child_zone_key}
+            $max_y
+                += $app_display_data->{'zone_layout'}{$child_zone_key}
                 {'bounds'}[3]
                 - $app_display_data->{'zone_layout'}{$child_zone_key}
                 {'bounds'}[1];
@@ -1523,8 +1540,8 @@ Lays out feautures
 
                 my $label_features = 0;
 
-                my $offset =
-                    $label_features
+                my $offset
+                    = $label_features
                     ? ($column_index)
                     * ( $feature_height + $feature_buffer + 15 )
                     : ($column_index) * ( $feature_height + $feature_buffer );
@@ -1758,7 +1775,8 @@ Lays out correspondences between two zones
     );
 
     # Get Correspondence Data
-    my $corrs = $app_display_data->app_data_module()
+    my $corrs
+        = $app_display_data->app_data_module()
         ->zone_correspondences_using_slot_comparisons(
         slot_comparisons => $slot_comparisons, );
 
@@ -1866,13 +1884,13 @@ Lays out correspondences between two zones
         my $x_end2          = $corr_x2 + $zone2_x_offset;
         my $y_end2          = $corr_y2 + $zone2_y_offset;
         my $x_mid1          = $x_end1;
-        my $y_mid1          =
-              $draw_downward1
+        my $y_mid1
+            = $draw_downward1
             ? $y_end1 + $end_line_height
             : $y_end1 - $end_line_height;
         my $x_mid2 = $x_end2;
-        my $y_mid2 =
-              $draw_downward2
+        my $y_mid2
+            = $draw_downward2
             ? $y_end2 + $end_line_height
             : $y_end2 - $end_line_height;
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
@@ -1973,7 +1991,8 @@ returns the number of pixesl per map unit.
                 my $map_start = $map->{'map_start'};
                 my $map_stop  = $map->{'map_stop'};
                 $map_length{$map_id}
-                    = $map->{'map_stop'} - $map->{'map_start'}
+                    = $map->{'map_stop'} 
+                    - $map->{'map_start'}
                     + $unit_granularity;
                 $length_sum += $map_length{$map_id};
             }
@@ -2251,8 +2270,10 @@ region that the overview will be displaying.
 
     my $overview_size = $overview_zone_layout->{'internal_bounds'}[2]
         - $overview_zone_layout->{'internal_bounds'}[0] + 1;
-    my $main_size = ( $main_zone_layout->{'internal_bounds'}[2]
-            - $main_zone_layout->{'internal_bounds'}[0] + 1 );
+    my $main_size
+        = (   $main_zone_layout->{'internal_bounds'}[2]
+            - $main_zone_layout->{'internal_bounds'}[0] 
+            + 1 );
     my $scale_difference = $overview_size / $main_size;
     if ( $scale_of_zoom < $scale_difference ) {
 
@@ -2343,8 +2364,8 @@ Adds tick marks to a map.
             [2];
     }
 
-    my $visible_pixel_start =
-        ( $viewable_x1 > $map_coords->[0] )
+    my $visible_pixel_start
+        = ( $viewable_x1 > $map_coords->[0] )
         ? $viewable_x1
         : $map_coords->[0];
 
@@ -2362,8 +2383,8 @@ Adds tick marks to a map.
             = $app_display_data->{'slot_info'}{$zone_key}{ $map->{'map_id'} }
             [3];
     }
-    my $visible_pixel_stop =
-        ( $viewable_x2 < $map_coords->[2] )
+    my $visible_pixel_stop
+        = ( $viewable_x2 < $map_coords->[2] )
         ? $viewable_x2
         : $map_coords->[2];
 
@@ -2382,8 +2403,8 @@ Adds tick marks to a map.
         = int( $visible_map_start / ( 10**( $map_scale - 1 ) ) )
         * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = 8;
-    my @intervals     =
-        map { int( $interval_start + ( $_ * $interval ) ) }
+    my @intervals
+        = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
     my $min_tick_distance
         = $app_display_data->config_data('min_tick_distance') || 40;
@@ -2424,9 +2445,10 @@ Adds tick marks to a map.
         # Figure out how many signifigant figures the number needs by
         # going down to the $interval size.
         #
-        my $sig_figs = $tick_pos
-            ? int( '' . ( log( abs($tick_pos) ) / log(10) ) ) -
-            int( '' . ( log( abs($interval) ) / log(10) ) ) + 1
+        my $sig_figs
+            = $tick_pos
+            ? int( '' . ( log( abs($tick_pos) ) / log(10) ) )
+            - int( '' . ( log( abs($interval) ) / log(10) ) ) + 1
             : 1;
         my $tick_pos_str = presentable_number( $tick_pos, $sig_figs );
         my $label_x = $x_pos;  #+ ( $font_width * length($tick_pos_str) ) / 2;
@@ -2568,7 +2590,7 @@ Return the bounds of the map.
     my $mid_y           = int( 0.5 + ( $min_y + $max_y ) / 2 );
     my @bounds          = ( $min_x, $min_y, $max_x, $max_y );
     my ( $left_side_unseen, $right_side_unseen ) = ( 0, 0 );
-    my @coords     = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords = ( $min_x, $min_y, $max_x, $max_y );
     my $is_flipped = 0;
 
     my ( $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2, )

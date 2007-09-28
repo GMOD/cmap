@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.60 2007-09-26 17:44:07 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.61 2007-09-28 16:22:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1394,19 +1394,22 @@ sub map_label_info {
     my $window_key = $args{'window_key'} or return;
     my $map_key    = $args{'map_key'}    or return;
 
-    my $map_data = $self->app_data_module()
-        ->map_data( map_id => $self->map_key_to_id($map_key), );
-    my $text = $map_data->{'map_name'};
-    my ( $width, $height, ) = $self->app_interface()->text_dimensions(
-        window_key => $window_key,
-        text       => $text,
-    );
+    unless ( $self->{'map_label_info'}{$map_key} ) {
+        my $map_data = $self->app_data_module()
+            ->map_data( map_id => $self->map_key_to_id($map_key), );
+        my $text = $map_data->{'map_name'};
+        my ( $width, $height, ) = $self->app_interface()->text_dimensions(
+            window_key => $window_key,
+            text       => $text,
+        );
+        $self->{'map_label_info'}{$map_key} = {
+            text   => $text,
+            width  => $width,
+            height => $height,
+        };
+    }
 
-    return {
-        text   => $text,
-        width  => $width,
-        height => $height,
-    };
+    return $self->{'map_label_info'}{$map_key};
 }
 
 # ----------------------------------------------------
