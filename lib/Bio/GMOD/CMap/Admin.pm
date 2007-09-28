@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.101 2007-09-26 17:44:06 mwz444 Exp $
+# $Id: Admin.pm,v 1.102 2007-09-28 20:17:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -3233,14 +3233,17 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ken Y. Clark E<lt>kclark@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

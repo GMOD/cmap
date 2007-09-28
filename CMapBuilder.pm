@@ -670,14 +670,17 @@ sub read_dir {
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ken Y. Clark E<lt>kclark@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 Cold Spring Harbor Laboratory
+Copyright (c) 2004-7 Cold Spring Harbor Laboratory
 
-This program is free software;  you can redistribute it and/or modify
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

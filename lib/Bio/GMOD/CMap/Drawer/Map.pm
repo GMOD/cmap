@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.205 2007-09-21 20:09:38 mwz444 Exp $
+# $Id: Map.pm,v 1.206 2007-09-28 20:17:12 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.205 $)[-1];
+$VERSION = (qw$Revision: 1.206 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -4334,10 +4334,12 @@ Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

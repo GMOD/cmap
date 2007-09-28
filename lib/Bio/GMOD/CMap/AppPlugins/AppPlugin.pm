@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.8 2007-08-15 20:45:27 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.9 2007-09-28 20:17:09 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME
@@ -294,9 +294,10 @@ Lincoln Stein E<lt>lstein@cshl.orgE<gt>.
 
 Copyright (c) 2007 Cold Spring Harbor Laboratory
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.  See DISCLAIMER.txt for
-disclaimers of warranty.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.18 2007-07-11 20:51:23 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.19 2007-09-28 20:17:09 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -82,8 +82,10 @@ Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.29 2007-09-19 21:50:20 mwz444 Exp $
+# $Id: AppData.pm,v 1.30 2007-09-28 20:17:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -1546,10 +1546,12 @@ Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-5 Cold Spring Harbor Laboratory
+Copyright (c) 2006-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

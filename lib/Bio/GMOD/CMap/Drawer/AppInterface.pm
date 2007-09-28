@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.63 2007-09-26 17:44:07 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.64 2007-09-28 20:17:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -5729,10 +5729,12 @@ Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-5 Cold Spring Harbor Laboratory
+Copyright (c) 2006-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

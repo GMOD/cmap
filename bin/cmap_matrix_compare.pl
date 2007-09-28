@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.11 2005-06-03 22:19:47 mwz444 Exp $
+# $Id: cmap_matrix_compare.pl,v 1.12 2007-09-28 20:16:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -324,7 +324,9 @@ Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
-This program is free software;  you can redistribute it and/or modify
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut

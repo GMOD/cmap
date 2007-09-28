@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_data_diagnostics.pl,v 1.1 2006-12-28 18:07:22 mwz444 Exp $
+# $Id: cmap_data_diagnostics.pl,v 1.2 2007-09-28 20:16:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $report_optional, );
 GetOptions(
@@ -550,6 +550,16 @@ Bio::GMOD::CMap.
 =head1 AUTHOR
 
 Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2006 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
 
 =cut
 

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.14 2007-09-19 21:50:19 mwz444 Exp $
+# $Id: Remote.pm,v 1.15 2007-09-28 20:17:09 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -292,10 +292,12 @@ Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2006 Cold Spring Harbor Laboratory
+Copyright (c) 2006-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

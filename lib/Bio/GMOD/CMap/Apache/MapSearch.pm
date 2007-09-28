@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -172,15 +172,17 @@ L<perl>, L<Template>.
 
 =head1 AUTHOR
 
-Ken Youens-Clark E<lt>kclark@cshl.orgE<gt>,
-Ben Faga E<lt>faga@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ken Y. Clark E<lt>kclark@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-6 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

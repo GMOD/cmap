@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.4 2007-07-02 15:16:28 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.5 2007-09-28 20:17:08 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -181,14 +181,17 @@ L<perl>
 
 =head1 AUTHOR
 
-Ben Faga E<lt>faga@cshl.edu<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ken Y. Clark E<lt>kclark@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-5 Cold Spring Harbor Laboratory
+Copyright (c) 2005-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

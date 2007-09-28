@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.170 2007-08-15 20:45:28 mwz444 Exp $
+# $Id: Generic.pm,v 1.171 2007-09-28 20:17:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.170 $)[-1];
+$VERSION = (qw$Revision: 1.171 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -11518,13 +11518,16 @@ L<perl>.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-7 Cold Spring Harbor Laboratory
 
-This library is free software;  you can redistribute it and/or modify 
-it under the same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut
 

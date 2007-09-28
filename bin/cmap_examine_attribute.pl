@@ -174,5 +174,14 @@ elsif ( $object_type eq 'map_type' ) {
 
 Ben Faga E<lt>faga@cshl.orgE<gt>.
 
+=head1 COPYRIGHT
+
+Copyright (c) 2006-7 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
 =cut
 

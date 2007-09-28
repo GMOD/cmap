@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap-fix-map-display-order.pl,v 1.4 2006-11-17 16:07:58 kycl4rk Exp $
+# $Id: cmap-fix-map-display-order.pl,v 1.5 2007-09-28 20:16:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -41,7 +41,7 @@ use Pod::Usage;
 use File::Basename;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $ms_accs );
 GetOptions(
@@ -155,6 +155,16 @@ Bio::GMOD::CMap.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004-6 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
 
 =cut
 

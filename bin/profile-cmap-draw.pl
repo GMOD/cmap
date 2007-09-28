@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: profile-cmap-draw.pl,v 1.6 2004-03-30 20:56:42 mwz444 Exp $
+# $Id: profile-cmap-draw.pl,v 1.7 2007-09-28 20:16:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -90,5 +90,14 @@ print "Done\n";
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2003-5 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: validate_import_file.pl,v 1.1 2005-02-09 05:31:35 mwz444 Exp $
+# $Id: validate_import_file.pl,v 1.2 2007-09-28 20:16:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -69,8 +69,17 @@ else{
 
 =head1 AUTHOR
 
-Ben Faga E<lt>faga@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 Munged profile-cmap-draw.pl by Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2005 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
 
 =cut

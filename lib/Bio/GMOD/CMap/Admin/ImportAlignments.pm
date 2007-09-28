@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.8 2007-07-02 15:16:27 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.9 2007-09-28 20:17:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -246,3 +246,28 @@ sub get_feature_id {
     $self->{'added_feature_ids'}->{$feature_key} = $feature_id;
     return $self->{'added_feature_ids'}->{$feature_key};
 }
+
+1;
+
+=pod
+
+=head1 SEE ALSO
+
+L<perl>.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ken Y. Clark E<lt>kclark@cshl.eduE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2005-7 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
+=cut
+

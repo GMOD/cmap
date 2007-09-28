@@ -102,3 +102,24 @@ if ($assembly_clone_file){
     }
 }
 
+=pod
+
+=head1 SEE ALSO
+
+L<perl>.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004-5 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
+=cut
+
