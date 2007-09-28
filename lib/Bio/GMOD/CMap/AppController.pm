@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.41 2007-09-26 20:15:59 mwz444 Exp $
+# $Id: AppController.pm,v 1.42 2007-09-28 16:18:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -914,18 +914,18 @@ sub print_benchmark {
     if ( $reset or not $self->{'benchmark_start'} ) {
         $self->{'benchmark_start'} = new Benchmark;
         $self->{'last_benchmark'}  = $self->{'benchmark_start'};
+        $return_str .= "----------------------------------\n";
     }
 
     my $current_benchmark = new Benchmark;
     $return_str .= "$text\n";
-    $return_str
-        .= "Segment Total: "
-        . timestr( timediff( $current_benchmark, $self->{'last_benchmark'} ) )
+    $return_str .= "Segment Total: "
+        . timestr( timediff( $current_benchmark, $self->{'last_benchmark'} ),
+        'auto', '5.4f' )
         . "\n";
-    $return_str
-        .= "Current Total: "
-        . timestr(
-        timediff( $current_benchmark, $self->{'benchmark_start'} ) )
+    $return_str .= "Current Total: "
+        . timestr( timediff( $current_benchmark, $self->{'benchmark_start'} ),
+        'auto', '5.4f' )
         . "\n";
 
     $self->{'last_benchmark'} = $current_benchmark;
