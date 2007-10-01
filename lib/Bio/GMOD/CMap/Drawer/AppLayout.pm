@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.46 2007-09-28 20:17:12 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.47 2007-10-01 15:09:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -1186,7 +1186,9 @@ Lays out a maps in a contained area.
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
-    if ($relayout) {
+    # Just move if the map has already been laid out based on the $relayout
+    # value and whether it has any drawing items.
+    if ( $relayout and @{ $map_layout->{'items'} || [] } ) {
 
         # Check if we just need to move the map
         # If the viewable region is the same and we aren't force_relayout
