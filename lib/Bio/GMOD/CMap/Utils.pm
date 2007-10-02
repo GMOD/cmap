@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.86 2007-09-28 20:17:01 mwz444 Exp $
+# $Id: Utils.pm,v 1.87 2007-10-02 21:35:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -810,7 +810,7 @@ Returns true if a string has an sql command in it.
 =cut 
 
 sub has_sql_command {
-    my $str = shift;
+    my $str = shift or return 0;
 
     if ( $str =~ /(SELECT|UPDATE|DELETE|INSERT|MERGE|UNION)/i ) {
         return 1;
