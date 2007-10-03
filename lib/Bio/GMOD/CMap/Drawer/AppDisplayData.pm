@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.62 2007-09-28 20:17:11 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.63 2007-10-03 15:00:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1754,6 +1754,49 @@ sub set_map_labels_visibility {
     my $value    = shift;
 
     $self->map_labels_visible( $zone_key, $value, );
+
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub features_visible {
+
+=pod
+
+=head2 features_visible
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    if ( defined $value ) {
+        $self->{'scaffold'}{$zone_key}{'show_features'} = $value;
+    }
+
+    return $self->{'scaffold'}{$zone_key}{'show_features'};
+}
+
+# ----------------------------------------------------
+sub set_features_visibility {
+
+=pod
+
+=head2 set_features_visibility
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    $self->features_visible( $zone_key, $value, );
 
     my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
 

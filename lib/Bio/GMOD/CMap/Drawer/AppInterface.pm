@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.64 2007-09-28 20:17:11 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.65 2007-10-03 15:00:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2493,6 +2493,19 @@ sub popup_display_options_menu {
         -command      => sub {
             $app_display_data->set_map_labels_visibility( $zone_key,
                 $map_labels_visible, );
+        },
+    ];
+
+    my $features_visible = $app_display_data->features_visible($zone_key);
+    push @$menu_items, [
+        'checkbutton' => '',
+        -variable     => \$features_visible,
+        -onvalue      => 1,
+        -offvalue     => 0,
+        -label        => 'Display Features',
+        -command      => sub {
+            $app_display_data->set_features_visibility( $zone_key,
+                $features_visible, );
         },
     ];
 

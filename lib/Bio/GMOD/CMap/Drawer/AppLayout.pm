@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.47 2007-10-01 15:09:45 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.48 2007-10-03 15:00:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -1308,7 +1308,7 @@ Lays out a maps in a contained area.
 
     $min_y = $max_y = $map_coords->[3];
 
-    if (    $app_display_data->{'scaffold'}{$zone_key}{'show_features'}
+    if (    $app_display_data->features_visible($zone_key)
         and $map_layout->{'show_details'} )
     {
         $max_y = _layout_features(
@@ -2405,8 +2405,7 @@ Adds tick marks to a map.
         = int( $visible_map_start / ( 10**( $map_scale - 1 ) ) )
         * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = 8;
-    my @intervals
-        = map { int( $interval_start + ( $_ * $interval ) ) }
+    my @intervals = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
     my $min_tick_distance
         = $app_display_data->config_data('min_tick_distance') || 40;
