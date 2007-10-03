@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.12 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: cmap_matrix_compare.pl,v 1.13 2007-10-03 04:02:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -77,19 +77,21 @@ use Text::TabularDisplay;
 use constant DEFAULT_STORE_FILE => 'matrix_data.dat';
 use constant DATE_FORMAT        => '%Y-%m-%d %I:%M %p';
 
-my ( $help, $store, @compare, $retrieve );
+my ( $help, $store, @compare, $retrieve, $data_source );
 GetOptions(
     'h|help'       => \$help,
     's|store:s'    => \$store,
     'c|compare:s'  => \@compare,
     'r|retrieve:s' => \$retrieve,
+    'd|datasource|data_source=s' => \$data_source,
 );
 pod2usage if $help;
 
 die qq[Error:  The "compare" option takes only one or two arguments.\n] 
     if scalar @compare > 2;
 
-my $cmap = Bio::GMOD::CMap->new or die Bio::GMOD::CMap->error;
+my $cmap = Bio::GMOD::CMap->new( data_source => $data_source, )
+    or die Bio::GMOD::CMap->error;
 my $db   = $cmap->db            or die $cmap->error;
 my $data = $cmap->data_module   or die $cmap->error;
 
@@ -119,7 +121,7 @@ my $map_sets = $db->selectall_hashref(
 #
 # Get the current matrix data.
 #
-my $matrix_raw = $data->matrix_correspondence_data;
+my $matrix_raw = $data->matrix_correspondence_data( show_matrix => 1, );
 my $matrix     = $matrix_raw->{'data'};
 
 #
