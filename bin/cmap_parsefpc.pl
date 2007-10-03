@@ -6,19 +6,28 @@ cmap_parcefpc.pl
 
 =head1 SYNOPSIS
 
-  cmap_parcefpc.pl [-a assembly_file] [options] fpc_file
+  cmap_parcefpc.pl [-a assembly_file] [options] fpc_file 
 
   options:
   -d|--delete_contig0 : Delete Contig0 which is where 
                         the singletons are placed.
 
-=head1 OPTIONS
+  Files Created: 
+    fpc_file.cmap
+    fpc_file.assembly (if assembly_file is provided.
 
 
 =head1 DESCRIPTION
 
-Parces FPC files into CMap style files.
-Output is loadable into the database with cmap_admin.pl
+Parces FPC files into CMap style files.  The output file is loadable into the
+database with cmap_admin.pl
+
+The assembly file must be like that produced by cmap_manageParsedAceFiles.pl.
+
+If an assembly file is provided, the script will read through that file and
+output (into a separate file) the lines that define clones that share a name
+with one of the FPC clones.  The feature type accession of the assembly clones
+must be "clone".
 
 =cut
 

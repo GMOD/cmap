@@ -20,7 +20,23 @@ cmap_import_alignment.pl
   -i|--identity             : Identity cutoff (default "0")
   -l|--length               : Length cutoff (default "0")
 
+=head1 USAGE
+
+ $ ./cmap_import_alignment.pl -d DATASOURCE -f ALIGNMENT_FILE \
+    -q QUERY_MAP_SET_ACC -s SUBJECT_MAP_SET_ACC -t FORMAT \
+    --fta HSP_FEATURE_TYPE -eta CORRESPONDENCE_EVIDENCE_TYPE
+
 =head1 DESCRIPTION
+
+This script directly imports alignment data recognized by BioPerl's SearchIO
+module (it has been tested for BLAST) into a CMap database.
+
+It uses the name field from both the query and subject (as parsed by BioPerl)
+to determine which CMap map is being refered to.  If no map with that name is
+currently in the specific map set, the map will be created.
+
+The HSPs are created as features with the type defined from the command line.
+Correspondences between the HSPs are created. 
 
 Requires Bio::Perl
 
@@ -71,6 +87,7 @@ my $formats = [
 
 my $sql_object = $admin->sql;
 
+# Validate input
 my @missing = ();
 if ($file_str) {
     unless ( $files = get_files( file_str => $file_str ) ) {
@@ -150,6 +167,8 @@ if (@missing) {
     print STDERR join( "\n", sort @missing ) . "\n";
     pod2usage;
 }
+
+# Done Validating input
 
 foreach my $file (@$files) {
     import_alignments(

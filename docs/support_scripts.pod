@@ -1,0 +1,353 @@
+=head1 CMap Support Scripts
+
+=head1 VERSION
+
+$Revision: 1.1 $
+
+There are a number of support scripts included with the CMap distribution.
+They are located in the bin/ directory inside the CMap source directory.  
+
+This document is intended to briefly describe each of these scripts and point
+to other documentation where an individual script is described in more detail.
+
+=head1 ADMINISTRATION
+
+The chief administration script is cmap_admin.pl.  This is what will be the
+most used script because it does most of the tasks that are needed to get CMap
+running and keep it that way.  The other administration scripts will help
+diagnose problems or attempt to solve issues that might be faced by an administrator.
+
+=head2 cmap_admin.pl
+
+=head3 Description
+
+This is the main administration script.  Most administrative tasks can be
+completed using the cmap_admin.pl script, from importing data to clearing the
+cache.  For much more information, please read the ADMINISTRATION document
+included with the distribution.
+
+=head3 Usage
+
+  $ cmap_admin.pl -d datasource [options] [data_file]
+
+=head3 See Also
+
+  ADMINISTRATION.pod/ADMINISTRATION.html
+
+  $ perldoc cmap_admin.pl
+
+=head2 cmap_data_diagnostics.pl
+
+=head3 Description
+
+This script was written to check the CMap database for problems.  It will
+report any problems that it finds such as missing configurations for map or
+feature types.
+
+=head3 Usage
+
+Stats and warnings are printed to standard out and the errors are printed to
+standard error.  To separate the outputs, use the following example.
+
+  $ cmap_data_diagnostics.pl -d datasource [options] 1>stats_file 2>error_file
+
+=head3 See Also
+
+  $ perldoc cmap_data_diagnostics.pl
+
+=head2 cmap_validate_config.pl
+
+=head3 Description
+
+This script checks a config file (not the global.conf though) to see if it is a
+valid.  It will report any problems it finds.
+
+=head3 Usage
+
+  $ validate_cmap_config.pl config_file.conf
+
+=head3 See Also
+
+  $ perldoc cmap_validate_config.pl
+
+=head2 cmap_reduce_cache_size.pl
+
+=head3 Description
+
+From the documentation: This script cycles through each CMap data_source and
+reduces the size of the query cache to the value given as
+'max_query_cache_size' in the config file.
+
+=head3 Usage
+
+  $ cmap_reduce_cache_size.pl
+
+=head3 See Also
+
+  $ perldoc cmap_reduce_cache_size.pl
+
+=head2 cmap_metrics.pl
+
+=head3 Description
+
+From the script documentation: A simple script to tell you how many records are
+in each table.  If no data-source is provided, the default is used.
+
+=head3 Usage
+
+  $ cmap_metrics.pl -d DATASOURCE
+
+=head3 See Also
+
+  $ perldoc cmap_metrics.pl
+
+=head2 cmap_matrix_compare.pl
+
+=head3 Description
+
+From the script documentation: This script is designed to compare the CMap
+correspondence matrix data between different loads of the database.
+
+=head3 Usage
+
+  $ ./cmap_matrix_compare.pl --store monday.dat
+
+  $ ./cmap_matrix_compare.pl --store tuesday.dat
+
+  $ ./cmap_matrix_compare.pl --compare monday.dat --compare tuesday.dat
+
+=head3 See Also
+
+  $ perldoc cmap_matrix_compare.pl
+
+=head2 cmap_examine_attribute.pl
+
+=head3 Description
+
+The goal of this script is to help look for a specific attribute that should be
+on every object of the specified type (map set, feature, etc).  It examines the
+CMap database and find all instances where the attribute should be.
+
+It prints the value of the attribute if it exists for the object and a warning
+if it is missing.
+
+An example is if all map sets are supposed to have a "Description" attribute.
+Running 
+
+  $ ./cmap_examine_attribute.pl -d DATASOURCE -a "Description" -o "map_set"
+
+would check to make sure all the map sets in the database have a Description
+attribute and provide a list of those that were missing it.
+
+=head3 Usage
+
+  $ /cmap_examine_attribute.pl -d DATASOURCE -a ATTRIBUTE_NAME -o OBJECT_TYPE
+
+=head3 See Also
+
+  $ perldoc cmap_examine_attribute.pl
+
+=head1 DATA PARSING AND IMPORT
+
+Getting data into the CMap database is an important step.  These scripts will
+help get data into a format that can be imported into CMap.  Some of them will
+directly import the data while others will rely on cmap_admin.pl to read the
+files they create.
+
+They also provide a good jumping off point if a new or custom parser is
+required.
+
+=head2 validate_import_file.pl
+
+=head3 Description
+
+This script can be used to check an import file to see if it will import
+correctly.  Any problems will be reported.
+
+=head3 Usage
+
+  $ validate_import_file.pl -d DATASOURCE -f IMPORT_FILE
+
+=head3 See Also
+
+  $ perldoc validate_import_file.pl
+
+=head2 cmap_parseWashUAceFiles.pl
+
+=head3 Description
+
+This script will parse an ACE file of super contigs and output a tab-delimited
+file that is readable by the CMap importer.
+
+The script was written for Washington University and may not be useful to most
+people out of the box but can be modified to suit your needs.  It can also
+provide some insight into writing a parser for your favorite file format.
+
+It is best to follow this script with cmap_manageParsedAceFile.pl to remove
+reads that aren't interesting and mark ones that are.
+
+=head3 Usage
+
+  $ ./cmap_parseWashUAceFiles.pl ace_file > cmap_import_file
+
+=head3 See Also
+
+  $ perldoc cmap_parseWashUAceFiles.pl
+
+  $ perldoc cmap_manageParsedAceFile.pl
+
+=head2 cmap_parsefpc.pl
+
+=head3 Description
+
+This script will parse an FPC (fingerprint contig) file and output a
+tab-delimited file that is readable by the CMap importer.
+
+If an assembly file created by cmap_manageParsedAceFiles.pl is provided, the
+script will read through that file and output (into a separate file) the lines
+that define clones that share a name with one of the FPC clones.  The feature
+type accession of the assembly clones must be "clone".
+
+=head3 Usage
+
+  $ cmap_parcefpc.pl [-a assembly_file] [options] fpc_file > CMAP_IMPORT_FILE
+
+=head3 See Also
+
+  $ perldoc cmap_parcefpc.pl
+
+=head2 cmap_parseagp.pl
+
+=head3 Description
+
+This script will parse an AGP formatted file and output a tab-delimited file
+that is readable by the CMap importer.
+
+=head3 Usage
+
+  $ cmap_parceagp.pl agp_file > CMAP_IMPORT_FILE
+
+=head3 See Also
+
+  $ perldoc cmap_parseagp.pl
+
+=head2 cmap_manageParsedAceFile.pl
+
+=head3 Description
+
+This script reads a CMap import file which was output from
+cmap_parseWashUAceFiles.pl and modifies the data to be more easily viewed in
+CMap.  
+
+It will create read-depth features which will allow the user to see the number
+of reads over a window wihtout having to load each read (which would bog down
+the viewer).
+
+It also finds problem reads such as singleton reads and read pairs that are too
+far apart.
+
+The output can then be loaded into CMap using cmap_admin.pl.
+
+=head3 Usage
+
+  $ ./cmap_manageParsedAceFile.pl options CMAP_IMPORT_FILE > NEW_CMAP_IMPORT_FILE
+
+=head3 See Also
+
+  $ perldoc cmap_manageParsedAceFile.pl
+
+=head2 cmap_import_alignment.pl
+
+=head3 Description
+
+This script directly imports alignment data recognized by BioPerl's SearchIO
+module (it has been tested for BLAST) into a CMap database.
+
+It uses the name field from both the query and subject (as parsed by BioPerl)
+to determine which CMap map is being refered to.  If no map with that name is
+currently in the specific map set, the map will be created.
+
+The HSPs are created as features with the type defined from the command line.
+Correspondences between the HSPs are created. 
+
+=head3 Usage
+
+  $ cmap_import_alignment.pl -d DATASOURCE -f ALIGNMENT_FILE \
+    -q QUERY_MAP_SET_ACC -s SUBJECT_MAP_SET_ACC -t FORMAT \
+    --fta HSP_FEATURE_TYPE -eta CORRESPONDENCE_EVIDENCE_TYPE
+
+=head3 See Also
+
+  $ perldoc cmap_import_alignment.pl
+
+
+=head1 DATA MODIFICATION
+
+These scripts modify the data, hopefully in in a way to make it more
+understandable for the user.
+
+=head2 cmap_create_stacked_maps.pl
+
+=head3 Description
+
+When there are a large number of comparative maps, the CMap view loads slowly
+and the resulting view can be unusably dense.  This script takes maps from a
+relational map set, groups them based on correspondences to a relational map
+and stacks them.  This creates a smaller number of stacked maps that are made
+up of the original maps.  These stacked maps can then be displayed much more
+quickly and legibly than before.
+
+It is important to note that this is a non-destructive script.  The stacked
+maps are inserted into a new map set.  It is recommended that the original map
+sets be kept in the database but if database size is an issue, the original
+maps can be removed.  Be aware that there is no script currently or in
+development to reverse the process.
+
+=head3 Usage
+
+See the documentation within the script for more details on the required
+options.
+
+  $ cmap_create_stacked_maps.pl [options]
+
+=head3 See Also
+
+  $ perldoc cmap_create_stacked_maps.pl
+
+=head2 cmap-fix-map-display-order.pl
+
+=head3 Description
+
+Unless the display order is set, the maps will be ordered alphabetically in the
+menus.  This script changes the display order of maps to reflect the numerical
+value in the map names.
+
+=head3 Usage
+
+  $ cmap-fix-map-display-order.pl -d DATASOURCE --ms-accs=msacc1[,msacc2...]
+
+=head3 See Also
+
+  $ perldoc cmap-fix-map-display-order.pl
+
+
+=head1 DEVELOPMENT
+
+The script in this section will only useful for debugging or benchmarking.
+
+=head2 profile-cmap-draw.pl
+
+=head3 Description
+
+This script is only useful for debugging or benchmarking the CMap drawing code.
+
+=head3 Usage
+
+This script must be run with root privilages.
+
+  $ sudo profile-cmap-draw.pl -u CMAP_URL
+
+=head3 See Also
+
+  $ perldoc profile-cmap-draw.pl
+

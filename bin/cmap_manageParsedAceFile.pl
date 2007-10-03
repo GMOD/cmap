@@ -6,12 +6,7 @@ cmap_manageParsedAceFile.pl
 
 =head1 SYNOPSIS
 
-  ./cmap_manageParsedAceFile.pl options cmap_tab_file
-
-
-
-=head1 OPTIONS
-
+  ./cmap_manageParsedAceFile.pl CMAP_IMPORT_FILE > NEW_CMAP_IMPORT_FILE
 
 =head1 DESCRIPTION
 

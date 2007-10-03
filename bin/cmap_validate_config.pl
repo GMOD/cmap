@@ -8,7 +8,7 @@ validate_cmap_config.pl
 
 =head1 SYNOPSIS
 
-  validate_cmap_config.pl cmap.conf
+  validate_cmap_config.pl cmap_config_file.conf
 
 =head1 DESCRIPTION
 

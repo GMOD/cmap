@@ -97,6 +97,12 @@ To limit the correspondences used to specific evidence types, use the --evidence
 
 You may want to run the duplicate correspondence remover in cmap_admin.pl.
 
+It is important to note that this is a non-destructive script.  The stacked
+maps are inserted into a new map set.  It is recommended that the original map
+sets be kept in the database but if database size is an issue, the original
+maps can be removed.  Be aware that there is no script currently or in
+developement to revers e the process.
+
 =cut
 
 use strict;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_data_diagnostics.pl,v 1.2 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: cmap_data_diagnostics.pl,v 1.3 2007-10-03 20:19:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $report_optional, );
 GetOptions(
@@ -72,6 +72,12 @@ for my $species_data ( @{ $species_list || [] } ) {
 check_map_types();
 
 check_feature_types();
+
+=pod
+
+=head1 METHODS
+
+=cut 
 
 # -----------------------------------------------
 sub check_species {

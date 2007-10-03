@@ -6,7 +6,8 @@
 cmap_reduce_cache_size.pl - Limit the size of the query caches
 
 =head1 SYNOPSIS
-                                                                                                                             cmap_reduce_cache_size.pl
+
+  cmap_reduce_cache_size.pl
 
 This script will reduce the size of the query caches to the size given in the
 config file as 'max_query_cache_size'.

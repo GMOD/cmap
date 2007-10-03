@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_metrics.pl,v 1.5 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: cmap_metrics.pl,v 1.6 2007-10-03 20:19:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -58,15 +58,11 @@ my @tables = qw[
     cmap_correspondence_evidence
     cmap_correspondence_lookup
     cmap_correspondence_matrix
-    cmap_evidence_type
     cmap_feature
     cmap_feature_alias
     cmap_feature_correspondence
-    cmap_feature_type
     cmap_map
-    cmap_map_cache
     cmap_map_set
-    cmap_map_type
     cmap_next_number
     cmap_species
     cmap_xref

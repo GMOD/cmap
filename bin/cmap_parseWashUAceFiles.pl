@@ -1,22 +1,22 @@
 #!/usr/bin/perl -w
 
+=pod 
+
 =head1 NAME 
 
 cmap_parseWashUAceFiles.pl
 
 =head1 SYNOPSIS
 
-  ./cmap_parseWashUAceFiles.pl ace_file
-
-=head1 OPTIONS
-
+  ./cmap_parseWashUAceFiles.pl ace_file > cmap_import_file
 
 =head1 DESCRIPTION
 
 Parses an ace file of SuperContigs as used by Washington University 
 into a tab delimited file that cmap_admin.pl can read.
 
-Requires contigs to be named like the WashU supercontigs.
+Requires contigs to be named like the WashU supercontigs.  For instance,
+Contig1.2 where 1 is the supercontig and 2 is the contig identifier.
 
 Use cmap_manageParsedAceFile.pl afterward to make the data more managable.
 

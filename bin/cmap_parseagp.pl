@@ -6,12 +6,7 @@ cmap_parceagp.pl
 
 =head1 SYNOPSIS
 
-  cmap_parceagp.pl [-a assembly_file] agp_file
-
-
-
-=head1 OPTIONS
-
+  cmap_parceagp.pl agp_file > CMAP_IMPORT_FILE
 
 =head1 DESCRIPTION
 
@@ -27,10 +22,9 @@ use Getopt::Long;
 use IO::File;
 use Data::Dumper;
 
-my ( $help, $assembly_clone_file);
+my ( $help, );
 GetOptions( 
     'h|help'   => \$help,
-    'a|assembly=s'   => \$assembly_clone_file,
 );
 pod2usage if ($help or !@ARGV) ;
 

@@ -22,15 +22,39 @@ Options:
 
 =head1 DESCRIPTION
 
-The goal of this script is to help look for attributes that haven't been
-installed or maybe are stale.
+The goal of this script is to help look for a specific attribute that should be
+on every object of the specified type (map set, feature, etc).  It examines the
+CMap database and find all instances where the attribute should be.
 
-This script examines the CMap data and find all instances of attributes for the object type.  It
-will report types that are missing the thing.
+It prints the value of the attribute if it exists for the object and a warning
+if it is missing.
 
-If the attribute name has multiple values for a given object, only one will be reported.
+An example is if all map sets are supposed to have a "Description" attribute.
+Running 
+
+  $ ./cmap_examine_attribute.pl -d DATASOURCE -a "Description" -o "map_set"
+
+would check to make sure all the map sets in the database have a Description
+attribute and provide a list of those that were missing it.
+
+If the attribute name has multiple values for a given object, only one will be
+reported.
 
 Prints results to standard out.
+
+=head2 Recognized object types
+
+=over 4
+
+=item * species
+
+=item * map_set
+
+=item * map
+
+=item * feature
+
+=back
 
 =cut
 
