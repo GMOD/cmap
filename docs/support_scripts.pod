@@ -2,7 +2,7 @@
 
 =head1 VERSION
 
-$Revision: 1.1 $
+$Revision: 1.2 $
 
 There are a number of support scripts included with the CMap distribution.
 They are located in the bin/ directory inside the CMap source directory.  
@@ -77,6 +77,9 @@ valid.  It will report any problems it finds.
 From the documentation: This script cycles through each CMap data_source and
 reduces the size of the query cache to the value given as
 'max_query_cache_size' in the config file.
+
+An optional --config_dir value can be set to use this on config files in a
+secondary location of config file.
 
 =head3 Usage
 

@@ -7,7 +7,11 @@ cmap_reduce_cache_size.pl - Limit the size of the query caches
 
 =head1 SYNOPSIS
 
-  cmap_reduce_cache_size.pl
+  cmap_reduce_cache_size.pl [options]
+
+  options:
+  -h|--help                 : Show this message
+  -c|--config_dir           : The location of the config directory
 
 This script will reduce the size of the query caches to the size given in the
 config file as 'max_query_cache_size'.
@@ -35,12 +39,23 @@ use warnings;
 use Data::Dumper;
 use Bio::GMOD::CMap;
 
-my $cmap_object = Bio::GMOD::CMap->new();
+use Pod::Usage;
+use Getopt::Long;
+
+my ( $help, $config_dir, );
+GetOptions(
+    'h|help'         => \$help,
+    'c|config_dir=s' => \$config_dir,
+);
+pod2usage if ($help);
+
+my $cmap_object = Bio::GMOD::CMap->new( config_dir => $config_dir );
 my $config_object = $cmap_object->config();
 
 # cycle through each data_source
 # and reduce the size.
 for my $config_name (@{$config_object->get_config_names()}){
+    print "Reducing: $config_name\n";
     $cmap_object->data_source($config_name);
     $cmap_object->control_cache_size()
 }
