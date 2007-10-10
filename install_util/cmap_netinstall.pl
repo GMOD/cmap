@@ -11,6 +11,7 @@ cmap_netinstall.pl
   options:
   -h|--help            : Show this message
   -d|--dev             : Use the developement version from SourceForge CVS
+  -k|--keep            : keep the distribution in the local directory as cmap
   -b|--build_param_str : Use this string to predefine Build.PL parameters
                          such as CONF or PREFIX
 
@@ -30,16 +31,16 @@ use Config;
 use Getopt::Long;
 use Pod::Usage;
 
-my ( $show_help, $get_from_cvs, $build_param_string, );
+my ( $show_help, $get_from_cvs, $keep_distro, $build_param_string, );
 
 BEGIN {
 
     GetOptions(
-        'h|help'              => \$show_help,             # Show help and exit
-        'd|dev'               => \$get_from_cvs,          # Use the dev cvs
-        'b|build_param_str=s' => \$build_param_string,    # Build parameters
-        )
-        or pod2usage(2);
+        'h|help'              => \$show_help,          # Show help and exit
+        'd|dev'               => \$get_from_cvs,       # Use the dev cvs
+        'k|keep'              => \$keep_distro,        # keep the distribution
+        'b|build_param_str=s' => \$build_param_string, # Build parameters
+    ) or pod2usage(2);
     pod2usage(2) if $show_help;
     print STDERR "\nAbout to install CMap and all its prerequisites.\n";
     print STDERR
@@ -95,8 +96,18 @@ my $make     = $Config{'make'};
 $ENV{COLUMNS} = 80;    # why do we have to do this?
 $ENV{LINES}   = 24;
 
-my $tmpdir = tempdir( CLEANUP => 1 )
-    or die "Could not create temporary directory: $!";
+my $tmpdir;
+
+if ($keep_distro) {
+    $tmpdir = "";
+    if ( -e "cmap" ) {
+        die "'cmap' directory already exists, please remove and try again.\n";
+    }
+}
+else {
+    $tmpdir = tempdir( CLEANUP => 1 )
+        or die "Could not create temporary directory: $!";
+}
 my $windows = $Config{osname} =~ /mswin/i;
 
 if ( $windows && !-e "$binaries/${make}.exe" ) {
@@ -107,12 +118,12 @@ if ( $windows && !-e "$binaries/${make}.exe" ) {
         or die
         "$binaries directory is not writeable. Please re-login as Admin.\n";
 
-    chdir $tmpdir;
+    chdir $tmpdir if ($tmpdir);
 
     my $rc = mirror( NMAKE, "nmake.zip" );
     die "Could not download nmake executable from Microsoft web site."
         unless $rc == RC_OK
-        or $rc == RC_NOT_MODIFIED;
+            or $rc == RC_NOT_MODIFIED;
 
     my $zip = Archive::Zip->new('nmake.zip')
         or die "Couldn't open nmake zip file for decompression: $!";
@@ -200,7 +211,7 @@ END {
 
 sub do_get_distro {
     my ( $get_from_cvs, ) = @_;
-    chdir $tmpdir;
+    chdir $tmpdir if ($tmpdir);
     my $local_name = 'cmap.tgz';
     if ($get_from_cvs) {
         my $distribution_dir = "cmap";
@@ -247,7 +258,7 @@ sub do_get_distro {
 
 sub do_get_static_distro {
     my ( $download, $local_name, $distribution_dir, ) = @_;
-    chdir $tmpdir;
+    chdir $tmpdir if ($tmpdir);
     print STDERR "Downloading $download...\n";
     my $rc = mirror( $download, $local_name );
     unless ( $rc == RC_OK or $rc == RC_NOT_MODIFIED ) {
@@ -279,7 +290,7 @@ sub do_install {
 
     print STDERR "Installing $distribution_dir\n";
 
-    chdir $tmpdir;
+    chdir $tmpdir if ($tmpdir);
 
     chdir $distribution_dir
         or die "Couldn't enter $distribution_dir directory: $!";
