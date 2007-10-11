@@ -49,15 +49,18 @@ GetOptions(
 );
 pod2usage if ($help);
 
-my $cmap_object = Bio::GMOD::CMap->new( config_dir => $config_dir );
+my $cmap_object = Bio::GMOD::CMap->new();
+$cmap_object->{'config'}
+    = Bio::GMOD::CMap::Config->new( config_dir => $config_dir, );
+
 my $config_object = $cmap_object->config();
 
 # cycle through each data_source
 # and reduce the size.
-for my $config_name (@{$config_object->get_config_names()}){
+for my $config_name ( @{ $config_object->get_config_names() } ) {
     print "Reducing: $config_name\n";
     $cmap_object->data_source($config_name);
-    $cmap_object->control_cache_size()
+    $cmap_object->control_cache_size();
 }
 
 =pod
