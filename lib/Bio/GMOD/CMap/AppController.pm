@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.43 2007-09-28 20:17:00 mwz444 Exp $
+# $Id: AppController.pm,v 1.44 2007-10-12 19:18:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -540,29 +540,6 @@ Handler for expanding a zone.
     my $zone_key   = $args{'zone_key'};
 
     $self->app_display_data()->expand_zone(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub toggle_corrs_zone {
-
-=pod
-
-=head2 toggle_corrs_zone
-
-Handler for toggling correspondences for a zone.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $zone_key   = $args{'zone_key'};
-
-    $self->app_display_data()->toggle_corrs_zone(
         window_key => $window_key,
         zone_key   => $zone_key,
     );

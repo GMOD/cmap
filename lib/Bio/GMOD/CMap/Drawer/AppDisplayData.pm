@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.63 2007-10-03 15:00:22 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.64 2007-10-12 19:18:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -633,19 +633,26 @@ Scroll zones
     my $scroll_value = $args{'scroll_value'} or return;
 
     $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
-    my $x_offset    = $self->{'scaffold'}{$zone_key}{'x_offset'};
-    my $zone_layout = $self->{'zone_layout'}{$zone_key};
+    my $x_offset          = $self->{'scaffold'}{$zone_key}{'x_offset'};
+    my $zone_layout       = $self->{'zone_layout'}{$zone_key};
+    my $half_screen_width = ( $zone_layout->{'viewable_internal_x2'}
+            - $zone_layout->{'viewable_internal_x1'} ) / 2;
 
+    # Halt movement right when on left edge
     if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value
-        > $zone_layout->{'viewable_internal_x1'} )
+        > $half_screen_width + $zone_layout->{'viewable_internal_x1'} )
     {
-        $scroll_value = -1 * $x_offset;
+        $scroll_value = -1 * $x_offset + $half_screen_width;
     }
+
+    # Halt movement left when on right edge
     if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value
-        < $zone_layout->{'viewable_internal_x2'} )
+        < $zone_layout->{'viewable_internal_x2'} - $half_screen_width )
     {
-        $scroll_value = $zone_layout->{'viewable_internal_x2'}
-            - $zone_layout->{'internal_bounds'}[2];
+        $scroll_value
+            = $zone_layout->{'viewable_internal_x2'}
+            - $zone_layout->{'internal_bounds'}[2]
+            - $half_screen_width;
     }
 
     return unless ($scroll_value);
@@ -710,7 +717,9 @@ Zoom zones
     my $zone_scaffold = $self->{'scaffold'}{$zone_key};
 
     # Don't let it zoom out farther than is useful.
-    if ( $zone_scaffold->{'scale'} == 1 and $zoom_value < 1 ) {
+    # Maybe Let it zoom out one farther than to scale
+    #if ( $zone_scaffold->{'scale'} < 1 and $zoom_value < 1 ) {
+    if ( $zone_scaffold->{'scale'} <= 1 and $zoom_value < 1 ) {
         return;
     }
 
@@ -878,49 +887,13 @@ Modify the correspondences for a zone
                 );
             }
             else {
-                $self->clear_zone_corrs(
+                $self->clear_corrs_between_zones(
                     window_key => $window_key,
                     zone_key1  => $zone_key1,
                     zone_key2  => $zone_key2,
                 );
             }
         }
-    }
-
-    return;
-}
-
-# ----------------------------------------------------
-sub toggle_corrs_zone {
-
-=pod
-
-=head2 toggle_corrs_zone
-
-toggle the correspondences for a zone
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $zone_key1  = $args{'zone_key'};
-
-    my $zone_key2 = $self->{'scaffold'}{$zone_key1}{'parent_zone_key'};
-    return unless ($zone_key2);
-
-    if ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} ) {
-        $self->clear_zone_corrs(
-            window_key => $window_key,
-            zone_key1  => $zone_key1,
-            zone_key2  => $zone_key2,
-        );
-    }
-    else {
-        $self->add_zone_corrs(
-            window_key => $window_key,
-            zone_key1  => $zone_key1,
-            zone_key2  => $zone_key2,
-        );
     }
 
     return;
@@ -1329,10 +1302,11 @@ canvases.
     #    app_display_data => $self,
     #    width            => $width - 400,
     #);
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
+    #$self->app_interface()->draw_window(
+    #    window_key       => $window_key,
+    #    app_display_data => $self,
+    #);
+    $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
 }
@@ -2282,7 +2256,7 @@ Hide Corrs for moving
         if ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} ) {
             push @{ $self->{'correspondences_hidden'}{$zone_key1} },
                 $zone_key2;
-            $self->clear_zone_corrs(
+            $self->clear_corrs_between_zones(
                 window_key => $window_key,
                 zone_key1  => $zone_key1,
                 zone_key2  => $zone_key2,
@@ -2567,7 +2541,7 @@ Move a map from one place on a parent to another
             ),
             old_feature_start =>
                 $self->{'sub_maps'}{$map_key}{'feature_start'},
-            feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+            old_feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
             new_parent_map_key => $new_parent_map_key,
             new_parent_map_id  => $self->map_key_to_id($new_parent_map_key),
             new_feature_start  => $new_feature_start,
@@ -3216,6 +3190,7 @@ Create one new map and hide the original maps
         first_map_feature_accs  => \@first_map_feature_accs,
         second_map_feature_accs => \@second_map_feature_accs,
         first_sub_map_keys      => \@first_sub_map_keys,
+        second_sub_map_keys     => \@second_sub_map_keys,
     );
     $self->add_action(
         window_key  => $window_key,
@@ -3308,8 +3283,18 @@ Create new maps and hide the original maps
         = $self->{'sub_maps'}{$subsection_map_key}{'feature_stop'};
 
     my $starting_zone_key = $self->map_key_to_zone_key($starting_map_key);
+    my $destination_zone_key
+        = $self->map_key_to_zone_key($destination_map_key);
+    my $ori_subsection_zone_key
+        = $self->map_key_to_zone_key($subsection_map_key);
 
     my $window_key = $self->{'scaffold'}{$starting_zone_key}{'window_key'};
+
+    # Erase the subsection zone corrs because they will be untouchable later
+    $self->erase_corrs_of_zone(
+        window_key => $window_key,
+        zone_key   => $ori_subsection_zone_key,
+    );
 
     my $starting_map_id    = $self->map_key_to_id($starting_map_key);
     my $destination_map_id = $self->map_key_to_id($destination_map_key);
@@ -3481,6 +3466,19 @@ Create new maps and hide the original maps
         destination_back_offset  => $destination_back_offset,
         subsection_offset        => $subsection_offset,
         same_parent_map          => $same_parent_map,
+    );
+
+    # Select the destination zone
+    my $new_subsection_zone_key
+        = $self->map_key_to_zone_key($subsection_map_key);
+    my $new_subsection_map_set_id
+        = $self->{'scaffold'}{$new_subsection_zone_key}{'map_set_id'};
+    my $new_subsection_map_set_data = $self->app_data_module()
+        ->get_map_set_data( map_set_id => $new_subsection_map_set_id, );
+    $self->app_interface()->int_new_selected_zone(
+        map_set_data     => $new_subsection_map_set_data,
+        zone_key         => $new_subsection_zone_key,
+        app_display_data => $self,
     );
 
     # Redraw
@@ -4947,6 +4945,7 @@ another (and possibly on a different parent).
                 show_features => $old_sub_zone_scaffold->{'show_features'},
                 map_labels_visible =>
                     $self->map_labels_visible($old_sub_zone_key),
+                copy_zone_key => $old_sub_zone_key,
             );
         }
 
@@ -5120,6 +5119,10 @@ Undo the action that was just performed.
             ori_map_key    => $last_action->{'ori_map_key'},
             first_map_key  => $last_action->{'first_map_key'},
             second_map_key => $last_action->{'second_map_key'},
+            first_map_feature_accs =>
+                $last_action->{'first_map_feature_accs'},
+            second_map_feature_accs =>
+                $last_action->{'second_map_feature_accs'},
         );
     }
     elsif ( $last_action->{'action'} eq 'merge_maps' ) {
@@ -5600,7 +5603,7 @@ The main highlight bounds must already have been moved.
         parent_zone_key => $parent_zone_key,
         window_key      => $window_key,
         parent_map_key  => $parent_map_key,
-        location_coords => [ $x1, $y1, $x2, $y2 ]
+        location_coords => [ $x1_on_parent, $y1, $x2_on_parent, $y2 ]
     );
 
     return %return_hash;
@@ -6123,11 +6126,69 @@ Given box coords and x and y coords, figure out if the mouse is in a the box.
 }
 
 # ----------------------------------------------------
-sub clear_zone_corrs {
+sub erase_corrs_of_zone {
 
 =pod
 
-=head2 clear_zone_corrs
+=head2 erase_corrs_of_zone
+
+Erase the corrs of a zone without turning corrs off.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key1  = $args{'zone_key'}   or return;
+
+    foreach my $map_key1 ( @{ $self->{'map_order'}{$zone_key1} || [] } ) {
+        foreach my $map_key2 (
+            keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
+        {
+            $self->remove_corrs_between_maps(
+                window_key => $window_key,
+                map_key1   => $map_key1,
+                map_key2   => $map_key2,
+            );
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub clear_corrs_of_zone {
+
+=pod
+
+=head2 clear_corrs_of_zone
+
+Clears a zone of correspondences and calls on the interface to remove the drawings.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key1  = $args{'zone_key'}   or return;
+
+    foreach my $zone_key2 (
+        keys %{ $self->{'correspondences_on'}{$zone_key1} || {} } )
+    {
+        $self->clear_corrs_between_zones(
+            window_key => $window_key,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
+        );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub clear_corrs_between_zones {
+
+=pod
+
+=head2 clear_corrs_between_zones
 
 Clears a zone of correspondences and calls on the interface to remove the drawings.
 
@@ -6149,6 +6210,8 @@ Clears a zone of correspondences and calls on the interface to remove the drawin
         foreach my $map_key2 (
             keys %{ $self->{'corr_layout'}{'maps'}{$map_key1} || {} } )
         {
+
+            # Skip this one if the map2 is not in the target zone2
             next unless ( $zone2_maps{$map_key2} );
             $self->remove_corrs_between_maps(
                 window_key => $window_key,
@@ -6201,7 +6264,7 @@ sub remove_corrs_to_map {
 
 =pod
 
-=head2 clear_zone_corrs
+=head2 remove_corrs_to_map
 
 Removes all the correspondences to a single map
 
@@ -6316,7 +6379,7 @@ reset  a zone of correspondences
     {
         next unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} );
 
-        $self->clear_zone_corrs(
+        $self->clear_corrs_between_zones(
             window_key => $window_key,
             zone_key1  => $zone_key1,
             zone_key2  => $zone_key2,
@@ -6327,6 +6390,73 @@ reset  a zone of correspondences
             zone_key2  => $zone_key2,
         );
     }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub delete_zone_corrs {
+
+=pod
+
+=head2 delete_zone_corrs
+
+copy a zone of correspondences
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key   = $args{'zone_key'}   or return;
+
+    $self->clear_corrs_of_zone(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
+
+    foreach my $zone_key2 (
+        keys %{ $self->{'correspondences_on'}{$zone_key} || {} } )
+    {
+        delete $self->{'correspondences_on'}{$zone_key2}{$zone_key};
+    }
+    delete $self->{'correspondences_on'}{$zone_key};
+    delete $self->{'zone_to_map_set_correspondences_on'}{$zone_key};
+
+    return;
+}
+
+# ----------------------------------------------------
+sub copy_zone_corrs {
+
+=pod
+
+=head2 copy_zone_corrs
+
+copy a zone of correspondences
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'}   or return;
+    my $ori_zone_key = $args{'ori_zone_key'} or return;
+    my $new_zone_key = $args{'new_zone_key'} or return;
+
+    foreach my $zone_key2 (
+        keys %{ $self->{'correspondences_on'}{$ori_zone_key} || {} } )
+    {
+        my $value = $self->{'correspondences_on'}{$ori_zone_key}{$zone_key2};
+        next unless ($value);
+
+        # If it is a self corr, adjust zk2 to be the new zone
+        if ( $zone_key2 == $ori_zone_key ) {
+            $zone_key2 = $new_zone_key;
+        }
+
+        $self->{'correspondences_on'}{$new_zone_key}{$zone_key2} = $value;
+        $self->{'correspondences_on'}{$zone_key2}{$new_zone_key} = $value;
+    }
+    $self->{'zone_to_map_set_correspondences_on'}{$new_zone_key}
+        = $self->{'zone_to_map_set_correspondences_on'}{$ori_zone_key};
 
     return;
 }
@@ -6454,6 +6584,7 @@ Deletes the zone data and wipes them from the canvas
     my $zone_key   = $args{'zone_key'};
 
     my $zone_layout = $self->{'zone_layout'}{$zone_key};
+    my $map_set_id  = $self->{'scaffold'}{$zone_key}{'map_set_id'};
 
     # Remove Drawing info
     foreach my $drawing_item_name (qw[ separator background ]) {
@@ -6465,6 +6596,26 @@ Deletes the zone data and wipes them from the canvas
 
     # Remove zone from window
     delete $self->{'zone_in_window'}{$window_key}{$zone_key};
+
+    # Remove from map_set_id list
+    for (
+        my $i = 0;
+        $i <= $#{ $self->{'map_set_id_to_zone_keys'}{$map_set_id} || [] };
+        $i++
+        )
+    {
+        if ($zone_key == $self->{'map_set_id_to_zone_keys'}{$map_set_id}[$i] )
+        {
+            splice @{ $self->{'map_set_id_to_zone_keys'}{$map_set_id} }, $i,
+                1;
+            $i--;
+        }
+    }
+
+    $self->delete_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
 
     # Delete the maps in this zone
     my @map_keys = @{ $self->{'map_order'}{$zone_key} || [] };
@@ -7068,6 +7219,26 @@ Creates the key used to identify a map bin.
 }
 
 # ----------------------------------------------------
+sub get_children_zones_of_zone {
+
+=pod
+
+=head2 get_children_zones_of_zone
+
+returns
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'};
+
+    my @child_zone_keys
+        = @{ $self->{'scaffold'}{$zone_key}{'children'} || [] };
+
+    return @child_zone_keys;
+}
+
+# ----------------------------------------------------
 sub get_children_zones_of_map {
 
 =pod
@@ -7266,6 +7437,7 @@ Initializes zone
         expanded           => $expanded,
         is_top             => $is_top,
         show_features      => $show_features,
+        copy_zone_key      => $zone_key_to_copy,
     );
 
 =cut
@@ -7274,14 +7446,32 @@ Initializes zone
     my $window_key = $args{'window_key'} or return undef;
     my $zone_key = $args{'zone_key'} || $self->next_internal_key('zone');
     my $map_set_id = $args{'map_set_id'};
-    my $parent_zone_key    = $args{'parent_zone_key'};          # Can be undef
-    my $parent_map_key     = $args{'parent_map_key'};           # Can be undef
-    my $attached_to_parent = $args{'attached_to_parent'} || 0;
-    my $expanded           = $args{'expanded'} || 0;
-    my $is_top             = $args{'is_top'} || 0;
-    my $show_features      = $args{'show_features'} || 0;
-    my $map_labels_visible = $args{'map_labels_visible'} || 0;
+    my $parent_zone_key    = $args{'parent_zone_key'};      # Can be undef
+    my $parent_map_key     = $args{'parent_map_key'};       # Can be undef
+    my $attached_to_parent = $args{'attached_to_parent'};
+    my $expanded           = $args{'expanded'};
+    my $is_top             = $args{'is_top'};
+    my $show_features      = $args{'show_features'};
+    my $map_labels_visible = $args{'map_labels_visible'};
+    my $copy_zone_key      = $args{'copy_zone_key'};
 
+    if ($copy_zone_key) {
+        my $copy_scaffold = $self->{'scaffold'}{$copy_zone_key};
+        $attached_to_parent = $copy_scaffold->{'attached_to_parent'}
+            unless ( defined $attached_to_parent );
+        $expanded = $copy_scaffold->{'expanded'} unless ( defined $expanded );
+        $is_top   = $copy_scaffold->{'is_top'}   unless ( defined $is_top );
+        $show_features = $copy_scaffold->{'show_features'}
+            unless ( defined $show_features );
+        $map_labels_visible = $copy_scaffold->{'map_labels_visible'}
+            unless ( defined $map_labels_visible );
+    }
+
+    $attached_to_parent ||= 0;
+    $expanded           ||= 0;
+    $is_top             ||= 0;
+    $show_features      ||= 0;
+    $map_labels_visible ||= 0;
     $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,
         map_set_id         => $map_set_id,
@@ -7300,7 +7490,16 @@ Initializes zone
 
     $self->map_set_id_to_zone_keys( $map_set_id, $zone_key, );
     $self->map_labels_visible( $zone_key, $map_labels_visible, );
+    $self->features_visible( $zone_key, $show_features, );
 
+    if ($copy_zone_key) {
+        $self->copy_zone_corrs(
+            window_key   => $window_key,
+            ori_zone_key => $copy_zone_key,
+            new_zone_key => $zone_key,
+        );
+
+    }
     if ($parent_zone_key) {
         push @{ $self->{'scaffold'}{$parent_zone_key}{'children'} },
             $zone_key;
@@ -7855,7 +8054,7 @@ Revisit
             $self->{'sub_maps'}{$map_key}{'parent_map_key'}
         ),
         old_feature_start  => $self->{'sub_maps'}{$map_key}{'feature_start'},
-        feature_stop       => $self->{'sub_maps'}{$map_key}{'feature_stop'},
+        old_feature_stop   => $self->{'sub_maps'}{$map_key}{'feature_stop'},
         new_parent_map_key => $new_parent_map_key,
         new_parent_map_id  => $self->map_key_to_id($new_parent_map_key),
         new_feature_start  => $new_feature_start,
@@ -7907,6 +8106,7 @@ Revisit
         first_map_feature_accs  => \@first_map_feature_accs,
         second_map_feature_accs => \@second_map_feature_accs,
         first_sub_map_keys      => \@first_sub_map_keys,
+        second_sub_map_keys     => \@second_sub_map_keys,
     );
 
 =head2 Other Values

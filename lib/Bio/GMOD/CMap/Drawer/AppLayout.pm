@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.48 2007-10-03 15:00:22 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.49 2007-10-12 19:18:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -273,6 +273,15 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
     my $zone_width;
 
+    # Refresh the layout hash if this is the first zone to be layed out.
+    unless ($depth) {
+        _refresh_layout_hash();
+    }
+
+    # Add the zone to the layout hash letting the world know that it has been
+    # layed out.
+    _add_zone_to_layout_hash($zone_key);
+
     # If the zone has never been layed out, set relayout to 0
     $relayout = 0 unless ( $zone_layout->{'layed_out_once'} );
 
@@ -342,6 +351,10 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                         y                => $move_offset_y,
                         app_display_data => $app_display_data,
                     );
+
+                    # let the program know that the child zones are visible
+                    _add_child_zones_of_zone_to_layout_hash( $zone_key,
+                        $app_display_data );
                     return 0;
                 }
             }
@@ -458,7 +471,12 @@ Lays out head maps in a zone
     }
 
     # Set the viewable space by using the window
+    # Save the last vieable to help with scrolling
     my $window_layout = $app_display_data->{'window_layout'}{$window_key};
+    $zone_layout->{'last_viewable_internal_x1'}
+        = $zone_layout->{'viewable_internal_x1'};
+    $zone_layout->{'last_viewable_internal_x2'}
+        = $zone_layout->{'viewable_internal_x2'};
     $zone_layout->{'viewable_internal_x1'} = -1 * $x_offset;
     $zone_layout->{'viewable_internal_x2'} = $zone_width - $x_offset;
     if ( $zone_layout->{'viewable_internal_x1'}
@@ -709,6 +727,8 @@ MAP:
             min_y            => $row_min_y,
             viewable_x1      => $zone_layout->{'viewable_internal_x1'},
             viewable_x2      => $zone_layout->{'viewable_internal_x2'},
+            last_viewable_x1 => $zone_layout->{'last_viewable_internal_x1'},
+            last_viewable_x2 => $zone_layout->{'last_viewable_internal_x2'},
             pixels_per_unit  => $map_pixels_per_unit,
             relayout         => $relayout,
             move_offset_x    => $move_offset_x,
@@ -816,7 +836,12 @@ Lays out sub maps in a slot.
     my $row_min_y = MAP_Y_BUFFER;
     my $row_max_y = $row_min_y;
 
-    $zone_layout->{'internal_bounds'}      = [ 0, 0, $zone_width, 0, ];
+    # Save the last vieable to help with scrolling
+    $zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0, ];
+    $zone_layout->{'last_viewable_internal_x1'}
+        = $zone_layout->{'viewable_internal_x1'};
+    $zone_layout->{'last_viewable_internal_x2'}
+        = $zone_layout->{'viewable_internal_x2'};
     $zone_layout->{'viewable_internal_x1'} = -1 * $x_offset;
     $zone_layout->{'viewable_internal_x2'} = $zone_width - $x_offset;
 
@@ -963,10 +988,13 @@ Lays out sub maps in a slot.
             # Set bounds so overview can access it later even if it
             # isn't on the screen.
             $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}[0]
+                = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[0]
                 = $x1;
             $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}[1]
+                = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[1]
                 = $row_min_y;
             $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}[2]
+                = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[2]
                 = $x2;
 
             # Set the shape of the map
@@ -1029,14 +1057,18 @@ Lays out sub maps in a slot.
                 max_x            => $x2,
                 viewable_x1      => $zone_layout->{'viewable_internal_x1'},
                 viewable_x2      => $zone_layout->{'viewable_internal_x2'},
-                min_y            => $row_min_y,
-                pixels_per_unit  => $map_pixels_per_unit,
-                relayout         => $relayout,
-                move_offset_x    => $move_offset_x,
-                move_offset_y    => $move_offset_y,
-                force_relayout   => $force_relayout,
-                depth            => $depth,
-                label            => $label_info{$sub_map_key},
+                last_viewable_x1 =>
+                    $zone_layout->{'last_viewable_internal_x1'},
+                last_viewable_x2 =>
+                    $zone_layout->{'last_viewable_internal_x2'},
+                min_y           => $row_min_y,
+                pixels_per_unit => $map_pixels_per_unit,
+                relayout        => $relayout,
+                move_offset_x   => $move_offset_x,
+                move_offset_y   => $move_offset_y,
+                force_relayout  => $force_relayout,
+                depth           => $depth,
+                label           => $label_info{$sub_map_key},
             );
 
             if ( $row_max_y < $tmp_map_max_y ) {
@@ -1172,6 +1204,8 @@ Lays out a maps in a contained area.
     my $min_y              = $args{'min_y'};
     my $viewable_x1        = $args{'viewable_x1'};
     my $viewable_x2        = $args{'viewable_x2'};
+    my $last_viewable_x1   = $args{'last_viewable_x1'};
+    my $last_viewable_x2   = $args{'last_viewable_x2'};
     my $pixels_per_unit    = $args{'pixels_per_unit'};
     my $relayout           = $args{'relayout'} || 0;
     my $move_offset_x      = $args{'move_offset_x'} || 0;
@@ -1193,15 +1227,35 @@ Lays out a maps in a contained area.
         # Check if we just need to move the map
         # If the viewable region is the same and we aren't force_relayout
         # simply move the map
+        my $viewable_x1_location_on_map = ( $viewable_x1 < $min_x )
+            ? -1    # Before Map
+            : ( $viewable_x1 > $max_x ) ? -2                       # After Map
+            :                             $viewable_x1 - $min_x;
+        my $viewable_x2_location_on_map = ( $viewable_x2 < $min_x )
+            ? -1    # Before Map
+            : ( $viewable_x2 > $max_x ) ? -2                       # After Map
+            :                             $viewable_x2 - $min_x;
+        my $last_viewable_x1_location_on_map
+            = ( not defined $last_viewable_x1 )
+            ? undef
+            : ( $last_viewable_x1 < $min_x ) ? -1    # Before Map
+            : ( $last_viewable_x1 > $max_x ) ? -2    # After Map
+            :                                  $last_viewable_x1 - $min_x;
+        my $last_viewable_x2_location_on_map
+            = ( not defined $last_viewable_x2 )
+            ? undef
+            : ( $last_viewable_x2 < $min_x ) ? -1    # Before Map
+            : ( $last_viewable_x2 > $max_x ) ? -2    # After Map
+            :                                  $last_viewable_x2 - $min_x;
+
         if (    !$force_relayout
+            and defined($last_viewable_x1_location_on_map)
+            and defined($last_viewable_x2_location_on_map)
             and @{ $map_layout->{'bounds'} || [] }
-            and ( $map_layout->{'coords'}[0] 
-                - $map_layout->{'bounds'}[0]
-                == ( ( $min_x > $viewable_x1 ) ? $min_x : $viewable_x1 )
-                - $min_x )
-            and ( $map_layout->{'bounds'}[2] 
-                - $map_layout->{'coords'}[2] == $max_x
-                - ( ( $max_x < $viewable_x2 ) ? $max_x : $viewable_x2 ) )
+            and ( $last_viewable_x1_location_on_map
+                == $viewable_x1_location_on_map )
+            and ( $last_viewable_x2_location_on_map
+                == $viewable_x2_location_on_map )
             )
         {
             my $app_interface = $app_display_data->app_interface();
@@ -1214,6 +1268,8 @@ Lays out a maps in a contained area.
                 x                => $move_offset_x,
                 y                => $move_offset_y,
             );
+            _add_child_zones_of_map_to_layout_hash( $zone_key, $map_key,
+                $app_display_data );
 
             # return the lowest point for this map
             return $map_layout->{'bounds'}[3];
@@ -1766,6 +1822,11 @@ Lays out correspondences between two zones
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
 
+    # TEMPORARY - don't layout if both ends aren't visible
+    return
+        unless ( _is_zone_layed_out($zone_key1)
+        and _is_zone_layed_out($zone_key2) );
+
     my $allow_intramap = 0;
     if ( $zone_key1 == $zone_key2 ) {
         $allow_intramap = 1;
@@ -1804,16 +1865,20 @@ Lays out correspondences between two zones
     );
 
     foreach my $corr ( @{ $corrs || [] } ) {
-        my $map_id1  = $corr->{'map_id1'};
-        my $map_id2  = $corr->{'map_id2'};
+        my $map_id1 = $corr->{'map_id1'};
+        my $map_id2 = $corr->{'map_id2'};
+
+        #next unless($map_id2 == 2898);
+        #next unless($map_id1 == 2870);
+        #print STDERR "$map_id1, $map_id2\n";
         my $map_key1 = $app_display_data->map_id_to_key_by_zone( $map_id1,
             $zone_key1 );
         my $map_key2 = $app_display_data->map_id_to_key_by_zone( $map_id2,
             $zone_key2 );
         my $map1_x1
-            = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[0];
+            = $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[0];
         my $map2_x1
-            = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[0];
+            = $app_display_data->{'map_layout'}{$map_key2}{'bounds'}[0];
 
         my $map_start1 = $map_data_hash->{$map_id1}{'map_start'};
         my $map_start2 = $map_data_hash->{$map_id2}{'map_start'};
@@ -2489,11 +2554,11 @@ box.
     my $truncated        = $args{'truncated'} || 0;
     my $app_display_data = $args{'app_display_data'};
 
-    my $max_y  = $min_y + $thickness;
-    my $mid_y  = int( 0.5 + ( $min_y + $max_y ) / 2 );
-    my @bounds = ( $min_x, $min_y, $max_x, $max_y );
+    my $max_y = $min_y + $thickness;
+    my $mid_y = int( 0.5 + ( $min_y + $max_y ) / 2 );
     my ( $left_side_unseen, $right_side_unseen ) = ( 0, 0 );
-    my @coords                 = ( $min_x, $min_y, $max_x, $max_y );
+    my @bounds = ( $min_x, $min_y, $max_x, $max_y );
+    my @coords = ( $min_x, $min_y, $max_x, $max_y );
     my $truncation_arrow_width = 20;
     my $is_flipped             = 0;
 
@@ -2725,6 +2790,131 @@ bounds of the map.
         );
 
     return ( \@bounds, \@coords );
+}
+
+=pod
+
+=head1 layed_out_zones methods
+
+These methods are to let the layout methods know if a zone has been layed out durint this call or if it is off screen somewhere.
+
+=cut
+
+{
+    my %layout_hash;
+
+=pod
+
+=head2 _refresh_layout_hash
+
+Refreshes the layout hash for the begining of a layout.  No zones have been layed out yet.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _refresh_layout_hash {
+        %layout_hash = ();
+        return;
+    }
+
+=pod
+
+=head2 _add_zone_to_layout_hash
+
+Adds a zone to the layout hash.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _add_zone_to_layout_hash {
+        my $zone_key = shift or return;
+        $layout_hash{$zone_key} = 1;
+        return;
+    }
+
+=pod
+
+=head2 _add_child_zones_of_zone_to_layout_hash
+
+Recursively adds children zone to the layout hash.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _add_child_zones_of_zone_to_layout_hash {
+        my $zone_key         = shift or return;
+        my $app_display_data = shift or return;
+
+        foreach my $child_zone_key (
+            $app_display_data->get_children_zones_of_zone(
+                zone_key => $zone_key,
+            )
+            )
+        {
+            _add_zone_to_layout_hash($child_zone_key);
+            _add_child_zones_of_zone_to_layout_hash( $child_zone_key,
+                $app_display_data );
+        }
+
+        return;
+    }
+
+=pod
+
+=head2 _add_child_zones_of_map_to_layout_hash
+
+Recursively adds children zones of a map to the layout hash.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _add_child_zones_of_map_to_layout_hash {
+        my $zone_key         = shift or return;
+        my $map_key          = shift or return;
+        my $app_display_data = shift or return;
+
+        foreach my $child_zone_key (
+            $app_display_data->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            )
+            )
+        {
+            _add_zone_to_layout_hash($child_zone_key);
+            _add_child_zones_of_map_to_layout_hash( $child_zone_key, $map_key,
+                $app_display_data );
+        }
+
+        return;
+    }
+
+=pod
+
+=head2 _is_zone_layed_out
+
+Adds a zone to the layout hash.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _is_zone_layed_out {
+        my $zone_key = shift or return;
+        return $layout_hash{$zone_key};
+    }
+
+=pod
+
+=head2 _layout_hash
+
+Simply returns the layout hash.
+
+=cut
+
+    # ----------------------------------------------------
+    sub _layout_hash {
+        return %layout_hash;
+    }
+
 }
 
 1;
