@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.49 2007-10-12 19:18:54 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.50 2007-10-16 19:38:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -42,6 +42,9 @@ use constant SMALL_BUFFER            => 2;
 use constant MIN_MAP_WIDTH           => 4;
 use constant MIN_MAP_DETAIL_WIDTH    => 50;
 use constant BETWEEN_ZONE_BUFFER     => 5;
+use constant OFF_TO_THE_LEFT         => 'left';
+use constant OFF_TO_THE_RIGHT        => 'right';
+use constant ON_SCREEN               => 'visible';
 
 use base 'Exporter';
 
@@ -275,12 +278,12 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
     # Refresh the layout hash if this is the first zone to be layed out.
     unless ($depth) {
-        _refresh_layout_hash();
+        _refresh_zone_visibility_hash();
     }
 
     # Add the zone to the layout hash letting the world know that it has been
     # layed out.
-    _add_zone_to_layout_hash($zone_key);
+    _add_zone_to_zone_visibility_hash($zone_key);
 
     # If the zone has never been layed out, set relayout to 0
     $relayout = 0 unless ( $zone_layout->{'layed_out_once'} );
@@ -353,8 +356,10 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                     );
 
                     # let the program know that the child zones are visible
-                    _add_child_zones_of_zone_to_layout_hash( $zone_key,
-                        $app_display_data );
+                    _add_child_zones_to_visibility_hash(
+                        app_display_data => $app_display_data,
+                        zone_key         => $zone_key,
+                    );
                     return 0;
                 }
             }
@@ -668,10 +673,29 @@ MAP:
         }
 
         # If map is not on the screen, don't lay it out.
-        if ( ( $map_min_x + $map_container_width )
-            < $zone_layout->{'viewable_internal_x1'}
-            or $map_min_x > $zone_layout->{'viewable_internal_x2'} )
-        {
+        my $left_of_view = ( ( $map_min_x + $map_container_width )
+            < $zone_layout->{'viewable_internal_x1'} );
+        my $right_of_view
+            = ( $map_min_x > $zone_layout->{'viewable_internal_x2'} );
+        if ( $left_of_view or $right_of_view ) {
+
+           # The map is off to either the left or right, save that information
+            if ($left_of_view) {
+                _add_child_zones_to_visibility_hash(
+                    app_display_data => $app_display_data,
+                    zone_key         => $zone_key,
+                    map_key          => $map_key,
+                    state            => OFF_TO_THE_LEFT,
+                );
+            }
+            elsif ($right_of_view) {
+                _add_child_zones_to_visibility_hash(
+                    app_display_data => $app_display_data,
+                    zone_key         => $zone_key,
+                    map_key          => $map_key,
+                    state            => OFF_TO_THE_RIGHT,
+                );
+            }
             if ( @{ $map_layout->{'items'} || [] } ) {
                 destroy_map_for_relayout(
                     app_display_data => $app_display_data,
@@ -991,7 +1015,8 @@ Lays out sub maps in a slot.
                 = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[0]
                 = $x1;
             $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}[1]
-                = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[1]
+
+               #= $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[1]
                 = $row_min_y;
             $app_display_data->{'map_layout'}{$sub_map_key}{'bounds'}[2]
                 = $app_display_data->{'map_layout'}{$sub_map_key}{'coords'}[2]
@@ -1019,9 +1044,29 @@ Lays out sub maps in a slot.
             }
 
             # If map is not on the screen, don't lay it out.
-            if (   $x2 < $zone_layout->{'viewable_internal_x1'}
-                or $x1 > $zone_layout->{'viewable_internal_x2'} )
-            {
+            my $left_of_view
+                = ( $x2 < $zone_layout->{'viewable_internal_x1'} );
+            my $right_of_view
+                = ( $x1 > $zone_layout->{'viewable_internal_x2'} );
+            if ( $left_of_view or $right_of_view ) {
+
+           # The map is off to either the left or right, save that information
+                if ($left_of_view) {
+                    _add_child_zones_to_visibility_hash(
+                        app_display_data => $app_display_data,
+                        zone_key         => $zone_key,
+                        map_key          => $sub_map_key,
+                        state            => OFF_TO_THE_LEFT,
+                    );
+                }
+                elsif ($right_of_view) {
+                    _add_child_zones_to_visibility_hash(
+                        app_display_data => $app_display_data,
+                        zone_key         => $zone_key,
+                        map_key          => $sub_map_key,
+                        state            => OFF_TO_THE_RIGHT,
+                    );
+                }
 
                 destroy_map_for_relayout(
                     app_display_data => $app_display_data,
@@ -1220,6 +1265,9 @@ Lays out a maps in a contained area.
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
+# BF DEBUG
+# return $min_y unless ( $map->{'map_id'} == 2898 or $zone_key == 1 or $map->{'map_id'} == 2870 );
+
     # Just move if the map has already been laid out based on the $relayout
     # value and whether it has any drawing items.
     if ( $relayout and @{ $map_layout->{'items'} || [] } ) {
@@ -1268,8 +1316,11 @@ Lays out a maps in a contained area.
                 x                => $move_offset_x,
                 y                => $move_offset_y,
             );
-            _add_child_zones_of_map_to_layout_hash( $zone_key, $map_key,
-                $app_display_data );
+            _add_child_zones_to_visibility_hash(
+                app_display_data => $app_display_data,
+                zone_key         => $zone_key,
+                map_key          => $map_key,
+            );
 
             # return the lowest point for this map
             return $map_layout->{'bounds'}[3];
@@ -1823,9 +1874,16 @@ Lays out correspondences between two zones
         if ( $zone_key1 > $zone_key2 );
 
     # TEMPORARY - don't layout if both ends aren't visible
+    # Put in test here
     return
         unless ( _is_zone_layed_out($zone_key1)
         and _is_zone_layed_out($zone_key2) );
+
+    # These are to be used when drawing corr stubbs for off-screen corrs
+    #my $zone1_off_screen_left = _is_zone_off_screen_left($zone_key1);
+    #my $zone2_off_screen_left = _is_zone_off_screen_left($zone_key2);
+    #my $zone1_off_screen_right = _is_zone_off_screen_right($zone_key1);
+    #my $zone2_off_screen_right = _is_zone_off_screen_right($zone_key2);
 
     my $allow_intramap = 0;
     if ( $zone_key1 == $zone_key2 ) {
@@ -1868,9 +1926,9 @@ Lays out correspondences between two zones
         my $map_id1 = $corr->{'map_id1'};
         my $map_id2 = $corr->{'map_id2'};
 
-        #next unless($map_id2 == 2898);
-        #next unless($map_id1 == 2870);
-        #print STDERR "$map_id1, $map_id2\n";
+        # BF DEBUG
+        # next unless($map_id2 == 2898);
+        # next unless($map_id1 == 2870);
         my $map_key1 = $app_display_data->map_id_to_key_by_zone( $map_id1,
             $zone_key1 );
         my $map_key2 = $app_display_data->map_id_to_key_by_zone( $map_id2,
@@ -1890,25 +1948,31 @@ Lays out correspondences between two zones
             $draw_downward1 = 0;
             $draw_downward2 = 0;
             $corr_y1
-                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[1];
             $corr_y2
-                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[1];
         }
         elsif ( $zone_key1 < $zone_key2 ) {
             $draw_downward1 = 1;
             $draw_downward2 = 0;
             $corr_y1
-                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[3];
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[3]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[3];
             $corr_y2
-                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1];
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[1]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[1];
         }
         else {
             $draw_downward1 = 0;
             $draw_downward2 = 1;
             $corr_y1
-                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1];
+                = $app_display_data->{'map_layout'}{$map_key1}{'coords'}[1]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[1];
             $corr_y2
-                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[3];
+                = $app_display_data->{'map_layout'}{$map_key2}{'coords'}[3]
+                || $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[3];
         }
         my $map1_pixels_per_unit
             = $app_display_data->{'map_pixels_per_unit'}{$map_key1}
@@ -2796,93 +2860,82 @@ bounds of the map.
 
 =head1 layed_out_zones methods
 
-These methods are to let the layout methods know if a zone has been layed out durint this call or if it is off screen somewhere.
+These methods are to let the layout methods know if a zone has been layed out
+durint this call or if it is off screen to the right or left.
 
 =cut
 
 {
-    my %layout_hash;
+    my %zone_visibility_hash;
 
 =pod
 
-=head2 _refresh_layout_hash
+=head2 _refresh_zone_visibility_hash
 
-Refreshes the layout hash for the begining of a layout.  No zones have been layed out yet.
+Refreshes the layout hash for the begining of a layout.  No zones have been
+layed out yet.
 
 =cut
 
     # ----------------------------------------------------
-    sub _refresh_layout_hash {
-        %layout_hash = ();
+    sub _refresh_zone_visibility_hash {
+        %zone_visibility_hash = ();
         return;
     }
 
 =pod
 
-=head2 _add_zone_to_layout_hash
+=head2 _add_zone_to_zone_visibility_hash
 
 Adds a zone to the layout hash.
 
 =cut
 
     # ----------------------------------------------------
-    sub _add_zone_to_layout_hash {
+    sub _add_zone_to_zone_visibility_hash {
         my $zone_key = shift or return;
-        $layout_hash{$zone_key} = 1;
+        my $state = shift || ON_SCREEN;
+        $zone_visibility_hash{$state}{$zone_key} = 1;
         return;
     }
 
 =pod
 
-=head2 _add_child_zones_of_zone_to_layout_hash
+=head2 _add_child_zones_to_visibility_hash
 
 Recursively adds children zone to the layout hash.
 
 =cut
 
     # ----------------------------------------------------
-    sub _add_child_zones_of_zone_to_layout_hash {
-        my $zone_key         = shift or return;
-        my $app_display_data = shift or return;
+    sub _add_child_zones_to_visibility_hash {
+        my %args             = @_;
+        my $app_display_data = $args{'app_display_data'} or return;
+        my $zone_key         = $args{'zone_key'} or return;
+        my $map_key          = $args{'map_key'};
+        my $state            = $args{'state'} || ON_SCREEN;
 
-        foreach my $child_zone_key (
-            $app_display_data->get_children_zones_of_zone(
-                zone_key => $zone_key,
-            )
-            )
-        {
-            _add_zone_to_layout_hash($child_zone_key);
-            _add_child_zones_of_zone_to_layout_hash( $child_zone_key,
-                $app_display_data );
-        }
-
-        return;
-    }
-
-=pod
-
-=head2 _add_child_zones_of_map_to_layout_hash
-
-Recursively adds children zones of a map to the layout hash.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _add_child_zones_of_map_to_layout_hash {
-        my $zone_key         = shift or return;
-        my $map_key          = shift or return;
-        my $app_display_data = shift or return;
-
-        foreach my $child_zone_key (
-            $app_display_data->get_children_zones_of_map(
+        # Get the child zones differently if a map key is given
+        my @children_zone_keys;
+        if ($map_key) {
+            @children_zone_keys
+                = $app_display_data->get_children_zones_of_map(
                 map_key  => $map_key,
                 zone_key => $zone_key,
-            )
-            )
-        {
-            _add_zone_to_layout_hash($child_zone_key);
-            _add_child_zones_of_map_to_layout_hash( $child_zone_key, $map_key,
-                $app_display_data );
+                );
+        }
+        else {
+            @children_zone_keys
+                = $app_display_data->get_children_zones_of_zone(
+                zone_key => $zone_key, );
+        }
+
+        foreach my $child_zone_key (@children_zone_keys) {
+            _add_zone_to_zone_visibility_hash( $child_zone_key, $state, );
+            _add_child_zones_to_visibility_hash(
+                app_display_data => $app_display_data,
+                zone_key         => $child_zone_key,
+            );
         }
 
         return;
@@ -2892,27 +2945,58 @@ Recursively adds children zones of a map to the layout hash.
 
 =head2 _is_zone_layed_out
 
-Adds a zone to the layout hash.
+Tests a zone to see if it's been layed out.
 
 =cut
 
     # ----------------------------------------------------
     sub _is_zone_layed_out {
         my $zone_key = shift or return;
-        return $layout_hash{$zone_key};
+        my $visibility_key = ON_SCREEN;
+        return $zone_visibility_hash{$visibility_key}{$zone_key};
     }
 
 =pod
 
-=head2 _layout_hash
+=head2 _is_zone_off_screen_left
+
+Tests a zone to see if off the screen to the left
+
+=cut
+
+    # ----------------------------------------------------
+    sub _is_zone_off_screen_left {
+        my $zone_key = shift or return;
+        my $visibility_key = OFF_TO_THE_LEFT;
+        return $zone_visibility_hash{$visibility_key}{$zone_key};
+    }
+
+=pod
+
+=head2 _is_zone_off_screen_right
+
+Tests a zone to see if off the screen to the left
+
+=cut
+
+    # ----------------------------------------------------
+    sub _is_zone_off_screen_right {
+        my $zone_key = shift or return;
+        my $visibility_key = OFF_TO_THE_RIGHT;
+        return $zone_visibility_hash{$visibility_key}{$zone_key};
+    }
+
+=pod
+
+=head2 _zone_visibility_hash
 
 Simply returns the layout hash.
 
 =cut
 
     # ----------------------------------------------------
-    sub _layout_hash {
-        return %layout_hash;
+    sub _zone_visibility_hash {
+        return %zone_visibility_hash;
     }
 
 }
