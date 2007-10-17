@@ -254,7 +254,7 @@ sub ACTION_html {
             [ 'Species'        => $cgi_dir . '/cmap/species_info' ],
             [ 'Saved Links'    => $cgi_dir . '/cmap/saved_link' ],
             [ 'Help'           => $cgi_dir . '/cmap/help' ],
-            [ 'Tutorial'       => $cmap_htdoc_dir . '/tutorial' ],
+            [ 'Tutorial'       => $cmap_htdoc_dir . '/tutorial/' ],
           )
     );
 
