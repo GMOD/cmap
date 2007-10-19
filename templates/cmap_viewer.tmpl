@@ -449,7 +449,7 @@ function check_radio_for_additional_buttons(radio,val){
       value="Eliminate Orphans**" 
       name="sub"
     >
-    <input type=button value="New Reference Maps" onClick="location.href='[% apr.url %]/viewer'"><br>
+    <input type=button value="New Reference Maps" onClick="location.href='viewer'"><br>
     <BR/>
     **Eliminate Orphans - Remove comparison maps that don't have correspondences to a reference map.
     <BR/>
@@ -510,7 +510,7 @@ function check_radio_for_additional_buttons(radio,val){
                 <td>
                   <div id="corr_menu_left_button">
                     <center>
-                       <a href="javascript:ajaxManagerWrapper('post_page','[% apr.url %]/corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(window.document.comparative_map_form), 'corr_menu_left_button','See Menu<br>Above')">Add Maps<br>Left</a>
+                       <a href="javascript:ajaxManagerWrapper('post_page','corr_menu','corr_menu_left','reuse_step=1&use_menu=1&side=left&'+ stringify_form(window.document.comparative_map_form), 'corr_menu_left_button','See Menu<br>Above')">Add Maps<br>Left</a>
                     </center>
                   </div>
                 </td>
@@ -541,7 +541,7 @@ function check_radio_for_additional_buttons(radio,val){
                 <td>
                 <div id="corr_menu_right_button">
                     <center>
-                       <a href="javascript:ajaxManagerWrapper('post_page','[% apr.url %]/corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(window.document.comparative_map_form), 'corr_menu_right_button','See Menu<br>Above')">Add Maps<br>Right</a>
+                       <a href="javascript:ajaxManagerWrapper('post_page','corr_menu','corr_menu_right','reuse_step=1&use_menu=1&side=right&'+ stringify_form(window.document.comparative_map_form), 'corr_menu_right_button','See Menu<br>Above')">Add Maps<br>Right</a>
                     </center>
                 </div>
                   </td>

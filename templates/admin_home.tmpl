@@ -1,5 +1,4 @@
 [% INCLUDE admin_header.tmpl title='Admin Home' %]
-[%- url=apr.url -%]
 
 [% IF data_sources.size > 1 %]
     <br>
@@ -27,7 +26,7 @@
   <li><a href="admin?action=xrefs_view">View Cross-References</a></li>
   <li><a href="admin?action=feature_search">Search for a Feature</a></li>
   <li><a href="admin?action=colors_view">View Color Palette</a></li>
-  <li><a href="[% url %]/viewer">Exit to Map Viewer</a></li>
+  <li><a href="viewer">Exit to Map Viewer</a></li>
 </ul>
 <br>
 [% INCLUDE admin_footer.tmpl %]

@@ -1,12 +1,11 @@
 [% INCLUDE admin_header.tmpl title="View Map Set &quot;$map_set.map_set_name&quot;" %]
-[%- url=apr.url %]
 <a href="admin">Home</a> |
 <a href="admin?action=map_sets_view">View All Map Sets</a> |
 <a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
 <a href="admin?action=confirm_delete;entity_type=map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
 
 [% UNLESS map_set.is_relational_map %]
-  | <a href="[% url %]/viewer?ref_map_set_acc=[% map_set.map_set_acc %]">View in CMap Viewer</a>
+  | <a href="viewer?ref_map_set_acc=[% map_set.map_set_acc %]">View in CMap Viewer</a>
 [% END %]
 <hr noshade>
 
@@ -127,7 +126,7 @@
     <table width="100%">
         <tr>
             <td colspan="9" align="center">
-                [% SET pager_url=apr.url _ "/admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url="admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>

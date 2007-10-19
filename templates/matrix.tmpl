@@ -11,7 +11,6 @@
 [%- IF intro -%]
 <p>[%- intro -%]</p>
 [%- END -%]
-[%- url=apr.url -%]
 
 [%- SET species_acc_str = '' -%]
 [%- IF apr.param('species_acc'); species_acc_str = "species_acc=" _ apr.param('species_acc') _ ";"; END -%]
@@ -136,7 +135,7 @@
                     <td colspan="3">&nbsp;</td>
                     [%- FOREACH ms=top_row.map_sets -%]
                         <td align="center">
-                            <a href="[%- url -%]/matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
+                            <a href="matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
                         </td>
                     [%- END -%]
                     <td colspan="3">&nbsp;</td>
@@ -181,7 +180,7 @@
                                 <b>All</b>
                             [%- END -%]
                         [%- ELSE -%]
-                            <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
+                            <a href="matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
                         [%- END -%]
                     </td>
 
@@ -216,9 +215,9 @@
                                 -
                             [%- ELSE -%]
                                 [%- IF apr.param('map_set_acc') -%]
-                                    <a href="[%- url -%]/viewer?aggregate=1;ref_map_set_acc=[%- ms.map_set_acc -%];ref_map_accs=[%- ms.map_acc -%];comparative_maps=[%- IF r.map_acc -%]1%3dmap_acc%3d[%- r.map_acc -%][%- ELSE -%]1%3dmap_set_acc%3d[%- r.map_set_acc -%][%- END -%]">[%- r.number | comma -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
+                                    <a href="viewer?aggregate=1;ref_map_set_acc=[%- ms.map_set_acc -%];ref_map_accs=[%- ms.map_acc -%];comparative_maps=[%- IF r.map_acc -%]1%3dmap_acc%3d[%- r.map_acc -%][%- ELSE -%]1%3dmap_set_acc%3d[%- r.map_set_acc -%][%- END -%]">[%- r.number | comma -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
                                 [%- ELSE -%]
-                                    <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%][%- map_name_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- r.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- r.number | comma -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
+                                    <a href="matrix?show_matrix=1;[%- species_acc_str -%][%- map_name_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- r.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- r.number | comma -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
                                 [%- END -%]
                             [%- END -%]
                         </td>
@@ -232,7 +231,7 @@
                                 <b>All</b>
                             [%- END -%]
                         [%- ELSE -%]
-                            <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
+                            <a href="matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
                         [%- END -%]
                     </td>
 
@@ -285,7 +284,7 @@
                     <td colspan="3">&nbsp;</td>
                     [%- FOREACH ms=top_row.map_sets -%]
                         <td>
-                            <a href="[%- url -%]/matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
+                            <a href="matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
                         </td>
                     [%- END -%]
                     <td colspan="3">&nbsp;</td>

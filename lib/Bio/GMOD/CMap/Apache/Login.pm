@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Login;
 
 # vim: set ft=perl:
 
-# $Id: Login.pm,v 1.4 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: Login.pm,v 1.5 2007-10-19 14:36:34 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use strict;
 use Digest::MD5 'md5';
@@ -24,32 +24,31 @@ sub init {
 sub handler {
     my $self         = shift;
     my $apr          = shift || $self->apr;
-    my $user         = $apr->param('user_name')    || '';
-    my $passwd       = $apr->param('password')     || '';
-    my $redirect_url = $apr->param('redirect_url') || 
-                       $self->{'redirect_url'}     ||
-                       $apr->url . '/viewer';
+    my $user         = $apr->param('user_name') || '';
+    my $passwd       = $apr->param('password') || '';
+    my $redirect_url = $apr->param('redirect_url')
+        || $self->{'redirect_url'}
+        || 'viewer';
 
     my ( $ok, $err ) = ( 0, '' );
     my $cookie;
-    if ( $user ) {
-        my $apr     = $self->apr;
-        my $cgi     = CGI->new( $redirect_url );
-        my $ds      = $self->data_source($cgi->param('data_source')) or return;
+    if ($user) {
+        my $apr = $self->apr;
+        my $cgi = CGI->new($redirect_url);
+        my $ds  = $self->data_source( $cgi->param('data_source') ) or return;
         my $config  = $self->config or return;
         my $db_conf = $config->get_config('database');
         my $sekrit  = 'r1ce1sn2c3';
 
         if ( my $passwd_file = $db_conf->{'passwd_file'} ) {
             if ( -e $passwd_file ) {
-                my $htpasswd = Apache::Htpasswd->new( $passwd_file );
+                my $htpasswd = Apache::Htpasswd->new($passwd_file);
                 if ( $htpasswd->htCheckPassword( $user, $passwd ) ) {
-                    $ok  = 1;
+                    $ok     = 1;
                     $cookie = $apr->cookie(
-                        -name    => 'CMAP_LOGIN',
-                        -value   => join(':', 
-                            $user, $ds, md5( $user . $ds . $sekrit ) 
-                        ),
+                        -name  => 'CMAP_LOGIN',
+                        -value => join( ':',
+                            $user, $ds, md5( $user . $ds . $sekrit ) ),
                         -expires => '+24h',
                         -domain  => $self->config_data('cookie_domain') || '',
                         -path    => '/'
@@ -67,8 +66,8 @@ sub handler {
             $ok = 1;
         }
     }
-    
-    if ( $ok ) {
+
+    if ($ok) {
         print $apr->redirect( -uri => $redirect_url, -cookie => $cookie );
     }
     else {
@@ -85,11 +84,10 @@ sub handler {
                 web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
             },
             \$html
-            )
-            or return $self->error( $t->error );
+        ) or return $self->error( $t->error );
 
-        print $apr->header( 
-            -type   => 'text/html', 
+        print $apr->header(
+            -type   => 'text/html',
             -cookie => $self->cookie,
         ), $html;
     }
@@ -100,10 +98,10 @@ sub handler {
 1;
 
 # ----------------------------------------------------
-# It is only those who have neither fired a shot 
-# nor heard the shrieks and groans of the wounded 
-# who cry aloud for blood, more vengeance, 
-# more desolation.  War is hell. 
+# It is only those who have neither fired a shot
+# nor heard the shrieks and groans of the wounded
+# who cry aloud for blood, more vengeance,
+# more desolation.  War is hell.
 # William Tecumseh Sherman
 # ----------------------------------------------------
 

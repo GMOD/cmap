@@ -7,13 +7,11 @@
 
 <h1>[% title %]</h1>
 
-[%- url=apr.url -%]
-
 [%- 
     SET object = apr.param('map_set_acc') ? 'Map Set' : 'Map';
     SET field_name = apr.param('map_set_acc') ? 'map_set_acc' : 'map_acc' 
 -%]
-<form action="[% url %]/download_data">
+<form action="download_data">
 <h1>Download Data</h1>
 <br>
 <table>

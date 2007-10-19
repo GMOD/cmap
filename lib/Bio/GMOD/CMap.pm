@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.119 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: CMap.pm,v 1.120 2007-10-19 14:36:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -1754,7 +1754,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $new_session                 = $args{'new_session'} || 0;
     my $session_mod                 = $args{'session_mod'};
     my $skip_map_info               = $args{'skip_map_info'} || 0;
-    my $url                         = $args{'url'} || '';
+    my $url                         = $args{'base_url'} || 'viewer?';
     $url .= '?' unless $url =~ /\?$/;
     my $cmap_viewer_link_debug = $args{'cmap_viewer_link_debug'};
 

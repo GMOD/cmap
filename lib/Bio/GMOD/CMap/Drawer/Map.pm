@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.206 2007-09-28 20:17:12 mwz444 Exp $
+# $Id: Map.pm,v 1.207 2007-10-19 14:36:34 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.206 $)[-1];
+$VERSION = (qw$Revision: 1.207 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2949,8 +2949,7 @@ sub add_tick_marks {
     my $interval_start = int( $map_start / ( 10**( $map_scale - 1 ) ) )
         * ( 10**( $map_scale - 1 ) );
     my $tick_overhang = $clean_view ? 8 : 15;
-    my @intervals
-        = map { int( $interval_start + ( $_ * $interval ) ) }
+    my @intervals = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
     my $min_tick_distance = $self->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;
@@ -3533,8 +3532,8 @@ sub add_labels_to_map {
     my $label_offset = 20;
     $base_x
         = $label_side eq RIGHT
-        ? $rightmostf > $base_x 
-            ? $rightmostf 
+        ? $rightmostf > $base_x
+            ? $rightmostf
             : $base_x
         : $leftmostf < $base_x ? $leftmostf
         :                        $base_x;
@@ -3936,17 +3935,9 @@ Button options:
     }
 
     # Specify the base urls
-    my $apr = $drawer->apr;
-    my $url;
-    if ($apr) {
-        $url = $apr->url . '/';
-    }
-    else {
-        $url = '';
-    }
-    my $map_viewer_url   = $url . 'viewer';
-    my $map_details_url  = $url . 'map_details';
-    my $map_set_info_url = $url . 'map_set_info';
+    my $map_viewer_url   = 'viewer';
+    my $map_details_url  = 'map_details';
+    my $map_set_info_url = 'map_set_info';
 
     my @map_buttons;
     my %this_map_info;
@@ -4004,7 +3995,7 @@ Button options:
             ref_map_accs     => \%this_map_info,
             ref_map_order    => '',
             comparative_maps => \%detail_maps,
-            url              => $map_details_url,
+            base_url         => $map_details_url,
             new_session      => 1,
         );
 
@@ -4055,7 +4046,7 @@ Button options:
         if ( $slot_no != 0 ) {
             my $delete_url = $self->create_viewer_link(
                 $drawer->create_minimal_link_params(),
-                url         => $map_viewer_url,
+                base_url    => $map_viewer_url,
                 session_mod => "del=$slot_no",
             );
 
@@ -4077,7 +4068,7 @@ Button options:
         if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
             my $map_delete_url = $self->create_viewer_link(
                 $drawer->create_minimal_link_params(),
-                url         => $map_viewer_url,
+                base_url    => $map_viewer_url,
                 session_mod => "del=$slot_no=" . $self->map_acc($map_id),
             );
 
@@ -4099,7 +4090,7 @@ Button options:
         if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
             my $map_limit_url = $self->create_viewer_link(
                 $drawer->create_minimal_link_params(),
-                url         => $map_viewer_url,
+                base_url    => $map_viewer_url,
                 session_mod => "limit=$slot_no=" . $self->map_acc($map_id),
             );
 
@@ -4131,8 +4122,8 @@ Button options:
 
         my $flip_url = $self->create_viewer_link(
             $drawer->create_minimal_link_params(),
-            flip => $flipping_flip_str,
-            url  => $map_viewer_url,
+            flip     => $flipping_flip_str,
+            base_url => $map_viewer_url,
         );
 
         my $flip_label = 'F';
@@ -4167,7 +4158,7 @@ Button options:
             ref_map_set_acc => $self->map_set_acc($map_id),
             ref_map_accs    => \%this_map_info,
             ref_map_order   => '',
-            url             => $map_viewer_url,
+            base_url        => $map_viewer_url,
             new_session     => 1,
         );
 

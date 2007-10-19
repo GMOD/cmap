@@ -3,7 +3,6 @@
     title=title
     cur_sec='map_search'
     help_anchor='map_search';
-    url=apr.url( '-path_info' => 1 );
 -%]
 
 [%- IF intro -%]
@@ -89,7 +88,7 @@
             <tr>
                 [% SET colspan = 7 + ( form_data.feature_type_accs.size * 2 ) -%]
                 <td colspan="[% colspan %]" align="center">
-                    [% SET pager_url="$url?ref_species_acc=${apr.param('ref_species_acc')}&ref_map_set_acc=${apr.param('ref_map_set_acc')}&min_correspondence_maps=${apr.param('min_correspondence_maps')}&name_search=${apr.param('name_search')}" %]
+                    [% SET pager_url="map_search?ref_species_acc=${apr.param('ref_species_acc')}&ref_map_set_acc=${apr.param('ref_map_set_acc')}&min_correspondence_maps=${apr.param('min_correspondence_maps')}&name_search=${apr.param('name_search')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
@@ -115,7 +114,7 @@
                 [% SET map_info=form_data.map_info.$map_id %]
                 <tr>
                     <td>
-                        <a href="[% apr.url %]/viewer?ref_map_set_acc=[% apr.param('ref_map_set_acc') %]&ref_map_accs=[% map_info.map_acc %]&ref_species_acc=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_acc=[% map_info.map_acc %]">spider</a>)</td>
+                        <a href="viewer?ref_map_set_acc=[% apr.param('ref_map_set_acc') %]&ref_map_accs=[% map_info.map_acc %]&ref_species_acc=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="spider?map_acc=[% map_info.map_acc %]">spider</a>)</td>
                     </td>
                     <td>[% map_info.cmap_count %]</td>
                     <td>[% map_info.cmap_count_per %]</td>

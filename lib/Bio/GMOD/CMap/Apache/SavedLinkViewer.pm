@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.12 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.13 2007-10-19 14:36:34 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -19,7 +19,6 @@ use base 'Bio::GMOD::CMap::Apache';
 
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
 use constant MULTI_VIEW_TEMPLATE => 'saved_links_viewer.tmpl';
-use constant VIEW_TEMPLATE       => 'saved_link_view.tmpl';
 use constant EDIT_TEMPLATE       => 'saved_link_edit.tmpl';
 use constant SAVED_LINK_URI      => 'saved_link';
 
@@ -42,16 +41,16 @@ sub handler {
 # ---------------------------------------------------
 sub saved_links_viewer {
     my ( $self, %args ) = @_;
-    my $apr        = $self->apr;
+    my $apr = $self->apr;
     my $sql_object = $self->sql or return;
 
-    my $page_no             = $apr->param('page_no') || 1;
+    my $page_no = $apr->param('page_no') || 1;
     my $selected_link_group = $apr->param('selected_link_group');
 
     # This is the value to see if we return hidden links
     # When it is undef, it will return all links but
     # when it is "0" it will return only non-hidden ones.
-    my $hidden = $apr->param('display_hidden') ? undef: 0;
+    my $hidden = $apr->param('display_hidden') ? undef : 0;
 
     # Create hash of link_groups
     my $link_group_counts_ref
@@ -88,7 +87,7 @@ sub saved_links_viewer {
     $t->process(
         MULTI_VIEW_TEMPLATE,
         {   apr                 => $apr,
-            current_url         => $apr->url( -path_info => 1, -query => 1 ),
+            current_url         => "saved_link?" . $apr->query_string(),
             page                => $self->page,
             stylesheet          => $self->stylesheet,
             data_sources        => $self->data_sources,
@@ -100,50 +99,8 @@ sub saved_links_viewer {
             web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-        )
-        or $html = $t->error;
+    ) or $html = $t->error;
 
-    print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
-        $html;
-    return 1;
-}
-
-# ----------------------------------------------------
-sub saved_link_view {
-    my ( $self, %args ) = @_;
-    my $apr           = $self->apr;
-    my $sql_object    = $self->sql or return;
-    my $saved_link_id = $apr->param('saved_link_id')
-        or die 'No feature saved_link id';
-    my $url_to_return_to = $apr->param('url_to_return_to');
-    my $saved_links
-        = $sql_object->get_saved_links( saved_link_id => $saved_link_id, );
-    my $saved_link;
-    if ( @{ $saved_links || [] } ) {
-        $saved_link = $saved_links->[0];
-    }
-    unless ( %{ $saved_link || {} } ) {
-        return $self->error(
-            "Failed getting saved link with id $saved_link_id\n");
-    }
-
-    my $html;
-    my $t = $self->template or return;
-    $t->process(
-        VIEW_TEMPLATE,
-        {   apr                 => $apr,
-            current_url         => $apr->url( -path_info => 1, -query => 1 ),
-            page                => $self->page,
-            stylesheet          => $self->stylesheet,
-            data_sources        => $self->data_sources,
-            saved_link          => $saved_link,
-            url_to_return_to    => $url_to_return_to,
-            web_image_cache_dir => $self->web_image_cache_dir(),
-            web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
-        },
-        \$html
-        )
-        or $html = $t->error;
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
         $html;
     return 1;
@@ -215,7 +172,6 @@ sub saved_link_edit {
     $t->process(
         EDIT_TEMPLATE,
         {   apr                 => $apr,
-            current_url         => $apr->url( -path_info => 1, -query => 1 ),
             page                => $self->page,
             stylesheet          => $self->stylesheet,
             data_sources        => $self->data_sources,
@@ -225,8 +181,7 @@ sub saved_link_edit {
             web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
         },
         \$html
-        )
-        or $html = $t->error;
+    ) or $html = $t->error;
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
         $html;
     return 1;

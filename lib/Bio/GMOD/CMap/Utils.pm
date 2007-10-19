@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.88 2007-10-17 18:28:11 mwz444 Exp $
+# $Id: Utils.pm,v 1.89 2007-10-19 14:36:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -238,8 +238,8 @@ Special thanks to Noel Yap for suggesting this strategy.
     # If we took fewer than was possible, try to sort them nicely.
     #
     elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
-        @accepted =
-            map { $_->[0] }
+        @accepted
+            = map { $_->[0] }
             sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
             map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
             @accepted;
@@ -334,11 +334,11 @@ Special thanks to Noel Yap for suggesting this strategy.
 
             my $below_open = $gap_below >= $bins_occupied;
             my $above_open = $gap_above >= $bins_occupied;
-            my $closer_gap =
-                $diff_to_gap_below == $diff_to_gap_above ? 'neither'
+            my $closer_gap
+                = $diff_to_gap_below == $diff_to_gap_above ? 'neither'
                 : defined $diff_to_gap_below
                 && ( $diff_to_gap_below < $diff_to_gap_above ) ? 'below'
-                : 'above';
+                :                                                'above';
 
             my $diff = 0;
             if ( !defined $hmin ) {
@@ -385,11 +385,11 @@ Special thanks to Noel Yap for suggesting this strategy.
         #
         my $ok = 0;
         while ( !$ok ) {
-            $ok       = 1;
-            @accepted =
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, $_->{'y'} ] } @accepted;
+            $ok = 1;
+            @accepted
+                = map { $_->[0] }
+                sort  { $a->[1] <=> $b->[1] }
+                map { [ $_, $_->{'y'} ] } @accepted;
 
             my $last_target = $accepted[0]->{'target'};
             $i = 0;
@@ -424,8 +424,8 @@ Special thanks to Noel Yap for suggesting this strategy.
         #
         # Figure the gap to evenly space the labels in the space.
         #
-        @accepted =
-            map { $_->[0] }
+        @accepted
+            = map { $_->[0] }
             sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
             map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
             @accepted;
@@ -491,14 +491,16 @@ label can be inserted.
                 #
                 my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
                 my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
-                my $ftop         =
-                    $direction eq NORTH
-                    ? defined $next_segment->[1] ? $next_segment->[1] : undef
+                my $ftop
+                    = $direction eq NORTH
+                    ? defined $next_segment->[1]
+                        ? $next_segment->[1]
+                        : undef
                     : $south;
-                my $fbottom =
-                      $direction eq NORTH ? $north
+                my $fbottom
+                    = $direction eq NORTH ? $north
                     : defined $next_segment->[0] ? $next_segment->[0]
-                    : undef;
+                    :                              undef;
 
                 #
                 # Check if we can fit the label into the frame.
@@ -513,8 +515,8 @@ label can be inserted.
                 #
                 # See if moving the label to the frame would move it too far.
                 #
-                my $diff =
-                      $direction eq NORTH
+                my $diff
+                    = $direction eq NORTH
                     ? $fbottom - $bottom - $buffer
                     : $ftop - $top + $buffer;
                 if ( ( abs $diff > $max_distance ) && $can_skip ) {
@@ -748,12 +750,12 @@ the DBI selectall_arrayref()
         }
     }
     for my $key ( keys(%$hashref) ) {
-        %{ $return_array[$i] } =
-            map { $column_name{$_} => $hashref->{$key}->{$_} } @columns;
+        %{ $return_array[$i] }
+            = map { $column_name{$_} => $hashref->{$key}->{$_} } @columns;
         $i++;
     }
-    @return_array =
-        sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
+    @return_array
+        = sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
     return \@return_array;
 }
 
@@ -891,7 +893,8 @@ example: .001 becomes "1/K"
     $printable_num = sprintf( "%.2f", $printable_num ) if $printable_num;
 
     my $unit = calculate_units( 10**( -1 * $denom_power ) );
-    $num_str = $unit
+    $num_str
+        = $unit
         ? $printable_num . "/" . $unit
         : $printable_num . "/unit";
     return $num_str;
@@ -918,7 +921,7 @@ example: 12.375 with a granularity of 0.1 becomes 12.4
 
 =cut
 
-    my $num         = shift;
+    my $num = shift;
     my $granularity = shift || DEFAULT->{'unit_granularity'};
 
     unless ( $granularity =~ /^0*\.?0*10*$/ ) {
@@ -1290,8 +1293,7 @@ sub _parse_session_step {
         $slots_ref, $parsed_url_options_ref,
         $parsed_url_options_ref->{'session_mod'},
         $parsed_url_options_ref->{'map_menu_data'}
-        )
-        if ( !$parsed_url_options_ref->{'reusing_step'} );
+    ) if ( !$parsed_url_options_ref->{'reusing_step'} );
 
     @$ref_map_accs_ref = keys( %{ $slots_ref->{0}->{'maps'} } );
     $apr->param( 'ref_map_accs', join( ":", @{ $ref_map_accs_ref || () } ) );
@@ -1332,7 +1334,7 @@ sub _get_options_from_url {
     @{ $parsed_url_options{'comparative_map_left'} }
         = $apr->param('comparative_map_left');
     $parsed_url_options{'url_for_saving'}
-        = $apr->url( -path_info => 1, -query => 1 );
+        = $apr->url( -relative => 1, -query => 1 );
 
     # Deal with parameters that don't default to anything
     # These are important for when 0 is a valid value
@@ -1394,8 +1396,7 @@ sub _get_options_from_url {
     if ( $apr->param('comparative_map') ) {
         (   $parsed_url_options{'comparative_map_field'},
             $parsed_url_options{'comparative_map_field_acc'}
-            )
-            = split( /=/, $apr->param('comparative_map') );
+        ) = split( /=/, $apr->param('comparative_map') );
     }
 
     # Get feature type and evidence type info
@@ -1698,8 +1699,7 @@ sub parse_url {
                 slots_ref              => \%slots,
                 parsed_url_options_ref => \%parsed_url_options,
                 ref_map_accs_ref       => \@ref_map_accs,
-                )
-                or return $calling_cmap_object->error();
+            ) or return $calling_cmap_object->error();
 
         }
         else {
@@ -1740,8 +1740,7 @@ sub parse_url {
             slots_ref              => \%slots,
             parsed_url_options_ref => \%parsed_url_options,
             ref_map_accs_ref       => \@ref_map_accs,
-            )
-            or return $calling_cmap_object->error();
+        ) or return $calling_cmap_object->error();
     }
 
     # Now find any params that need defaults but weren't in the url or the
@@ -1890,8 +1889,7 @@ sub parse_url {
             my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
             (   $acc, $start, $stop, $magnification,
                 $parsed_url_options{'highlight'}
-                )
-                = _parse_map_info( $acc, $parsed_url_options{'highlight'} );
+            ) = _parse_map_info( $acc, $parsed_url_options{'highlight'} );
             if ( $field eq 'map_acc' or $field eq 'map_aid' ) {
                 $slots{$slot_no}->{'maps'}{$acc} = {
                     start => $start,
@@ -1909,8 +1907,8 @@ sub parse_url {
             my @cmaps = split( /:/, $parsed_url_options{'comparative_maps'} );
             my $found = 0;
             for ( my $i = 0; $i <= $#cmaps; $i++ ) {
-                my ( $c_slot_no, $c_field, $c_acc ) =
-                    split( /=/, $cmaps[$i] )
+                my ( $c_slot_no, $c_field, $c_acc )
+                    = split( /=/, $cmaps[$i] )
                     or next;
                 $acc =~ s/^(.*)\[.*/$1/;
                 if (    ( $c_slot_no eq $slot_no )
@@ -2059,12 +2057,12 @@ sub parse_url {
         #
         for my $side ( ( RIGHT, LEFT ) ) {
             my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
-            my $cmap =
-                  $side eq RIGHT
+            my $cmap
+                = $side eq RIGHT
                 ? $parsed_url_options{'comparative_map_right'}
                 : $parsed_url_options{'comparative_map_left'};
-            my $cmap_set_acc =
-                  $side eq RIGHT
+            my $cmap_set_acc
+                = $side eq RIGHT
                 ? $parsed_url_options{'comp_map_set_right'}
                 : $parsed_url_options{'comp_map_set_left'};
             if ( @{ $cmap || [] } ) {

@@ -56,7 +56,7 @@
     <table width="100%">
         <tr>
             <td colspan="9" align="center">
-                [% SET pager_url=apr.url _ "/admin?action=map_sets_view&order_by=${apr.param('order_by')}&species_id=${apr.param('species_id')}&map_type_acc=${apr.param('map_type_acc')}&is_enabled=${apr.param('is_enabled')}" %]
+                [% SET pager_url="admin?action=map_sets_view&order_by=${apr.param('order_by')}&species_id=${apr.param('species_id')}&map_type_acc=${apr.param('map_type_acc')}&is_enabled=${apr.param('is_enabled')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>

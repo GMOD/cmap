@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.141 2007-09-28 20:17:01 mwz444 Exp $
+# $Id: Drawer.pm,v 1.142 2007-10-19 14:36:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.141 $)[-1];
+$VERSION = (qw$Revision: 1.142 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -3478,7 +3478,7 @@ Creates default link parameters for CMap->create_viewer_link()
         $data_source = $self->data_source();
     }
     unless ( defined($url) ) {
-        $url = '?';
+        $url = '';
     }
     unless ( defined($session_id) ) {
         $session_id = $self->session_id();

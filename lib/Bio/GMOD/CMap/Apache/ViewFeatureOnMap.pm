@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.19 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.20 2007-10-19 14:36:34 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -27,7 +27,6 @@ sub handler {
     my $image_only   = $apr->param('image_only')  || 0;
     my $hide_legend  = $apr->param('hide_legend') || 0;
     my $data         = $self->data_module;
-    my $url          = $apr->url;
 
     my ( $ms_acc, $map_acc, $feature_name )
         = $data->view_feature_on_map($feature_acc);
@@ -40,8 +39,7 @@ sub handler {
     return $self->error("Can't find the feature accession ID '$feature_acc'")
         unless $ms_acc && $map_acc;
 
-    print $apr->redirect(
-              "$url/viewer?ref_map_set_acc=$ms_acc&label_features=all"
+    print $apr->redirect( "viewer?ref_map_set_acc=$ms_acc&label_features=all"
             . qq[&ref_map_accs=$map_acc&highlight="$highlight"]
             . "&ref_map_start=$start&ref_map_stop=$stop"
             . "&image_only=$image_only&hide_legend=$hide_legend"
