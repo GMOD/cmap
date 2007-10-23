@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.64 2007-10-12 19:18:54 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.65 2007-10-23 15:34:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -924,12 +924,25 @@ The data structure looks like this
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $zone_key1  = $args{'zone_key1'};
-    my $zone_key2  = $args{'zone_key2'};
+    my $window_key            = $args{'window_key'};
+    my $zone_key1             = $args{'zone_key1'};
+    my $zone_key2             = $args{'zone_key2'};
+    my $hide_off_screen_corrs = $args{'hide_off_screen_corrs'};
 
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
+
+    my $zone1_displayed = $self->is_zone_layed_out($zone_key1);
+    my $zone2_displayed = $self->is_zone_layed_out($zone_key2);
+
+    # If neither zone is displayed, just skip it
+    # If hiding off screen corrs, make sure both are visible
+    return []
+        if (
+        not( $zone1_displayed or $zone2_displayed )
+        or ( $hide_off_screen_corrs
+            and not( $zone1_displayed and $zone2_displayed ) )
+        );
 
     my $allow_intramap = 0;
     if ( $zone_key1 == $zone_key2 ) {
@@ -956,42 +969,73 @@ The data structure looks like this
                 my $ancestor_start  = $fragment->[3];
                 my $ancestor_stop   = $fragment->[4];
 
-                next
-                    if ( $fragment_stop < $info_start
-                    or $fragment_start > $info_stop );
+                my $map1_displayed = 0;
+                if ($zone1_displayed) {
+                    if (   $fragment_stop < $info_start
+                        or $fragment_start > $info_stop )
+                    {
+                        $map1_displayed = 1;
+                    }
+                }
+
+                # Skip if there are no on screen corrs
+                next unless ( $map1_displayed or $zone2_displayed );
+
+                # If hiding off screen corrs, make sure fragment is visible
+                next if ( $hide_off_screen_corrs and not $map1_displayed );
+
                 if ( $info_stop < $fragment_stop ) {
                     $ancestor_start -= ( $fragment_stop - $info_stop );
                 }
                 if ( $info_start > $fragment_start ) {
                     $ancestor_start += ( $info_start - $fragment_start );
                 }
-                my $map_info1 = [
-                    $ancestor_start, $ancestor_stop, $ancestor_start,
-                    $ancestor_stop,  1,
-                ];
+                my $map_info1
+                    = [ undef, undef, $ancestor_start, $ancestor_stop, 1, ];
                 my $fragment_offset1 = $fragment_start - $ancestor_start;
                 push @slot_comparisons,
-                    $self->_get_slot_comparisons_for_corrs_helper1(
-                    map_id1          => $map_id1,
-                    ancestor_map_id1 => $ancestor_map_id,
-                    map_info1        => $map_info1,
-                    fragment_offset1 => $fragment_offset1,
-                    zone_key1        => $zone_key1,
-                    zone_key2        => $zone_key2,
-                    allow_intramap   => $allow_intramap,
+                    $self->_get_slot_comparisons_for_corrs_slot2(
+                    map_id1               => $map_id1,
+                    map1_displayed        => $map1_displayed,
+                    zone2_displayed       => $zone2_displayed,
+                    ancestor_map_id1      => $ancestor_map_id,
+                    map_info1             => $map_info1,
+                    fragment_offset1      => $fragment_offset1,
+                    zone_key1             => $zone_key1,
+                    zone_key2             => $zone_key2,
+                    allow_intramap        => $allow_intramap,
+                    hide_off_screen_corrs => $hide_off_screen_corrs,
                     );
             }
         }
         else {
-            my $map_info1 = $slot_info1->{$map_id1};
+            my $map1_displayed = 0;
+            if ( @{ $self->{'map_layout'}{$map_key1}{'items'} || [] } ) {
+                $map1_displayed = 1;
+            }
+
+            # Skip if there are no on screen corrs
+            next unless ( $map1_displayed or $zone2_displayed );
+
+            # If hiding off screen corrs, make sure fragment is visible
+            next if ( $hide_off_screen_corrs and not $map1_displayed );
+
+            my $map_info1 = [
+                undef, undef,
+                $slot_info1->{$map_id1}[2],
+                $slot_info1->{$map_id1}[3], 1,
+            ];
             push @slot_comparisons,
-                $self->_get_slot_comparisons_for_corrs_helper1(
-                map_id1          => $map_id1,
-                map_info1        => $map_info1,
-                fragment_offset1 => 0,
-                zone_key1        => $zone_key1,
-                zone_key2        => $zone_key2,
-                allow_intramap   => $allow_intramap,
+                $self->_get_slot_comparisons_for_corrs_slot2(
+                map_id1               => $map_id1,
+                map_info1             => $map_info1,
+                map1_displayed        => $map1_displayed,
+                zone2_displayed       => $zone2_displayed,
+                fragment_offset1      => 0,
+                zone_key1             => $zone_key1,
+                zone_key2             => $zone_key2,
+                allow_intramap        => $allow_intramap,
+                hide_off_screen_corrs => $hide_off_screen_corrs,
                 );
         }
     }
@@ -1000,11 +1044,11 @@ The data structure looks like this
 }
 
 # ----------------------------------------------------
-sub _get_slot_comparisons_for_corrs_helper1 {
+sub _get_slot_comparisons_for_corrs_slot2 {
 
 =pod
 
-=head2 get_slot_comparisons_for_corrs_helper1
+=head2 get_slot_comparisons_for_corrs_slot2
 
 Get a list of all the information needed for correspondences, taking into
 account the posibility of split/merged maps.
@@ -1012,14 +1056,17 @@ account the posibility of split/merged maps.
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key       = $args{'window_key'};
-    my $zone_key1        = $args{'zone_key1'};
-    my $zone_key2        = $args{'zone_key2'};
-    my $map_id1          = $args{'map_id1'};
-    my $ancestor_map_id1 = $args{'ancestor_map_id1'} || $map_id1;
-    my $map_info1        = $args{'map_info1'};
-    my $fragment_offset1 = $args{'fragment_offset1'};
-    my $allow_intramap   = $args{'allow_intramap'};
+    my $window_key            = $args{'window_key'};
+    my $zone_key1             = $args{'zone_key1'};
+    my $zone_key2             = $args{'zone_key2'};
+    my $map_id1               = $args{'map_id1'};
+    my $map1_displayed        = $args{'map1_displayed'};
+    my $zone2_displayed       = $args{'zone2_displayed'};
+    my $ancestor_map_id1      = $args{'ancestor_map_id1'} || $map_id1;
+    my $map_info1             = $args{'map_info1'};
+    my $fragment_offset1      = $args{'fragment_offset1'};
+    my $allow_intramap        = $args{'allow_intramap'};
+    my $hide_off_screen_corrs = $args{'hide_off_screen_corrs'};
 
     my $slot_info2 = $self->{'slot_info'}{$zone_key2};
     my @slot_comparisons;
@@ -1041,19 +1088,30 @@ account the posibility of split/merged maps.
                 my $ancestor_map_id2 = $fragment->[2];
                 my $ancestor_start   = $fragment->[3];
                 my $ancestor_stop    = $fragment->[4];
-                next
-                    if ( $fragment_stop < $info_start
-                    or $fragment_start > $info_stop );
+
+                my $map2_displayed = 0;
+                if ($zone2_displayed) {
+                    if (   $fragment_stop < $info_start
+                        or $fragment_start > $info_stop )
+                    {
+                        $map2_displayed = 1;
+                    }
+                }
+
+                # Skip if there are no on screen corrs
+                next unless ( $map1_displayed or $map2_displayed );
+
+                # If hiding off screen corrs, make sure fragment is visible
+                next if ( $hide_off_screen_corrs and not $map2_displayed );
+
                 if ( $info_stop < $fragment_stop ) {
                     $ancestor_start -= ( $fragment_stop - $info_stop );
                 }
                 if ( $info_start > $fragment_start ) {
                     $ancestor_start += ( $info_start - $fragment_start );
                 }
-                my $map_info2 = [
-                    $ancestor_start, $ancestor_stop, $ancestor_start,
-                    $ancestor_stop,  1,
-                ];
+                my $map_info2
+                    = [ undef, undef, $ancestor_start, $ancestor_stop, 1, ];
                 my $fragment_offset2 = $fragment_start - $ancestor_start;
                 push @slot_comparisons,
                     {
@@ -1068,7 +1126,22 @@ account the posibility of split/merged maps.
             }
         }
         else {
-            my $map_info2 = $slot_info2->{$map_id2};
+            my $map2_displayed = 0;
+            if ( @{ $self->{'map_layout'}{$map_key2}{'items'} || [] } ) {
+                $map2_displayed = 1;
+            }
+
+            # Skip if there are no on screen corrs
+            next unless ( $map1_displayed or $map2_displayed );
+
+            # If hiding off screen corrs, make sure fragment is visible
+            next if ( $hide_off_screen_corrs and not $map2_displayed );
+
+            my $map_info2 = [
+                undef, undef,
+                $slot_info2->{$map_id1}[2],
+                $slot_info2->{$map_id1}[3], 1,
+            ];
             push @slot_comparisons,
                 {
                 map_id1          => $map_id1,
@@ -7756,6 +7829,151 @@ Gets/sets map_order
     }
 
     return $self->{'map_order'}{$zone_key};
+}
+
+=pod
+
+=head1 layed_out_zones methods
+
+These methods are to let the layout methods know if a zone has been layed out
+durint this call or if it is off screen to the right or left.
+
+=cut
+
+=pod
+
+=head2 refresh_zone_visibility_hash
+
+Refreshes the layout hash for the begining of a layout.  No zones have been
+layed out yet.
+
+=cut
+
+# ----------------------------------------------------
+sub refresh_zone_visibility_hash {
+    my $self = shift;
+    $self->{'zone_visibility_hash'} = undef;
+    return;
+}
+
+=pod
+
+=head2 add_zone_to_zone_visibility_hash
+
+Adds a zone to the layout hash.
+
+=cut
+
+# ----------------------------------------------------
+sub add_zone_to_zone_visibility_hash {
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $state    = shift || ON_SCREEN;
+    $self->{'zone_visibility_hash'}{$state}{$zone_key} = 1;
+    return;
+}
+
+=pod
+
+=head2 add_child_zones_to_visibility_hash
+
+Recursively adds children zone to the layout hash.
+
+=cut
+
+# ----------------------------------------------------
+sub add_child_zones_to_visibility_hash {
+    my $self             = shift;
+    my %args             = @_;
+    my $app_display_data = $args{'app_display_data'} or return;
+    my $zone_key         = $args{'zone_key'} or return;
+    my $map_key          = $args{'map_key'};
+    my $state            = $args{'state'} || ON_SCREEN;
+
+    # Get the child zones differently if a map key is given
+    my @children_zone_keys;
+    if ($map_key) {
+        @children_zone_keys = $app_display_data->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        );
+    }
+    else {
+        @children_zone_keys = $app_display_data->get_children_zones_of_zone(
+            zone_key => $zone_key, );
+    }
+
+    foreach my $child_zone_key (@children_zone_keys) {
+        $self->add_zone_to_zone_visibility_hash( $child_zone_key, $state, );
+        $self->add_child_zones_to_visibility_hash(
+            app_display_data => $app_display_data,
+            zone_key         => $child_zone_key,
+        );
+    }
+
+    return;
+}
+
+=pod
+
+=head2 _is_zone_layed_out
+
+Tests a zone to see if it's been layed out.
+
+=cut
+
+# ----------------------------------------------------
+sub is_zone_layed_out {
+    my $self           = shift;
+    my $zone_key       = shift or return;
+    my $visibility_key = ON_SCREEN;
+    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+}
+
+=pod
+
+=head2 _is_zone_off_screen_left
+
+Tests a zone to see if off the screen to the left
+
+=cut
+
+# ----------------------------------------------------
+sub is_zone_off_screen_left {
+    my $self           = shift;
+    my $zone_key       = shift or return;
+    my $visibility_key = OFF_TO_THE_LEFT;
+    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+}
+
+=pod
+
+=head2 _is_zone_off_screen_right
+
+Tests a zone to see if off the screen to the left
+
+=cut
+
+# ----------------------------------------------------
+sub is_zone_off_screen_right {
+    my $self           = shift;
+    my $zone_key       = shift or return;
+    my $visibility_key = OFF_TO_THE_RIGHT;
+    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+}
+
+=pod
+
+=head2 _zone_visibility_hash
+
+Simply returns the layout hash.
+
+=cut
+
+# ----------------------------------------------------
+sub zone_visibility_hash {
+    my $self = shift;
+    return $self->{'zone_visibility_hash'};
 }
 
 1;

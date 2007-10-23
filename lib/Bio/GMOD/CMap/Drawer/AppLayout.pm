@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.50 2007-10-16 19:38:51 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.51 2007-10-23 15:34:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -42,9 +42,6 @@ use constant SMALL_BUFFER            => 2;
 use constant MIN_MAP_WIDTH           => 4;
 use constant MIN_MAP_DETAIL_WIDTH    => 50;
 use constant BETWEEN_ZONE_BUFFER     => 5;
-use constant OFF_TO_THE_LEFT         => 'left';
-use constant OFF_TO_THE_RIGHT        => 'right';
-use constant ON_SCREEN               => 'visible';
 
 use base 'Exporter';
 
@@ -278,12 +275,12 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
     # Refresh the layout hash if this is the first zone to be layed out.
     unless ($depth) {
-        _refresh_zone_visibility_hash();
+        $app_display_data->refresh_zone_visibility_hash();
     }
 
     # Add the zone to the layout hash letting the world know that it has been
     # layed out.
-    _add_zone_to_zone_visibility_hash($zone_key);
+    $app_display_data->add_zone_to_zone_visibility_hash($zone_key);
 
     # If the zone has never been layed out, set relayout to 0
     $relayout = 0 unless ( $zone_layout->{'layed_out_once'} );
@@ -356,7 +353,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                     );
 
                     # let the program know that the child zones are visible
-                    _add_child_zones_to_visibility_hash(
+                    $app_display_data->add_child_zones_to_visibility_hash(
                         app_display_data => $app_display_data,
                         zone_key         => $zone_key,
                     );
@@ -681,7 +678,7 @@ MAP:
 
            # The map is off to either the left or right, save that information
             if ($left_of_view) {
-                _add_child_zones_to_visibility_hash(
+                $app_display_data->add_child_zones_to_visibility_hash(
                     app_display_data => $app_display_data,
                     zone_key         => $zone_key,
                     map_key          => $map_key,
@@ -689,7 +686,7 @@ MAP:
                 );
             }
             elsif ($right_of_view) {
-                _add_child_zones_to_visibility_hash(
+                $app_display_data->add_child_zones_to_visibility_hash(
                     app_display_data => $app_display_data,
                     zone_key         => $zone_key,
                     map_key          => $map_key,
@@ -1052,7 +1049,7 @@ Lays out sub maps in a slot.
 
            # The map is off to either the left or right, save that information
                 if ($left_of_view) {
-                    _add_child_zones_to_visibility_hash(
+                    $app_display_data->add_child_zones_to_visibility_hash(
                         app_display_data => $app_display_data,
                         zone_key         => $zone_key,
                         map_key          => $sub_map_key,
@@ -1060,7 +1057,7 @@ Lays out sub maps in a slot.
                     );
                 }
                 elsif ($right_of_view) {
-                    _add_child_zones_to_visibility_hash(
+                    $app_display_data->add_child_zones_to_visibility_hash(
                         app_display_data => $app_display_data,
                         zone_key         => $zone_key,
                         map_key          => $sub_map_key,
@@ -1316,7 +1313,7 @@ Lays out a maps in a contained area.
                 x                => $move_offset_x,
                 y                => $move_offset_y,
             );
-            _add_child_zones_to_visibility_hash(
+            $app_display_data->add_child_zones_to_visibility_hash(
                 app_display_data => $app_display_data,
                 zone_key         => $zone_key,
                 map_key          => $map_key,
@@ -1873,26 +1870,34 @@ Lays out correspondences between two zones
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
 
-    # TEMPORARY - don't layout if both ends aren't visible
+    # TEMPORARY - don't layout if neither end is visible
     # Put in test here
     return
-        unless ( _is_zone_layed_out($zone_key1)
-        and _is_zone_layed_out($zone_key2) );
+        unless ( $app_display_data->is_zone_layed_out($zone_key1)
+        and $app_display_data->is_zone_layed_out($zone_key2) );
 
     # These are to be used when drawing corr stubbs for off-screen corrs
-    #my $zone1_off_screen_left = _is_zone_off_screen_left($zone_key1);
-    #my $zone2_off_screen_left = _is_zone_off_screen_left($zone_key2);
-    #my $zone1_off_screen_right = _is_zone_off_screen_right($zone_key1);
-    #my $zone2_off_screen_right = _is_zone_off_screen_right($zone_key2);
+    #my $zone1_off_screen_left =
+    #    $app_display_data->is_zone_off_screen_left($zone_key1);
+    #my $zone2_off_screen_left
+    #    = $app_display_data->is_zone_off_screen_left($zone_key2);
+    #my $zone1_off_screen_right
+    #    = $app_display_data->is_zone_off_screen_right($zone_key1);
+    #my $zone2_off_screen_right
+    #    = $app_display_data->is_zone_off_screen_right($zone_key2);
+
+    my $zone_layout1 = $app_display_data->{'zone_layout'}{$zone_key1};
+    my $zone_layout2 = $app_display_data->{'zone_layout'}{$zone_key2};
 
     my $allow_intramap = 0;
     if ( $zone_key1 == $zone_key2 ) {
         $allow_intramap = 1;
     }
     my $slot_comparisons = $app_display_data->get_slot_comparisons_for_corrs(
-        window_key => $window_key,
-        zone_key1  => $zone_key1,
-        zone_key2  => $zone_key2,
+        window_key            => $window_key,
+        zone_key1             => $zone_key1,
+        zone_key2             => $zone_key2,
+        hide_off_screen_corrs => 1,
     );
 
     # Get Correspondence Data
@@ -1989,6 +1994,16 @@ Lays out correspondences between two zones
         my $corr_x2 = $map2_x1
             + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
 
+        # Don't display if one of the ends isn't being displayed
+        next
+            if (
+            (      $zone_layout1->{'viewable_internal_x1'} > $corr_x1
+                or $zone_layout1->{'viewable_internal_x2'} < $corr_x1
+            )
+            or (   $zone_layout2->{'viewable_internal_x1'} > $corr_x2
+                or $zone_layout2->{'viewable_internal_x2'} < $corr_x2 )
+            );
+
         unless (
             $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2} )
         {
@@ -2066,6 +2081,7 @@ object used in CMap.
 
     $app_display_data->{'slot_info'}{$zone_key}{$map_id}
         = [ undef, undef, $map_start, $map_stop, 1 ];
+
     if ( $map_min_x < $visible_min_bound ) {
         $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0] = $map_start
             + ( ( $visible_min_bound - $map_min_x ) / $pixels_per_unit );
@@ -2854,151 +2870,6 @@ bounds of the map.
         );
 
     return ( \@bounds, \@coords );
-}
-
-=pod
-
-=head1 layed_out_zones methods
-
-These methods are to let the layout methods know if a zone has been layed out
-durint this call or if it is off screen to the right or left.
-
-=cut
-
-{
-    my %zone_visibility_hash;
-
-=pod
-
-=head2 _refresh_zone_visibility_hash
-
-Refreshes the layout hash for the begining of a layout.  No zones have been
-layed out yet.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _refresh_zone_visibility_hash {
-        %zone_visibility_hash = ();
-        return;
-    }
-
-=pod
-
-=head2 _add_zone_to_zone_visibility_hash
-
-Adds a zone to the layout hash.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _add_zone_to_zone_visibility_hash {
-        my $zone_key = shift or return;
-        my $state = shift || ON_SCREEN;
-        $zone_visibility_hash{$state}{$zone_key} = 1;
-        return;
-    }
-
-=pod
-
-=head2 _add_child_zones_to_visibility_hash
-
-Recursively adds children zone to the layout hash.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _add_child_zones_to_visibility_hash {
-        my %args             = @_;
-        my $app_display_data = $args{'app_display_data'} or return;
-        my $zone_key         = $args{'zone_key'} or return;
-        my $map_key          = $args{'map_key'};
-        my $state            = $args{'state'} || ON_SCREEN;
-
-        # Get the child zones differently if a map key is given
-        my @children_zone_keys;
-        if ($map_key) {
-            @children_zone_keys
-                = $app_display_data->get_children_zones_of_map(
-                map_key  => $map_key,
-                zone_key => $zone_key,
-                );
-        }
-        else {
-            @children_zone_keys
-                = $app_display_data->get_children_zones_of_zone(
-                zone_key => $zone_key, );
-        }
-
-        foreach my $child_zone_key (@children_zone_keys) {
-            _add_zone_to_zone_visibility_hash( $child_zone_key, $state, );
-            _add_child_zones_to_visibility_hash(
-                app_display_data => $app_display_data,
-                zone_key         => $child_zone_key,
-            );
-        }
-
-        return;
-    }
-
-=pod
-
-=head2 _is_zone_layed_out
-
-Tests a zone to see if it's been layed out.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _is_zone_layed_out {
-        my $zone_key = shift or return;
-        my $visibility_key = ON_SCREEN;
-        return $zone_visibility_hash{$visibility_key}{$zone_key};
-    }
-
-=pod
-
-=head2 _is_zone_off_screen_left
-
-Tests a zone to see if off the screen to the left
-
-=cut
-
-    # ----------------------------------------------------
-    sub _is_zone_off_screen_left {
-        my $zone_key = shift or return;
-        my $visibility_key = OFF_TO_THE_LEFT;
-        return $zone_visibility_hash{$visibility_key}{$zone_key};
-    }
-
-=pod
-
-=head2 _is_zone_off_screen_right
-
-Tests a zone to see if off the screen to the left
-
-=cut
-
-    # ----------------------------------------------------
-    sub _is_zone_off_screen_right {
-        my $zone_key = shift or return;
-        my $visibility_key = OFF_TO_THE_RIGHT;
-        return $zone_visibility_hash{$visibility_key}{$zone_key};
-    }
-
-=pod
-
-=head2 _zone_visibility_hash
-
-Simply returns the layout hash.
-
-=cut
-
-    # ----------------------------------------------------
-    sub _zone_visibility_hash {
-        return %zone_visibility_hash;
-    }
-
 }
 
 1;

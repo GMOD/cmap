@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.52 2007-09-28 20:17:00 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.53 2007-10-23 15:34:19 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -53,6 +53,9 @@ $VERSION = (qw$Revision: 1.52 $)[-1];
     STRING_UP
     VALID
     APP_BACKGROUND_COLORS
+    OFF_TO_THE_LEFT
+    OFF_TO_THE_RIGHT
+    ON_SCREEN
 ];
 
 NOGROK
@@ -740,6 +743,14 @@ use constant APP_BACKGROUND_COLORS  => [
     'grey',
     'lightgrey',
 ];
+
+#
+# string values that denote if the map in on screen or off screen
+#
+
+use constant OFF_TO_THE_LEFT => 'left';
+use constant OFF_TO_THE_RIGHT => 'right';
+use constant ON_SCREEN => 'visible';
 
 1;
 
