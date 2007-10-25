@@ -1312,7 +1312,7 @@ function check_radio_for_additional_buttons(radio,val){
   </table>
 [%- END -%]
 
-[%- UNLESS apr.param('ref_map_accs') OR form_data.ref_map_set_info -%]
+[%- UNLESS drawer.image_name -%]
   [%- INCLUDE help_quick_start.tmpl -%]
 [%- END -%]
 
