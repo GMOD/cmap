@@ -35,17 +35,17 @@ my $conf_file = shift or die "Missing original 'cmap.conf' file\n";
 
 if ( $conf_file eq 'global.conf' ) {
     print "This will not validate the global.conf file.  "
-      . "It only validates individual data_source config files.  "
-      . "Sorry.\n";
+        . "It only validates individual data_source config files.  "
+        . "Sorry.\n";
     exit(0);
 }
 
 print "Parsing config file '$conf_file.'\n";
 
 my $conf = Config::General->new($conf_file)
-  or die "Trouble reading config '$conf_file'";
+    or die "Trouble reading config '$conf_file'";
 my %config = $conf->getall
-  or die "No configuration options present in '$conf_file'";
+    or die "No configuration options present in '$conf_file'";
 
 # Helper definitions ------------------------------
 my %generic_scalar_def = (
@@ -115,6 +115,7 @@ my %config_defs = (
     disable_cache             => { %generic_scalar_def, },
     comp_menu_order           => { %generic_scalar_def, },
     label_features            => { %generic_scalar_def, },
+    default_species_acc       => { %generic_scalar_def, },
     collapse_features         => { %generic_scalar_def, },
     scale_maps                => { %generic_scalar_def, },
     omit_area_boxes           => { %generic_scalar_def, },
@@ -126,24 +127,26 @@ my %config_defs = (
     image_type                => { %generic_scalar_def, },
     stack_maps                => { %generic_scalar_def, },
     clean_view                => { %generic_scalar_def, },
-    min_map_pixel_height      =>
+    min_map_pixel_height =>
         { %generic_scalar_def, option_type => 'integer', },
     min_tick_distance => { %generic_scalar_def, option_type => 'integer', },
     map_shape         => { %generic_scalar_def, },
-    feature_search_field         => { %generic_scalar_def, },
-    background_color             => { %generic_scalar_def, },
-    slot_background_color        => { %generic_scalar_def, },
-    slot_border_color            => { %generic_scalar_def, },
-    feature_color                => { %generic_scalar_def, },
-    connecting_line_color        => { %generic_scalar_def, },
-    feature_highlight_bg_color   => { %generic_scalar_def, },
-    feature_highlight_fg_color   => { %generic_scalar_def, },
-    feature_correspondence_color => { %generic_scalar_def, },
-    map_color                    => { %generic_scalar_def, },
-    menu_bgcolor                 => { %generic_scalar_def, },
-    menu_bgcolor_tint            => { %generic_scalar_def, },
-    menu_ref_bgcolor             => { %generic_scalar_def, },
-    menu_ref_bgcolor_tint        => { %generic_scalar_def, },
+    allow_remote_data_access       => { %generic_scalar_def, },
+    allow_remote_data_manipulation => { %generic_scalar_def, },
+    feature_search_field           => { %generic_scalar_def, },
+    background_color               => { %generic_scalar_def, },
+    slot_background_color          => { %generic_scalar_def, },
+    slot_border_color              => { %generic_scalar_def, },
+    feature_color                  => { %generic_scalar_def, },
+    connecting_line_color          => { %generic_scalar_def, },
+    feature_highlight_bg_color     => { %generic_scalar_def, },
+    feature_highlight_fg_color     => { %generic_scalar_def, },
+    feature_correspondence_color   => { %generic_scalar_def, },
+    map_color                      => { %generic_scalar_def, },
+    menu_bgcolor                   => { %generic_scalar_def, },
+    menu_bgcolor_tint              => { %generic_scalar_def, },
+    menu_ref_bgcolor               => { %generic_scalar_def, },
+    menu_ref_bgcolor_tint          => { %generic_scalar_def, },
     map_width          => { %generic_scalar_def, option_type => 'integer', },
     cmap_title         => { %generic_scalar_def, },
     cmap_home_intro    => { %generic_scalar_def, },
@@ -177,7 +180,7 @@ my %config_defs = (
             user        => { %generic_scalar_def, required => 1, },
             password    => { %generic_scalar_def, required => 0, },
             passwd_file => { %generic_scalar_def, required => 0, },
-            is_default  =>
+            is_default =>
                 { deprecated => 1, validation_method => \&deprecated_value, },
         },
     },
@@ -206,7 +209,7 @@ my %config_defs = (
         object                   => {
             feature_type_accession => {
                 deprecated => 1,
-                warning    =>
+                warning =>
                     'Warning: feature_type_accession has been changed to feature_type_acc.',
                 validation_method => \&deprecated_value,
             },
@@ -255,7 +258,7 @@ my %config_defs = (
         object                   => {
             map_type_accession => {
                 deprecated => 1,
-                warning    =>
+                warning =>
                     'Warning: map_type_accession has been changed to map_type_acc.',
                 validation_method => \&deprecated_value,
             },
@@ -296,13 +299,13 @@ my %config_defs = (
                 %generic_scalar_def,
             },
             width => { %generic_scalar_def, option_type => 'integer', },
-            gbrowse_ftype => { %generic_scalar_def, },
+            gbrowse_ftype           => { %generic_scalar_def, },
             feature_default_display => {
                 validation_method        => \&validate_hash,
                 print_valididated_method => \&print_validated_hash,
                 print_corrections_method => \&print_corrected_hash,
             },
-            unit_granularity         => {
+            unit_granularity => {
                 no_validation_hash => 1,
                 required           => 1,
                 %generic_scalar_def,
@@ -319,7 +322,7 @@ my %config_defs = (
         object                   => {
             evidence_type_accession => {
                 deprecated => 1,
-                warning    =>
+                warning =>
                     'Warning: evidence_type_accession has been changed to evidence_type_acc.',
                 validation_method => \&deprecated_value,
             },
@@ -408,13 +411,14 @@ my %config_defs = (
     ignore_image_map_sanity        => { %generic_scalar_def, },
 );
 my %global_config_defs = (
-    template_dir         => { %generic_scalar_def, required    => 1, },
-    cache_dir            => { %generic_scalar_def, required    => 1, },
-    default_db           => { %generic_scalar_def, required    => 1, },
-    max_img_dir_size     => { %generic_scalar_def, option_type => 'integer', },
-    max_img_dir_fullness => { %generic_scalar_def, option_type => 'integer', },
+    template_dir     => { %generic_scalar_def, required    => 1, },
+    cache_dir        => { %generic_scalar_def, required    => 1, },
+    default_db       => { %generic_scalar_def, required    => 1, },
+    max_img_dir_size => { %generic_scalar_def, option_type => 'integer', },
+    max_img_dir_fullness =>
+        { %generic_scalar_def, option_type => 'integer', },
     purge_img_dir_when_full =>
-      { %generic_scalar_def, option_type => 'integer', },
+        { %generic_scalar_def, option_type => 'integer', },
     file_age_to_purge => { %generic_scalar_def, option_type => 'integer', },
 );
 
@@ -445,7 +449,8 @@ foreach my $option_name ( sort keys %config ) {
             );
         }
         elsif ( $print_out_full
-            or ( !$valid and $print_corrections ) and not $def->{'deprecated'} )
+            or ( !$valid and $print_corrections )
+            and not $def->{'deprecated'} )
         {
             $def->{'print_corrections_method'}(
                 option_name   => $option_name,
@@ -453,6 +458,9 @@ foreach my $option_name ( sort keys %config ) {
                 config_object => $config{$option_name}
             );
         }
+    }
+    else {
+        print "Warning! Not a valid option: $option_name\n";
     }
 }
 
@@ -473,7 +481,7 @@ foreach my $option_name ( sort keys %config_defs ) {
         }
         else {
             print "Missing optional entry for $option_name\n"
-              unless $config_defs{$option_name}->{'no_report_if_missing'};
+                unless $config_defs{$option_name}->{'no_report_if_missing'};
         }
     }
 }
@@ -494,10 +502,10 @@ sub validate_scalar {
     my $option_name  = $args{'option_name'};
     my $parent_name  = $args{'parent_name'} || '';
     my $valid        = 1;
-    my $error_start  =
-      $parent_name
-      ? "INVALID <$parent_name> option:"
-      : "INVALID:";
+    my $error_start
+        = $parent_name
+        ? "INVALID <$parent_name> option:"
+        : "INVALID:";
 
     if ( ( ( not defined($config_value) ) or $config_value eq '' )
         and $def->{'required'} )
@@ -510,8 +518,8 @@ sub validate_scalar {
         if ( defined($config_value) and ref($config_value) ne '' ) {
             $valid = 0;
             print "$error_start '$option_name' is defined as a "
-              . ref($config_value)
-              . " when it should be simple text.\n";
+                . ref($config_value)
+                . " when it should be simple text.\n";
         }
 
         # Check for a predifined set of valid values first
@@ -521,7 +529,7 @@ sub validate_scalar {
         {
             $valid = 0;
             print
-              "$error_start '$config_value' is not valid for $option_name.\n";
+                "$error_start '$config_value' is not valid for $option_name.\n";
         }
 
         # Check for a set of valid values in Constants.pm
@@ -531,7 +539,7 @@ sub validate_scalar {
         {
             $valid = 0;
             print
-              "$error_start '$config_value' is not valid for $option_name.\n";
+                "$error_start '$config_value' is not valid for $option_name.\n";
         }
         elsif ( $def->{'option_type'}
             and $def->{'option_type'} eq 'integer'
@@ -540,7 +548,7 @@ sub validate_scalar {
         {
             $valid = 0;
             print "$error_start '$config_value' is not an integer which is "
-              . "required for $option_name.\n";
+                . "required for $option_name.\n";
         }
     }
 
@@ -568,8 +576,8 @@ sub print_corrected_scalar {
 
     my $question;
     if ( defined($config_value) ) {
-        $question =
-          "The previous entry had this data:\n" . Dumper($config_value);
+        $question
+            = "The previous entry had this data:\n" . Dumper($config_value);
     }
     else {
         $question = "There was no entry for $option_name.\n";
@@ -605,10 +613,10 @@ sub validate_hash {
     my $config_object = $args{'config_object'};
     my $option_name   = $args{'option_name'};
     my $parent_name   = $args{'parent_name'} || '';
-    my $error_start   =
-      $parent_name
-      ? "INVALID <$parent_name> option:"
-      : "INVALID:";
+    my $error_start
+        = $parent_name
+        ? "INVALID <$parent_name> option:"
+        : "INVALID:";
 
     my $valid = 1;
     if ( !$config_object and $def->{'required'} ) {
@@ -622,8 +630,8 @@ sub validate_hash {
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
         print "$error_start '$option_name' is defined as a "
-          . ref($config_object)
-          . " when it should a hash.\n";
+            . ref($config_object)
+            . " when it should a hash.\n";
         return 0;
     }
 
@@ -638,7 +646,7 @@ sub validate_hash {
                 config_object => $config_object->{$key},
                 parent_name   => $option_name,
             )
-          )
+            )
         {
             $valid = 0;
         }
@@ -649,14 +657,14 @@ sub validate_hash {
             unless ( $found{$user_option_name} ) {
                 $valid = 0;
                 print "$error_start $user_option_name is "
-                  . "not a option in <$option_name>.\n";
+                    . "not a option in <$option_name>.\n";
             }
         }
     }
 
     unless ($valid) {
         print "$error_start $option_name does not have the "
-          . "correct options (see above)\n";
+            . "correct options (see above)\n";
     }
 
     return $valid;
@@ -689,10 +697,10 @@ sub validate_hash_with_acc {
     my $config_object = $args{'config_object'};
     my $option_name   = $args{'option_name'};
     my $parent_name   = $args{'parent_name'} || '';
-    my $error_start   =
-      $parent_name
-      ? "INVALID <$parent_name> option:"
-      : "INVALID:";
+    my $error_start
+        = $parent_name
+        ? "INVALID <$parent_name> option:"
+        : "INVALID:";
 
     my $valid = 1;
     if ( !$config_object and $def->{'required'} ) {
@@ -703,8 +711,8 @@ sub validate_hash_with_acc {
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
         print "$error_start '$option_name' is defined as a "
-          . ref($config_object)
-          . " when it should a hash.\n";
+            . ref($config_object)
+            . " when it should a hash.\n";
         return 0;
     }
 
@@ -712,19 +720,20 @@ sub validate_hash_with_acc {
         if ( ref($config_object) ne 'HASH' ) {
             $valid = 0;
             print "$error_start <$option_name $acc> is defined as a "
-              . ref($config_object)
-              . " when it should a hash.\n";
+                . ref($config_object)
+                . " when it should a hash.\n";
             next;
         }
         if ( $def->{'accession_name'} ) {
             unless (
                 defined( $config_object->{$acc}{ $def->{'accession_name'} } )
-                and $acc eq $config_object->{$acc}{ $def->{'accession_name'} } )
+                and $acc eq
+                $config_object->{$acc}{ $def->{'accession_name'} } )
             {
                 $valid = 0;
                 print "$error_start the "
-                  . $def->{'accession_name'}
-                  . " field in <$option_name $acc> must equal '$acc'\n";
+                    . $def->{'accession_name'}
+                    . " field in <$option_name $acc> must equal '$acc'\n";
             }
         }
         unless (
@@ -734,11 +743,11 @@ sub validate_hash_with_acc {
                 config_object => $config_object->{$acc},
                 parent_name   => "$option_name $acc",
             )
-          )
+            )
         {
             $valid = 0;
             print "$error_start <$option_name $acc> "
-              . "is defined incorrectly (see above)\n\n";
+                . "is defined incorrectly (see above)\n\n";
         }
 
     }
@@ -773,10 +782,10 @@ sub validate_array {
     my $config_object = $args{'config_object'};
     my $option_name   = $args{'option_name'};
     my $parent_name   = $args{'parent_name'} || '';
-    my $error_start   =
-      $parent_name
-      ? "INVALID <$parent_name> option:"
-      : "INVALID:";
+    my $error_start
+        = $parent_name
+        ? "INVALID <$parent_name> option:"
+        : "INVALID:";
 
     my $valid = 1;
     if ( !defined($config_object) and $def->{'required'} ) {
@@ -806,7 +815,7 @@ sub validate_array {
                     config_object => $element,
                     parent_name   => $option_name,
                 )
-              )
+                )
             {
                 $valid = 0;
             }
@@ -815,7 +824,7 @@ sub validate_array {
 
     unless ($valid) {
         print "$error_start one or more values in '$option_name' "
-          . "is incorrect (see above)\n";
+            . "is incorrect (see above)\n";
     }
 
     return $valid;
@@ -850,7 +859,7 @@ sub deprecated_value {
 
     if ( defined($config_object) ) {
         my $warning = $def->{'warning'}
-          || "Warning: $option_name has been deprecated";
+            || "Warning: $option_name has been deprecated";
         print $warning. "\n";
     }
 
@@ -875,7 +884,7 @@ sub show_question {
     my $answer = undef;
     my $reply;
     my $first_time = 1;
-  OUTSIDE_LOOP: while ( not defined($answer) ) {
+OUTSIDE_LOOP: while ( not defined($answer) ) {
         print "\n";
         print $definition. "\n" if $definition;
         print $question. "\n";
@@ -895,13 +904,13 @@ sub show_question {
 
             #Menu
             my @options = sort keys(%$validHashRef);
-          INSIDE_LOOP: while ( not defined($answer) ) {
-                for ( my $i = 0 ; $i <= $#options ; $i++ ) {
+        INSIDE_LOOP: while ( not defined($answer) ) {
+                for ( my $i = 0; $i <= $#options; $i++ ) {
                     print "    " . ( $i + 1 ) . ") " . $options[$i] . "\n";
                 }
                 print "Please select from the above list:\n";
                 print "(separate multiple answers by a space)\n"
-                  if $allow_multiple;
+                    if $allow_multiple;
 
                 chomp( $reply = <STDIN> );
 

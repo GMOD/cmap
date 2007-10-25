@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.89 2007-10-19 14:36:34 mwz444 Exp $
+# $Id: Utils.pm,v 1.90 2007-10-25 14:55:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1311,6 +1311,7 @@ sub _get_options_from_url {
 
     my %args = @_;
     my $apr  = $args{'apr'};
+    my $calling_cmap_object  = $args{'calling_cmap_object'};
 
     my %parsed_url_options;
 
@@ -1325,6 +1326,7 @@ sub _get_options_from_url {
         || q{};
     $parsed_url_options{'ref_species_acc'} = $apr->param('ref_species_acc')
         || $apr->param('ref_species_aid')
+        || $calling_cmap_object->config_data('default_species_acc')
         || q{};
     $parsed_url_options{'ref_map_set_acc'} = $apr->param('ref_map_set_acc')
         || $apr->param('ref_map_set_aid')
@@ -1633,7 +1635,10 @@ sub parse_url {
     my ( $self, $apr, $calling_cmap_object ) = @_;
 
     # Parse the options
-    my %parsed_url_options = _get_options_from_url( apr => $apr );
+    my %parsed_url_options = _get_options_from_url(
+        apr                 => $apr,
+        calling_cmap_object => $calling_cmap_object,
+    );
 
     # Create @ref_map_accs
     my @ref_map_accs;
