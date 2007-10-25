@@ -350,7 +350,7 @@ function check_radio_for_additional_buttons(radio,val){
                     [%- END -%]
                   </select>
                 <td valign="top">
-                  <input type="submit" value="Draw Maps" name="sub">
+                  <input type="submit" value="Draw Selected Maps" onClick=" if (ref_map_accs.value==''){alert('Please, select a map or maps from the Ref. Map list.');return false};" name="sub">
                 </td>
               </tr>
               <tr>
