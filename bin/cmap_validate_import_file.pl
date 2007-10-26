@@ -1,15 +1,15 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: validate_import_file.pl,v 1.3 2007-10-03 20:19:53 mwz444 Exp $
+# $Id: cmap_validate_import_file.pl,v 1.1 2007-10-26 19:48:32 mwz444 Exp $
 
 =head1 NAME
 
-validate_import_file.pl - Check a tab delimited file for import
+cmap_validate_import_file.pl - Check a tab delimited file for import
 
 =head1 SYNOPSIS
 
-validate_import_file.pl d DATASOURCE -f IMPORT_FILE
+cmap_validate_import_file.pl d DATASOURCE -f IMPORT_FILE
 
 Use this to check if a tab delimited file will import correctly.
 

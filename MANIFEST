@@ -10,7 +10,7 @@ bin/cmap_parseWashUAceFiles.pl
 bin/cmap_reduce_cache_size.pl
 bin/cmap_validate_config.pl
 bin/profile-cmap-draw.pl
-bin/validate_import_file.pl
+bin/cmap_validate_import_file.pl
 BUGS
 Build.PL
 cgi-bin/cmap.PL

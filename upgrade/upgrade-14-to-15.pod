@@ -115,10 +115,11 @@ To use your old config files with CMap version 0.15, you will need to
 make some changes.
 
 There is now a config file validator for the individual datasource
-config files, validate_import_file.pl.  It is located in the bin
-directory.  Simply run it on your config files and it will tell you if
-it is valid and what is wrong if it is invalid, as well as list
-possible options that you could be using.
+config files, cmap_validate_import_file.pl (previously known as
+validate_import_file.pl).  It is located in the bin directory.  Simply
+run it on your config files and it will tell you if it is valid and
+what is wrong if it is invalid, as well as list possible options that
+you could be using.
 
 To change to modify your current v0.14 config, please do the following:
 
@@ -153,7 +154,9 @@ the original (which you backed up, right?).
 Run the config file validator on the new config file and fix any
 problems that it tells you about.
 
-  $ /usr/local/src/cmap/bin/validate_import_file.pl data_source1.conf
+  $ /usr/local/src/cmap/bin/cmap_validate_import_file.pl data_source1.conf
+
+Note: In previous releases, was known as validate_import_file.pl.
 
 Be sure to check the output of this to see if there are any options
 that you want to be using but aren't.  There are several new options.

@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.69 2007-08-12 04:01:41 mwz444 Exp $
+# $Id: Build.PL,v 1.70 2007-10-26 19:48:31 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -233,7 +233,23 @@ my $builder = CMapBuilder->new(
     dist_name         => 'cmap',
     dist_version_from => 'lib/Bio/GMOD/CMap.pm',
     license           => 'gpl',
-    script_files      => ['bin/cmap_admin.pl'],
+    script_files      => [
+        'bin/cmap_admin.pl',
+        'bin/cmap_create_stacked_maps.pl',
+        'bin/cmap_data_diagnostics.pl',
+        'bin/cmap_examine_attribute.pl',
+        'bin/cmap-fix-map-display-order.pl',
+        'bin/cmap_import_alignment.pl',
+        'bin/cmap_manageParsedAceFile.pl',
+        'bin/cmap_matrix_compare.pl',
+        'bin/cmap_metrics.pl',
+        'bin/cmap_parseagp.pl',
+        'bin/cmap_parsefpc.pl',
+        'bin/cmap_parseWashUAceFiles.pl',
+        'bin/cmap_reduce_cache_size.pl',
+        'bin/cmap_validate_config.pl',
+        'bin/cmap_validate_import_file.pl',
+    ],
     sign              => 1,
     requires          => {
         'Algorithm::Numerical::Sample' => 0,

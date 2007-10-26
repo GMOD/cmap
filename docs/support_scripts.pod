@@ -2,7 +2,7 @@
 
 =head1 VERSION
 
-$Revision: 1.2 $
+$Revision: 1.3 $
 
 There are a number of support scripts included with the CMap distribution.
 They are located in the bin/ directory inside the CMap source directory.  
@@ -160,7 +160,7 @@ files they create.
 They also provide a good jumping off point if a new or custom parser is
 required.
 
-=head2 validate_import_file.pl
+=head2 cmap_validate_import_file.pl
 
 =head3 Description
 
@@ -169,11 +169,11 @@ correctly.  Any problems will be reported.
 
 =head3 Usage
 
-  $ validate_import_file.pl -d DATASOURCE -f IMPORT_FILE
+  $ cmap_validate_import_file.pl -d DATASOURCE -f IMPORT_FILE
 
 =head3 See Also
 
-  $ perldoc validate_import_file.pl
+  $ perldoc cmap_validate_import_file.pl
 
 =head2 cmap_parseWashUAceFiles.pl
 
