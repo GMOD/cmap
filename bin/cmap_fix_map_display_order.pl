@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 
-# $Id: cmap-fix-map-display-order.pl,v 1.5 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: cmap_fix_map_display_order.pl,v 1.1 2007-10-26 19:53:22 mwz444 Exp $
 
 =head1 NAME
 
-cmap-fix-map-display-order.pl - Fixes map display order for CMap
+cmap_fix_map_display_order.pl - Fixes map display order for CMap
 
 =head1 SYNOPSIS
 
-  cmap-fix-map-display-order.pl [options]
+  cmap_fix_map_display_order.pl [options]
 
 Options:
 
@@ -41,7 +41,7 @@ use Pod::Usage;
 use File::Basename;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $ms_accs );
 GetOptions(

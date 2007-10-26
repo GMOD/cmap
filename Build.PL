@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.70 2007-10-26 19:48:31 mwz444 Exp $
+# $Id: Build.PL,v 1.71 2007-10-26 19:53:22 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -238,7 +238,7 @@ my $builder = CMapBuilder->new(
         'bin/cmap_create_stacked_maps.pl',
         'bin/cmap_data_diagnostics.pl',
         'bin/cmap_examine_attribute.pl',
-        'bin/cmap-fix-map-display-order.pl',
+        'bin/cmap_fix_map_display_order.pl',
         'bin/cmap_import_alignment.pl',
         'bin/cmap_manageParsedAceFile.pl',
         'bin/cmap_matrix_compare.pl',

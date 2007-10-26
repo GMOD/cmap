@@ -1,4 +1,4 @@
-bin/cmap-fix-map-display-order.pl
+bin/cmap_fix_map_display_order.pl
 bin/cmap_admin.pl
 bin/cmap_create_stacked_maps.pl
 bin/cmap_manageParsedAceFile.pl

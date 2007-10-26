@@ -2,7 +2,7 @@
 
 =head1 VERSION
 
-$Revision: 1.3 $
+$Revision: 1.4 $
 
 There are a number of support scripts included with the CMap distribution.
 They are located in the bin/ directory inside the CMap source directory.  
@@ -317,7 +317,7 @@ options.
 
   $ perldoc cmap_create_stacked_maps.pl
 
-=head2 cmap-fix-map-display-order.pl
+=head2 cmap_fix_map_display_order.pl
 
 =head3 Description
 
@@ -327,11 +327,11 @@ value in the map names.
 
 =head3 Usage
 
-  $ cmap-fix-map-display-order.pl -d DATASOURCE --ms-accs=msacc1[,msacc2...]
+  $ cmap_fix_map_display_order.pl -d DATASOURCE --ms-accs=msacc1[,msacc2...]
 
 =head3 See Also
 
-  $ perldoc cmap-fix-map-display-order.pl
+  $ perldoc cmap_fix_map_display_order.pl
 
 
 =head1 DEVELOPMENT
