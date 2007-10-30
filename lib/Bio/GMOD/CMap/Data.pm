@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.290 2007-10-19 14:36:33 mwz444 Exp $
+# $Id: Data.pm,v 1.291 2007-10-30 19:25:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.290 $)[-1];
+$VERSION = (qw$Revision: 1.291 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1727,6 +1727,7 @@ sub fill_out_slots {
         $filled_slot->{'description'} = join( ";",
             map { $desc_by_species{$_} } keys(%desc_by_species) );
         $filled_slot->{'min_corrs'}  = $slots->{$slot_no}->{'min_corrs'};
+print STDERR "SS: ".$slots->{$slot_no}->{'stack_slot'}."\n";
         $filled_slot->{'stack_slot'} = $slots->{$slot_no}->{'stack_slot'};
 
         if ( $slot_no == 0 ) {
@@ -4028,6 +4029,7 @@ Data Structures:
     my $slot_min_corrs = shift;
     my $stack_slot     = shift;
     my $slot_info      = $self->slot_info;
+print STDERR "UPDATE SLOTS\n";
 
     my %used_slot_nos;
 
@@ -4045,14 +4047,17 @@ Data Structures:
         }
     }
 
+print STDERR Dumper($stack_slot)."\n";
     # Remove any spare slots and update the stack and min_corrs value
     foreach my $slot_no ( keys(%$slots) ) {
         unless ( $used_slot_nos{$slot_no} ) {
             delete( $slots->{$slot_no} );
             next;
         }
-        $slots->{$slot_no}->{'stack_slot'} = $stack_slot->{$slot_no}
-            if defined( $stack_slot->{$slot_no} );
+print STDERR "BEFORE: ".$slots->{$slot_no}->{'stack_slot'}."\n";
+        $slots->{$slot_no}->{'stack_slot'} = $stack_slot->{$slot_no};
+            #if defined( $stack_slot->{$slot_no} );
+print STDERR "AFTER: ".$slots->{$slot_no}->{'stack_slot'}."\n";
         $slots->{$slot_no}->{'min_corrs'} = $slot_min_corrs->{$slot_no}
             if defined( $slot_min_corrs->{$slot_no} );
     }
