@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.66 2007-10-12 19:18:54 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.67 2007-10-31 16:20:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -706,6 +706,10 @@ Adds control buttons to the controls_pane.
         #    new_feature_stop   => 3239.97,
         #);
         #print STDERR
+        #    "            --------------BEFORE DISPLAY LABELS------------\n";
+        #$self->app_controller()->app_display_data()
+        #    ->set_map_labels_visibility( 2, 1, );
+        #print STDERR
         #    "           --------------BEFORE UNDO-------------------\n";
         #$self->app_controller()
         #    ->app_display_data->undo_action( window_key => $window_key, );
@@ -754,13 +758,6 @@ Adds control buttons to the controls_pane.
         #    zoom_value => 2,
         #);
         #print STDERR
-        #    "            ----------------BEFORE SCROLL-----------------\n";
-        #$self->app_controller()->scroll_zone(
-        #    window_key   => $window_key,
-        #    zone_key     => ${ $self->{'selected_zone_key_scalar'} },
-        #    scroll_value => 200,
-        #);
-        #print STDERR
         #    "            --------------BEFORE SELECT-------------------\n";
         #  $self->add_object_selection(
         #      zinc       => $zinc,
@@ -769,8 +766,30 @@ Adds control buttons to the controls_pane.
         #      window_key => $window_key,
         #  );
         #print STDERR
-        #    "            ----------------BEFORE SELECT---\n";
+        #    "            ----------------BEFORE SELECT ZONE---\n";
         #$self->app_controller()->new_selected_zone( zone_key => 3, );
+        #print STDERR
+        #    "            -----------BEFORE DISPLAY LABELS-----\n";
+        #$self->app_controller()->app_display_data()
+        #    ->set_map_labels_visibility( 2, 1, );
+        #print STDERR
+        #    "            -----------BEFORE flip-----------------\n";
+        #$self->app_controller()->app_display_data()->flip_map(
+        #    'map_key'   => 4,
+        #);
+        #print STDERR
+        #    "            ----------------BEFORE SCROLL-----------------\n";
+        #$self->app_controller()->scroll_zone(
+        #    window_key   => $window_key,
+        #    zone_key     => 2,
+        #    scroll_value => -400,
+        #);
+        #print STDERR
+        #    "            ----------------BEFORE SPLIT-----------------\n";
+        #$self->app_controller->app_display_data->split_map(
+        #    map_key        => 4,
+        #    split_position => 1000,
+        #    );
         #print STDERR "  ------------------DONE-----------------------\n";
         #exit;
         },
@@ -789,7 +808,7 @@ Adds control buttons to the controls_pane.
         $expand_button,                  # $show_features_check_box,
         $refresh_button,
 
-        $debug_button,
+        #$debug_button,
 
         # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
@@ -2249,6 +2268,15 @@ sub popup_map_menu {
         my $zone_key = $app_display_data->map_key_to_zone_key($map_key);
         my $map_num  = $self->number_of_object_selections( $window_key, );
 
+        my $map_layout = $app_display_data->{'map_layout'}{$map_key};
+
+        push @$menu_items, [
+            Button => $map_layout->{'flipped'} ? 'Unflip' : 'Flip',
+            -command => sub {
+                $app_display_data->flip_map( map_key => $map_key, );
+            },
+        ];
+
         # Map has been moved
         if ( $moved
             and not $app_display_data->{'scaffold'}{$zone_key}{'is_top'} )
@@ -2607,11 +2635,10 @@ sub fill_info_box {
             my $zone_key
                 = $self->{'first_object_selection_zone_key'}{$window_key};
 
-            $new_text = "$map_key: "
-                . $controller->get_map_info_text(
+            $new_text = $controller->get_map_info_text(
                 map_key    => $map_key,
                 window_key => $window_key,
-                );
+            );
         }
         else {
             $new_text = $self->number_of_object_selections( $window_key, )

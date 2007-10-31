@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.51 2007-10-23 15:34:21 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.52 2007-10-31 16:20:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -567,6 +567,10 @@ MAP:
             = $map->{'map_stop'} - $map->{'map_start'} + $unit_granularity;
         my $map_container_width = $length_in_units * $pixels_per_unit;
         my $show_details        = 1;
+        my $draw_flipped        = $app_display_data->is_map_drawn_flipped(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        );
 
         # If the map is the minimum width,
         # Set the individual ppu otherwise clear it.
@@ -734,6 +738,7 @@ MAP:
             map_stop          => $map->{'map_stop'},
             map_id            => $map->{'map_id'},
             x_offset          => $x_offset,
+            draw_flipped      => $draw_flipped,
             pixels_per_unit   => $map_pixels_per_unit,
         );
 
@@ -758,6 +763,7 @@ MAP:
             depth            => $depth,
             label            => $label_info{$map_key},
             hide_label       => $hide_label,
+            draw_flipped     => $draw_flipped,
             head_map         => 1,
         );
         if ( $row_max_y < $tmp_map_max_y ) {
@@ -933,6 +939,8 @@ Lays out sub maps in a slot.
     # Figure out where the parent start is in this zone's coordinate system
     my $parent_x1
         = $parent_map_layout->{'coords'}[0] - $zone_layout->{'bounds'}[0];
+    my $parent_x2
+        = $parent_map_layout->{'coords'}[2] - $zone_layout->{'bounds'}[0];
     my $parent_pixel_width = $parent_map_layout->{'coords'}[2]
         - $parent_map_layout->{'coords'}[0] + 1;
 
@@ -944,6 +952,10 @@ Lays out sub maps in a slot.
             window_key => $window_key,
             map_key    => $sub_map_key,
         );
+        my $parent_drawn_flipped = $app_display_data->is_map_drawn_flipped(
+            map_key  => $parent_map_key,
+            zone_key => $zone_key,
+        );
 
         # feature_start/stop refers to where the sub-map is on the parent
         my $feature_start
@@ -951,14 +963,25 @@ Lays out sub maps in a slot.
         my $feature_stop
             = $app_display_data->{'sub_maps'}{$sub_map_key}{'feature_stop'};
 
+        # $x*_on_parent_map is in relation to the parent map and flipping is
+        # not considered
         my $x1_on_parent_map
             = ( ( $feature_start - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
         my $x2_on_parent_map
             = ( ( $feature_stop - $parent_start ) * $parent_pixels_per_unit )
             * $scale;
-        my $x1 = $parent_x1 + $x1_on_parent_map;
-        my $x2 = $parent_x1 + $x2_on_parent_map;
+
+        # Flipping is considered for $x1 and $x2
+        my ( $x1, $x2 );
+        if ($parent_drawn_flipped) {
+            $x2 = $parent_x2 - $x1_on_parent_map;
+            $x1 = $parent_x2 - $x2_on_parent_map;
+        }
+        else {
+            $x1 = $parent_x1 + $x1_on_parent_map;
+            $x2 = $parent_x1 + $x2_on_parent_map;
+        }
 
         my $map_width = ($parent_pixel_width) * $scale;
         if ( $app_display_data->map_labels_visible($zone_key) ) {
@@ -984,7 +1007,7 @@ Lays out sub maps in a slot.
         $app_display_data->{'map_layout'}{$sub_map_key}{'row_index'}
             = $row_index;
 
-        push @{ $rows[$row_index] }, [ $sub_map_key, $x1, $x2 ];
+        push @{ $rows[$row_index] }, [ $sub_map_key, $x1, $x2, ];
     }
 
     my $map_pixels_per_unit;
@@ -998,6 +1021,11 @@ Lays out sub maps in a slot.
             my $sub_map_id   = $app_display_data->map_key_to_id($sub_map_key);
             my $sub_map_data = $app_display_data->app_data_module()
                 ->map_data( map_id => $sub_map_id, );
+
+            my $draw_flipped = $app_display_data->is_map_drawn_flipped(
+                map_key  => $sub_map_key,
+                zone_key => $zone_key,
+            );
 
             # Set map_pixels_per_unit
             $map_pixels_per_unit
@@ -1086,6 +1114,7 @@ Lays out sub maps in a slot.
                 map_stop          => $sub_map_data->{'map_stop'},
                 map_id            => $sub_map_data->{'map_id'},
                 x_offset          => $x_offset,
+                draw_flipped      => $draw_flipped,
                 pixels_per_unit   => $map_pixels_per_unit,
             );
 
@@ -1110,6 +1139,7 @@ Lays out sub maps in a slot.
                 move_offset_y   => $move_offset_y,
                 force_relayout  => $force_relayout,
                 depth           => $depth,
+                draw_flipped    => $draw_flipped,
                 label           => $label_info{$sub_map_key},
             );
 
@@ -1258,6 +1288,7 @@ Lays out a maps in a contained area.
     my $hide_label         = $args{'hide_label'} || 0;
     my $head_map           = $args{'head_map'} || 0;
     my $font_height        = $label->{'height'};
+    my $draw_flipped       = $args{'draw_flipped'};
     my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
@@ -1382,9 +1413,9 @@ Lays out a maps in a contained area.
     my ( $bounds, $map_coords ) = &$draw_sub_ref(
         map_layout       => $map_layout,
         app_display_data => $app_display_data,
-        min_x            => $min_x,
-        min_y            => $min_y,
-        max_x            => $max_x,
+        min_x            => int $min_x,
+        min_y            => int $min_y,
+        max_x            => int $max_x,
         color            => $color,
         thickness        => $thickness,
         truncated        => $truncated,
@@ -1407,6 +1438,7 @@ Lays out a maps in a contained area.
             viewable_x1      => $viewable_x1,
             viewable_x2      => $viewable_x2,
             app_display_data => $app_display_data,
+            draw_flipped     => $draw_flipped,
         );
     }
 
@@ -1426,6 +1458,7 @@ Lays out a maps in a contained area.
             viewable_x1      => $viewable_x1,
             viewable_x2      => $viewable_x2,
             pixels_per_unit  => $pixels_per_unit,
+            draw_flipped     => $draw_flipped,
         );
     }
     if ( $map_layout->{'show_details'} ) {
@@ -1566,6 +1599,7 @@ Lays out feautures
     my $viewable_x1      = $args{'viewable_x1'};
     my $viewable_x2      = $args{'viewable_x2'};
     my $pixels_per_unit  = $args{'pixels_per_unit'};
+    my $draw_flipped     = $args{'draw_flipped'};
 
     my $max_y = $min_y;
 
@@ -1591,10 +1625,44 @@ Lays out feautures
         my @fcolumns;
 
         foreach my $feature ( @{ $lane_features || [] } ) {
-            my $feature_acc      = $feature->{'feature_acc'};
-            my $feature_start    = $feature->{'feature_start'};
-            my $feature_stop     = $feature->{'feature_stop'};
-            my $feature_type_acc = $feature->{'feature_type_acc'};
+            my $feature_acc       = $feature->{'feature_acc'};
+            my $feature_start     = $feature->{'feature_start'};
+            my $feature_stop      = $feature->{'feature_stop'};
+            my $feature_type_acc  = $feature->{'feature_type_acc'};
+            my $feature_direction = $feature->{'direction'};
+            my ( $x1, $x2 );
+
+            if ($draw_flipped) {
+                $x2 = $max_x
+                    - ( ( $feature_start - $map_start ) * $pixels_per_unit );
+                $x1 = $max_x
+                    - ( ( $feature_stop - $map_start ) * $pixels_per_unit );
+                $feature_direction = -1 * $feature_direction;
+            }
+            else {
+                $x1 = $min_x
+                    + ( ( $feature_start - $map_start ) * $pixels_per_unit );
+                $x2 = $min_x
+                    + ( ( $feature_stop - $map_start ) * $pixels_per_unit );
+            }
+
+            # Skip if not visible
+            if ( $x2 < $viewable_x1 or $x1 > $viewable_x2 ) {
+                next;
+            }
+
+            unless ( $app_display_data->{'map_layout'}{$map_key}{'features'}
+                {$feature_acc} )
+            {
+                $app_display_data->{'map_layout'}{$map_key}{'features'}
+                    {$feature_acc} = {};
+            }
+
+            my $column_index;
+            my $feature_layout
+                = $app_display_data->{'map_layout'}{$map_key}{'features'}
+                {$feature_acc};
+
             my $feature_shape
                 = $app_display_data->feature_type_data( $feature_type_acc,
                 'shape' )
@@ -1602,28 +1670,6 @@ Lays out feautures
             my $feature_glyph = $feature_shape;
             $feature_glyph =~ s/-/_/g;
             if ( $glyph->can($feature_glyph) ) {
-
-                unless (
-                    $app_display_data->{'map_layout'}{$map_key}{'features'}
-                    {$feature_acc} )
-                {
-                    $app_display_data->{'map_layout'}{$map_key}{'features'}
-                        {$feature_acc} = {};
-                }
-                my $column_index;
-                my $feature_layout
-                    = $app_display_data->{'map_layout'}{$map_key}{'features'}
-                    {$feature_acc};
-
-                my $x1 = $min_x
-                    + ( ( $feature_start - $map_start ) * $pixels_per_unit );
-                my $x2 = $min_x
-                    + ( ( $feature_stop - $map_start ) * $pixels_per_unit );
-
-                # Skip if not visible
-                if ( $x2 < $viewable_x1 or $x1 > $viewable_x2 ) {
-                    next;
-                }
 
                 if ( not $glyph->allow_glyph_overlap($feature_glyph) ) {
                     my $adjusted_left  = $x1 - $min_x;
@@ -1687,8 +1733,8 @@ Lays out feautures
                     y_pos1           => $y1,
                     y_pos2           => $y2,
                     color            => $color,
-                    is_flipped       => 0,
-                    direction        => $feature->{'direction'},
+                    is_flipped       => $draw_flipped,
+                    direction        => $feature_direction,
                     name             => $feature->{'feature_name'},
                     app_display_data => $app_display_data,
                     feature          => $feature,
@@ -1927,6 +1973,7 @@ Lays out correspondences between two zones
         ],
     );
 
+    my %map_flipped;
     foreach my $corr ( @{ $corrs || [] } ) {
         my $map_id1 = $corr->{'map_id1'};
         my $map_id2 = $corr->{'map_id2'};
@@ -1940,11 +1987,29 @@ Lays out correspondences between two zones
             $zone_key2 );
         my $map1_x1
             = $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[0];
+        my $map1_x2
+            = $app_display_data->{'map_layout'}{$map_key1}{'bounds'}[2];
         my $map2_x1
             = $app_display_data->{'map_layout'}{$map_key2}{'bounds'}[0];
+        my $map2_x2
+            = $app_display_data->{'map_layout'}{$map_key2}{'bounds'}[2];
 
         my $map_start1 = $map_data_hash->{$map_id1}{'map_start'};
         my $map_start2 = $map_data_hash->{$map_id2}{'map_start'};
+
+        # Set the flipped values if needed
+        unless ( defined $map_flipped{$map_key1} ) {
+            $map_flipped{$map_key1} = $app_display_data->is_map_drawn_flipped(
+                map_key  => $map_key1,
+                zone_key => $zone_key1,
+            );
+        }
+        unless ( defined $map_flipped{$map_key2} ) {
+            $map_flipped{$map_key2} = $app_display_data->is_map_drawn_flipped(
+                map_key  => $map_key2,
+                zone_key => $zone_key2,
+            );
+        }
 
         my ( $corr_y1, $corr_y2, $draw_downward1, $draw_downward2, );
 
@@ -1987,12 +2052,26 @@ Lays out correspondences between two zones
             || $app_display_data->{'scaffold'}{$zone_key2}{'pixels_per_unit'};
         my $corr_avg_x1
             = ( $corr->{'feature_start1'} + $corr->{'feature_stop1'} ) / 2;
-        my $corr_x1 = $map1_x1
-            + ( $map1_pixels_per_unit * ( $corr_avg_x1 - $map_start1 ) );
         my $corr_avg_x2
             = ( $corr->{'feature_start2'} + $corr->{'feature_stop2'} ) / 2;
-        my $corr_x2 = $map2_x1
-            + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
+
+        my ( $corr_x1, $corr_x2 );
+        if ( $map_flipped{$map_key1} ) {
+            $corr_x1 = $map1_x2
+                - ( $map1_pixels_per_unit * ( $corr_avg_x1 - $map_start1 ) );
+        }
+        else {
+            $corr_x1 = $map1_x1
+                + ( $map1_pixels_per_unit * ( $corr_avg_x1 - $map_start1 ) );
+        }
+        if ( $map_flipped{$map_key2} ) {
+            $corr_x2 = $map2_x2
+                - ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
+        }
+        else {
+            $corr_x2 = $map2_x1
+                + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
+        }
 
         # Don't display if one of the ends isn't being displayed
         next
@@ -2077,18 +2156,35 @@ object used in CMap.
     my $map_stop          = $args{'map_stop'};
     my $map_id            = $args{'map_id'};
     my $x_offset          = $args{'x_offset'};
+    my $draw_flipped      = $args{'draw_flipped'};
     my $pixels_per_unit   = $args{'pixels_per_unit'};
 
     $app_display_data->{'slot_info'}{$zone_key}{$map_id}
         = [ undef, undef, $map_start, $map_stop, 1 ];
 
-    if ( $map_min_x < $visible_min_bound ) {
-        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0] = $map_start
-            + ( ( $visible_min_bound - $map_min_x ) / $pixels_per_unit );
+    if ($draw_flipped) {
+        if ( $map_min_x < $visible_min_bound ) {
+            $app_display_data->{'slot_info'}{$zone_key}{$map_id}[1]
+                = $map_stop
+                - ( ( $visible_min_bound - $map_min_x ) / $pixels_per_unit );
+        }
+        if ( $map_max_x > $visible_max_bound ) {
+            $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0]
+                = $map_start
+                + ( ( $map_max_x - $visible_max_bound ) / $pixels_per_unit );
+        }
     }
-    if ( $map_max_x > $visible_max_bound ) {
-        $app_display_data->{'slot_info'}{$zone_key}{$map_id}[1] = $map_stop
-            - ( ( $map_max_x - $visible_max_bound ) / $pixels_per_unit );
+    else {
+        if ( $map_min_x < $visible_min_bound ) {
+            $app_display_data->{'slot_info'}{$zone_key}{$map_id}[0]
+                = $map_start
+                + ( ( $visible_min_bound - $map_min_x ) / $pixels_per_unit );
+        }
+        if ( $map_max_x > $visible_max_bound ) {
+            $app_display_data->{'slot_info'}{$zone_key}{$map_id}[1]
+                = $map_stop
+                - ( ( $map_max_x - $visible_max_bound ) / $pixels_per_unit );
+        }
     }
 
     return;
@@ -2495,6 +2591,7 @@ Adds tick marks to a map.
     my $viewable_x1      = $args{'viewable_x1'};
     my $viewable_x2      = $args{'viewable_x2'};
     my $app_display_data = $args{'app_display_data'};
+    my $draw_flipped     = $args{'draw_flipped'};
     my $x_offset = $app_display_data->{'scaffold'}{$zone_key}{'x_offset'}
         || 0;
 
@@ -2546,38 +2643,53 @@ Adds tick marks to a map.
     my ( $interval, $map_scale ) = _tick_mark_interval( $visible_map_units, );
 
     my $no_intervals = int( $visible_map_units / $interval );
+
+    my $visible_pixel_width = $visible_pixel_stop - $visible_pixel_start + 1;
+
     my $interval_start
         = int( $visible_map_start / ( 10**( $map_scale - 1 ) ) )
         * ( 10**( $map_scale - 1 ) );
-    my $tick_overhang = 8;
     my @intervals = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
+
+    my $tick_overhang = 8;
     my $min_tick_distance
         = $app_display_data->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;
 
-    my $visible_pixel_width = $visible_pixel_stop - $visible_pixel_start + 1;
-    my $tick_start          = $map_coords->[1] - $tick_overhang;
-    my $tick_stop           = $map_coords->[3];
+    my $tick_start = $map_coords->[1] - $tick_overhang;
+    my $tick_stop  = $map_coords->[3];
     for my $tick_pos (@intervals) {
         my $rel_position
             = ( $tick_pos - $visible_map_start ) / $visible_map_units;
 
-        # If there isn't enough space, skip this one.
-        if (( ( $rel_position * $visible_pixel_width ) < $min_tick_distance )
-            or (defined($last_tick_rel_pos)
-                and ( ( $rel_position * $visible_pixel_width )
-                    - ( $last_tick_rel_pos * $visible_pixel_width )
-                    < $min_tick_distance )
+        if ((   (   ( $rel_position * $visible_pixel_width )
+                    < $min_tick_distance
+                )
+                or (defined($last_tick_rel_pos)
+                    and ( ( $rel_position * $visible_pixel_width )
+                        - ( $last_tick_rel_pos * $visible_pixel_width )
+                        < $min_tick_distance )
+                )
             )
             )
         {
             next;
         }
+
         $last_tick_rel_pos = $rel_position;
 
-        my $x_pos
-            = $visible_pixel_start + ( $visible_pixel_width * $rel_position );
+        my $x_pos;
+        if ($draw_flipped) {
+            $x_pos
+                = $visible_pixel_start
+                + ( $visible_pixel_width
+                    * ( $rel_position ? ( 1 - $rel_position ) : 0 ) );
+        }
+        else {
+            $x_pos = $visible_pixel_start
+                + ( $visible_pixel_width * $rel_position );
+        }
 
         push @{ $map_layout->{'items'} },
             (

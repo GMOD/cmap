@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.102 2007-09-28 20:17:00 mwz444 Exp $
+# $Id: Admin.pm,v 1.103 2007-10-31 16:20:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -46,6 +46,7 @@ use Bio::GMOD::CMap::Utils qw[ parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
+use Storable qw(freeze thaw);
 
 # ----------------------------------------------------
 sub attribute_create {
@@ -2718,8 +2719,13 @@ The primary key of the object.
     my $change_actions = shift or return;
     my $sql_object     = $self->sql or return;
 
+    my $time_str            = localtime();
     my $temp_to_real_map_id = {};
+
+    my $transaction_id = $sql_object->insert_transaction();
     $sql_object->start_transaction();
+    my $commit_text;
+
     foreach my $action ( @{ $change_actions || [] } ) {
         if ( $action->{'action'} eq 'move_map' ) {
             my $feature_id = $action->{'feature_id'} or next;
@@ -2732,12 +2738,87 @@ The primary key of the object.
             my $feature_start = $action->{'new_feature_start'};
             my $feature_stop  = $action->{'new_feature_stop'};
 
+            # Handle commit log
+            my $map_data = $sql_object->get_maps( map_id => $map_id );
+            die "$map_id is not a valid map ID\n"
+                unless ( @{ $map_data || [] } );
+            $map_data = $map_data->[0];
+            my $commit_type = 'move_map';
+
+            $commit_text .= join( ";",
+                "action=$commit_type",
+                "feature_id=$feature_id",
+                "map_id=$map_id",
+                "feature_start=$feature_start",
+                "feature_stop=$feature_stop",
+                "direction=" . ( defined($direction) ? $direction : '' ) );
+
+            $sql_object->insert_commit_log(
+                transaction_id => $transaction_id,
+                commit_type    => $commit_type,
+                commit_text    => $commit_text,
+                commit_object  => freeze($action),
+                species_id     => $map_data->{'species_id'},
+                species_acc    => $map_data->{'species_acc'},
+                map_set_id     => $map_data->{'map_set_id'},
+                map_set_acc    => $map_data->{'map_set_acc'},
+                map_id         => $map_data->{'map_id'},
+                map_acc        => $map_data->{'map_acc'},
+            );
+
+            # Done with commit log
+
             $sql_object->update_feature(
                 feature_id    => $feature_id,
                 map_id        => $map_id,
                 feature_start => $feature_start,
                 feature_stop  => $feature_stop,
                 direction     => $direction,
+            );
+        }
+        elsif ( $action->{'action'} eq 'flip_map' ) {
+            my $feature_id = $action->{'feature_id'} or next;
+
+            my $map_id = $self->_translate_map_id( $action->{'map_id'},
+                $temp_to_real_map_id );
+
+            my $feature_data = $sql_object->get_features_simple(
+                feature_id => $feature_id );
+            die "$feature_id is not a valid feature ID\n"
+                unless ( @{ $feature_data || [] } );
+            $feature_data = $feature_data->[0];
+
+            my $new_direction = $feature_data->{'direction'} < 0 ? 1 : -1;
+
+            # Handle commit log
+            my $map_data = $sql_object->get_maps( map_id => $map_id );
+            die "$map_id is not a valid map ID\n"
+                unless ( @{ $map_data || [] } );
+            $map_data = $map_data->[0];
+            my $commit_type = 'flip_map';
+
+            $commit_text .= join( ";",
+                "action=$commit_type", "map_id=$map_id",
+                "feature_id=$feature_id", );
+
+            $sql_object->insert_commit_log(
+                transaction_id => $transaction_id,
+                commit_type    => $commit_type,
+                commit_text    => $commit_text,
+                commit_object  => freeze($action),
+                species_id     => $map_data->{'species_id'},
+                species_acc    => $map_data->{'species_acc'},
+                map_set_id     => $map_data->{'map_set_id'},
+                map_set_acc    => $map_data->{'map_set_acc'},
+                map_id         => $map_data->{'map_id'},
+                map_acc        => $map_data->{'map_acc'},
+            );
+
+            # Done with commit log
+
+            $sql_object->update_feature(
+                feature_id => $feature_id,
+                direction  => $new_direction,
             );
         }
         elsif ( $action->{'action'} eq 'split_map' ) {
@@ -2767,6 +2848,41 @@ The primary key of the object.
                 map_start     => $action->{'second_map_start'},
                 map_stop      => $action->{'second_map_stop'},
             );
+
+            # Handle commit log
+            my $map_data = $sql_object->get_maps( map_id => $ori_map_id );
+            die "$ori_map_id is not a valid map ID\n"
+                unless ( @{ $map_data || [] } );
+            $map_data = $map_data->[0];
+            my $commit_type = 'split_map';
+
+            $commit_text .= join( ";",
+                "action=$commit_type",
+                "ori_map_id=$ori_map_id",
+                "first_map_id=$first_map_id",
+                "first_map_name=" . $action->{'first_map_name'},
+                "first_map_start=" . $action->{'first_map_start'},
+                "first_map_stop=" . $action->{'first_map_stop'},
+                "second_map_id=" . $second_map_id,
+                "second_map_name=" . $action->{'second_map_name'},
+                "second_map_start=" . $action->{'second_map_start'},
+                "second_map_stop=" . $action->{'second_map_stop'},
+            );
+
+            $sql_object->insert_commit_log(
+                transaction_id => $transaction_id,
+                commit_type    => $commit_type,
+                commit_text    => $commit_text,
+                commit_object  => freeze($action),
+                species_id     => $map_data->{'species_id'},
+                species_acc    => $map_data->{'species_acc'},
+                map_set_id     => $map_data->{'map_set_id'},
+                map_set_acc    => $map_data->{'map_set_acc'},
+                map_id         => $map_data->{'map_id'},
+                map_acc        => $map_data->{'map_acc'},
+            );
+
+            # Done with commit log
 
             # Add the new IDs to the hash for later lookup
             $temp_to_real_map_id->{ $action->{'first_map_id'} }
@@ -2897,6 +3013,38 @@ The primary key of the object.
                 map_start     => $action->{'merged_map_start'},
                 map_stop      => $action->{'merged_map_stop'},
             );
+
+            # Handle commit log
+            my $map_data = $sql_object->get_maps( map_id => $first_map_id );
+            die "$first_map_id is not a valid map ID\n"
+                unless ( @{ $map_data || [] } );
+            $map_data = $map_data->[0];
+            my $commit_type = 'merge_maps';
+
+            $commit_text .= join( ";",
+                "action=$commit_type",
+                "first_map_id=$first_map_id",
+                "second_map_id=$second_map_id",
+                "second_map_offset=" . $action->{'second_map_offset'},
+                "merged_map_id=$merged_map_id",
+                "merged_map_name=" . $action->{'merged_map_name'},
+                "merged_map_start=" . $action->{'merged_map_start'},
+                "merged_map_stop=" . $action->{'merged_map_stop'},
+            );
+
+            $sql_object->insert_commit_log(
+                transaction_id => $transaction_id,
+                commit_type    => $commit_type,
+                commit_text    => $commit_text,
+                commit_object  => freeze($action),
+                species_id     => $map_data->{'species_id'},
+                species_acc    => $map_data->{'species_acc'},
+                map_set_id     => $map_data->{'map_set_id'},
+                map_set_acc    => $map_data->{'map_set_acc'},
+            );
+
+            # Done with commit log
+
             $temp_to_real_map_id->{ $action->{'merged_map_id'} }
                 = $merged_map_id;
 
@@ -3088,6 +3236,35 @@ The primary key of the object.
                     );
                 }
             }
+
+            # Handle commit log
+            my $subsection_map_id = $action->{'subsection_map_id'};
+            my $map_data
+                = $sql_object->get_maps( map_id => $subsection_map_id );
+            die "$subsection_map_id is not a valid map ID\n"
+                unless ( @{ $map_data || [] } );
+            $map_data = $map_data->[0];
+            my $commit_type = 'move_map_subsection';
+
+            $commit_text .= join( ";",
+                "action=$commit_type",
+                "subsection_map_id=$subsection_map_id",
+                "destination_map_id=$destination_map_id",
+                "insertion_point=$insertion_point",
+            );
+
+            $sql_object->insert_commit_log(
+                transaction_id => $transaction_id,
+                commit_type    => $commit_type,
+                commit_text    => $commit_text,
+                commit_object  => freeze($action),
+                species_id     => $map_data->{'species_id'},
+                species_acc    => $map_data->{'species_acc'},
+                map_set_id     => $map_data->{'map_set_id'},
+                map_set_acc    => $map_data->{'map_set_acc'},
+            );
+
+            # Done with commit log
 
             # Now Move the subsection features
             foreach my $feature (@subsection_features) {

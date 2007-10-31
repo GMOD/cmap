@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.65 2007-10-23 15:34:21 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.66 2007-10-31 16:20:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -193,10 +193,12 @@ Adds the first slot
 
     $self->set_default_window_layout( window_key => $window_key, );
 
+    # Initialize maps in the head zone
     foreach my $map_id ( @{ $map_ids || [] } ) {
         my $map_key = $self->initialize_map(
-            map_id   => $map_id,
-            zone_key => $zone_key,
+            map_id       => $map_id,
+            zone_key     => $zone_key,
+            draw_flipped => 0,
         );
     }
 
@@ -336,12 +338,13 @@ sub create_sub_zone_from_saved_view {
         my $sub_map_id = $sub_map->{'sub_map_id'};
 
         $sub_maps_hash{$sub_map_id} = {
-            parent_map_key   => $parent_map_key,
-            feature_start    => $sub_map->{'feature_start'},
-            feature_stop     => $sub_map->{'feature_stop'},
-            feature_id       => $sub_map->{'feature_id'},
-            feature_type_acc => $sub_map->{'feature_type_acc'},
-            feature_length   => (
+            parent_map_key    => $parent_map_key,
+            feature_start     => $sub_map->{'feature_start'},
+            feature_stop      => $sub_map->{'feature_stop'},
+            feature_id        => $sub_map->{'feature_id'},
+            feature_type_acc  => $sub_map->{'feature_type_acc'},
+            feature_direction => $sub_map->{'direction'},
+            feature_length    => (
                       $sub_map->{'feature_stop'} 
                     - $sub_map->{'feature_start'}
                     + $parent_unit_granularity
@@ -408,6 +411,8 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
         my $map_key = $self->initialize_map(
             map_id   => $map_id,
             zone_key => $zone_key,
+            feature_direction =>
+                $sub_maps_hash->{$map_id}{'feature_direction'}
         );
 
         # set the sub_maps data
@@ -591,20 +596,22 @@ sub assign_and_initialize_new_maps {
         }
 
         foreach my $sub_map_id ( @{ $map_ids_by_set{$set_key} || [] } ) {
+            my $sub_map     = $sub_map_hash{$sub_map_id};
             my $sub_map_key = $self->initialize_map(
-                map_id   => $sub_map_id,
-                zone_key => $child_zone_key,
+                map_id            => $sub_map_id,
+                zone_key          => $child_zone_key,
+                feature_direction => $sub_map->{'direction'}
             );
             $map_id_to_map_key{$sub_map_id} = $sub_map_key;
 
-            my $sub_map = $sub_map_hash{$sub_map_id};
             $self->{'sub_maps'}{$sub_map_key} = {
-                parent_map_key   => $parent_map_key,
-                feature_start    => $sub_map->{'feature_start'},
-                feature_stop     => $sub_map->{'feature_stop'},
-                feature_id       => $sub_map->{'feature_id'},
-                feature_type_acc => $sub_map->{'feature_type_acc'},
-                feature_length   => (
+                parent_map_key    => $parent_map_key,
+                feature_start     => $sub_map->{'feature_start'},
+                feature_stop      => $sub_map->{'feature_stop'},
+                feature_id        => $sub_map->{'feature_id'},
+                feature_type_acc  => $sub_map->{'feature_type_acc'},
+                feature_direction => $sub_map->{'direction'},
+                feature_length    => (
                           $sub_map->{'feature_stop'} 
                         - $sub_map->{'feature_start'}
                         + $parent_unit_granularity
@@ -2041,6 +2048,7 @@ Initializes map_layout
         color        => 'black',
         expanded     => 0,
         show_details => 1,
+        flipped      => 0,
     };
 
     return;
@@ -2070,6 +2078,7 @@ Initializes zone_layout
         layed_out_once => 0,
         changed        => 0,
         sub_changed    => 0,
+        flipped        => 0,
     };
 
     return;
@@ -2582,6 +2591,118 @@ another
 }
 
 # ----------------------------------------------------
+sub is_map_drawn_flipped {
+
+=pod
+
+=head2 is_map_drawn_flipped
+
+Test a map to see if it needs to be drawn as flipped.  This means that either it is flipped or the zone it is in is flipped.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key  = $args{'map_key'};
+    my $zone_key = $self->map_key_to_zone_key($map_key);
+
+    my $map_flipped  = $self->{'map_layout'}{$map_key}{'flipped'};
+    my $zone_flipped = $self->{'zone_layout'}{$zone_key}{'flipped'};
+
+    return ( $zone_flipped != $map_flipped );
+
+}
+
+# ----------------------------------------------------
+sub flip_map {
+
+=pod
+
+=head2 flip_map
+
+Move a map from one place on a parent to another
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key      = $args{'map_key'};
+    my $zone_key     = $self->map_key_to_zone_key($map_key);
+    my $window_key   = $self->{'scaffold'}{$zone_key}{'window_key'};
+    my $undo_or_redo = $args{'undo_or_redo'} || 0;
+
+    my $map_layout = $self->{'map_layout'}{$map_key};
+
+    # If a value was passed, use it, otherwise toggle the flip value
+    my $new_flip_value
+        = defined( $args{'value'} ) ? $args{'value'}
+        : $map_layout->{'flipped'}  ? 0
+        :                             1;
+
+    $map_layout->{'flipped'} = $new_flip_value;
+
+    # Add Action Data to be able to undo and redo
+    unless ($undo_or_redo) {
+        my $feature_id = 0;
+        if ( $self->{'sub_maps'}{$map_key} ) {
+            $feature_id = $self->{'sub_maps'}{$map_key}{'feature_id'};
+        }
+
+        my %action_data = (
+            action     => 'flip_map',
+            feature_id => $feature_id,
+            map_key    => $map_key,
+            map_id     => $self->map_key_to_id($map_key),
+        );
+        $self->add_action(
+            window_key  => $window_key,
+            action_data => \%action_data,
+        );
+    }
+
+    # Flip the child zones
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        $self->cascade_flip_zone_toggle( zone_key => $child_zone_key, );
+    }
+
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
+
+    return;
+
+}
+
+# ----------------------------------------------------
+sub cascade_flip_zone_toggle {
+
+=pod
+
+=head2 cascade_flip_zone_toggle
+
+Toggle a zone's flip value
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'} or return;
+
+    my $flip_value = $self->{'zone_layout'}{$zone_key}{'flipped'} ? 0 : 1;
+    $self->{'zone_layout'}{$zone_key}{'flipped'} = $flip_value;
+
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
+    {
+        $self->cascade_flip_zone_toggle( zone_key => $child_zone_key, );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub move_map {
 
 =pod
@@ -2750,16 +2871,21 @@ Create two new maps and hide the original
     my $second_map_length
         = $ori_map_stop - $second_map_start + $unit_granularity;
 
+    # Determine if the new maps need to be flipped or not
+    my $ori_flipped = $self->{'map_layout'}{$ori_map_key}{'flipped'};
+
     # Get the identifiers for the two new maps
     my $first_map_id  = $self->create_temp_id();
     my $first_map_key = $self->initialize_map(
-        map_id   => $first_map_id,
-        zone_key => $zone_key,
+        map_id       => $first_map_id,
+        zone_key     => $zone_key,
+        draw_flipped => $ori_flipped,
     );
     my $second_map_id  = $self->create_temp_id();
     my $second_map_key = $self->initialize_map(
-        map_id   => $second_map_id,
-        zone_key => $zone_key,
+        map_id       => $second_map_id,
+        zone_key     => $zone_key,
+        draw_flipped => $ori_flipped,
     );
 
     # Handle sub map information if it is a sub map
@@ -2767,11 +2893,13 @@ Create two new maps and hide the original
     my $first_feature_stop;
     my $second_feature_start;
     my $second_feature_stop;
-    if ( $self->{'sub_maps'}{$ori_map_key} ) {
+    if ( %{ $self->{'sub_maps'}{$ori_map_key} || {} } ) {
         my $ori_feature_start
             = $self->{'sub_maps'}{$ori_map_key}{'feature_start'};
         my $ori_feature_stop
             = $self->{'sub_maps'}{$ori_map_key}{'feature_stop'};
+        my $ori_feature_direction
+            = $self->{'sub_maps'}{$ori_map_key}{'feature_direction'};
         my $ori_feature_length = $ori_feature_stop - $ori_feature_start;
         my $first_feature_id   = $self->create_temp_id();
         my $second_feature_id  = $self->create_temp_id();
@@ -2792,21 +2920,23 @@ Create two new maps and hide the original
         $self->{'sub_maps'}{$first_map_key} = {
             parent_map_key =>
                 $self->{'sub_maps'}{$ori_map_key}{'parent_map_key'},
-            feature_start    => $first_feature_start,
-            feature_stop     => $first_feature_stop,
-            feature_id       => $first_feature_id,
-            feature_type_acc => $first_feature_type_acc,
-            feature_length   => (
+            feature_start     => $first_feature_start,
+            feature_stop      => $first_feature_stop,
+            feature_direction => $ori_feature_direction,
+            feature_id        => $first_feature_id,
+            feature_type_acc  => $first_feature_type_acc,
+            feature_length    => (
                 $first_feature_stop - $ori_feature_start + $unit_granularity
             ),
         };
         $self->{'sub_maps'}{$second_map_key} = {
             parent_map_key =>
                 $self->{'sub_maps'}{$ori_map_key}{'parent_map_key'},
-            feature_start    => $second_feature_start,
-            feature_stop     => $second_feature_stop,
-            feature_type_acc => $second_feature_type_acc,
-            feature_length   => (
+            feature_start     => $second_feature_start,
+            feature_stop      => $second_feature_stop,
+            feature_direction => $ori_feature_direction,
+            feature_type_acc  => $second_feature_type_acc,
+            feature_length    => (
                 $ori_feature_stop - $second_feature_start + $unit_granularity
             ),
         };
@@ -3061,6 +3191,23 @@ Create one new map and hide the original maps
     my $zone_key       = $self->map_key_to_zone_key($first_map_key);
     my $window_key     = $self->{'scaffold'}{$zone_key}{'window_key'};
 
+    unless (
+        $self->is_map_drawn_flipped(
+            map_key  => $first_map_key,
+            zone_key => $zone_key,
+        ) == $self->is_map_drawn_flipped(
+            map_key  => $second_map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        $self->app_interface()
+            ->popup_warning(
+            text => 'Cannot yet merge a map that has been flipped '
+                . 'with one that has not.', );
+        return;
+    }
+
     my $first_map_id  = $self->map_key_to_id($first_map_key);
     my $second_map_id = $self->map_key_to_id($second_map_key);
     my $first_map_data
@@ -3104,10 +3251,15 @@ Create one new map and hide the original maps
     if ( $merged_map_stop < $first_map_data->{'map_stop'} ) {
         $merged_map_stop = $first_map_data->{'map_stop'};
     }
-    my $merged_map_id  = $self->create_temp_id();
+    my $merged_map_id = $self->create_temp_id();
+
+    # Determine if the new map need to be flipped or not
+    my $first_flipped = $self->{'map_layout'}{$first_map_key}{'flipped'};
+
     my $merged_map_key = $self->initialize_map(
-        map_id   => $merged_map_id,
-        zone_key => $zone_key,
+        map_id       => $merged_map_id,
+        zone_key     => $zone_key,
+        draw_flipped => $first_flipped,
     );
 
     # Reassign Features
@@ -3147,17 +3299,22 @@ Create one new map and hide the original maps
     # Handle sub map information if they are sub_maps
     my $merged_feature_start;
     my $merged_feature_stop;
-    if ( $self->{'sub_maps'}{$first_map_key} ) {
+    if ( %{ $self->{'sub_maps'}{$first_map_key} || {} } ) {
         my $first_feature_start
             = $self->{'sub_maps'}{$first_map_key}{'feature_start'};
+        my $first_feature_direction
+            = $self->{'sub_maps'}{$first_map_key}{'feature_direction'};
         my $first_feature_stop
             = $self->{'sub_maps'}{$first_map_key}{'feature_stop'};
         my $second_feature_start
             = $self->{'sub_maps'}{$second_map_key}{'feature_start'};
         my $second_feature_stop
             = $self->{'sub_maps'}{$second_map_key}{'feature_stop'};
+        my $second_feature_direction
+            = $self->{'sub_maps'}{$second_map_key}{'feature_direction'};
         my $merged_feature_type_acc
             = $self->{'sub_maps'}{$first_map_key}{'feature_type_acc'};
+        my $merged_feature_direction = $first_feature_direction;
         $merged_feature_start
             = ( $first_feature_start < $second_feature_start )
             ? $first_feature_start
@@ -3172,11 +3329,12 @@ Create one new map and hide the original maps
         $self->{'sub_maps'}{$merged_map_key} = {
             parent_map_key =>
                 $self->{'sub_maps'}{$first_map_key}{'parent_map_key'},
-            feature_start    => $merged_feature_start,
-            feature_stop     => $merged_feature_stop,
-            feature_id       => $merged_feature_id,
-            feature_type_acc => $merged_feature_type_acc,
-            feature_length   => (
+            feature_start     => $merged_feature_start,
+            feature_stop      => $merged_feature_stop,
+            feature_id        => $merged_feature_id,
+            feature_type_acc  => $merged_feature_type_acc,
+            feature_direction => $merged_feature_direction,
+            feature_length    => (
                       $merged_feature_stop 
                     - $merged_feature_start
                     + $unit_granularity
@@ -3363,6 +3521,23 @@ Create new maps and hide the original maps
 
     my $window_key = $self->{'scaffold'}{$starting_zone_key}{'window_key'};
 
+    unless (
+        $self->is_map_drawn_flipped(
+            map_key  => $starting_map_key,
+            zone_key => $starting_zone_key,
+        ) == $self->is_map_drawn_flipped(
+            map_key  => $destination_map_key,
+            zone_key => $destination_zone_key,
+        )
+        )
+    {
+        $self->app_interface()
+            ->popup_warning(
+            text => 'Cannot yet merge a map that has been flipped '
+                . 'with one that has not.', );
+        return;
+    }
+
     # Erase the subsection zone corrs because they will be untouchable later
     $self->erase_corrs_of_zone(
         window_key => $window_key,
@@ -3488,6 +3663,7 @@ Create new maps and hide the original maps
     my %action_data = (
         action                  => 'move_map_subsection',
         subsection_map_key      => $subsection_map_key,
+        subsection_map_id       => $self->map_key_to_id($subsection_map_key),
         starting_map_key        => $starting_map_key,
         starting_map_id         => $self->map_key_to_id($starting_map_key),
         new_starting_map_key    => $new_starting_map_key,
@@ -3679,11 +3855,15 @@ Create new map and hide the original map.
         my $new_map_stop  = $map_data->{'map_stop'} - $subsection_length;
         my $new_map_name  = $map_data->{'map_name'};
 
+        # Determine if the new map need to be flipped or not
+        my $flipped = $self->{'map_layout'}{$map_key}{'flipped'};
+
         # Initialize the new maps
         $new_map_id  = $self->create_temp_id();
         $new_map_key = $self->initialize_map(
-            map_id   => $new_map_id,
-            zone_key => $zone_key,
+            map_id       => $new_map_id,
+            zone_key     => $zone_key,
+            draw_flipped => $flipped,
         );
 
         # Create the new map data
@@ -3717,25 +3897,21 @@ Create new map and hide the original map.
         );
 
         # Handle sub map information if they are sub_maps
-        if ( $self->{'sub_maps'}{$map_key} ) {
-            my $feature_start
-                = $self->{'sub_maps'}{$map_key}{'feature_start'};
-            my $feature_type_acc
-                = $self->{'sub_maps'}{$map_key}{'feature_type_acc'};
+        my $sub_map_info = $self->{'sub_maps'}{$map_key};
+        if ( %{ $sub_map_info || {} } ) {
+            my $feature_start    = $sub_map_info->{'feature_start'};
+            my $feature_type_acc = $sub_map_info->{'feature_type_acc'};
 
             my $feature_id = $self->create_temp_id();
 
-            $self->{'sub_maps'}{$map_key} = {
-                parent_map_key =>
-                    $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-                feature_start =>
-                    $self->{'sub_maps'}{$map_key}{'feature_start'},
-                feature_stop => $self->{'sub_maps'}{$map_key}{'feature_stop'},
-                feature_id   => $self->{'sub_maps'}{$map_key}{'feature_id'},
-                feature_type_acc =>
-                    $self->{'sub_maps'}{$map_key}{'feature_type_acc'},
-                feature_length =>
-                    $self->{'sub_maps'}{$map_key}{'feature_length'},
+            $self->{'sub_maps'}{$new_map_key} = {
+                parent_map_key    => $sub_map_info->{'parent_map_key'},
+                feature_start     => $sub_map_info->{'feature_start'},
+                feature_stop      => $sub_map_info->{'feature_stop'},
+                feature_id        => $sub_map_info->{'feature_id'},
+                feature_direction => $sub_map_info->{'feature_direction'},
+                feature_type_acc  => $sub_map_info->{'feature_type_acc'},
+                feature_length    => $sub_map_info->{'feature_length'},
             };
 
             # BF Potentially link to the oritinal feature
@@ -3915,11 +4091,15 @@ Create new map and hide the original map.
         = $map_data->{'map_stop'} + $subsection_length + $insert_gap;
     my $new_map_name = $map_data->{'map_name'};
 
+    # Determine if the new map need to be flipped or not
+    my $flipped = $self->{'map_layout'}{$map_key}{'flipped'};
+
     # Initialize the new maps
     my $new_map_id  = $self->create_temp_id();
     my $new_map_key = $self->initialize_map(
-        map_id   => $new_map_id,
-        zone_key => $zone_key,
+        map_id       => $new_map_id,
+        zone_key     => $zone_key,
+        draw_flipped => $flipped,
     );
 
     # Create the new map data
@@ -3963,21 +4143,20 @@ Create new map and hide the original map.
     );
 
     # Handle sub map information if they are sub_maps
-    if ( $self->{'sub_maps'}{$map_key} ) {
-        my $feature_start = $self->{'sub_maps'}{$map_key}{'feature_start'};
-        my $feature_type_acc
-            = $self->{'sub_maps'}{$map_key}{'feature_type_acc'};
+    my $sub_map_info = $self->{'sub_maps'}{$map_key};
+    if ( %{ $sub_map_info || {} } ) {
+        my $feature_start    = $sub_map_info->{'feature_start'};
+        my $feature_type_acc = $sub_map_info->{'feature_type_acc'};
 
         my $feature_id = $self->create_temp_id();
 
-        $self->{'sub_maps'}{$map_key} = {
-            parent_map_key => $self->{'sub_maps'}{$map_key}{'parent_map_key'},
-            feature_start  => $self->{'sub_maps'}{$map_key}{'feature_start'},
-            feature_stop   => $self->{'sub_maps'}{$map_key}{'feature_stop'},
-            feature_id     => $self->{'sub_maps'}{$map_key}{'feature_id'},
-            feature_type_acc =>
-                $self->{'sub_maps'}{$map_key}{'feature_type_acc'},
-            feature_length => $self->{'sub_maps'}{$map_key}{'feature_length'},
+        $self->{'sub_maps'}{$new_map_key} = {
+            parent_map_key   => $sub_map_info->{'parent_map_key'},
+            feature_start    => $sub_map_info->{'feature_start'},
+            feature_stop     => $sub_map_info->{'feature_stop'},
+            feature_id       => $sub_map_info->{'feature_id'},
+            feature_type_acc => $sub_map_info->{'feature_type_acc'},
+            feature_length   => $sub_map_info->{'feature_length'},
         };
 
         # BF Potentially link to the oritinal feature
@@ -5187,6 +5366,12 @@ Undo the action that was just performed.
             undo_or_redo   => 1,
         );
     }
+    elsif ( $last_action->{'action'} eq 'flip_map' ) {
+        $self->flip_map(
+            map_key      => $last_action->{'map_key'},
+            undo_or_redo => 1,
+        );
+    }
     elsif ( $last_action->{'action'} eq 'split_map' ) {
         $self->undo_split_map(
             ori_map_key    => $last_action->{'ori_map_key'},
@@ -5287,6 +5472,13 @@ Redo the action that was last undone.
             feature_start  => $next_action->{'new_feature_start'},
             feature_stop   => $next_action->{'new_feature_stop'},
             undo_or_redo   => 1,
+        );
+        $self->{'window_actions'}{$window_key}{'last_action_index'}++;
+    }
+    elsif ( $next_action->{'action'} eq 'flip_map' ) {
+        $self->flip_map(
+            map_key      => $next_action->{'map_key'},
+            undo_or_redo => 1,
         );
         $self->{'window_actions'}{$window_key}{'last_action_index'}++;
     }
@@ -5745,10 +5937,16 @@ The main highlight bounds must already have been moved.
     # coords
     my $center_x = $mouse_x - ( $parent_main_x_offset + $parent_x_offset );
 
-    my $center_in_parent_units = $self->convert_pixel_position_to_map_units(
-        position => $center_x,
+    my $drawn_flipped = $self->is_map_drawn_flipped(
         map_key  => $parent_map_key,
         zone_key => $parent_zone_key,
+    );
+
+    my $center_in_parent_units = $self->convert_pixel_position_to_map_units(
+        position      => $center_x,
+        map_key       => $parent_map_key,
+        zone_key      => $parent_zone_key,
+        drawn_flipped => $drawn_flipped,
     );
 
     return () unless ( defined $center_in_parent_units );
@@ -5789,9 +5987,10 @@ The main highlight bounds must already have been moved.
 
     # Convert placement to pixel coords
     my $placement_in_pixels = $self->convert_map_position_to_pixels(
-        position => $final_placement_in_parent_units,
-        map_key  => $parent_map_key,
-        zone_key => $parent_zone_key,
+        position      => $final_placement_in_parent_units,
+        map_key       => $parent_map_key,
+        zone_key      => $parent_zone_key,
+        drawn_flipped => $drawn_flipped,
     );
 
     # Get y coords
@@ -5834,10 +6033,11 @@ sub convert_map_position_to_pixels {
 =cut
 
     my ( $self, %args ) = @_;
-    my $zone_key  = $args{'zone_key'};
-    my $map_key   = $args{'map_key'};
-    my $position  = $args{'position'};
-    my $positions = $args{'positions'} || [];
+    my $zone_key      = $args{'zone_key'};
+    my $map_key       = $args{'map_key'};
+    my $drawn_flipped = $args{'drawn_flipped'};
+    my $position      = $args{'position'};
+    my $positions     = $args{'positions'} || [];
 
     my $return_single_val = 0;
     if ( defined $position ) {
@@ -5855,7 +6055,13 @@ sub convert_map_position_to_pixels {
     # Convert placement to pixel coords
     my @pixel_array;
     foreach my $pos (@$positions) {
-        my $relative_placement_in_units = $pos - $map_data->{'map_start'};
+        my $relative_placement_in_units;
+        if ($drawn_flipped) {
+            $relative_placement_in_units = $map_data->{'map_stop'} - $pos;
+        }
+        else {
+            $relative_placement_in_units = $pos - $map_data->{'map_start'};
+        }
         my $relative_pixel_placement
             = $relative_placement_in_units * $map_pixels_per_unit;
         push @pixel_array, ( $relative_pixel_placement + $map_coords->[0] );
@@ -5881,10 +6087,11 @@ sub convert_pixel_position_to_map_units {
 =cut
 
     my ( $self, %args ) = @_;
-    my $zone_key  = $args{'zone_key'};
-    my $map_key   = $args{'map_key'};
-    my $position  = $args{'position'};
-    my $positions = $args{'positions'} || [];
+    my $zone_key      = $args{'zone_key'};
+    my $map_key       = $args{'map_key'};
+    my $drawn_flipped = $args{'drawn_flipped'};
+    my $position      = $args{'position'};
+    my $positions     = $args{'positions'} || [];
 
     my $return_single_val = 0;
     if ( defined $position ) {
@@ -5911,9 +6118,17 @@ sub convert_pixel_position_to_map_units {
 
             my $relative_unit_loc
                 = $relative_pixel_loc / $map_pixels_per_unit;
+            my $position_in_units;
+            if ($drawn_flipped) {
+                $position_in_units
+                    = ( $map_data->{'map_stop'} - $relative_unit_loc );
+            }
+            else {
+                $position_in_units
+                    = ( $relative_unit_loc + $map_data->{'map_start'} );
+            }
 
-            push @unit_array,
-                ( $relative_unit_loc + $map_data->{'map_start'} );
+            push @unit_array, $position_in_units;
         }
     }
 
@@ -6779,6 +6994,7 @@ AppInterface.
         $self->{'zone_layout'}{$zone_key}{'internal_bounds'} = [ 0, 0, 0, 0 ];
         $self->{'zone_layout'}{$zone_key}{'maps_min_x'}   = undef;
         $self->{'zone_layout'}{$zone_key}{'maps_max_x'}   = undef;
+        $self->{'zone_layout'}{$zone_key}{'flipped'}      = undef;
         $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
         foreach my $field (qw[ separator background ]) {
             $self->destroy_items(
@@ -7358,19 +7574,37 @@ returns
 
     my ( $zone_x_offset, $zone_y_offset )
         = $self->get_main_zone_offsets( zone_key => $zone_key, );
-    my $relative_pixel_position
-        = $mouse_x 
-        - $self->{'map_layout'}{$map_key}{'coords'}[0]
-        - $zone_x_offset;
 
-    return undef if ( $relative_pixel_position < 0 );
+    my $map_pixel_start = $self->{'map_layout'}{$map_key}{'coords'}[0];
+    my $map_pixel_stop  = $self->{'map_layout'}{$map_key}{'coords'}[2];
+    my $map_pixel_width = $map_pixel_stop - $map_pixel_start + 1;
 
-    my $relative_unit_position
-        = $relative_pixel_position /
-        (      $self->{'map_pixels_per_unit'}{$map_key}
-            || $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} );
+    my $relative_pixel_position_from_map_start;
+    if ($self->is_map_drawn_flipped(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        $relative_pixel_position_from_map_start
+            = ( $map_pixel_stop + $zone_x_offset ) - $mouse_x;
+    }
+    else {
+        $relative_pixel_position_from_map_start
+            = $mouse_x - ( $map_pixel_start + $zone_x_offset );
+    }
+
     my $map_data = $self->app_data_module()
         ->map_data( map_id => $self->map_key_to_id($map_key), );
+    return $map_data->{'map_start'}
+        if ( $relative_pixel_position_from_map_start < 0 );
+    return $map_data->{'map_stop'}
+        if ( $relative_pixel_position_from_map_start > $map_pixel_width );
+
+    my $relative_unit_position
+        = $relative_pixel_position_from_map_start /
+        (      $self->{'map_pixels_per_unit'}{$map_key}
+            || $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} );
 
     # Modify the relative unit start to round to the unit granularity
     my $unit_granularity = $self->map_type_data( $map_data->{'map_type_acc'},
@@ -7524,9 +7758,17 @@ Initializes zone
     my $attached_to_parent = $args{'attached_to_parent'};
     my $expanded           = $args{'expanded'};
     my $is_top             = $args{'is_top'};
+    my $flipped            = $args{'flipped'};
     my $show_features      = $args{'show_features'};
     my $map_labels_visible = $args{'map_labels_visible'};
     my $copy_zone_key      = $args{'copy_zone_key'};
+
+    unless ( defined $flipped ) {
+        $flipped = 0;
+        if ($parent_map_key) {
+            $flipped = $self->{'map_layout'}{$parent_map_key}{'flipped'};
+        }
+    }
 
     if ($copy_zone_key) {
         my $copy_scaffold = $self->{'scaffold'}{$copy_zone_key};
@@ -7534,6 +7776,7 @@ Initializes zone
             unless ( defined $attached_to_parent );
         $expanded = $copy_scaffold->{'expanded'} unless ( defined $expanded );
         $is_top   = $copy_scaffold->{'is_top'}   unless ( defined $is_top );
+        $flipped  = $copy_scaffold->{'flipped'}  unless ( defined $flipped );
         $show_features = $copy_scaffold->{'show_features'}
             unless ( defined $show_features );
         $map_labels_visible = $copy_scaffold->{'map_labels_visible'}
@@ -7560,6 +7803,7 @@ Initializes zone
         show_features      => $show_features,
     };
     $self->initialize_zone_layout( $zone_key, $window_key, );
+    $self->{'zone_layout'}{$zone_key}{'flipped'} = $flipped;
 
     $self->map_set_id_to_zone_keys( $map_set_id, $zone_key, );
     $self->map_labels_visible( $zone_key, $map_labels_visible, );
@@ -7593,9 +7837,24 @@ Initializes map
 =cut
 
     my ( $self, %args ) = @_;
-    my $map_id   = $args{'map_id'};
-    my $zone_key = $args{'zone_key'};
-    my $map_key  = $args{'map_key'} || $self->next_internal_key('map');
+    my $map_id       = $args{'map_id'};
+    my $zone_key     = $args{'zone_key'};
+    my $map_key      = $args{'map_key'} || $self->next_internal_key('map');
+    my $draw_flipped = $args{'draw_flipped'};
+    my $feature_direction = $args{'feature_direction'} || 1;
+
+    unless ( defined $draw_flipped ) {
+
+        # Default the direction to 1 (-1 is for reverse)
+        $feature_direction ||= 1;
+        my $zone_flipped = $self->{'zone_layout'}{$zone_key}{'flipped'};
+        $draw_flipped = 0;
+        if (   ( $feature_direction < 0 and !$zone_flipped )
+            or ( $feature_direction > 0 and $zone_flipped ) )
+        {
+            $draw_flipped = 1;
+        }
+    }
 
     push @{ $self->{'map_order'}{$zone_key} }, $map_key;
     $self->map_id_to_keys( $map_id, $map_key );
@@ -7603,6 +7862,7 @@ Initializes map
     $self->map_key_to_id( $map_key, $map_id );
     $self->map_key_to_zone_key( $map_key, $zone_key );
     $self->initialize_map_layout($map_key);
+    $self->{'map_layout'}{$map_key}{'flipped'} = $draw_flipped;
 
     return $map_key;
 }
@@ -8175,6 +8435,7 @@ Revisit
             layed_out_once => 0,
             changed        => 0,
             sub_changed    => 0,
+            flipped        => 0,
         }
     }
 
@@ -8184,17 +8445,18 @@ Revisit
 
     $self->{'map_layout'} = {
         $map_key => {
-            bounds   => [ 0, 0, 0, 0 ],
-            coords   => [ 0, 0, 0, 0 ],
-            buttons  => [],
-            items    => [],
-            changed  => 1,
+            bounds      => [ 0, 0, 0, 0 ],
+            coords      => [ 0, 0, 0, 0 ],
+            buttons     => [],
+            items       => [],
+            changed     => 1,
             sub_changed => 1,
-            row_index => undef,
-            features => {
+            flipped     => 0,
+            row_index   => undef,
+            features    => {
                 $feature_acc => {
                     changed => 1,
-                    items => [],
+                    items   => [],
                 }
             },
         }

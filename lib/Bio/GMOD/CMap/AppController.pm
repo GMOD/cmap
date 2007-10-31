@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.44 2007-10-12 19:18:53 mwz444 Exp $
+# $Id: AppController.pm,v 1.45 2007-10-31 16:20:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -579,7 +579,7 @@ Create the text to go into the info box when a map is clicked.
         . $map_data->{'map_stop'} . "\n";
 
     my $sub_map_data = $app_display_data->{'sub_maps'}{$map_key};
-    if ($sub_map_data) {
+    if ( %{ $sub_map_data || {} } ) {
         $map_info_str
             .= "Start on Parent: "
             . $sub_map_data->{'feature_start'} . "\n"
