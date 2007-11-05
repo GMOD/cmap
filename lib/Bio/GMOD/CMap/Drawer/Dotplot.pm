@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Dotplot;
 
 # vim: set ft=perl:
 
-# $Id: Dotplot.pm,v 1.4 2007-09-28 20:17:12 mwz444 Exp $
+# $Id: Dotplot.pm,v 1.5 2007-11-05 06:51:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ The Dot plot drawer. See Bio::GMOD::CMap::Drawer
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Utils qw[ commify ];
 use Bio::GMOD::CMap::Constants;
@@ -141,7 +141,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     # If there aren't any comparative maps with corrs, give the user a msg and
     # quit
-    unless ( @right_comp_map_ids, @left_comp_map_ids ) {
+    unless ( @right_comp_map_ids or @left_comp_map_ids ) {
         $self->message(
                   "Can't display a dotplot without comparison maps with "
                 . "correspondences to the reference maps.<BR>\n"
