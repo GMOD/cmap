@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.142 2007-10-19 14:36:34 mwz444 Exp $
+# $Id: Drawer.pm,v 1.143 2007-11-26 21:07:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.142 $)[-1];
+$VERSION = (qw$Revision: 1.143 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1827,8 +1827,10 @@ Do the actual drawing.
     # Write to a temporary file and remember it.
     #
     my $cache_dir = $self->cache_dir or return;
-    my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
+    my $suffix = '.' . ( ( $image_type eq 'jpeg' ) ? 'jpg' : $image_type );
+    my ( $fh, $filename )
+        = tempfile( 'X' x 9, DIR => $cache_dir, SUFFIX => $suffix );
     print $fh $img->$image_type()
         || $self->warn("CMap image write failed: $!");
     $fh->close;
