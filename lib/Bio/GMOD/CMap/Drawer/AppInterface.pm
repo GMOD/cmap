@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.67 2007-10-31 16:20:27 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.68 2007-12-12 22:18:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -682,116 +682,143 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
-    my $debug_button = $controls_pane->Button(
+    my $debug_button1 = $controls_pane->Button(
         -text    => "Debug",
         -command => sub {
 
             my $zinc = $self->zinc( window_key => $window_key, );
 
-        #print STDERR "---------------------------------\n";
-        #print STDERR
-        #  "           --------------BEFORE MERGE-------------------\n";
-        #my ( $selected_map_keys, $zone_key )
-        #    = $self->app_controller()->app_display_data()->merge_maps(
-        #    overlap_amount => 0,
-        #    first_map_key  => 3,
-        #    second_map_key => 4,
-        #    );
-        #print STDERR
-        #  "           --------------BEFORE MOVE-------------------\n";
-        #$self->app_controller->app_display_data->move_map(
-        #    map_key            => 16,
-        #    new_parent_map_key => 1,
-        #    new_feature_start  => 1039.96,
-        #    new_feature_stop   => 3239.97,
-        #);
-        #print STDERR
-        #    "            --------------BEFORE DISPLAY LABELS------------\n";
-        #$self->app_controller()->app_display_data()
-        #    ->set_map_labels_visibility( 2, 1, );
-        #print STDERR
-        #    "           --------------BEFORE UNDO-------------------\n";
-        #$self->app_controller()
-        #    ->app_display_data->undo_action( window_key => $window_key, );
-        #
-        #print STDERR
-        #    "            --------------BEFORE SELECT-------------------\n";
-        #$self->app_controller()->new_selected_zone( zone_key => 2, );
-        #print STDERR
-        #    "            --------------BEFORE SHOW SELF CORRS---------\n";
-        #$self->app_controller()->app_display_data()->set_corrs_map_set(
-        #    'map_set_id' => '7',
-        #    'zone_key'   => 2,
-        #    'corrs_on'   => 1,
-        #    'window_key' => 1
-        #);
-        #print STDERR
-        #    "            --------------BEFORE MOVE SUBSECTION------------\n";
-        #$self->app_controller()->app_display_data()->move_map_subsection(
-        #    'gap_stop'            => '50467.00',
-        #    'gap_start'           => '50466.00',
-        #    'destination_map_key' => 1,
-        #    'subsection_map_key'  => '13'
-        #);
-        #
-        #print STDERR
-        #    "            --------------BEFORE SHOW ALL CORRS------------\n";
-        #$self->app_controller()->app_display_data()->set_corrs_map_set(
-        #    'map_set_ids' => [ '1', '3' ],
-        #    'zone_key'    => 2,
-        #    'corrs_on'    => 1,
-        #    'window_key'  => 1,
-        #);
-        #print STDERR
-        #    "            -----------BEFORE HIDE ONE CORR-----------------\n";
-        #$self->app_controller()->app_display_data()->set_corrs_map_set(
-        #    'map_set_id' => '1',
-        #    'zone_key'   => 2,
-        #    'corrs_on'   => 0,
-        #    'window_key' => 1,
-        #);
-        #print STDERR
-        #    "           --------------BEFORE ZOOM-------------------\n";
-        #$self->app_controller()->zoom_zone(
-        #    window_key => $window_key,
-        #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-        #    zoom_value => 2,
-        #);
-        #print STDERR
-        #    "            --------------BEFORE SELECT-------------------\n";
-        #  $self->add_object_selection(
-        #      zinc       => $zinc,
-        #      zone_key   => 4,
-        #      map_key    => 12,
-        #      window_key => $window_key,
-        #  );
-        #print STDERR
-        #    "            ----------------BEFORE SELECT ZONE---\n";
-        #$self->app_controller()->new_selected_zone( zone_key => 3, );
-        #print STDERR
-        #    "            -----------BEFORE DISPLAY LABELS-----\n";
-        #$self->app_controller()->app_display_data()
-        #    ->set_map_labels_visibility( 2, 1, );
-        #print STDERR
-        #    "            -----------BEFORE flip-----------------\n";
-        #$self->app_controller()->app_display_data()->flip_map(
-        #    'map_key'   => 4,
-        #);
-        #print STDERR
-        #    "            ----------------BEFORE SCROLL-----------------\n";
-        #$self->app_controller()->scroll_zone(
-        #    window_key   => $window_key,
-        #    zone_key     => 2,
-        #    scroll_value => -400,
-        #);
-        #print STDERR
-        #    "            ----------------BEFORE SPLIT-----------------\n";
-        #$self->app_controller->app_display_data->split_map(
-        #    map_key        => 4,
-        #    split_position => 1000,
-        #    );
-        #print STDERR "  ------------------DONE-----------------------\n";
-        #exit;
+       #print STDERR "---------------------------------\n";
+       #print STDERR
+       #  "           --------------BEFORE MOVE-------------------\n";
+       #$self->app_controller->app_display_data->move_map(
+       #    map_key            => 16,
+       #    new_parent_map_key => 1,
+       #    new_feature_start  => 1039.96,
+       #    new_feature_stop   => 3239.97,
+       #);
+       #print STDERR
+       #    "            --------------BEFORE DISPLAY LABELS------------\n";
+       #$self->app_controller()->app_display_data()
+       #    ->set_map_labels_visibility( 2, 1, );
+       #print STDERR
+       #    "            --------------BEFORE DISPLAY FEATURES------------\n";
+       #$self->app_controller()->app_display_data()
+       #    ->set_features_visibility( 2, 1, );
+       #print STDERR
+       #    "           --------------BEFORE MERGE-------------------\n";
+       #my ( $selected_map_keys, $zone_key )
+       #    = $self->app_controller()->app_display_data()->merge_maps(
+       #    overlap_amount => 0,
+       #    first_map_key  => 3,
+       #    second_map_key => 4,
+       #    );
+       #print STDERR
+       #    "           --------------BEFORE UNDO-------------------\n";
+       #$self->app_controller()
+       #    ->app_display_data->undo_action( window_key => $window_key, );
+       #
+       #print STDERR
+       #    "            --------------BEFORE SELECT-------------------\n";
+       #$self->app_controller()->new_selected_zone( zone_key => 2, );
+       #print STDERR
+       #    "            --------------BEFORE SHOW SELF CORRS---------\n";
+       #$self->app_controller()->app_display_data()->set_corrs_map_set(
+       #    'map_set_id' => '7',
+       #    'zone_key'   => 2,
+       #    'corrs_on'   => 1,
+       #    'window_key' => 1
+       #);
+       #print STDERR
+       #    "            --------------BEFORE MOVE SUBSECTION------------\n";
+       #$self->app_controller()->app_display_data()->move_map_subsection(
+       #    'gap_stop'            => '50467.00',
+       #    'gap_start'           => '50466.00',
+       #    'destination_map_key' => 1,
+       #    'subsection_map_key'  => '13'
+       #);
+       #
+       #print STDERR
+       #    "            --------------BEFORE SHOW ALL CORRS------------\n";
+       #$self->app_controller()->app_display_data()->set_corrs_map_set(
+       #    'map_set_ids' => [ '1', '3' ],
+       #    'zone_key'    => 2,
+       #    'corrs_on'    => 1,
+       #    'window_key'  => 1,
+       #);
+       #print STDERR
+       #    "            -----------BEFORE HIDE ONE CORR-----------------\n";
+       #$self->app_controller()->app_display_data()->set_corrs_map_set(
+       #    'map_set_id' => '1',
+       #    'zone_key'   => 2,
+       #    'corrs_on'   => 0,
+       #    'window_key' => 1,
+       #);
+       #print STDERR
+       #    "           --------------BEFORE ZOOM-------------------\n";
+       #$self->app_controller()->zoom_zone(
+       #    window_key => $window_key,
+       #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+       #    zoom_value => 2,
+       #);
+       #print STDERR
+       #    "            --------------BEFORE SELECT-------------------\n";
+       #  $self->add_object_selection(
+       #      zinc       => $zinc,
+       #      zone_key   => 4,
+       #      map_key    => 12,
+       #      window_key => $window_key,
+       #  );
+       #print STDERR
+       #    "            ----------------BEFORE SELECT ZONE---\n";
+       #$self->app_controller()->new_selected_zone( zone_key => 3, );
+       #print STDERR
+       #    "            -----------BEFORE DISPLAY LABELS-----\n";
+       #$self->app_controller()->app_display_data()
+       #    ->set_map_labels_visibility( 2, 1, );
+       #print STDERR
+       #    "            -----------BEFORE flip-----------------\n";
+       #$self->app_controller()->app_display_data()->flip_map(
+       #    'map_key'   => 4,
+       #);
+       #print STDERR
+       #    "            ----------------BEFORE SCROLL-----------------\n";
+       #$self->app_controller()->scroll_zone(
+       #    window_key   => $window_key,
+       #    zone_key     => 2,
+       #    scroll_value => -400,
+       #);
+       #print STDERR
+       #    "            ----------------BEFORE SPLIT-----------------\n";
+       #$self->app_controller->app_display_data->split_map(
+       #    map_key        => 4,
+       #    split_position => 1000,
+       #    );
+       #print STDERR "  ------------------DONE-----------------------\n";
+       #exit;
+        },
+        -font => $font,
+    );
+    my $debug_button2 = $controls_pane->Button(
+        -text    => "Debug2",
+        -command => sub {
+            my $zinc = $self->zinc( window_key => $window_key, );
+
+           #print STDERR "---------------------------------\n";
+           #print STDERR
+           #    "           --------------BEFORE MERGE-------------------\n";
+           #my ( $selected_map_keys, $zone_key )
+           #    = $self->app_controller()->app_display_data()->merge_maps(
+           #    overlap_amount => 0,
+           #    first_map_key  => 2,
+           #    second_map_key => 3,
+           #    );
+           #print STDERR
+           #    "           --------------BEFORE COMMIT-------------------\n";
+           #$self->app_controller()
+           #    ->commit_changes( window_key => 1, );
+           #print STDERR "  ------------------DONE-----------------------\n";
+           #exit;
         },
         -font => $font,
     );
@@ -808,7 +835,7 @@ Adds control buttons to the controls_pane.
         $expand_button,                  # $show_features_check_box,
         $refresh_button,
 
-        #$debug_button,
+        #$debug_button1, #$debug_button2,
 
         # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
@@ -900,14 +927,13 @@ Draws and re-draws on the zinc
     }
 
     # Raise the top layer above the earlier zones
-    $zinc->raise(
-        $self->get_zone_group_id(
-            window_key       => $window_key,
-            zone_key         => TOP_LAYER_ZONE_KEY,
-            zinc             => $zinc,
-            app_display_data => $app_display_data,
-        )
+    my $top_group_id = $self->get_zone_group_id(
+        window_key       => $window_key,
+        zone_key         => TOP_LAYER_ZONE_KEY,
+        zinc             => $zinc,
+        app_display_data => $app_display_data,
     );
+    $zinc->raise($top_group_id);
 
     my $zinc_width
         = $window_layout->{'bounds'}[2] - $window_layout->{'bounds'}[0] + 1;
@@ -930,6 +956,9 @@ Draws and re-draws on the zinc
         window_key       => $window_key,
         app_display_data => $app_display_data,
     );
+
+    # Only add back if using the -render flag
+    #$zinc->itemconfigure($top_group_id, -alpha => 50);
 
     $self->layer_tagged_items( zinc => $zinc, );
 
@@ -2037,12 +2066,16 @@ Returns the zinc object.
         #            '-background'  => 'white',
         #        );
 
+        # Using the -render flag allows transparency but slows it down
+        # considerably
         $self->{'zinc'}{$window_key} = $zinc_frame->Zinc(
             -width       => 1100,
             -height      => 800,
             -backcolor   => 'white',
             -borderwidth => 2,
-            -relief      => 'sunken'
+            -relief      => 'sunken',
+
+            #-render      => 1,
         );
 
         $self->{'zinc'}{$window_key}
@@ -2227,12 +2260,16 @@ Returns the overview_zinc object.
     unless ( $self->{'overview_zinc'}{$window_key} ) {
         my $overview_zinc_frame = $self->{'top_pane'}{$window_key};
 
+        # Using the -render flag allows transparency but slows it down
+        # considerably
         $self->{'overview_zinc'}{$window_key} = $overview_zinc_frame->Zinc(
             -width       => 300,
             -height      => 300,
             -backcolor   => 'white',
             -borderwidth => 2,
-            -relief      => 'sunken'
+            -relief      => 'sunken',
+
+            #-render      => 1,
         );
 
         # Pack later in pack_panes()

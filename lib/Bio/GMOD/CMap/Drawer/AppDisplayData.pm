@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.66 2007-10-31 16:20:27 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.67 2007-12-12 22:18:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -725,7 +725,6 @@ Zoom zones
 
     # Don't let it zoom out farther than is useful.
     # Maybe Let it zoom out one farther than to scale
-    #if ( $zone_scaffold->{'scale'} < 1 and $zoom_value < 1 ) {
     if ( $zone_scaffold->{'scale'} <= 1 and $zoom_value < 1 ) {
         return;
     }
@@ -1377,15 +1376,6 @@ canvases.
         app_display_data => $self,
     );
 
-    #layout_overview(
-    #    window_key       => $window_key,
-    #    app_display_data => $self,
-    #    width            => $width - 400,
-    #);
-    #$self->app_interface()->draw_window(
-    #    window_key       => $window_key,
-    #    app_display_data => $self,
-    #);
     $self->redraw_the_whole_window( window_key => $window_key, );
 
     return;
@@ -2790,9 +2780,7 @@ Create two new maps and hide the original
     my $ori_map_start = $ori_map_data->{'map_start'};
     my $ori_map_stop  = $ori_map_data->{'map_stop'};
     my $unit_granularity
-        = $self->map_type_data( $ori_map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+        = $self->unit_granularity( $ori_map_data->{'map_type_acc'} );
 
     # Remove the drawing data for the old map, do this now so that it will
     # affect sub-maps before they are re-assigned.
@@ -3181,6 +3169,22 @@ Merge two maps
 
 Create one new map and hide the original maps
 
+Merging/Flipped logic:
+
+=over 4
+
+=item * If original_map1 is flipped, make the finished product flipped
+
+=item * If the maps are of opposite flippage, then set_map2 to reverse
+
+=item * If the final map is going to be flipped, modify the offset to place map2 in front of map1
+
+=item * If reversing second map, reverse it now.
+
+=item * Do the merge
+
+=back
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -3191,16 +3195,16 @@ Create one new map and hide the original maps
     my $zone_key       = $self->map_key_to_zone_key($first_map_key);
     my $window_key     = $self->{'scaffold'}{$zone_key}{'window_key'};
 
-    unless (
-        $self->is_map_drawn_flipped(
-            map_key  => $first_map_key,
-            zone_key => $zone_key,
-        ) == $self->is_map_drawn_flipped(
-            map_key  => $second_map_key,
-            zone_key => $zone_key,
-        )
-        )
-    {
+    my $first_map_flipped = $self->is_map_drawn_flipped(
+        map_key  => $first_map_key,
+        zone_key => $zone_key,
+    );
+    my $second_map_flipped = $self->is_map_drawn_flipped(
+        map_key  => $second_map_key,
+        zone_key => $zone_key,
+    );
+
+    unless ( 1 or $first_map_flipped == $second_map_flipped ) {
         $self->app_interface()
             ->popup_warning(
             text => 'Cannot yet merge a map that has been flipped '
@@ -3208,22 +3212,59 @@ Create one new map and hide the original maps
         return;
     }
 
-    my $first_map_id  = $self->map_key_to_id($first_map_key);
-    my $second_map_id = $self->map_key_to_id($second_map_key);
+    my $merged_map_flipped = 0;
+    if ($first_map_flipped) {
+        $merged_map_flipped = 1;
+    }
+    my $reverse_second_map = 0;
+    if ( $first_map_flipped != $second_map_flipped ) {
+        $reverse_second_map = 1;
+    }
+    my $second_before_first = 0;
+    if ($merged_map_flipped) {
+        $second_before_first = 1;
+    }
+
+    my $first_map_id = $self->map_key_to_id($first_map_key);
     my $first_map_data
         = $self->app_data_module()->map_data( map_id => $first_map_id );
     my $first_map_start = $first_map_data->{'map_start'};
     my $first_map_stop  = $first_map_data->{'map_stop'};
+
+    my $second_map_id = $self->map_key_to_id($second_map_key);
     my $second_map_data
         = $self->app_data_module()->map_data( map_id => $second_map_id );
     my $second_map_start = $second_map_data->{'map_start'};
     my $second_map_stop  = $second_map_data->{'map_stop'};
 
-    my $second_map_offset = $first_map_data->{'map_stop'} - $overlap_amount;
-    if ( $second_map_offset < $first_map_data->{'map_start'} ) {
+    my $unit_granularity
+        = $self->unit_granularity( $first_map_data->{'map_type_acc'} );
+
+    my $first_map_length
+        = $first_map_stop - $first_map_start + $unit_granularity;
+    my $second_map_length
+        = $second_map_stop - $second_map_start + $unit_granularity;
+
+    if ( $overlap_amount > $first_map_length ) {
         $self->app_interface()
             ->popup_warning( text => 'Overlap is too big.', );
         return;
+    }
+
+    my $second_map_offset = 0;
+    if ($second_before_first) {
+        $second_map_offset
+            = $first_map_data->{'map_start'} 
+            - $second_map_data->{'map_stop'}
+            - $unit_granularity 
+            + $overlap_amount;
+    }
+    else {
+        $second_map_offset
+            = $first_map_data->{'map_stop'} 
+            - $second_map_data->{'map_start'}
+            + $unit_granularity 
+            - $overlap_amount;
     }
 
     # Remove the drawing data for the old maps, do this now so that it will
@@ -3240,26 +3281,33 @@ Create one new map and hide the original maps
         window_key       => $window_key,
         cascade          => 1,
     );
-    my $unit_granularity
-        = $self->map_type_data( $first_map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
-    my $merged_map_start = $first_map_data->{'map_start'};
-    my $merged_map_stop = $second_map_data->{'map_stop'} + $second_map_offset;
+
+    # Merged map info
+    my ( $merged_map_start, $merged_map_stop, );
+    if ($second_before_first) {
+        $merged_map_start
+            = $second_map_data->{'map_start'} + $second_map_offset;
+        $merged_map_stop = $first_map_data->{'map_stop'};
+        if ( $merged_map_start > $first_map_data->{'map_start'} ) {
+            $merged_map_start = $first_map_data->{'map_start'};
+        }
+    }
+    else {
+        $merged_map_start = $first_map_data->{'map_start'};
+        $merged_map_stop
+            = $second_map_data->{'map_stop'} + $second_map_offset;
+        if ( $merged_map_stop < $first_map_data->{'map_stop'} ) {
+            $merged_map_stop = $first_map_data->{'map_stop'};
+        }
+    }
     my $merged_map_name = $first_map_data->{'map_name'} . "-"
         . $second_map_data->{'map_name'};
-    if ( $merged_map_stop < $first_map_data->{'map_stop'} ) {
-        $merged_map_stop = $first_map_data->{'map_stop'};
-    }
     my $merged_map_id = $self->create_temp_id();
-
-    # Determine if the new map need to be flipped or not
-    my $first_flipped = $self->{'map_layout'}{$first_map_key}{'flipped'};
 
     my $merged_map_key = $self->initialize_map(
         map_id       => $merged_map_id,
         zone_key     => $zone_key,
-        draw_flipped => $first_flipped,
+        draw_flipped => $merged_map_flipped,
     );
 
     # Reassign Features
@@ -3275,6 +3323,16 @@ Create one new map and hide the original maps
         ->feature_data_by_map( map_id => $second_map_id, ) || [];
     foreach my $feature (@$second_feature_data) {
         push @second_map_feature_accs, $feature->{'feature_acc'};
+    }
+
+    # Reverse second map in memory if needed
+    if ($reverse_second_map) {
+        $self->reverse_map_section(
+            map_key          => $second_map_key,
+            map_data         => $second_map_data,
+            unit_granularity => $unit_granularity,
+            feature_accs     => \@second_map_feature_accs,
+        );
     }
 
     # Then copy the features onto the new map
@@ -3405,6 +3463,8 @@ Create one new map and hide the original maps
    # redo path.
     my %action_data = (
         action                  => 'merge_maps',
+        reverse_second_map      => $reverse_second_map,
+        second_before_first     => $second_before_first,
         first_map_key           => $first_map_key,
         first_map_id            => $self->map_key_to_id($first_map_key),
         second_map_key          => $second_map_key,
@@ -3416,6 +3476,7 @@ Create one new map and hide the original maps
         merged_map_stop         => $merged_map_stop,
         merged_feature_start    => $merged_feature_start,
         merged_feature_stop     => $merged_feature_stop,
+        merged_map_flipped      => $merged_map_flipped,
         overlap_amount          => $overlap_amount,
         second_map_offset       => $second_map_offset,
         first_map_feature_accs  => \@first_map_feature_accs,
@@ -3816,9 +3877,8 @@ Create new map and hide the original map.
 
     my $map_data = $self->app_data_module()->map_data( map_id => $map_id );
 
-    my $unit_granularity = $self->map_type_data( $map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+    my $unit_granularity
+        = $self->unit_granularity( $map_data->{'map_type_acc'} );
 
     my $subsection_length
         = $subsection_feature_stop 
@@ -4067,9 +4127,8 @@ Create new map and hide the original map.
         }
     }
 
-    my $unit_granularity = $self->map_type_data( $map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+    my $unit_granularity
+        = $self->unit_granularity( $map_data->{'map_type_acc'} );
 
     my $subsection_length
         = $ori_subsection_feature_stop 
@@ -4549,6 +4608,7 @@ Destroy the new map and show the original
 =cut
 
     my ( $self, %args ) = @_;
+    my $reverse_second_map      = $args{'reverse_second_map'};
     my $merged_map_key          = $args{'merged_map_key'};
     my $first_map_key           = $args{'first_map_key'};
     my $second_map_key          = $args{'second_map_key'};
@@ -4564,6 +4624,9 @@ Destroy the new map and show the original
     my $merged_map_id = $self->map_key_to_id($merged_map_key);
     my $first_map_id  = $self->map_key_to_id($first_map_key);
     my $second_map_id = $self->map_key_to_id($second_map_key);
+
+    my $second_map_data
+        = $self->app_data_module()->map_data( map_id => $second_map_id );
 
     # Reattach original maps to the zone
     push @{ $self->{'map_order'}{$zone_key} }, $first_map_key;
@@ -4594,6 +4657,15 @@ Destroy the new map and show the original
         map_id            => $second_map_id,
         offset            => -1 * $second_map_offset,
     );
+
+    # If second map was reversed, reverse it back now.
+    if ($reverse_second_map) {
+        $self->reverse_map_section(
+            map_key      => $second_map_key,
+            map_data     => $second_map_data,
+            feature_accs => $second_map_feature_accs,
+        );
+    }
 
     # Move sub maps back to their original maps
     foreach my $loop_array (
@@ -4873,9 +4945,7 @@ sub move_subsection_pedigree {
         = $self->app_data_module()->map_data( map_id => $starting_map_id );
 
     my $unit_granularity
-        = $self->map_type_data( $starting_map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+        = $self->unit_granularity( $starting_map_data->{'map_type_acc'} );
 
     my @new_starting_map_pedigree;
     my @subsection_pedigree;
@@ -5385,6 +5455,7 @@ Undo the action that was just performed.
     }
     elsif ( $last_action->{'action'} eq 'merge_maps' ) {
         $self->undo_merge_maps(
+            reverse_second_map  => $last_action->{'reverse_second_map'},
             first_map_key       => $last_action->{'first_map_key'},
             second_map_key      => $last_action->{'second_map_key'},
             merged_map_key      => $last_action->{'merged_map_key'},
@@ -5717,6 +5788,79 @@ Given a zone, figure out the coordinates on the main window.
     return ( $x_offset, $y_offset );
 }
 
+# ----------------------------------------------------
+sub reverse_map_section {
+
+=pod
+
+=head2 reverse_map_section
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_key          = $args{'map_key'};
+    my $map_data         = $args{'map_data'};
+    my $feature_accs     = $args{'feature_accs'};
+    my $unit_granularity = $args{'unit_granularity'}
+        || $self->unit_granularity( $map_data->{'map_type_acc'} );
+    my $zone_key = $args{'$zone_key'}
+        || $self->map_key_to_zone_key($map_key);
+
+    my $map_id        = $map_data->{'map_id'};
+    my $reverse_start = $map_data->{'map_start'};
+    my $reverse_stop  = $map_data->{'map_stop'};
+
+    # Handle features first and get the modifier from it
+    my $modifier_to_be_subtracted_from
+        = $self->app_data_module()->reverse_features_on_map(
+        map_id            => $map_id,
+        unit_granularity  => $unit_granularity,
+        feature_acc_array => $feature_accs,
+        reverse_start     => $reverse_start,
+        reverse_stop      => $reverse_stop,
+        );
+
+    # Handle sub maps
+    my @sub_map_feature_ids;
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_map(
+            map_key  => $map_key,
+            zone_key => $zone_key,
+        )
+        )
+    {
+        foreach my $sub_map_key (
+            @{ $self->{'map_order'}{$child_zone_key} || [] } )
+        {
+
+            (   $self->{'sub_maps'}{$sub_map_key}{'feature_start'},
+                $self->{'sub_maps'}{$sub_map_key}{'feature_stop'},
+                $self->{'sub_maps'}{$sub_map_key}{'feature_direction'},
+                )
+                = $self->app_data_module()->reverse_feature_logic(
+                modifier_to_be_subtracted_from =>
+                    $modifier_to_be_subtracted_from,
+                feature_start =>
+                    $self->{'sub_maps'}{$sub_map_key}{'feature_start'},
+                feature_stop =>
+                    $self->{'sub_maps'}{$sub_map_key}{'feature_stop'},
+                feature_direction =>
+                    $self->{'sub_maps'}{$sub_map_key}{'feature_direction'},
+                );
+
+            push @sub_map_feature_ids,
+                $self->{'sub_maps'}{$sub_map_key}{'feature_id'};
+        }
+    }
+
+    $self->app_data_module()->reverse_sub_maps_on_map(
+        modifier_to_be_subtracted_from => $modifier_to_be_subtracted_from,
+        map_id                         => $map_id,
+        sub_map_feature_ids            => \@sub_map_feature_ids,
+    );
+
+    return;
+}
 ## ----------------------------------------------------
 #sub move_drawing_items {
 #
@@ -7607,9 +7751,9 @@ returns
             || $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} );
 
     # Modify the relative unit start to round to the unit granularity
-    my $unit_granularity = $self->map_type_data( $map_data->{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+    my $unit_granularity
+        = $self->unit_granularity( $map_data->{'map_type_acc'} );
+
     $relative_unit_position
         = round_to_granularity( $relative_unit_position, $unit_granularity );
 

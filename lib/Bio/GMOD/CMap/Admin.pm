@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.103 2007-10-31 16:20:23 mwz444 Exp $
+# $Id: Admin.pm,v 1.104 2007-12-12 22:18:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.103 $)[-1];
+$VERSION = (qw$Revision: 1.104 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -3006,6 +3006,8 @@ The primary key of the object.
                 $temp_to_real_map_id );
 
             # Create new map
+            # If adding a map_acc be sure to add it to the insert_commit_log
+            # below
             my $merged_map_id = $sql_object->insert_map(
                 map_set_id    => $first_map_data->{'map_set_id'},
                 map_name      => $action->{'merged_map_name'},
@@ -3030,6 +3032,7 @@ The primary key of the object.
                 "merged_map_name=" . $action->{'merged_map_name'},
                 "merged_map_start=" . $action->{'merged_map_start'},
                 "merged_map_stop=" . $action->{'merged_map_stop'},
+                "reverse_second_map=" . $action->{'reverse_second_map'},
             );
 
             $sql_object->insert_commit_log(
@@ -3041,6 +3044,8 @@ The primary key of the object.
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
                 map_set_acc    => $map_data->{'map_set_acc'},
+                map_id         => $merged_map_id,
+                map_acc        => $merged_map_id,
             );
 
             # Done with commit log
@@ -3056,6 +3061,23 @@ The primary key of the object.
                 $sql_object->update_feature(
                     feature_id => $feature->{'feature_id'},
                     map_id     => $merged_map_id,
+                );
+            }
+
+            # If second map was reversed, reverse it back now.
+            my ( $second_map_data, )
+                = @{ $sql_object->get_maps( map_id => $second_map_id )
+                    || [] };
+            my $unit_granularity = $self->unit_granularity(
+                $second_map_data->{'map_type_acc'} );
+
+            if ( $action->{'reverse_second_map'} ) {
+                $self->reverse_features_on_map(
+                    map_id            => $second_map_id,
+                    unit_granularity  => $unit_granularity,
+                    feature_acc_array => $action->{'second_map_feature_accs'},
+                    reverse_start     => $second_map_data->{'map_start'},
+                    reverse_stop      => $second_map_data->{'map_stop'},
                 );
             }
 
@@ -3298,6 +3320,88 @@ The primary key of the object.
     $sql_object->commit_transaction();
 
     return $temp_to_real_map_id;
+}
+
+# ----------------------------------------------------
+sub reverse_features_on_map {
+
+=pod
+
+=head2 reverse_feature_on_map
+
+Given a list of feature_accs, move them in memory 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'}
+        or die "reverse_features_on_map called without a map_id\n";
+    my $unit_granularity = $args{'unit_granularity'}
+        or die "reverse_features_on_map called without a unit_granularity\n";
+    my $feature_acc_array = $args{'feature_acc_array'};
+    my $reverse_start     = $args{'reverse_start'};
+    my $reverse_stop      = $args{'reverse_stop'};
+
+    #Check if passed an empty feature acc array
+    if ( defined $feature_acc_array and not(@$feature_acc_array) ) {
+        return 1;
+    }
+
+    my $sql_object = $self->sql or return;
+
+    my %feature_data;
+
+    # If not given a feature_acc_array, reverse all the features on a map.
+    # May as well build a feature_data hash if we've got the data already
+    if ( not defined $feature_acc_array ) {
+        my $feature_results
+            = $sql_object->get_features_simple( map_id => $map_id, );
+        foreach my $feature ( @{ $feature_results || [] } ) {
+            push @$feature_acc_array, $feature->{'feature_acc'};
+            $feature_data{ $feature->{'feature_acc'} } = $feature;
+        }
+    }
+
+    # set start and stop to the map start and stop unless defined
+    if ( ( not defined $reverse_start ) or ( not defined $reverse_stop ) ) {
+        my $map_data = $sql_object->get_maps_simple( map_id => $map_id );
+        if ( not defined $reverse_start ) {
+            $reverse_start = $map_data->{'map_start'};
+        }
+        if ( not defined $reverse_stop ) {
+            $reverse_stop = $map_data->{'map_stop'};
+        }
+
+    }
+
+    my $modifier_to_be_subtracted_from = $reverse_start + $reverse_stop;
+    foreach my $feature_acc (@$feature_acc_array) {
+        my $this_feature_data;
+        unless ( $this_feature_data = $feature_data{$feature_acc} ) {
+            my $feature_results = $sql_object->get_features_simple(
+                feature_acc => $feature_acc, );
+            next unless ( @{ $feature_results || [] } );
+            $this_feature_data = $feature_results->[0];
+        }
+
+        # Start and stop have to swap places after being reversed
+        my $new_feature_start = $modifier_to_be_subtracted_from
+            - $this_feature_data->{'feature_stop'};
+        my $new_feature_stop = $modifier_to_be_subtracted_from
+            - $this_feature_data->{'feature_start'};
+
+        my $new_direction
+            = ( $this_feature_data->{'feature_direction'} || 1 ) * -1;
+
+        $sql_object->update_feature(
+            feature_id    => $this_feature_data->{'feature_id'},
+            feature_start => $new_feature_start,
+            feature_stop  => $new_feature_stop,
+            direction     => $new_direction,
+        );
+    }
+
+    return 1;
 }
 
 sub _translate_map_id {

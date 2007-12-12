@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.120 2007-10-19 14:36:29 mwz444 Exp $
+# $Id: CMap.pm,v 1.121 2007-12-12 22:18:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -126,7 +126,8 @@ sub config {
         $self->{'config'} = $newConfig;
     }
     unless ( defined $self->{'config'} ) {
-        $self->{'config'} = Bio::GMOD::CMap::Config->new(
+        $self->{'config'}
+            = Bio::GMOD::CMap::Config->new(
             config_dir => $self->{'config_dir'} )
             or return Bio::GMOD::CMap::Config->error;
     }
@@ -327,7 +328,7 @@ Returns all the data souces defined in the configuration files.
 
 =cut
 
-    my $self   = shift;
+    my $self = shift;
     my $config = $self->config or return;
 
     unless ( defined $self->{'data_sources'} ) {
@@ -620,6 +621,30 @@ The default is 0.
 }
 
 # ----------------------------------------------------
+sub unit_granularity {
+
+=pod
+
+=head3 unit_granularity
+
+Given a map type accession
+Returns the unit granularity
+
+=cut
+
+    my $self         = shift;
+    my $map_type_acc = shift;
+
+    unless ( $self->{'unit_granularity'}{$map_type_acc} ) {
+        $self->{'unit_granularity'}{$map_type_acc}
+            = $self->map_type_data( $map_type_acc, 'unit_granularity' )
+            || DEFAULT->{'unit_granularity'};
+    }
+
+    return $self->{'unit_granularity'}{$map_type_acc};
+}
+
+# ----------------------------------------------------
 sub ignore_image_map_sanity {
 
 =pod
@@ -759,8 +784,7 @@ Returns a handle to the data module.
             split_agg_ev        => $self->split_agg_ev,
             ref_map_order       => $self->ref_map_order,
             comp_menu_order     => $self->comp_menu_order,
-            )
-            or $self->error( Bio::GMOD::CMap::Data->error );
+        ) or $self->error( Bio::GMOD::CMap::Data->error );
     }
 
     return $self->{'data_module'};
@@ -955,7 +979,8 @@ Given a table name and some objects, get the cross-references.
                 {
                 xref_name => $xref->{'xref_name'},
                 xref_url  => $_,
-                } for map { $_ || () } split /\s+/, $url;
+                }
+                for map { $_ || () } split /\s+/, $url;
         }
 
         $o->{'xrefs'} = \@processed;
@@ -1166,7 +1191,6 @@ Example configurations:
 
 BUTTON:
     foreach my $button ( @{ $additional_buttons->{'button'} || [] } ) {
-        print STDERR Dumper($button) . "\n";
         next BUTTON
             unless $self->check_parameters(
             values_hash               => $button->{'if'},
@@ -1197,7 +1221,8 @@ BUTTON:
                 or $param =~ /^ft_/
                 or $param =~ /^evidence_type_/ )
             {
-                $js .= "check_radio_for_additional_buttons("
+                $js
+                    .= "check_radio_for_additional_buttons("
                     . "document.comparative_map_form."
                     . $param . ","
                     . $value . ");";
@@ -1207,16 +1232,22 @@ BUTTON:
                 or $param =~ /^map_flip_/ )
             {
                 if ($value) {
-                    $js .= "document.comparative_map_form." . $param
+                    $js
+                        .= "document.comparative_map_form." 
+                        . $param
                         . ".checked=true;";
                 }
                 else {
-                    $js .= "document.comparative_map_form." . $param
+                    $js
+                        .= "document.comparative_map_form." 
+                        . $param
                         . ".checked=false;";
                 }
             }
             elsif ( $hidden_or_text{$param} ) {
-                $js .= "document.comparative_map_form." . $param
+                $js
+                    .= "document.comparative_map_form." 
+                    . $param
                     . ".value='"
                     . $button->{'set'}{$param} . "';";
             }
@@ -1493,7 +1524,7 @@ Returns a Template Toolkit object.
 
 =cut
 
-    my $self   = shift;
+    my $self = shift;
     my $config = $self->config or return;
 
     unless ( $self->{'template'} ) {
@@ -1625,7 +1656,7 @@ Clears the image directory of files.  (It will not touch directories.)
 
 =cut
 
-    my $self      = shift;
+    my $self = shift;
     my $cache_dir = $self->cache_dir or return;
 
     return 0 unless ( $self->config_data('purge_img_dir_when_full') );
@@ -1803,21 +1834,23 @@ Given information about the link, creates a url to cmap_viewer.
                     )
                     )
                 {
-                    my $start =
-                        defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                    my $start
+                        = defined( $ref_map_accs->{$ref_map_acc}{'start'} )
                         ? $ref_map_accs->{$ref_map_acc}{'start'}
                         : '';
-                    my $stop =
-                        defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
+                    my $stop
+                        = defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
                         ? $ref_map_accs->{$ref_map_acc}{'stop'}
                         : '';
-                    my $mag =
-                        defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
+                    my $mag
+                        = defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
                         ? $ref_map_accs->{$ref_map_acc}{'magnify'}
                         : 1;
                     push @ref_strs,
-                        $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag
-                        . ']';
+                        $ref_map_acc . '[' 
+                        . $start . '*' 
+                        . $stop . 'x' 
+                        . $mag . ']';
                 }
                 else {
                     push @ref_strs, $ref_map_acc;
@@ -1833,16 +1866,16 @@ Given information about the link, creates a url to cmap_viewer.
                     next unless ( defined( $map->{$field} ) );
                     foreach my $acc ( keys %{ $map->{$field} } ) {
                         if ( $field eq 'maps' ) {
-                            my $start =
-                                defined( $map->{$field}{$acc}{'start'} )
+                            my $start
+                                = defined( $map->{$field}{$acc}{'start'} )
                                 ? $map->{$field}{$acc}{'start'}
                                 : '';
-                            my $stop =
-                                defined( $map->{$field}{$acc}{'stop'} )
+                            my $stop
+                                = defined( $map->{$field}{$acc}{'stop'} )
                                 ? $map->{$field}{$acc}{'stop'}
                                 : '';
-                            my $mag =
-                                defined( $map->{$field}{$acc}{'mag'} )
+                            my $mag
+                                = defined( $map->{$field}{$acc}{'mag'} )
                                 ? $map->{$field}{$acc}{'mag'}
                                 : 1;
                             push @strs,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.30 2007-09-28 20:17:11 mwz444 Exp $
+# $Id: AppData.pm,v 1.31 2007-12-12 22:18:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -337,13 +337,145 @@ Given a hash of feature_accs, copy them in memory to a new map_id
 }
 
 # ----------------------------------------------------
+sub reverse_features_on_map {
+
+=pod
+
+=head2 reverse_feature_on_map
+
+Given a list of feature_accs, move them in memory 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'}
+        or die "reverse_features_on_map called without a map_id\n";
+    my $unit_granularity = $args{'unit_granularity'}
+        or die "reverse_features_on_map called without a unit_granularity\n";
+    my $feature_acc_array = $args{'feature_acc_array'};
+    my $reverse_start     = $args{'reverse_start'};
+    my $reverse_stop      = $args{'reverse_stop'};
+
+    #Check if passed an empty feature acc array
+    if ( defined $feature_acc_array and not(@$feature_acc_array) ) {
+        return;
+    }
+    if ( not defined $feature_acc_array ) {
+        $feature_acc_array = [ map { $_->{'feature_acc'} }
+                @{ $self->{'feature_data_by_map'}{$map_id} } ];
+    }
+
+    # set start and stop to the map start and stop unless defined
+    if ( ( not defined $reverse_start ) or ( not defined $reverse_stop ) ) {
+        my $map_data = $self->map_data( map_id => $map_id );
+        if ( not defined $reverse_start ) {
+            $reverse_start = $map_data->{'map_start'};
+        }
+        if ( not defined $reverse_stop ) {
+            $reverse_stop = $map_data->{'map_stop'};
+        }
+
+    }
+
+    my $modifier_to_be_subtracted_from = $reverse_start + $reverse_stop;
+    foreach my $feature_acc (@$feature_acc_array) {
+        (   $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'},
+            $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'},
+            $self->{'feature_data_by_acc'}{$feature_acc}{'feature_direction'},
+            )
+            = $self->reverse_feature_logic(
+            modifier_to_be_subtracted_from => $modifier_to_be_subtracted_from,
+            feature_start =>
+                $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'},
+            feature_stop =>
+                $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'},
+            feature_direction => $self->{'feature_data_by_acc'}{$feature_acc}
+                {'feature_direction'},
+            );
+    }
+
+    # Resort the features
+    $self->{'feature_data_by_map'}{$map_id} = [
+        sort {
+                   $a->{'feature_start'} <=> $b->{'feature_start'}
+                || $a->{'feature_stop'} <=> $b->{'feature_stop'}
+            } @{ $self->{'feature_data_by_map'}{$map_id} || [] }
+    ];
+
+    return $modifier_to_be_subtracted_from;
+}
+
+# ----------------------------------------------------
+sub reverse_sub_maps_on_map {
+
+=pod
+
+=head2 reverse_sub_map_on_map
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_id = $args{'map_id'}
+        or die "reverse_features_on_map called without a map_id\n";
+    my $sub_map_feature_ids = $args{'sub_map_feature_ids'} or return;
+    my $modifier_to_be_subtracted_from
+        = $args{'modifier_to_be_subtracted_from'}
+        or return;
+
+    my %feature_ids_to_move = map { $_ => 1 } @$sub_map_feature_ids;
+
+    foreach my $feature ( @{ $self->{'sub_map_data'}{$map_id} || [] } ) {
+        next unless ( $feature_ids_to_move{ $feature->{'feature_id'} } );
+
+        (   $feature->{'feature_start'},
+            $feature->{'feature_stop'},
+            $feature->{'feature_direction'},
+            )
+            = $self->reverse_feature_logic(
+            modifier_to_be_subtracted_from => $modifier_to_be_subtracted_from,
+            feature_start                  => $feature->{'feature_start'},
+            feature_stop                   => $feature->{'feature_stop'},
+            feature_direction              => $feature->{'feature_direction'},
+            );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub reverse_feature_logic {
+
+=pod
+
+=head2 reverse_feature_on_map
+
+Given a list of feature_accs, move them in memory 
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $modifier_to_be_subtracted_from
+        = $args{'modifier_to_be_subtracted_from'};
+    my $feature_start     = $args{'feature_start'};
+    my $feature_stop      = $args{'feature_stop'};
+    my $feature_direction = $args{'feature_direction'};
+
+    # Start and stop have to swap places after being reversed
+    my $new_feature_start = $modifier_to_be_subtracted_from - $feature_stop;
+    my $new_feature_stop  = $modifier_to_be_subtracted_from - $feature_start;
+    my $new_feature_direction = ( $feature_direction || 1 ) * -1;
+
+    return ( $new_feature_start, $new_feature_stop, $new_feature_direction, );
+}
+
+# ----------------------------------------------------
 sub move_feature_data_on_map {
 
 =pod
 
 =head2 move_feature_data_on_map
 
-Given a list of feature_accs, move them in memory 
+
 
 =cut
 

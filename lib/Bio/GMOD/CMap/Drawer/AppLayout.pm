@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.52 2007-10-31 16:20:27 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.53 2007-12-12 22:18:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -190,9 +190,11 @@ sub layout_overview {
         [1];
 MAP:
     foreach my $map_key (@sorted_map_keys) {
-        my $map_layout = $app_display_data->{'map_layout'}{$map_key};
+        my $map_layout   = $app_display_data->{'map_layout'}{$map_key};
+        my $draw_sub_ref = $map_layout->{'shape_sub_ref'};
         if (   $overview_vis_x1_in_main_coords > $map_layout->{'bounds'}[2]
-            or $overview_vis_x2_in_main_coords < $map_layout->{'bounds'}[0] )
+            or $overview_vis_x2_in_main_coords < $map_layout->{'bounds'}[0]
+            or not $draw_sub_ref )
         {
             next MAP;
         }
@@ -210,8 +212,6 @@ MAP:
             = $top_pixel_factor
             * (
             $map_layout->{'bounds'}[2] - $overview_vis_x1_in_main_coords );
-
-        my $draw_sub_ref = $map_layout->{'shape_sub_ref'};
 
         my ( $bounds, $map_coords ) = &$draw_sub_ref(
             map_layout       => $top_overview_zone_layout->{'maps'}{$map_key},
@@ -519,11 +519,8 @@ Lays out head maps in a zone
     # Set the background color
     $app_display_data->zone_bgcolor( zone_key => $zone_key, );
 
-    my $unit_granularity
-        = $app_display_data->map_type_data(
-        $map_data_hash->{ $ordered_map_ids[0] }{'map_type_acc'},
-        'unit_granularity' )
-        || DEFAULT->{'unit_granularity'};
+    my $unit_granularity = $app_display_data->unit_granularity(
+        $map_data_hash->{ $ordered_map_ids[0] }{'map_type_acc'} );
 
     # Get the ppu, this is important because it essentially defines the zoom
     # level.

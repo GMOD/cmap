@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyCommitChanges;
 
-# $Id: ExampleModifyCommitChanges.pm,v 1.2 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: ExampleModifyCommitChanges.pm,v 1.3 2007-12-12 22:18:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ sub modify_commit_changes {
     my $app_interface    = $self->app_interface();
     my $app_display_data = $self->app_display_data();
 
-    print STDERR Dumper($actions) . "\n";
+    #print STDERR Dumper($actions) . "\n";
 
     return 1;
 }
