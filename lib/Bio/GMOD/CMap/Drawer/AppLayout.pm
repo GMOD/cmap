@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.53 2007-12-12 22:18:46 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.54 2007-12-13 16:16:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -176,12 +176,14 @@ sub layout_overview {
         );
 
     # Sort maps according to height.  This way, maps can be drawn from top to
-    # bottom
+    # bottom.
+    # Exclude maps that haven't been drawn (ie they'be been binned).
     my @sorted_map_keys = sort {
         $app_display_data->{'map_layout'}{$a}{'bounds'}[1]
             <=> $app_display_data->{'map_layout'}{$b}{'bounds'}[1]
 
-    } @{ $app_display_data->{'map_order'}{$head_zone_key} };
+        } grep { @{ $app_display_data->{'map_layout'}{$_}{'bounds'} || [] } }
+        @{ $app_display_data->{'map_order'}{$head_zone_key} };
 
     return unless (@sorted_map_keys);
 
