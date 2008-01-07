@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.104 2007-12-12 22:18:44 mwz444 Exp $
+# $Id: Admin.pm,v 1.105 2008-01-07 18:27:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2778,19 +2778,10 @@ The primary key of the object.
         }
         elsif ( $action->{'action'} eq 'flip_map' ) {
             my $feature_id = $action->{'feature_id'} or next;
-
             my $map_id = $self->_translate_map_id( $action->{'map_id'},
                 $temp_to_real_map_id );
 
-            my $feature_data = $sql_object->get_features_simple(
-                feature_id => $feature_id );
-            die "$feature_id is not a valid feature ID\n"
-                unless ( @{ $feature_data || [] } );
-            $feature_data = $feature_data->[0];
-
-            my $new_direction = $feature_data->{'direction'} < 0 ? 1 : -1;
-
-            # Handle commit log
+            # Start commit log
             my $map_data = $sql_object->get_maps( map_id => $map_id );
             die "$map_id is not a valid map ID\n"
                 unless ( @{ $map_data || [] } );
@@ -2800,8 +2791,7 @@ The primary key of the object.
             $commit_text .= join( ";",
                 "action=$commit_type", "map_id=$map_id",
                 "feature_id=$feature_id", );
-
-            $sql_object->insert_commit_log(
+            my %commit_log = (
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
@@ -2814,12 +2804,49 @@ The primary key of the object.
                 map_acc        => $map_data->{'map_acc'},
             );
 
-            # Done with commit log
+            if ( $action->{'subsection'} ) {
+                my $super_map_id
+                    = $self->_translate_map_id( $action->{'super_map_id'},
+                    $temp_to_real_map_id );
+                my $super_unit_granularity
+                    = $action->{'super_unit_granularity'};
+                my $subsection_feature_accs
+                    = $action->{'subsection_feature_accs'};
+                my $reverse_start = $action->{'reverse_start'};
+                my $reverse_stop  = $action->{'reverse_stop'};
+                $self->reverse_features_on_map(
+                    map_id            => $super_map_id,
+                    unit_granularity  => $super_unit_granularity,
+                    feature_acc_array => $subsection_feature_accs,
+                    reverse_start     => $reverse_start,
+                    reverse_stop      => $reverse_stop,
+                );
 
-            $sql_object->update_feature(
-                feature_id => $feature_id,
-                direction  => $new_direction,
-            );
+                # Add subsection specific data to the commit log
+                $commit_log{'commit_text'} = join( ";",
+                    $commit_log{'commit_text'},
+                    "subsection=" . $action->{'subsection'},
+                    "super_map_id=$super_map_id",
+                    "reverse_start=$reverse_start",
+                    "reverse_stop=$reverse_stop",
+                );
+            }
+            else {
+                my $feature_data = $sql_object->get_features_simple(
+                    feature_id => $feature_id );
+                die "$feature_id is not a valid feature ID\n"
+                    unless ( @{ $feature_data || [] } );
+                $feature_data = $feature_data->[0];
+
+                my $new_direction = $feature_data->{'direction'} < 0 ? 1 : -1;
+
+                $sql_object->update_feature(
+                    feature_id => $feature_id,
+                    direction  => $new_direction,
+                );
+            }
+            $sql_object->insert_commit_log( %commit_log, );
+
         }
         elsif ( $action->{'action'} eq 'split_map' ) {
 
@@ -3194,6 +3221,7 @@ The primary key of the object.
             my $starting_feature_data = $sql_object->get_features_simple(
                 map_id => $starting_map_id, );
             my @subsection_features;
+            my @subsection_feature_accs;
             foreach my $feature ( @{ $starting_feature_data || [] } ) {
                 if ( $feature->{'feature_stop'} < $subsection_feature_start )
                 {
@@ -3211,24 +3239,25 @@ The primary key of the object.
                     );
                 }
                 else {
-                    push @subsection_features, $feature;
+                    push @subsection_features,     $feature;
+                    push @subsection_feature_accs, $feature->{'feature_acc'};
                 }
             }
 
-            if ($delete_starting_map) {
-                $sql_object->delete_map( map_id => $starting_map_id, );
-            }
-            else {
-
-                # Shrink Starting Map
-                $sql_object->update_map(
-                    map_id   => $starting_map_id,
-                    map_stop => $starting_map_data->{'map_stop'}
-                        + $starting_back_offset,
+           # If subsection is to be reversed, reverse the features on it now.
+           # These are already stored in subsection_features, so we don't have
+           # to worry about the features that were moved in the section above
+           # getting in the way
+            if ( $action->{'reverse_subsection'} ) {
+                my $unit_granularity = $self->unit_granularity(
+                    $starting_map_data->{'map_type_acc'} );
+                $self->reverse_features_on_map(
+                    map_id            => $starting_map_id,
+                    unit_granularity  => $unit_granularity,
+                    feature_acc_array => \@subsection_feature_accs,
+                    reverse_start     => $subsection_feature_start,
+                    reverse_stop      => $subsection_feature_stop,
                 );
-
-                # Validate the start and stop of the new map
-                $self->validate_update_map_start_stop($starting_map_id);
             }
 
             # DESTINATION MAP
@@ -3284,6 +3313,8 @@ The primary key of the object.
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
                 map_set_acc    => $map_data->{'map_set_acc'},
+                map_id         => $map_data->{'map_id'},
+                map_acc        => $map_data->{'map_acc'},
             );
 
             # Done with commit log
@@ -3298,6 +3329,24 @@ The primary key of the object.
                     feature_stop => $feature->{'feature_stop'}
                         + $subsection_offset,
                 );
+            }
+
+            # Delete or Shrink Starting map
+            if ($delete_starting_map) {
+                $sql_object->delete_map( map_id => $starting_map_id, );
+            }
+            else {
+
+                # Shrink Starting Map
+                my $new_map_stop = $starting_map_data->{'map_stop'}
+                    + $starting_back_offset;
+                $sql_object->update_map(
+                    map_id   => $starting_map_id,
+                    map_stop => $new_map_stop,
+                );
+
+                # Validate the start and stop of the new map
+                $self->validate_update_map_start_stop($starting_map_id);
             }
 
             # Enlarge the Destination Map

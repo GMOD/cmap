@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.31 2007-12-12 22:18:46 mwz444 Exp $
+# $Id: AppData.pm,v 1.32 2008-01-07 18:27:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -381,7 +381,7 @@ Given a list of feature_accs, move them in memory
     foreach my $feature_acc (@$feature_acc_array) {
         (   $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'},
             $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'},
-            $self->{'feature_data_by_acc'}{$feature_acc}{'feature_direction'},
+            $self->{'feature_data_by_acc'}{$feature_acc}{'direction'},
             )
             = $self->reverse_feature_logic(
             modifier_to_be_subtracted_from => $modifier_to_be_subtracted_from,
@@ -389,8 +389,8 @@ Given a list of feature_accs, move them in memory
                 $self->{'feature_data_by_acc'}{$feature_acc}{'feature_start'},
             feature_stop =>
                 $self->{'feature_data_by_acc'}{$feature_acc}{'feature_stop'},
-            feature_direction => $self->{'feature_data_by_acc'}{$feature_acc}
-                {'feature_direction'},
+            direction =>
+                $self->{'feature_data_by_acc'}{$feature_acc}{'direction'},
             );
     }
 
@@ -429,13 +429,13 @@ sub reverse_sub_maps_on_map {
 
         (   $feature->{'feature_start'},
             $feature->{'feature_stop'},
-            $feature->{'feature_direction'},
+            $feature->{'direction'},
             )
             = $self->reverse_feature_logic(
             modifier_to_be_subtracted_from => $modifier_to_be_subtracted_from,
             feature_start                  => $feature->{'feature_start'},
             feature_stop                   => $feature->{'feature_stop'},
-            feature_direction              => $feature->{'feature_direction'},
+            direction                      => $feature->{'direction'},
             );
     }
 
@@ -456,16 +456,16 @@ Given a list of feature_accs, move them in memory
     my ( $self, %args ) = @_;
     my $modifier_to_be_subtracted_from
         = $args{'modifier_to_be_subtracted_from'};
-    my $feature_start     = $args{'feature_start'};
-    my $feature_stop      = $args{'feature_stop'};
-    my $feature_direction = $args{'feature_direction'};
+    my $feature_start = $args{'feature_start'};
+    my $feature_stop  = $args{'feature_stop'};
+    my $direction     = $args{'direction'};
 
     # Start and stop have to swap places after being reversed
     my $new_feature_start = $modifier_to_be_subtracted_from - $feature_stop;
     my $new_feature_stop  = $modifier_to_be_subtracted_from - $feature_start;
-    my $new_feature_direction = ( $feature_direction || 1 ) * -1;
+    my $new_direction     = ( $direction || 1 ) * -1;
 
-    return ( $new_feature_start, $new_feature_stop, $new_feature_direction, );
+    return ( $new_feature_start, $new_feature_stop, $new_direction, );
 }
 
 # ----------------------------------------------------

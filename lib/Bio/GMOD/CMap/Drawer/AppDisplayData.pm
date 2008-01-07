@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.67 2007-12-12 22:18:46 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.68 2008-01-07 18:27:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2609,7 +2609,7 @@ sub flip_map {
 
 =head2 flip_map
 
-Move a map from one place on a parent to another
+Flip a map
 
 =cut
 
@@ -2621,42 +2621,115 @@ Move a map from one place on a parent to another
 
     my $map_layout = $self->{'map_layout'}{$map_key};
 
-    # If a value was passed, use it, otherwise toggle the flip value
-    my $new_flip_value
-        = defined( $args{'value'} ) ? $args{'value'}
-        : $map_layout->{'flipped'}  ? 0
-        :                             1;
+    return
+        if (defined( $args{'value'} )
+        and defined( $map_layout->{'flipped'} )
+        and $args{'value'} == $map_layout->{'flipped'} );
 
-    $map_layout->{'flipped'} = $new_flip_value;
+    # Handle subsections
+    my $map_id = $self->map_key_to_id($map_key);
+    my $map_data = $self->app_data_module()->map_data( map_id => $map_id, );
+    my $map_type_acc = $map_data->{'map_type_acc'};
+
+    # Set the basic action_data
+    my $feature_id = 0;
+    if ( $self->{'sub_maps'}{$map_key} ) {
+        $feature_id = $self->{'sub_maps'}{$map_key}{'feature_id'};
+    }
+    my %action_data = (
+        action     => 'flip_map',
+        feature_id => $feature_id,
+        map_key    => $map_key,
+        map_id     => $map_id,
+    );
+
+    if ( $self->map_type_data( $map_type_acc, 'subsection' ) ) {
+
+        my $super_map_key = $self->{'sub_maps'}{$map_key}{'parent_map_key'};
+        my $super_map_id  = $self->map_key_to_id($super_map_key);
+        my $subsection_feature_start
+            = $self->{'sub_maps'}{$map_key}{'feature_start'};
+        my $subsection_feature_stop
+            = $self->{'sub_maps'}{$map_key}{'feature_stop'};
+
+        my $feature_data
+            = $self->app_data_module()
+            ->feature_data_by_map( map_id => $super_map_id, )
+            || [];
+        my @subsection_feature_accs;
+        foreach my $feature (@$feature_data) {
+
+            # If features overlap into the subsection, abort
+            if ((   $feature->{'feature_start'} < $subsection_feature_start
+                    and $feature->{'feature_stop'} > $subsection_feature_start
+                )
+                or (    $feature->{'feature_start'} < $subsection_feature_stop
+                    and $feature->{'feature_stop'}
+                    > $subsection_feature_stop )
+                )
+            {
+                $self->app_interface()
+                    ->popup_warning(
+                    text => 'Cannot flip this subsection because features '
+                        . 'overlap into the subsection.', );
+                return undef;
+            }
+            elsif ( $feature->{'feature_stop'} <= $subsection_feature_stop
+                and $feature->{'feature_start'} >= $subsection_feature_start )
+            {
+                push @subsection_feature_accs, $feature->{'feature_acc'};
+            }
+        }
+
+        my $super_map_data
+            = $self->app_data_module()->map_data( map_id => $super_map_id );
+        my $super_unit_granularity
+            = $self->unit_granularity( $super_map_data->{'map_type_acc'} );
+        $self->reverse_map_section(
+            map_key          => $super_map_key,
+            map_data         => $super_map_data,
+            unit_granularity => $super_unit_granularity,
+            feature_accs     => \@subsection_feature_accs,
+            reverse_start    => $subsection_feature_start,
+            reverse_stop     => $subsection_feature_stop,
+        );
+
+        # Add subsection specific info to the action_data
+        $action_data{'subsection'}              = 1;
+        $action_data{'super_map_id'}            = $super_map_id;
+        $action_data{'reverse_start'}           = $subsection_feature_start;
+        $action_data{'reverse_stop'}            = $subsection_feature_stop;
+        $action_data{'super_unit_granularity'}  = $super_unit_granularity;
+        $action_data{'subsection_feature_accs'} = \@subsection_feature_accs;
+    }
+    else {
+
+        # If a value was passed, use it, otherwise toggle the flip value
+        my $new_flip_value
+            = defined( $args{'value'} ) ? $args{'value'}
+            : $map_layout->{'flipped'}  ? 0
+            :                             1;
+
+        $map_layout->{'flipped'} = $new_flip_value;
+
+        # Flip the child zones
+        foreach my $child_zone_key (
+            $self->get_children_zones_of_map(
+                map_key  => $map_key,
+                zone_key => $zone_key,
+            )
+            )
+        {
+            $self->cascade_flip_zone_toggle( zone_key => $child_zone_key, );
+        }
+    }
 
     # Add Action Data to be able to undo and redo
     unless ($undo_or_redo) {
-        my $feature_id = 0;
-        if ( $self->{'sub_maps'}{$map_key} ) {
-            $feature_id = $self->{'sub_maps'}{$map_key}{'feature_id'};
-        }
-
-        my %action_data = (
-            action     => 'flip_map',
-            feature_id => $feature_id,
-            map_key    => $map_key,
-            map_id     => $self->map_key_to_id($map_key),
-        );
         $self->add_action(
             window_key  => $window_key,
             action_data => \%action_data,
         );
-    }
-
-    # Flip the child zones
-    foreach my $child_zone_key (
-        $self->get_children_zones_of_map(
-            map_key  => $map_key,
-            zone_key => $zone_key,
-        )
-        )
-    {
-        $self->cascade_flip_zone_toggle( zone_key => $child_zone_key, );
     }
 
     # Redraw
@@ -3204,14 +3277,6 @@ Merging/Flipped logic:
         zone_key => $zone_key,
     );
 
-    unless ( 1 or $first_map_flipped == $second_map_flipped ) {
-        $self->app_interface()
-            ->popup_warning(
-            text => 'Cannot yet merge a map that has been flipped '
-                . 'with one that has not.', );
-        return;
-    }
-
     my $merged_map_flipped = 0;
     if ($first_map_flipped) {
         $merged_map_flipped = 1;
@@ -3582,6 +3647,8 @@ Create new maps and hide the original maps
 
     my $window_key = $self->{'scaffold'}{$starting_zone_key}{'window_key'};
 
+    # If the maps are in an opposite orientation, reverse the subsection
+    my $reverse_subsection = 0;
     unless (
         $self->is_map_drawn_flipped(
             map_key  => $starting_map_key,
@@ -3592,11 +3659,7 @@ Create new maps and hide the original maps
         )
         )
     {
-        $self->app_interface()
-            ->popup_warning(
-            text => 'Cannot yet merge a map that has been flipped '
-                . 'with one that has not.', );
-        return;
+        $reverse_subsection = 1;
     }
 
     # Erase the subsection zone corrs because they will be untouchable later
@@ -3688,6 +3751,19 @@ Create new maps and hide the original maps
         }
     }
 
+    if ($reverse_subsection) {
+        my $starting_unit_granularity
+            = $self->unit_granularity( $starting_map_data->{'map_type_acc'} );
+        $self->reverse_map_section(
+            map_key          => $starting_map_key,
+            map_data         => $starting_map_data,
+            unit_granularity => $starting_unit_granularity,
+            feature_accs     => $subsection_feature_accs,
+            reverse_start    => $subsection_feature_start,
+            reverse_stop     => $subsection_feature_stop,
+        );
+    }
+
     my $subsection_offset = $insertion_point
         - ( $subsection_feature_start - $starting_map_data->{'map_start'} );
     my $insertion_data = $self->insert_map_subsection(
@@ -3753,6 +3829,7 @@ Create new maps and hide the original maps
         subsection_feature_stop        => $subsection_feature_stop,
         destination_front_sub_map_keys => $destination_front_sub_map_keys,
         destination_back_sub_map_keys  => $destination_back_sub_map_keys,
+        reverse_subsection             => $reverse_subsection,
     );
     $self->add_action(
         window_key  => $window_key,
@@ -5806,9 +5883,15 @@ sub reverse_map_section {
     my $zone_key = $args{'$zone_key'}
         || $self->map_key_to_zone_key($map_key);
 
-    my $map_id        = $map_data->{'map_id'};
-    my $reverse_start = $map_data->{'map_start'};
-    my $reverse_stop  = $map_data->{'map_stop'};
+    my $map_id = $map_data->{'map_id'};
+    my $reverse_start
+        = defined( $args{'reverse_start'} )
+        ? $args{'reverse_start'}
+        : $map_data->{'map_start'};
+    my $reverse_stop
+        = defined( $args{'reverse_stop'} )
+        ? $args{'reverse_stop'}
+        : $map_data->{'map_stop'};
 
     # Handle features first and get the modifier from it
     my $modifier_to_be_subtracted_from
@@ -5832,6 +5915,12 @@ sub reverse_map_section {
         foreach my $sub_map_key (
             @{ $self->{'map_order'}{$child_zone_key} || [] } )
         {
+
+            next
+                unless ( $self->{'sub_maps'}{$sub_map_key}{'feature_stop'} <=
+                    $reverse_stop
+                and $self->{'sub_maps'}{$sub_map_key}{'feature_start'}
+                >= $reverse_start );
 
             (   $self->{'sub_maps'}{$sub_map_key}{'feature_start'},
                 $self->{'sub_maps'}{$sub_map_key}{'feature_stop'},
