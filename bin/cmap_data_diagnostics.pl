@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_data_diagnostics.pl,v 1.3 2007-10-03 20:19:52 mwz444 Exp $
+# $Id: cmap_data_diagnostics.pl,v 1.4 2008-01-08 21:41:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $report_optional, );
 GetOptions(
@@ -166,6 +166,7 @@ Do the map_set check on the map_set data and then check the maps.
         ]
         )
     {
+
         unless ( $map_set_data->{$column_name} ) {
             print STDERR "Map Set ID "
                 . $map_set_data->{'map_set_id'}
@@ -240,6 +241,8 @@ Do the map check on the map data and then check the features.
     my $map_data = shift;
     print "        Map ID: " . $map_data->{'map_id'} . "\n";
 
+    my $skip_features_due_to_start_stop = 0;
+
     # String Columns
     foreach my $column_name (
         qw[
@@ -271,6 +274,22 @@ Do the map check on the map data and then check the features.
         }
     }
 
+    # Check to make sure the start is less than the stop
+    if (   not defined $map_data->{'map_start'}
+        or not defined $map_data->{'map_stop'} )
+    {
+        $skip_features_due_to_start_stop = 1;
+    }
+    elsif ( $map_data->{'map_start'} >= $map_data->{'map_stop'} ) {
+        $skip_features_due_to_start_stop = 1;
+        print STDERR "Map ID "
+            . $map_data->{'map_id'}
+            . ": The start ("
+            . $map_data->{'map_start'}
+            . ") is greater than or equal to the stop ("
+            . $map_data->{'map_stop'} . ").\n";
+    }
+
     if ($report_optional) {
 
         # Optional String Columns
@@ -297,8 +316,18 @@ Do the map check on the map data and then check the features.
         print "            WARNING - No Features on this map.\n";
     }
 
-    for my $feature_data ( @{ $feature_list || [] } ) {
-        check_feature($feature_data);
+    if ($skip_features_due_to_start_stop) {
+        print STDERR
+            "Skipping feature check due to map start/stop problems\n";
+    }
+    else {
+        for my $feature_data ( @{ $feature_list || [] } ) {
+            check_feature(
+                $feature_data,
+                $map_data->{'map_start'},
+                $map_data->{'map_stop'},
+            );
+        }
     }
 }
 
@@ -314,6 +343,8 @@ Do the feature check on the feature data
 =cut 
 
     my $feature_data = shift;
+    my $map_start    = shift;
+    my $map_stop     = shift;
 
     # String Columns
     foreach my $column_name (
@@ -346,6 +377,39 @@ Do the feature check on the feature data
             print STDERR "Feature ID "
                 . $feature_data->{'feature_id'}
                 . ": $column_name is not defined\n";
+        }
+    }
+
+    if (    defined $feature_data->{'feature_start'}
+        and defined $feature_data->{'feature_stop'} )
+    {
+
+        # Check to make sure the start is less than the stop
+        if ( $feature_data->{'feature_start'}
+            >= $feature_data->{'feature_stop'} )
+        {
+            print STDERR "Feature ID "
+                . $feature_data->{'feature_id'}
+                . ": The start ("
+                . $feature_data->{'feature_start'}
+                . ") is greater than or equal to the stop ("
+                . $feature_data->{'feature_stop'} . ").\n";
+        }
+
+        # Check to make sure the feature is within the map bounds
+        if ( $feature_data->{'feature_start'} < $map_start ) {
+            print STDERR "Feature ID "
+                . $feature_data->{'feature_id'}
+                . ": The feature start ("
+                . $feature_data->{'feature_start'}
+                . ") is less than the start of the map ($map_start).\n";
+        }
+        if ( $feature_data->{'feature_stop'} > $map_stop ) {
+            print STDERR "Feature ID "
+                . $feature_data->{'feature_id'}
+                . ": The feature stop ("
+                . $feature_data->{'feature_stop'}
+                . ") is greater than the end of the map ($map_stop).\n";
         }
     }
 
@@ -468,7 +532,9 @@ Do the feature_types check on the feature_types data
     foreach my $feature_type_acc ( keys %global_feature_types ) {
         next unless ($feature_type_acc);    # Guard against blank entries
         my $current_type_data;
-        unless ( $current_type_data = $feature_type_data->{$feature_type_acc} ) {
+        unless ( $current_type_data
+            = $feature_type_data->{$feature_type_acc} )
+        {
             print STDERR
                 "Feature Type $feature_type_acc is NOT defined in the config file\n";
             next;
@@ -493,8 +559,9 @@ Do the feature_types check on the feature_types data
         my $feature_glyph = $current_type_data->{'shape'};
         $feature_glyph =~ s/-/_/g;
         if ( $feature_glyph and not $glyph->can($feature_glyph) ) {
-            print STDERR "Feature Type Acc $feature_type_acc"
-                . ": ".$current_type_data->{'shape'}." is not a valid shape\n";
+            print STDERR "Feature Type Acc $feature_type_acc" . ": "
+                . $current_type_data->{'shape'}
+                . " is not a valid shape\n";
         }
 
         # Numeric Columns
@@ -522,7 +589,8 @@ Do the feature_types check on the feature_types data
                 )
             {
                 unless ( $current_type_data->{$column_name} ) {
-                    print STDERR "OPTIONAL - Feature Type Acc $feature_type_acc"
+                    print STDERR
+                        "OPTIONAL - Feature Type Acc $feature_type_acc"
                         . ": $column_name is not filled\n";
                 }
             }
@@ -537,7 +605,8 @@ Do the feature_types check on the feature_types data
                 )
             {
                 unless ( defined( $current_type_data->{$column_name} ) ) {
-                    print STDERR "OPTIONAL - Feature Type Acc $feature_type_acc"
+                    print STDERR
+                        "OPTIONAL - Feature Type Acc $feature_type_acc"
                         . ": $column_name is not filled\n";
                 }
             }
