@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_data_diagnostics.pl,v 1.4 2008-01-08 21:41:44 mwz444 Exp $
+# $Id: cmap_data_diagnostics.pl,v 1.5 2008-01-09 17:13:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 my ( $help, $show_version, $data_source, $report_optional, );
 GetOptions(
@@ -386,13 +386,13 @@ Do the feature check on the feature data
 
         # Check to make sure the start is less than the stop
         if ( $feature_data->{'feature_start'}
-            >= $feature_data->{'feature_stop'} )
+            > $feature_data->{'feature_stop'} )
         {
             print STDERR "Feature ID "
                 . $feature_data->{'feature_id'}
-                . ": The start ("
+                . ": The feature_start ("
                 . $feature_data->{'feature_start'}
-                . ") is greater than or equal to the stop ("
+                . ") is greater than the feature_stop ("
                 . $feature_data->{'feature_stop'} . ").\n";
         }
 
