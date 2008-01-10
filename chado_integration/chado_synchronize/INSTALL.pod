@@ -9,7 +9,7 @@ Postgres 8.0+ with Perl support is required to use the Perl triggers.  You will
 need to upgrade your install of Postgres if your version does not meet the
 requirements.
 
-=head2 Upgrading Postgres
+=head2 Upgrading Postgres (If Needed)
 
 When upgrading, first see the upgrade secion of postgres INSTALL doc.  
 
@@ -90,7 +90,7 @@ inconsistencies.
 
 =head1 Add "maps" into featureset. 
 
-Each "map" is connected to it's featureset by feature_featureset.
+In chado, the "maps" are stored in the feature table.  Each "map" should be connected to it's featureset by feature_featureset.
 
 =head2 Example populating feature_featureset
 
@@ -133,6 +133,7 @@ synchronized with chado.
 Included in this directory is a file called trigger.PL.  It will help create
 the triggers file. 
 
+=over 4
 
 =item * Create trigger file.  
 
