@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.173 2008-01-07 18:27:34 mwz444 Exp $
+# $Id: Generic.pm,v 1.174 2008-01-10 22:14:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.173 $)[-1];
+$VERSION = (qw$Revision: 1.174 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -231,7 +231,11 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
-    die "Object type: $object_type not valid.\n"
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: acc_id_to_internal_id<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
         unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $acc_id = $args{'acc_id'} or return $self->error('No accession id');
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
@@ -305,7 +309,11 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
-    die "Object type: $object_type not valid.\n"
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: internal_id_to_acc_id<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
         unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $id = $args{'id'} or return $self->error('No id');
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
@@ -388,7 +396,11 @@ Not using cache because this query is quicker.
 
     my $object_type = $args{'object_type'}
         or return $self->error('No object type');
-    die "Object type: $object_type not valid.\n"
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: get_object_name<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
         unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $object_id = $args{'object_id'} or return $self->error('No object id');
     my $order_by = $args{'order_by'};
@@ -464,7 +476,11 @@ Primary key field
 
     my $self        = shift;
     my $object_type = shift;
-    die "Object type: $object_type not valid.\n"
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: pk_name<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
         unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     $object_type .= '_id';
     return $object_type;
@@ -8285,8 +8301,12 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: get_attributes<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $attribute_id    = $args{'attribute_id'};
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
@@ -8439,8 +8459,12 @@ Attribute id
         or return $self->error('No next number for attribute ');
     my $display_order = $args{'display_order'} || 1;
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: insert_attribute<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $is_public      = $args{'is_public'}      || 1;
     my $attribute_name = $args{'attribute_name'} || q{};
     my $attribute_value
@@ -8548,8 +8572,12 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $attribute_id  = $args{'attribute_id'} or return;
     my $display_order = $args{'display_order'};
     my $object_type   = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: update_attribute<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
     my $attribute_value = $args{'attribute_value'};
@@ -8665,8 +8693,12 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $db           = $self->db;
     my $attribute_id = $args{'attribute_id'};
     my $object_type  = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: delete_attribute<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $object_id   = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @delete_args = ();
@@ -8781,8 +8813,12 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: get_xrefs<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $xref_id   = $args{'xref_id'};
     my $xref_name = $args{'xref_name'};
     my $xref_url  = $args{'xref_url'};
@@ -8922,8 +8958,12 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: get_generic_xrefs<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $order_by = $args{'order_by'};
     die "Order by clause ($order_by) has SQL code in it\n"
         if ( has_sql_command($order_by) );
@@ -9022,8 +9062,12 @@ Xref id
         or return $self->error('No next number for xref ');
     my $display_order = $args{'display_order'} || 1;
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: insert_xref<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $xref_name = $args{'xref_name'} || q{};
     my $xref_url  = $args{'xref_url'}  || q{};
     my $object_id = $args{'object_id'};
@@ -9127,8 +9171,12 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $xref_id       = $args{'xref_id'} or return;
     my $display_order = $args{'display_order'};
     my $object_type   = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: update_xref<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $xref_name = $args{'xref_name'};
     my $xref_url  = $args{'xref_url'};
     my $object_id = $args{'object_id'};
@@ -9244,8 +9292,12 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $db          = $self->db;
     my $xref_id     = $args{'xref_id'};
     my $object_type = $args{'object_type'};
-    die "Object type: $object_type not valid.\n"
-        unless ( $self->{'TABLE_NAMES'}->{$object_type} );
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: delete_xref<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
+        if ( $object_type and not $self->{'TABLE_NAMES'}->{$object_type} );
     my $object_id   = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @delete_args = ();
@@ -11509,7 +11561,11 @@ that db has auto incrementing.
 
     my $db          = $self->db            or return;
     my $object_type = $args{'object_type'} or return;
-    die "Object type: $object_type not valid.\n"
+    die "Object type: $object_type not valid.  \n<br>"
+        . "Method giving error: next_number<br>"
+        . "Calling information:<pre>"
+        . Dumper( caller() )
+        . "</pre>\n"
         unless ( $self->{'TABLE_NAMES'}->{$object_type} );
     my $no_requested = $args{'requested'} || 1;
     my $id_field     = $self->pk_name($object_type);
