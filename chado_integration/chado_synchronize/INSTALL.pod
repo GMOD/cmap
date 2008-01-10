@@ -5,7 +5,9 @@ document will help you get started
 
 =head1 Postgres Requirements
 
-Postgres 8.0+ with Perl support is required to use the Perl triggers.  You will need to upgrade your install of Postgres if your version does not meet the requirements.
+Postgres 8.0+ with Perl support is required to use the Perl triggers.  You will
+need to upgrade your install of Postgres if your version does not meet the
+requirements.
 
 =head2 Upgrading Postgres
 
@@ -123,39 +125,27 @@ newly created features.
 
 =head1 Triggers
 
-Postgres triggers have been written to keep the data in the CMap database synchronized with chado.  
+Postgres triggers have been written to keep the data in the CMap database
+synchronized with chado.  
 
 =head2 Installing the Triggers
 
-Included in this directory is a file called trigger.template.  This holds the template for the triggers.  This will need to be modified before you can proceed.
+Included in this directory is a file called trigger.PL.  It will help create
+the triggers file. 
 
-=over 4
 
-=item * Copy trigger.template to a new file (in case something goes horribly wrong).
+=item * Create trigger file.  
 
-  $ cp trigger.template trigger.cmap1
+Run trigger.PL using the cmap data source (the example uses CMAP_DEMO as the
+cmap data source).  This will create a file called "triggers.DATASOURCE.sql"
+(in the example it will create "triggers.CMAP_DEMO.sql").
 
-=item * Open the file in an editor.
+  $ perl trigger.PL -d CMAP_DEMO
 
-  $ vi trigger.cmap1
-
-=item * Replace the following text with the appropriate values
-
-=over 4
-
-=item - CMAP_BASE_NAME: This needs to be changed to what "CMAP_BASE_NAME" is set to in the cmap_synchronize_chado.pl script.  It is initially "cmap".
-
-  :s/CMAP_BASE_NAME/cmap/g
-
-=item - CMAP_DATASOURCE: This must be replaced by the name of the CMap datasource (as specified in the CMap config file).
-
-  :s/CMAP_DATASOURCE/CMAP/g
-
-=back
 
 =item * Run the resulting sql in postgres
 
-  $ psql chado-fly < triggers.cmap1
+  $ psql chado-fly < triggers.CMAP_DEMO.sql
 
 =back
 
@@ -274,7 +264,8 @@ The following is an example of how to get an xref from the database.
     $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_type_acc'});
   EOF
 
-For more information about how the area_code works, see the "Map, Feature and Evidence Type Information" section of ADMINISTRATION.html.
+For more information about how the area_code works, see the "Map, Feature and
+Evidence Type Information" section of ADMINISTRATION.html.
 
 For more information about how cross-references work, see attributes-and-xrefs.html.
 

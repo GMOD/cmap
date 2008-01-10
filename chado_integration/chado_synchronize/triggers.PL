@@ -1,3 +1,55 @@
+#!perl
+
+# $Id: triggers.PL,v 1.1 2008-01-10 16:51:43 mwz444 Exp $
+
+=head1 NAME
+
+triggers.PL - Creates a file with sql to create postgres triggers to
+update CMap 
+
+=head1 SYNOPSIS
+
+  perl triggers.PL [options] 
+
+  Creates file: triggers.DATASOURCE.sql
+
+Options:
+
+  -d|--cmap_data_source    CMap datasource (required)
+  -b|--cmap_base_name      Base name for chado "db" names (optional)
+
+=head1 DESCRIPTION
+
+This script will crawl through the main cmap data (species, map_set, map and
+features) to look for any problems.
+
+=cut
+
+use strict;
+use Cwd;
+use File::Basename qw(&basename &dirname);
+
+use Pod::Usage;
+use Getopt::Long;
+
+my ( $help, $cmap_base_name, $cmap_data_source, );
+GetOptions(
+    'h|help'                                      => \$help,
+    'd|datasource|data_source|cmap_data_source=s' => \$cmap_data_source,
+    'b|base_name|cmap_base_name=s'                => \$cmap_base_name,
+);
+pod2usage if ($help);
+pod2usage unless ($cmap_data_source);
+$cmap_base_name ||= "cmap_".$cmap_data_source;
+
+my $origdir = cwd;
+chdir dirname($0);
+my $file;
+( $file = basename($0) ) =~ s/\.PL$//;
+$file .= ".$cmap_data_source.sql";
+open OUT, ">$file" or die "Can't write file '$file': $!\n";
+print "Extracting $file (with variable substitutions)\n";
+my $output_string = <<'!GROK!THIS!';
 -- CMap triggers and functions for organism table --
 CREATE OR REPLACE FUNCTION cmap_organism_updated() RETURNS trigger AS '
     my $sql_str = q[
@@ -7,7 +59,7 @@ CREATE OR REPLACE FUNCTION cmap_organism_updated() RETURNS trigger AS '
         . $_TD->{new}{organism_id} . q[ 
             and odbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_species\'
+            and db.name = \'CMAP_BASE_NAME_species\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -49,7 +101,7 @@ CREATE OR REPLACE FUNCTION cmap_organism_deleted() RETURNS trigger AS '
         . $_TD->{old}{organism_id} . q[ 
             and odbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_species\'
+            and db.name = \'CMAP_BASE_NAME_species\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -96,7 +148,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
         . $organism_id . q[ 
             and odbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_species\'
+            and db.name = \'CMAP_BASE_NAME_species\'
     ];
     $rv = spi_exec_query($sql_str);
     if ( $rv->{\'processed\'} ) {
@@ -138,7 +190,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
             q[
               insert into dbxref ( db_id, accession) (
                 select db_id, \'] . $species_id . q[\'
-                from db where name = \'cmap_species\' )
+                from db where name = \'CMAP_BASE_NAME_species\' )
              ]
         );
         $rv = spi_exec_query(
@@ -168,7 +220,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_created() RETURNS trigger AS '
         q[
           insert into dbxref ( db_id, accession) (
             select db_id, \'] . $map_set_id . q[\'
-            from db where name = \'cmap_map_set\' )
+            from db where name = \'CMAP_BASE_NAME_map_set\' )
          ]
     );
     $rv = spi_exec_query(
@@ -196,7 +248,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_updated() RETURNS trigger AS '
         . $_TD->{new}{featureset_id} . q[ 
             and fsdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_map_set\'
+            and db.name = \'CMAP_BASE_NAME_map_set\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -233,7 +285,7 @@ CREATE OR REPLACE FUNCTION cmap_featureset_deleted() RETURNS trigger AS '
         . $_TD->{old}{featureset_id} . q[ 
             and fsdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_map_set\'
+            and db.name = \'CMAP_BASE_NAME_map_set\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -275,7 +327,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
         . $featureset_id . q[ 
             and fsdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_map_set\'
+            and db.name = \'CMAP_BASE_NAME_map_set\'
     ];
     my $rv = spi_exec_query($sql_str);
     $map_set_id = $rv->{\'rows\'}[0]{\'accession\'};
@@ -311,7 +363,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
         q[
           insert into dbxref ( db_id, accession) (
             select db_id, \'] . $map_id . q[\'
-            from db where name = \'cmap_map\' )
+            from db where name = \'CMAP_BASE_NAME_map\' )
          ]
     );
     $rv = spi_exec_query(
@@ -401,7 +453,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_created() RETURNS trigger AS 
                 q[
                   insert into dbxref ( db_id, accession) (
                     select db_id, \'] . $cmap_feature_id . q[\'
-                    from db where name = \'cmap_feature\' )
+                    from db where name = \'CMAP_BASE_NAME_feature\' )
                  ]
             );
             $rv = spi_exec_query(
@@ -434,7 +486,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_featureset_deleted() RETURNS trigger AS 
         . $_TD->{old}{feature_id} . q[ 
             and fdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_map\'
+            and db.name = \'CMAP_BASE_NAME_map\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -470,7 +522,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
         . $_TD->{new}{srcfeature_id} . q[ 
             and fdbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_map\'
+            and db.name = \'CMAP_BASE_NAME_map\'
     ];
 
     my $rv = spi_exec_query($sql_str);
@@ -548,7 +600,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_created() RETURNS trigger AS '
                 q[
                   insert into dbxref ( db_id, accession) (
                     select db_id, \'] . $cmap_feature_id . q[\'
-                    from db where name = \'cmap_feature\' )
+                    from db where name = \'CMAP_BASE_NAME_feature\' )
                  ]
             );
             $rv = spi_exec_query(
@@ -580,7 +632,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_updated() RETURNS trigger AS '
         . $_TD->{new}{featureloc_id} . q[ 
             and fldbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_feature\'
+            and db.name = \'CMAP_BASE_NAME_feature\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -644,7 +696,7 @@ CREATE OR REPLACE FUNCTION cmap_featureloc_deleted() RETURNS trigger AS '
         . $_TD->{old}{featureloc_id} . q[ 
             and fldbx.dbxref_id = dbxref.dbxref_id
             and dbxref.db_id = db.db_id
-            and db.name = \'cmap_feature\'
+            and db.name = \'CMAP_BASE_NAME_feature\'
     ];
     my $rv    = spi_exec_query($sql_str);
     my $nrows = $rv->{processed};
@@ -685,7 +737,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
     my $nrows = $rv->{processed};
     if ($nrows) {
         foreach my $rn ( 0 .. $nrows - 1 ) {
-            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'cmap_map\' ) {
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_map\' ) {
                 use Bio::GMOD::CMap::Admin;
                 my $cmap_admin = Bio::GMOD::CMap::Admin->new(
                     data_source => \'CMAP_DATASOURCE\', );
@@ -719,7 +771,7 @@ CREATE OR REPLACE FUNCTION cmap_feature_updated() RETURNS trigger AS '
     $nrows = $rv->{processed};
     if ($nrows) {
         foreach my $rn ( 0 .. $nrows - 1 ) {
-            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'cmap_feature\' ) {
+            if ( $rv->{\'rows\'}[$rn]{\'db_name\'} eq \'CMAP_BASE_NAME_feature\' ) {
                 use Bio::GMOD::CMap::Admin;
                 my $cmap_admin = Bio::GMOD::CMap::Admin->new(
                     data_source => \'CMAP_DATASOURCE\', );
@@ -742,3 +794,11 @@ CREATE TRIGGER cmap_feature_updated_trig
     BEFORE UPDATE ON feature
     FOR EACH ROW EXECUTE PROCEDURE cmap_feature_updated();
 
+!GROK!THIS!
+
+$output_string  =~ s/CMAP_BASE_NAME/$cmap_base_name/g;
+$output_string  =~ s/CMAP_DATASOURCE/$cmap_data_source/g;
+
+print OUT $output_string;
+close OUT;
+print "$file has been created.\n";
