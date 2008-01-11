@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.207 2007-10-19 14:36:34 mwz444 Exp $
+# $Id: Map.pm,v 1.208 2008-01-11 21:28:37 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.207 $)[-1];
+$VERSION = (qw$Revision: 1.208 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1297,9 +1297,7 @@ Variable Info:
         = $is_compressed ? 0
         : $label_features eq 'none' ? 0
         :                             1;
-    my $show_ticks     = !$stack_rel_maps;        # Show ticks unless stacking
-    my $show_map_title = $is_compressed ? 0 : 1;
-    my $show_map_units = $is_compressed ? 0 : 1;
+    my $show_ticks        = !$stack_rel_maps;    # Show ticks unless stacking
     my $slot_title_buffer = 2;
 
     my $base_x = $self->base_x;
@@ -1876,8 +1874,10 @@ MAP:
 
     #Make aggregated correspondences
     my $corrs_aggregated = 0;
-    if (   $is_compressed
-        or $self->is_compressed( $drawer->reference_slot_no($slot_no) ) )
+    if ($is_compressed
+        or (    $slot_no
+            and $self->is_compressed( $drawer->reference_slot_no($slot_no) ) )
+        )
     {
         for my $map_id (@map_ids) {
             $corrs_aggregated = 1
@@ -2215,11 +2215,7 @@ sub get_map_height {
     if ( $is_compressed and $slot_no != 0 ) {
         $pixel_height = $min_map_pixel_height;
     }
-
-    #
-    # Set information used to scale.
-    #
-    if (    $self->scale_maps
+    elsif ( $self->scale_maps
         and $self->config_data('scalable')
         and $self->config_data('scalable')->{ $self->map_units($map_id) }
         and $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } )
