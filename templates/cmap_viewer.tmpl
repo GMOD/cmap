@@ -1128,7 +1128,7 @@ function check_radio_for_additional_buttons(radio,val){
                 <td><input type="radio" name="hide_legend" value="1"[%- IF hide_legend==1; ' checked'; END -%]>Yes</td>
               </tr>
             </table>
-
+            <em><b>*</b>SVG output for high-resolution printing only (no hyperlinks).</em><br>
 
             <input type="submit" value="Redraw" name="sub">
             <input type="reset"  value="Reset">
@@ -1174,7 +1174,7 @@ function check_radio_for_additional_buttons(radio,val){
               </tr>
               <tr>
                 <td align="left" valign="top">Clickable Image</td>
-                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Other</td>
+                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Use All</td>
                 <td><input type="radio" name="omit_area_boxes" value="1"[%- IF apr.param('omit_area_boxes')==1; ' checked'; END -%]>Omit Features</td>
                 <td><input type="radio" name="omit_area_boxes" value="2"[%- IF apr.param('omit_area_boxes')==2; ' checked'; END -%]>Omit All Buttons</td>
               </tr>
@@ -1217,8 +1217,6 @@ function check_radio_for_additional_buttons(radio,val){
               <input type="hidden" name="flip"      value="[%- apr.param('flip') -%]">
               <input type="hidden" name="data_source"      value="[%- data_source -%]">
               <br>
-              <em><b>*</b>SVG output for high-resolution 
-              printing only (no hyperlinks).</em>
             </td>
           </tr>
           [%- IF extra_form -%]
