@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.208 2008-01-11 21:28:37 mwz444 Exp $
+# $Id: Map.pm,v 1.209 2008-01-11 21:38:50 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.208 $)[-1];
+$VERSION = (qw$Revision: 1.209 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -180,6 +180,7 @@ box.
         or $self->error('No coordinates');
     my $map_id              = $args{'map_id'};
     my $map_acc             = $self->map_acc($map_id);
+    my $is_compressed       = $args{'is_compressed'};
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
     my $color               = $self->map_color($map_id);
@@ -268,6 +269,7 @@ box.
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
             map_units     => $map_units,
+            is_compressed => $is_compressed,
             bounds        => \@coords,
         );
     }
@@ -296,6 +298,7 @@ bounds of the image.
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
         or $self->error('No coordinates');
     my $map_id              = $args{'map_id'};
+    my $is_compressed       = $args{'is_compressed'};
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
     my $map_acc             = $self->map_acc($map_id);
@@ -405,6 +408,7 @@ bounds of the image.
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
             map_units     => $map_units,
+            is_compressed => $is_compressed,
             bounds        => \@coords,
         );
     }
@@ -441,6 +445,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
         or $self->error('No coordinates');
     my $map_id              = $args{'map_id'};
+    my $is_compressed       = $args{'is_compressed'};
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
     my $map_acc             = $self->map_acc($map_id);
@@ -534,6 +539,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
             map_units     => $map_units,
+            is_compressed => $is_compressed,
             bounds        => \@coords,
         );
     }
@@ -563,6 +569,7 @@ for this map to be stacked on others.  Return the bounds of the box.
         or $self->error('No coordinates');
     my $map_id              = $args{'map_id'};
     my $map_acc             = $self->map_acc($map_id);
+    my $is_compressed       = $args{'is_compressed'};
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
     my $color1              = $self->map_color($map_id);
@@ -646,6 +653,7 @@ such as the units.
     my $top_buf       = 12;
     my $buf           = 2;
     my $font          = $drawer->regular_font;
+    my $is_compressed = $args{'is_compressed'};
     my $y             = $y2 + $top_buf;
     my $x_mid         = $x1 + ( ( $x2 - $x1 ) / 2 );
     my $magnification
@@ -702,92 +710,101 @@ such as the units.
 
         }
 
-        ###Scale buttons
-        my $mag_plus_val
-            = $magnification <= 1 ? $magnification * 2 : $magnification * 2;
-        my $mag_minus_val
-            = $magnification <= 1 ? $magnification / 2 : $magnification / 2;
-        my $mag_plus_str  = "+";
-        my $mag_minus_str = "-";
-        my $mag_mid_str   = " Mag ";
-        $x = $x_mid - (
-            (   $font->width *
-                    length( $mag_minus_str . $mag_plus_str . $mag_mid_str )
-            ) / 2
-        );
+        unless ($is_compressed) {
+            ###Scale buttons
+            my $mag_plus_val
+                = $magnification <= 1
+                ? $magnification * 2
+                : $magnification * 2;
+            my $mag_minus_val
+                = $magnification <= 1
+                ? $magnification / 2
+                : $magnification / 2;
+            my $mag_plus_str  = "+";
+            my $mag_minus_str = "-";
+            my $mag_mid_str   = " Mag ";
+            $x = $x_mid - (
+                (   $font->width * length(
+                        $mag_minus_str . $mag_plus_str . $mag_mid_str
+                    )
+                ) / 2
+            );
 
-        # Minus side
-        my $mag_minus_url
-            = $self->create_viewer_link(
-            $drawer->create_minimal_link_params(),
-            session_mod => "mag=$slot_no=$map_acc=$mag_minus_val", );
-        push @$drawing_data,
-            [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
-        $code = qq[
+            # Minus side
+            my $mag_minus_url
+                = $self->create_viewer_link(
+                $drawer->create_minimal_link_params(),
+                session_mod => "mag=$slot_no=$map_acc=$mag_minus_val", );
+            push @$drawing_data,
+                [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
+            $code = qq[
             onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
             ];
-        push @$map_area_data,
-            {
-            coords => [
-                $x, $y,
-                $x + ( $font->width * length($mag_minus_str) ),
-                $y + $font->height
-            ],
-            url  => $mag_minus_url,
-            alt  => 'Magnification',
-            code => $code,
-            }
-            unless ($omit_all_area_boxes);
-        $bounds->[0] = $x
-            if ( $bounds->[0] > $x );
-        $bounds->[3] = $y + $font->height
-            if ( $bounds->[3] < $y + $font->height );
-        $x += ( $font->width * length($mag_minus_str) );
+            push @$map_area_data,
+                {
+                coords => [
+                    $x, $y,
+                    $x + ( $font->width * length($mag_minus_str) ),
+                    $y + $font->height
+                ],
+                url  => $mag_minus_url,
+                alt  => 'Magnification',
+                code => $code,
+                }
+                unless ($omit_all_area_boxes);
+            $bounds->[0] = $x
+                if ( $bounds->[0] > $x );
+            $bounds->[3] = $y + $font->height
+                if ( $bounds->[3] < $y + $font->height );
+            $x += ( $font->width * length($mag_minus_str) );
 
-        # Middle
-        push @$drawing_data, [ STRING, $font, $x, $y, $mag_mid_str, 'grey' ];
-        $code = qq[
+            # Middle
+            push @$drawing_data,
+                [ STRING, $font, $x, $y, $mag_mid_str, 'grey' ];
+            $code = qq[
             onMouseOver="window.status='Current Magnification: $magnification times original size';return true" 
             ];
-        push @$map_area_data,
-            {
-            coords => [
-                $x, $y,
-                $x + ( $font->width * length($mag_mid_str) ),
-                $y + $font->height
-            ],
-            url  => '',
-            alt  => 'Current Magnification: ' . $magnification . ' times',
-            code => $code,
-            }
-            unless ($omit_all_area_boxes);
-        $x += ( $font->width * length($mag_mid_str) );
+            push @$map_area_data,
+                {
+                coords => [
+                    $x, $y,
+                    $x + ( $font->width * length($mag_mid_str) ),
+                    $y + $font->height
+                ],
+                url  => '',
+                alt  => 'Current Magnification: ' . $magnification . ' times',
+                code => $code,
+                }
+                unless ($omit_all_area_boxes);
+            $x += ( $font->width * length($mag_mid_str) );
 
-        # Plus Side
-        my $mag_plus_url
-            = $self->create_viewer_link(
-            $drawer->create_minimal_link_params(),
-            session_mod => "mag=$slot_no=$map_acc=$mag_plus_val", );
-        push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
-        $code = qq[
+            # Plus Side
+            my $mag_plus_url
+                = $self->create_viewer_link(
+                $drawer->create_minimal_link_params(),
+                session_mod => "mag=$slot_no=$map_acc=$mag_plus_val", );
+            push @$drawing_data,
+                [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
+            $code = qq[
             onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
             ];
-        push @$map_area_data,
-            {
-            coords => [
-                $x, $y,
-                $x + ( $font->width * length($mag_plus_str) ),
-                $y + $font->height
-            ],
-            url  => $mag_plus_url,
-            alt  => 'Magnification',
-            code => $code,
-            }
-            unless ($omit_all_area_boxes);
-        $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
-            if (
-            $bounds->[2] < $x + ( $font->width * length($mag_plus_str) ) );
-        $y += $font->height + $buf;
+            push @$map_area_data,
+                {
+                coords => [
+                    $x, $y,
+                    $x + ( $font->width * length($mag_plus_str) ),
+                    $y + $font->height
+                ],
+                url  => $mag_plus_url,
+                alt  => 'Magnification',
+                code => $code,
+                }
+                unless ($omit_all_area_boxes);
+            $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
+                if ( $bounds->[2]
+                < $x + ( $font->width * length($mag_plus_str) ) );
+            $y += $font->height + $buf;
+        }
     }
 
     ###Start and stop
@@ -1297,7 +1314,9 @@ Variable Info:
         = $is_compressed ? 0
         : $label_features eq 'none' ? 0
         :                             1;
-    my $show_ticks        = !$stack_rel_maps;    # Show ticks unless stacking
+
+    # Show ticks unless the maps are stacked or compressed
+    my $show_ticks = !( $stack_rel_maps || $is_compressed );
     my $slot_title_buffer = 2;
 
     my $base_x = $self->base_x;
@@ -1467,12 +1486,13 @@ MAP:
         my $draw_sub_name = $SHAPE{ $self->shape($map_id) };
         $draw_sub_name = 'draw_stackable_box' if ($stack_rel_maps);
         my ( $bounds, $map_coords ) = $self->$draw_sub_name(
-            map_id     => $map_id,
-            slot_no    => $slot_no,
-            map_units  => $self->map_units($map_id),
-            drawer     => $drawer,
-            is_flipped => $is_flipped,
-            coords     => [
+            map_id        => $map_id,
+            slot_no       => $slot_no,
+            map_units     => $self->map_units($map_id),
+            drawer        => $drawer,
+            is_compressed => $is_compressed,
+            is_flipped    => $is_flipped,
+            coords        => [
                 $mid_x,
                 $map_placement_data{$map_id}{'map_coords'}[1],
                 $map_placement_data{$map_id}{'map_coords'}[3],
