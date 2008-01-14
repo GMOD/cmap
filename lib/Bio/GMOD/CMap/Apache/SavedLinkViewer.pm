@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.13 2007-10-19 14:36:34 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.14 2008-01-14 21:19:30 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -20,7 +20,7 @@ use base 'Bio::GMOD::CMap::Apache';
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
 use constant MULTI_VIEW_TEMPLATE => 'saved_links_viewer.tmpl';
 use constant EDIT_TEMPLATE       => 'saved_link_edit.tmpl';
-use constant SAVED_LINK_URI      => 'saved_link';
+use constant SAVED_LINK_URI      => 'saved_links';
 
 # ----------------------------------------------------
 sub handler {
@@ -87,7 +87,7 @@ sub saved_links_viewer {
     $t->process(
         MULTI_VIEW_TEMPLATE,
         {   apr                 => $apr,
-            current_url         => "saved_link?" . $apr->query_string(),
+            current_url         => "saved_links?" . $apr->query_string(),
             page                => $self->page,
             stylesheet          => $self->stylesheet,
             data_sources        => $self->data_sources,

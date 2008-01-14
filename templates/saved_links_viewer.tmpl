@@ -14,7 +14,7 @@
 
 <div align="center">
 
-<form method="GET" action="saved_link">
+<form method="GET" action="saved_links">
     Display:
     <select name="selected_link_group">
         <option value="">--Select a User Name--</option>
@@ -32,7 +32,7 @@
     <table>
         <tr>
             <td colspan="1" align="center">
-                [% SET pager_url="saved_link?" %]
+                [% SET pager_url="saved_links?" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
@@ -61,7 +61,7 @@
                     <td align="right" valign="top"><a href="[% saved_link.saved_url %]">Permanent Link</a></td>
                     <td align="right" valign="top"><a href="[% saved_link.legacy_url %]">Legacy Link</a></td>
                     <td align="center" valign="top" NOWRAP>
-                      <a href="saved_link?action=saved_link_edit;saved_link_id=[%- saved_link.saved_link_id -%];url_to_return_to=[%- current_url -%]">edit</a>&nbsp
+                      <a href="saved_links?action=saved_link_edit;saved_link_id=[%- saved_link.saved_link_id -%];url_to_return_to=[%- current_url -%]">edit</a>&nbsp
                     </td>
                 </tr> 
 
