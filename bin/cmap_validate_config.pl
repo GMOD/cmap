@@ -167,7 +167,13 @@ my %config_defs = (
     evidence_type_details_url => { %generic_scalar_def, },
     max_search_pages => { %generic_scalar_def, option_type => 'integer', },
     max_child_elements => { %generic_scalar_def, option_type => 'integer', },
-
+    expanded_correspondence_lookup =>
+        { deprecated => 1, validation_method => \&deprecated_value, },
+    debug => { deprecated => 1, validation_method => \&deprecated_value, },
+    number_flanking_positions =>
+        { deprecated => 1, validation_method => \&deprecated_value, },
+    relational_maps_show_only_correspondences =>
+        { deprecated => 1, validation_method => \&deprecated_value, },
     database => {
         required                 => 1,
         only_defined_values      => 1,
