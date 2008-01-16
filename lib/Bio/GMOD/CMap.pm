@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.121 2007-12-12 22:18:43 mwz444 Exp $
+# $Id: CMap.pm,v 1.122 2008-01-16 04:13:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -1049,14 +1049,27 @@ sub cache_level_name {
 
 This is a consistant way of naming the cache levels. 
 
+If a datasource name is given use it, otherwise use the current config
+
 =cut
 
-    my $self  = shift;
-    my $level = shift;
+    my $self            = shift;
+    my $level           = shift;
+    my $datasource_name = shift;
     return $self->error(
         "Cache Level: $level should not be higher than " . CACHE_LEVELS )
         unless ( $level <= CACHE_LEVELS );
-    return $self->config_data('database')->{'name'} . "_L" . $level;
+
+    my $name;
+    if ($datasource_name) {
+        $name = $self->config_data( 'database', $datasource_name, )->{'name'},
+
+    }
+    else {
+        $name = $self->config_data('database')->{'name'},;
+    }
+
+    return $name . "_L" . $level;
 }
 
 # ----------------------------------------------------

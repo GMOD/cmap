@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.38 $
+$Revision: 1.39 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -2274,6 +2274,11 @@ Level 3 is purged when feature information is changed.
 =item - Cache Level 4 (purge correspondence info on down)
 
 Level 4 is purged when correspondence information is changed.
+
+=item * Cache Level 5 (purge whole image caching )
+
+Level 5 is purged when any information changes because this level caches the
+whole CMap image when a map is first displayed.
 
 =back
 

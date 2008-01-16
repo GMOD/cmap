@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.105 2008-01-07 18:27:33 mwz444 Exp $
+# $Id: Admin.pm,v 1.106 2008-01-16 04:13:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.105 $)[-1];
+$VERSION = (qw$Revision: 1.106 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1272,17 +1272,46 @@ If a new Map is added, Levels 2,3,4 and 5 need to be purged.
 
 =cut
 
-    my ( $self, $cache_level ) = @_;
+    my ( $self, @remainder ) = @_;
+
+    # Allow either a parameter list or hash to be passed
+    my ( $cache_level, $purge_all, );
+    my %args = @remainder;
+    if ( $remainder[0] =~ /^\d$/ ) {
+        $cache_level = $remainder[0];
+        $purge_all   = $remainder[1];
+    }
+    else {
+        $cache_level = $args{'cache_level'};
+        $purge_all   = $args{'purge_all'};
+    }
+
     $cache_level = 1 unless $cache_level;
 
-    for ( my $i = $cache_level - 1; $i <= CACHE_LEVELS; $i++ ) {
-        my $namespace = $self->cache_level_name($i)
-            or return $self->ERROR(
-            "Cache Level: $i should not be higher than " . CACHE_LEVELS );
+    my @namespaces;
+    if ($purge_all) {
+        foreach
+            my $datasource ( @{ $self->config()->get_config_names() || [] } )
+        {
+            for ( my $i = $cache_level - 1; $i <= CACHE_LEVELS; $i++ ) {
+                push @namespaces, $self->cache_level_name( $i, $datasource )
+                    || die $self->ERROR();
+            }
+        }
+    }
+    else {
+        for ( my $i = $cache_level - 1; $i <= CACHE_LEVELS; $i++ ) {
+            push @namespaces,
+                $self->cache_level_name($i) || die $self->ERROR();
+        }
+    }
+
+    foreach my $namespace (@namespaces) {
         my %params = ( 'namespace' => $namespace, );
         my $cache = new Cache::SizeAwareFileCache( \%params );
         $cache->clear;
     }
+    return \@namespaces;
 }
 
 # ----------------------------------------------------

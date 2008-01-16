@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.143 2007-09-28 20:16:59 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.144 2008-01-16 04:13:03 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.143 $)[-1];
+$VERSION = (qw$Revision: 1.144 $)[-1];
 
 #
 # Get command-line options
@@ -31,7 +31,7 @@ my ( $map_set_acc,  $map_shape,          $map_color,  $map_width );
 my ( $overwrite, $allow_update );
 
 #cache purging
-my ($cache_level);
+my ($cache_level,$purge_all,);
 
 #import corrs
 my ($map_set_accs);
@@ -72,43 +72,43 @@ GetOptions(
     'q|quiet'        => \$Quiet,           # Only print necessities
     'c|config_dir=s' => \$config_dir,      # location of the config files
     'a|action=s'     => \$ACTION,          # Command line action
-    'species_full_name=s'      => \$species_full_name,
-    'species_common_name=s'    => \$species_common_name,
-    'species_acc=s'            => \$species_acc,
-    'species_id=s'             => \$species_id,
-    'map_set_name=s'           => \$map_set_name,
-    'map_set_short_name=s'     => \$map_set_short_name,
-    'map_accs=s'               => \$map_accs,
-    'map_type_acc=s'           => \$map_type_acc,
-    'feature_type_acc=s'       => \$feature_type_acc,
-    'feature_type_accs=s'      => \$feature_type_accs,
-    'evidence_type_acc=s'      => \$evidence_type_acc,
-    'evidence_type_accs=s'     => \$evidence_type_accs,
-    'skip_feature_type_accs=s' => \$skip_feature_type_accs,
-    'map_set_acc=s'            => \$map_set_acc,
-    'map_set_accs=s'           => \$map_set_accs,
-    'from_map_set_acc=s'       => \$from_map_set_acc,
-    'from_map_set_accs=s'      => \$from_map_set_accs,
-    'to_map_set_acc=s'         => \$to_map_set_acc,
-    'to_map_set_accs=s'        => \$to_map_set_accs,
-    'map_shape=s'              => \$map_shape,
-    'map_color=s'              => \$map_color,
-    'map_width=i'              => \$map_width,
-    'overwrite'                => \$overwrite,
-    'allow_update'             => \$allow_update,
-    'cache_level=i'            => \$cache_level,
-    'format=s'                 => \$format,
-    'add_truncate'             => \$add_truncate,
-    'export_file=s'            => \$export_file,
-    'export_objects=s'         => \$export_objects,
-    'tables=s'                 => \$tables,
-    'quote_escape=s'           => \$quote_escape,
-    'exclude_fields=s'         => \$exclude_fields,
-    'directory=s'              => \$directory,
-    'name_regex=s'             => \$name_regex,
-    'from_group_size=s'        => \$from_group_size,
-    'link_group=s'             => \$link_group,
-
+    'species_full_name=s'             => \$species_full_name,
+    'species_common_name=s'           => \$species_common_name,
+    'species_acc=s'                   => \$species_acc,
+    'species_id=s'                    => \$species_id,
+    'map_set_name=s'                  => \$map_set_name,
+    'map_set_short_name=s'            => \$map_set_short_name,
+    'map_accs=s'                      => \$map_accs,
+    'map_type_acc=s'                  => \$map_type_acc,
+    'feature_type_acc=s'              => \$feature_type_acc,
+    'feature_type_accs=s'             => \$feature_type_accs,
+    'evidence_type_acc=s'             => \$evidence_type_acc,
+    'evidence_type_accs=s'            => \$evidence_type_accs,
+    'skip_feature_type_accs=s'        => \$skip_feature_type_accs,
+    'map_set_acc=s'                   => \$map_set_acc,
+    'map_set_accs=s'                  => \$map_set_accs,
+    'from_map_set_acc=s'              => \$from_map_set_acc,
+    'from_map_set_accs=s'             => \$from_map_set_accs,
+    'to_map_set_acc=s'                => \$to_map_set_acc,
+    'to_map_set_accs=s'               => \$to_map_set_accs,
+    'map_shape=s'                     => \$map_shape,
+    'map_color=s'                     => \$map_color,
+    'map_width=i'                     => \$map_width,
+    'overwrite'                       => \$overwrite,
+    'allow_update'                    => \$allow_update,
+    'cache_level=i'                   => \$cache_level,
+    'purge_all|purge_all_datasources' => \$purge_all,
+    'format=s'                        => \$format,
+    'add_truncate'                    => \$add_truncate,
+    'export_file=s'                   => \$export_file,
+    'export_objects=s'                => \$export_objects,
+    'tables=s'                        => \$tables,
+    'quote_escape=s'                  => \$quote_escape,
+    'exclude_fields=s'                => \$exclude_fields,
+    'directory=s'                     => \$directory,
+    'name_regex=s'                    => \$name_regex,
+    'from_group_size=s'               => \$from_group_size,
+    'link_group=s'                    => \$link_group,
     )
     or pod2usage(2);
 my $file_str = join( ' ', @ARGV );
@@ -132,7 +132,7 @@ my $cli = Bio::GMOD::CMap::CLI::Admin->new(
 );
 
 die "$datasource is not a valid data source.\n"
-    if ( $ACTION and $datasource ne $cli->data_source() );
+    if ( $datasource and $ACTION and $datasource ne $cli->data_source() );
 
 my %command_line_actions = (
     create_species                   => 1,
@@ -204,6 +204,7 @@ while ($continue) {
         overwrite              => $overwrite,
         allow_update           => $allow_update,
         cache_level            => $cache_level,
+        purge_all              => $purge_all,
         format                 => $format,
         add_truncate           => $add_truncate,
         export_file            => $export_file,
@@ -229,6 +230,8 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a import_links --link_group 'Team 1'  file1 file2
 
 # ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2;
+
+# ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2 --purge_all_datasources;
 
 # ./bin/cmap_admin.pl -d WashU -a reload_correspondence_matrix
 
@@ -2665,6 +2668,14 @@ sub purge_query_cache_menu {
 
     my $self = shift;
 
+    my $response;
+    my $purge_all = 0;
+    print "Purge query caches for all datasources? [y/N] ";
+    chomp( $response = <STDIN> );
+    if ( $response =~ m/^[Yy]/ ) {
+        $purge_all = 1;
+    }
+
     my $cache_level = $self->show_menu(
         title  => '  --= Cache Level =--  ',
         prompt =>
@@ -2687,7 +2698,7 @@ sub purge_query_cache_menu {
                 display => 'Cache Level 4 (purge correspondence info)',
             },
             {   level   => 5,
-                display => 'Cache Level 5 (purge whole web page info)',
+                display => 'Cache Level 5 (purge whole-image cache )',
             },
             {   level   => 0,
                 display => 'quit',
@@ -2696,7 +2707,7 @@ sub purge_query_cache_menu {
     );
     return unless $cache_level;
 
-    $self->purge_query_cache( cache_level => $cache_level );
+    $self->purge_query_cache( cache_level => $cache_level, purge_all => $purge_all, );
 }
 
 # ----------------------------------------------------
@@ -2704,6 +2715,8 @@ sub purge_query_cache {
 
     my ( $self, %args ) = @_;
     my $cache_level = $args{'cache_level'} || 1;
+    my $purge_all = $args{'purge_all'} || 0;
+print STDERR "$purge_all\n";
 
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
@@ -2711,8 +2724,10 @@ sub purge_query_cache {
     );
     print "Purging cache at level $cache_level of "
         . $self->data_source() . ".\n";
-    $admin->purge_cache($cache_level);
-    print "Cache Purged\n";
+    my $namespaces_purged = $admin->purge_cache(cache_level => $cache_level,purge_all=>$purge_all,);
+    foreach my $namespace (@{$namespaces_purged||[]}){
+        print "Purged $namespace\n";
+    }
 }
 
 # ----------------------------------------------------
@@ -3856,10 +3871,12 @@ cmap_admin.pl [-d data_source] --action reload_correspondence_matrix
 
 =head2 purge_query_cache
 
-cmap_admin.pl [-d data_source] --action purge_query_cache [--cache_level level]
+cmap_admin.pl [-d data_source] --action purge_query_cache [options]
 
   Optional:
-    --cache_level : The level of the cache to be purged (default: 1)
+    --cache_level           : The level of the cache to be purged (default: 1)
+    --purge_all_datasources : purge the caches of all datasources enabled on
+                              this machine.
 
 =head2 delete_duplicate_correspondences
 
@@ -4051,7 +4068,7 @@ Purging the cache is important after the data has changed or after
 the configuration file has change.  Otherwise the changes will not
 be consistantly displayed.
 
-There are four layers of the cache.  When one layer is purged all of
+There are five layers of the cache.  When one layer is purged all of
 the layers after it are purged.
 
 =over 4
@@ -4071,7 +4088,11 @@ Level 3 is purged when feature information is changed.
 
 =item * Cache Level 4 (purge correspondence info on down)
 
-Level 3 is purged when correspondence information is changed.
+Level 4 is purged when correspondence information is changed.
+
+=item * Cache Level 5 (purge whole image caching )
+
+Level 5 is purged when any information changes
 
 =back
 

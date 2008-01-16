@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Config;
 
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.16 2007-09-28 20:17:00 mwz444 Exp $
+# $Id: Config.pm,v 1.17 2008-01-16 04:13:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,9 +51,9 @@ The conf dir and the global conf file are specified in Constants.pm
 
 =cut
 
-    my $self   = shift;
-    my $suffix = 'conf';
-    my $global = GLOBAL_CONFIG_FILE;
+    my $self       = shift;
+    my $suffix     = 'conf';
+    my $global     = GLOBAL_CONFIG_FILE;
     my $config_dir = $self->config_dir;
     my %config_data;
 
@@ -62,8 +62,8 @@ The conf dir and the global conf file are specified in Constants.pm
     #
     croak "$config_dir is not a directory" unless -d $config_dir;
     opendir( D, $config_dir ) or croak "Couldn't open '$config_dir': $!";
-    my @conf_files =
-      map { catfile( $config_dir, $_ ) } grep { /\.$suffix$/ } readdir(D);
+    my @conf_files
+        = map { catfile( $config_dir, $_ ) } grep {/\.$suffix$/} readdir(D);
     close D;
 
     #
@@ -79,20 +79,20 @@ The conf dir and the global conf file are specified in Constants.pm
     #
     foreach my $conf_file (@conf_files) {
         my $conf = Config::General->new($conf_file)
-          or croak "Trouble reading config '$conf_file'";
+            or croak "Trouble reading config '$conf_file'";
         my %config = $conf->getall
-          or croak "No configuration options present in '$conf_file'";
+            or croak "No configuration options present in '$conf_file'";
 
         if ( $conf_file =~ /$global$/ ) {
             $self->{'global_config'} = \%config;
         }
         else {
             my $db_name = $config{'database'}{'name'}
-              || croak 
+                || croak
                 qq[Config file "$conf_file" does not defined a db name];
-            if ($config_data{$db_name}){
+            if ( $config_data{$db_name} ) {
                 croak qq[Two config files share the "$db_name" name.];
-            } 
+            }
             $config_data{$db_name} = \%config;
         }
     }
@@ -100,10 +100,10 @@ The conf dir and the global conf file are specified in Constants.pm
     #
     # Need a global and specific conf file
     #
-    croak  'No "global.conf" found in ' . $config_dir 
-      unless $self->{'global_config'};
-    croak  'No database conf files found in ' . $config_dir 
-      unless %config_data;
+    croak 'No "global.conf" found in ' . $config_dir
+        unless $self->{'global_config'};
+    croak 'No database conf files found in ' . $config_dir
+        unless %config_data;
     $self->{'config_data'} = \%config_data;
 
     return 1;
@@ -146,11 +146,13 @@ Sets the active config data.
         # and it exists, set that as the config.
         #
         if (   $self->{'global_config'}{'default_db'}
-            && $self->{'config_data'}{ $self->{'global_config'}{'default_db'} }
-            && $self->{'config_data'}{ $self->{'global_config'}{'default_db'} }
-            {'is_enabled'} )
+            && $self->{'config_data'}
+            { $self->{'global_config'}{'default_db'} }
+            && $self->{'config_data'}
+            { $self->{'global_config'}{'default_db'} }{'is_enabled'} )
         {
-            $self->{'current_config'} = $self->{'global_config'}{'default_db'};
+            $self->{'current_config'}
+                = $self->{'global_config'}{'default_db'};
             return 1;
         }
 
@@ -184,7 +186,7 @@ Returns an array ref of the keys to $self->{'config_data'}.
     my $self = shift;
     return [
         grep { $self->{'config_data'}{$_}{'is_enabled'} }
-          keys %{ $self->{'config_data'} }
+            keys %{ $self->{'config_data'} }
     ];
 }
 
@@ -211,35 +213,29 @@ optionally you can specify a set of config data to read from.
 
     return $self unless $option;
 
-    #
-    # If a specific db conf file was asked for, supply answer from it.
-    #
+   #
+   # If a specific db conf file was asked for use it otherwise use the current
+   # config
+   #
+    $specific_db ||= $self->{'current_config'};
+
     my $value;
-    if ($specific_db) {
-        $value =
-          defined $self->{'config_data'}{$specific_db}{$option}
-          ? $self->{'config_data'}{$specific_db}{$option}
-          : '';
+
+    #
+    # Is it in the global config
+    #
+    if ( defined $self->{'global_config'}{$option} ) {
+        $value = $self->{'global_config'}{$option};
     }
     else {
 
         #
-        # Is it in the global config
+        # Otherwise get it from the other config.
         #
-        if ( defined $self->{'global_config'}{$option} ) {
-            $value = $self->{'global_config'}{$option};
-        }
-        else {
-
-            #
-            # Otherwise get it from the other config.
-            #
-            $value =
-              defined $self->{'config_data'}{ $self->{'current_config'} }
-              {$option}
-              ? $self->{'config_data'}->{ $self->{'current_config'} }{$option}
-              : DEFAULT->{$option};
-        }
+        $value
+            = defined $self->{'config_data'}{$specific_db}{$option}
+            ? $self->{'config_data'}->{$specific_db}{$option}
+            : DEFAULT->{$option};
     }
 
     if ( defined($value) ) {
@@ -252,6 +248,7 @@ optionally you can specify a set of config data to read from.
 
 # ----------------------------------------------------
 sub config_dir {
+
 =pod
 
 =head2 config_dir
