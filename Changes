@@ -1,17 +1,125 @@
                       Revision history for CMap
 
-0.17
+1.0
 
+- Added three new feature glyphs: heatmap, i_beam and bar.
+- Added a feature that will stack comparative maps in real time.
+- Added a dot-plot view.
+- Added the unused feature types into the legend, colored grey with a little +
+  box which will add them to the display.
+- Added an image_only parameter that will cause CMap to only return the htmp
+  tag pointing to the image.
+- Added the ability to define additional buttons in the config file that will
+  be displayed only when certain criteria are met.  These buttons will change
+  parameters in the menu and submit.
+- Added the ability to define the default species that a new user will have
+  selected in the opening menu.  This will not override the information in a
+  cookie.
+- Added a button for the user to hide the legend (Hide the Legend).
+- Added the ability inside each map type configuration to define the
+  feature_default_display value for individual feature types when displayed on
+  maps of that type.  
+- Added a display/ignore option for individual evidence types
+  (evidence_default_display) which is similar to the feature_default_display
+  option for features.
+- Added a unit granularity for a map type to allow for math with the correct
+  significant figures.
+- Added color2 option to banding.
+- Added the ability to add custom colors to feature glyphs which are outside
+  the pre-decided set.
+- Added start and stop parameters to View Feature on Map view.
+- A network install script is included that will download and install CMap and
+  all it's pre-requisites.  It is based on the GBrowse script
+  gbrowse_netinstall.pl.
+- More robust install options such as directory guessing which was borrowed
+  from GBrowse.
+- Modified the installer to ask the user if they want to change the options
+  individually rather than making them learn an archaic flag system.
+- Modified the installer to also allow installing a demo.
+- Removed Bio::Perl from the base requirements.
+- Deleting objects will also delete their xrefs.
+- Increased speed of importing correspondences.
+- Tightened up against security.
+- Modified the internal link generation to only use relative links.
+- Changed the word "Crop" to "Show only" for the map arrow pop-ups because it
+  was confusing.
+- Modified the saved link interface to make it a little more user friendly.
+- Modified the feature_details page for clarity.
+- Changed the order of the Feature Types in the legend to reflect the order of
+  the drawing lanes.
+- Removed some of the legend when in clean view.  
+- Modified the behavior for a comparative map that no longer has
+  correspondences displayed.  Now it will keep the map unless the "Eliminate
+  Orphans" button is pressed.
+- Modified the interface slightly to create a row of buttons for Dotplot,
+  Eliminate Orphans and New Reference Maps.
+- Wrote a document, CMAP_API.pod, explaining the CMap API.
+- Modified code to make the API more consistant.
+- Made changes to allow the ViewFeatureOnMap module to return only the image
+  tag when passed the image_only parameter in its redirect.
+- Hides the stacked maps that don't have any correspondences due to reference
+  map truncation (as well as hide any subsequent maps that only have corrs to
+  hidden maps).
+- In the initial menu, added a check to see if any maps are selected and
+  popping up a warning if not.
+- Wrote a document briefly explaining the support scripts.  
+- In the cmap_admin.pl script, added an "all" option for deleting maps from a
+  set.
+- In the cmap_admin.pl script, added a "delete features" option.
+- In the cmap_admin.pl script, added the ability to purge all the caches on a 
+  machine from different datasources at once.
+- In the cmap_admin.pl script, added the ability to narrow the delete duplicate
+  correspondence method to a single map set.
+- In the cmap_create_stacked_maps.pl script, attributes are created for each
+  contig feature that reports the number of correspondences to each reference
+  map.  
+- In the cmap_create_stacked_maps.pl script, an xref is created to link back to
+  the original map.
+- In the cmap_create_stacked_maps.pl script, maps are sorted and displayed
+  based on the number of correspondences to each reference maps.
+- In the cmap_create_stacked_maps.pl script, added a correspondence cutoff.
+- In the cmap_create_stacked_maps.pl script, added the ability to import the
+  alignments in a file rather than relying on a correspondence voting
+  mechanism.
+- In the cmap_create_stacked_maps.pl script, added the ability to only use
+  correspondences with specific evidence types to create the order and
+  orientation of the stacked maps.
+- In the cmap_create_stacked_maps.pl script, the script will now report errors
+  and die if stack maps don't have any corrs to the reference map they are
+  aligned with.
+- The new cmap_examine_attribute.pl script looks in the database for a
+  specified attribute that the administrator wants on every object of the
+  specified type (map set, feature, etc).
+- The new cmap_data_diagnostics.pl script crawls the database to ensure the
+  CMap data is okay.
+- Fixed bug where CMap would trust the user-supplied start and stop of the map
+  instead of checking their validity.
+- Fixed a bug where a slot would stay stacked even after it was unchecked.
+- Fixed bug in heatmap legend creation.
 - Fixed a flaw in the tick mark logic.  Rather than rounding the location
   string of the tick mark, it now places the tick marks at reasonably rounded
   locations.
-- Added Dotplot button.
-- Modified the behavior when a map no longer has correspondences.  Now it will
-  keep the map unless the "Eliminate Orphans" button is pressed.
-- Modified the interface slightly to create a row of buttons for Dotplot,
-  Eliminate Orphans and New Reference Maps.
-- Added a display/ignore option for individual evidence types
-  (evidence_default_display).
+- Fixed issues with importing correspondences:  Multiple imports were being
+  ignored because they were being deleted after the first one.
+- Fixed issues with importing correspondences:  If a feature_acc was missing in
+  the db, it would create corrs with ALL the features in the db
+- Fixed a problem where CMap drew maps as if they were truncated when they were
+  not. 
+- Fixed problem where duplicate correspondences could be made where two
+  features had the same name and the same aliases.
+- Fixed problem with the stacked maps being drawn into the legend.
+- Fixed an issue where if you hit enter when in a text box, it would submit as
+  if the dot-plot button was clicked.  Now it submits as though the redraw was
+  clicked.
+- Fixed an API problem where update_feature() couldn't update a start or stop
+  to 0.
+- Fixed problem with the session id being cached during a whole page cache
+  causing use of a common session.  This causes CMap to fail when the session
+  expires and potentially gets confused when multiple people are changing the
+  same session.
+- Fixed problem in the feature details page where corrs with multiple evidences
+  were being displayed twice.
+- Fixed a problem to allow the attribute_value of attributes to be "0".
 
 0.16 
 
