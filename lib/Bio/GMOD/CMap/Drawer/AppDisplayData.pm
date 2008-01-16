@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.68 2008-01-07 18:27:35 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.69 2008-01-16 14:48:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2595,8 +2595,8 @@ Test a map to see if it needs to be drawn as flipped.  This means that either it
     my $map_key  = $args{'map_key'};
     my $zone_key = $self->map_key_to_zone_key($map_key);
 
-    my $map_flipped  = $self->{'map_layout'}{$map_key}{'flipped'};
-    my $zone_flipped = $self->{'zone_layout'}{$zone_key}{'flipped'};
+    my $map_flipped  = $self->{'map_layout'}{$map_key}{'flipped'}   || 0;
+    my $zone_flipped = $self->{'zone_layout'}{$zone_key}{'flipped'} || 0;
 
     return ( $zone_flipped != $map_flipped );
 
@@ -7227,7 +7227,6 @@ AppInterface.
         $self->{'zone_layout'}{$zone_key}{'internal_bounds'} = [ 0, 0, 0, 0 ];
         $self->{'zone_layout'}{$zone_key}{'maps_min_x'}   = undef;
         $self->{'zone_layout'}{$zone_key}{'maps_max_x'}   = undef;
-        $self->{'zone_layout'}{$zone_key}{'flipped'}      = undef;
         $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
         foreach my $field (qw[ separator background ]) {
             $self->destroy_items(

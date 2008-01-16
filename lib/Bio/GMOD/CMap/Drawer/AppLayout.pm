@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.55 2008-01-07 18:27:35 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.56 2008-01-16 14:48:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -595,6 +595,7 @@ MAP:
                     min_y            => $row_min_y,
                     min_x            => $map_min_x,
                     max_x            => $map_min_x + MIN_MAP_WIDTH,
+                    label            => $label_info{$map_key},
                     );
             }
             next MAP;
@@ -618,6 +619,7 @@ MAP:
                 min_y            => $row_min_y,
                 min_x            => $map_min_x,
                 max_x            => $map_min_x + MIN_MAP_WIDTH,
+                label => $label_info{ $binned_maps->{'maps'}[0]{'map_key'} },
             );
         }
 
@@ -793,6 +795,7 @@ MAP:
             min_y            => $row_min_y,
             min_x            => $map_min_x,
             max_x            => $map_min_x + MIN_MAP_WIDTH,
+            label => $label_info{ $binned_maps->{'maps'}[0]{'map_key'} },
         );
     }
 
@@ -1519,13 +1522,20 @@ Lays out maps that are in a binned region.  This is when zoomed way out.
     my $binned_maps = $args{'binned_maps'} or return ( $row_max_y, $min_x, );
     my $max_x       = $args{'max_x'};
     my $min_y       = $args{'min_y'};
+    my $label       = $args{'label'};
     my $color       = $token_map_data->{'color'}
         || $token_map_data->{'default_color'}
         || $app_display_data->config_data('map_color')
         || 'black';
+    my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
 
     return ( $row_max_y, $min_x, )
         unless ( %$binned_maps and @{ $binned_maps->{'maps'} || [] } );
+
+    # Leave space for label if they are drawn on other maps
+    if ($map_labels_visible) {
+        $min_y += $label->{'height'} * 3;
+    }
 
     my $bin_layout = {};
     my $bin_index
