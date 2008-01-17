@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.45 2007-10-31 16:20:23 mwz444 Exp $
+# $Id: AppController.pm,v 1.46 2008-01-17 17:07:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -51,7 +51,8 @@ Initializes the object.
 
     # Initiate AppPluginSet
     $self->plugin_set( $init_params->{'plugins'}, );
-    $self->{'remote_url'} = $init_params->{'remote_url'};
+    $self->{'remote_url'}            = $init_params->{'remote_url'};
+    $self->{'init_highlight_string'} = $init_params->{'highlight_string'};
 
     my $config = $self->app_data_module()->config();
     $self->config($config);
@@ -127,6 +128,11 @@ Initializes the object.
     }
 
     my $window_key = $self->start_application();
+
+    $self->app_display_data()->parse_highlight(
+        window_key       => $window_key,
+        highlight_string => $self->{'init_highlight_string'},
+    );
 
     if ($saved_view_data) {
         $self->app_display_data()->dd_load_save_in_new_window(

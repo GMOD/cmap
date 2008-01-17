@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.69 2008-01-16 14:48:58 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.70 2008-01-17 17:07:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -621,6 +621,51 @@ sub assign_and_initialize_new_maps {
         }
     }
     return \%map_id_to_map_key;
+}
+
+=pod
+
+=head2 parse_highlight
+
+Checks to see if what objects are to be highlighted
+
+=cut
+
+# ----------------------------------------------------
+sub parse_highlight {
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+    my $highlight_string = $args{'highlight_string'};
+
+    # Wipe highlighted maps first
+    $self->{'highlighted_by_name'}{$window_key} = {};
+
+    my @names = map { chomp $_; $_ } split( /\s*,\s*/, $highlight_string );
+    foreach my $name (@names) {
+        $self->{'highlighted_by_name'}{$window_key}{$name} = 1;
+    }
+
+    $self->{'highlight_string'}{$window_key} = join( ", ", @names );
+
+    return;
+}
+
+=pod
+
+=head2 get_highlight_string
+
+Return the highlight string
+
+=cut
+
+# ----------------------------------------------------
+sub get_highlight_string {
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'} or return;
+
+    return $self->{'highlight_string'}{$window_key};
 }
 
 # ----------------------------------------------------
@@ -8452,6 +8497,27 @@ sub is_zone_off_screen_right {
     my $zone_key       = shift or return;
     my $visibility_key = OFF_TO_THE_RIGHT;
     return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+}
+
+=pod
+
+=head2 is_highlighted
+
+Checks to see if an object is highlighted
+
+=cut
+
+# ----------------------------------------------------
+sub is_highlighted {
+
+    my ( $self, %args ) = @_;
+    my $window_key   = $args{'window_key'} or return;
+    my $map_name     = $args{'map_name'};
+    my $feature_name = $args{'feature_name'};
+
+    if ( my $name = $map_name || $feature_name ) {
+        return $self->{'highlighted_by_name'}{$window_key}{$name};
+    }
 }
 
 =pod

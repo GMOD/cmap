@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.69 2008-01-17 04:20:58 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.70 2008-01-17 17:07:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2036,6 +2036,16 @@ Populates the edit menu with menu_items
                     );
                 },
             ],
+            [   'command',
+                '~Highlight',
+                -accelerator => 'Ctrl-h',
+                -command     => sub {
+                    $self->highlight_menu_popup( window_key => $window_key, );
+                    $self->app_controller()
+                        ->app_display_data->redraw_the_whole_window(
+                        window_key => $window_key, );
+                },
+            ],
         ];
     }
 
@@ -2874,6 +2884,48 @@ sub commit_changes {
 
     if ( $answer eq 'OK' ) {
         $self->app_controller()->commit_changes( window_key => $window_key, );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub highlight_menu_popup {
+
+=pod
+
+=head2 highlight_menu_popup
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $controller = $self->app_controller();
+
+    my $highlight_string
+        = $controller->app_display_data->get_highlight_string(
+        window_key => $window_key, );
+
+    my $popup = $self->main_window()->Dialog(
+        -title          => 'Highlight Maps and Features',
+        -default_button => 'OK',
+        -buttons        => [ 'OK', 'Cancel', ],
+    );
+    $popup->add(
+        'LabEntry',
+        -textvariable => \$highlight_string,
+        -width        => 50,
+        -label =>
+            'Highlight (comma separated list of map and/or feature names)',
+        -labelPack => [ -side => 'top' ],
+    )->pack();
+    my $answer = $popup->Show();
+
+    if ( $answer eq 'OK' ) {
+        $controller->app_display_data->parse_highlight(
+            window_key       => $window_key,
+            highlight_string => $highlight_string,
+        );
     }
 
     return;

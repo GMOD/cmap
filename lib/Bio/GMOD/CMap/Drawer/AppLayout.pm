@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.56 2008-01-16 14:48:58 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.57 2008-01-17 17:07:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -1403,6 +1403,16 @@ Lays out a maps in a contained area.
         || $map_layout->{'color'};
     $map_layout->{'color'} = $color;
 
+    # Is map in highlight list?
+    if ($app_display_data->is_highlighted(
+            window_key => $window_key,
+            map_name   => $map->{'map_name'},
+        )
+        )
+    {
+        $color = 'yellow';
+    }
+
     # set the thickness of the map
     my $thickness = $map->{'width'}
         || $map->{'default_width'}
@@ -1451,6 +1461,7 @@ Lays out a maps in a contained area.
     {
         $max_y = _layout_features(
             app_display_data => $app_display_data,
+            window_key       => $window_key,
             zone_key         => $zone_key,
             map_key          => $map_key,
             map              => $map,
@@ -1599,6 +1610,7 @@ Lays out feautures
 
     my %args             = @_;
     my $app_display_data = $args{'app_display_data'};
+    my $window_key       = $args{'window_key'};
     my $zone_key         = $args{'zone_key'};
     my $map_key          = $args{'map_key'};
     my $map              = $args{'map'};
@@ -1731,6 +1743,16 @@ Lays out feautures
                 # Highlight features that are also sub maps
                 if ( $feature->{'sub_map_id'} ) {
                     $color = 'red';
+                }
+
+                # Is feature in highlight list?
+                if ($app_display_data->is_highlighted(
+                        window_key   => $window_key,
+                        feature_name => $feature->{'feature_name'},
+                    )
+                    )
+                {
+                    $color = 'yellow';
                 }
                 my $coords;
                 ( $coords, $feature_layout->{'items'} )
