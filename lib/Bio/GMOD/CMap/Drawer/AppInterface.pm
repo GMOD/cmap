@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.68 2007-12-12 22:18:46 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.69 2008-01-17 04:20:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -39,8 +39,10 @@ use Tk::Dialog;
 use Tk::LabEntry;
 use Tk::TableMatrix::Spreadsheet;
 
-use constant BETWEEN_SLOT_BUFFER => 5;
-use constant TOP_LAYER_ZONE_KEY  => -1;
+use constant BETWEEN_SLOT_BUFFER   => 5;
+use constant TOP_LAYER_ZONE_KEY    => -1;
+use constant MIN_ZINC_X_COORD      => -32868;
+use constant MAX_ZINC_CLIP_X_COORD => 32756;
 
 # ----------------------------------------------------
 sub init {
@@ -759,7 +761,7 @@ Adds control buttons to the controls_pane.
        #$self->app_controller()->zoom_zone(
        #    window_key => $window_key,
        #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-       #    zoom_value => 2,
+       #    zoom_value => 32,
        #);
        #print STDERR
        #    "            --------------BEFORE SELECT-------------------\n";
@@ -785,8 +787,8 @@ Adds control buttons to the controls_pane.
        #    "            ----------------BEFORE SCROLL-----------------\n";
        #$self->app_controller()->scroll_zone(
        #    window_key   => $window_key,
-       #    zone_key     => 2,
-       #    scroll_value => -400,
+       #    zone_key     => 1,
+       #    scroll_value => -13500,
        #);
        #print STDERR
        #    "            ----------------BEFORE SPLIT-----------------\n";
@@ -805,6 +807,13 @@ Adds control buttons to the controls_pane.
             my $zinc = $self->zinc( window_key => $window_key, );
 
            #print STDERR "---------------------------------\n";
+           #print STDERR
+           #    "           --------------BEFORE ZOOM-------------------\n";
+           #$self->app_controller()->zoom_zone(
+           #    window_key => $window_key,
+           #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+           #    zoom_value => 2,
+           #);
            #print STDERR
            #    "           --------------BEFORE MERGE-------------------\n";
            #my ( $selected_map_keys, $zone_key )
@@ -1154,7 +1163,6 @@ Draws and re-draws on the zinc
             ]
         );
 
-        #print STDERR "$zone_key\n";
         $self->set_zone_clip(
             zone_key      => $zone_key,
             zone_group_id => $zone_group_id,
@@ -1564,6 +1572,14 @@ Sets the group clip object
         $zone_layout->{'internal_bounds'}[2],
         $zone_layout->{'internal_bounds'}[3]
     ];
+
+    if ( $clip_bounds->[0] < MIN_ZINC_X_COORD ) {
+        $clip_bounds->[0] = MIN_ZINC_X_COORD;
+    }
+    if ( $clip_bounds->[2] > MAX_ZINC_CLIP_X_COORD ) {
+        $clip_bounds->[2] = MAX_ZINC_CLIP_X_COORD;
+    }
+
     if ( $self->{'zone_group_clip_id'}{$zone_key} ) {
         $zinc->coords( $self->{'zone_group_clip_id'}{$zone_key}, $clip_bounds,
         );
