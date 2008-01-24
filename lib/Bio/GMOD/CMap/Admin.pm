@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.106 2008-01-16 04:13:04 mwz444 Exp $
+# $Id: Admin.pm,v 1.107 2008-01-24 16:43:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -46,7 +46,7 @@ use Bio::GMOD::CMap::Utils qw[ parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 
 # ----------------------------------------------------
 sub attribute_create {
@@ -2786,7 +2786,7 @@ The primary key of the object.
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
-                commit_object  => freeze($action),
+                commit_object  => nfreeze($action),
                 species_id     => $map_data->{'species_id'},
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
@@ -2824,7 +2824,7 @@ The primary key of the object.
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
-                commit_object  => freeze($action),
+                commit_object  => nfreeze($action),
                 species_id     => $map_data->{'species_id'},
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
@@ -2929,7 +2929,7 @@ The primary key of the object.
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
-                commit_object  => freeze($action),
+                commit_object  => nfreeze($action),
                 species_id     => $map_data->{'species_id'},
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
@@ -3095,7 +3095,7 @@ The primary key of the object.
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
-                commit_object  => freeze($action),
+                commit_object  => nfreeze($action),
                 species_id     => $map_data->{'species_id'},
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},
@@ -3337,7 +3337,7 @@ The primary key of the object.
                 transaction_id => $transaction_id,
                 commit_type    => $commit_type,
                 commit_text    => $commit_text,
-                commit_object  => freeze($action),
+                commit_object  => nfreeze($action),
                 species_id     => $map_data->{'species_id'},
                 species_acc    => $map_data->{'species_acc'},
                 map_set_id     => $map_data->{'map_set_id'},

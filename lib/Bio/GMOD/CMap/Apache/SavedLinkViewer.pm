@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.14 2008-01-14 21:19:30 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.15 2008-01-24 16:43:09 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -13,7 +13,6 @@ use CGI;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin::SavedLink;
 use Bio::GMOD::CMap::Constants;
-use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap::Apache';
 

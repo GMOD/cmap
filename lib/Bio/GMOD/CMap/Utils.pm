@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.90 2007-10-25 14:55:06 mwz444 Exp $
+# $Id: Utils.pm,v 1.91 2008-01-24 16:43:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -28,14 +28,14 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 use CGI::Session;
-use Storable qw( freeze thaw );
+use Storable qw( nfreeze thaw );
 use POSIX;
 use Digest::MD5 qw(md5 md5_hex);
 use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc

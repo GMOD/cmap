@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ManageLinks;
 
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.11 2007-09-28 20:17:07 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.12 2008-01-24 16:43:08 mwz444 Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ This module encapsulates the logic for handling imported links.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -35,7 +35,7 @@ use Bio::GMOD::CMap::Constants;
 use Text::RecordParser;
 use Text::ParseWords 'parse_line';
 use Cache::FileCache;
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 use Regexp::Common;
 use base 'Bio::GMOD::CMap';
 
@@ -250,7 +250,7 @@ under and is displayed when the accessing the links.
     my %cache_params = ( 'namespace' => $self->get_link_name_space(), );
     my $cache        = new Cache::FileCache( \%cache_params );
 
-    $cache->set( $link_set_name, freeze( \@links ) );
+    $cache->set( $link_set_name, nfreeze( \@links ) );
     $self->Print("Done\n");
 
     return 1;

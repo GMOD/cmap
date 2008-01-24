@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.139 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.140 2008-01-24 16:43:08 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.139 $)[-1];
+$VERSION = (qw$Revision: 1.140 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -18,7 +18,6 @@ use Template;
 use URI::Escape;
 use Data::Dumper;
 use Digest::MD5 qw(md5 md5_hex);
-use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE            => 'cmap_viewer.tmpl';

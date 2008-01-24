@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.122 2008-01-16 04:13:04 mwz444 Exp $
+# $Id: CMap.pm,v 1.123 2008-01-24 16:43:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -44,7 +44,7 @@ use DBI;
 use File::Path;
 use Filesys::DfPortable;
 use File::Spec::Functions qw( abs2rel );
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 use Template;
 
 use base 'Class::Base';
@@ -2106,7 +2106,7 @@ sub store_cached_results {
     # can only check for disabled cache after init_cache is called.
     return undef if ( $self->{'disable_cache'} );
 
-    $self->{$cache_name}->set( $query, freeze($object) );
+    $self->{$cache_name}->set( $query, nfreeze($object) );
 }
 
 sub init_cache {

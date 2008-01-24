@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.5 2007-09-28 20:17:08 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.6 2008-01-24 16:43:08 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Time::ParseDate;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 
 use base 'Bio::GMOD::CMap::Admin';
 
@@ -67,7 +67,7 @@ sub create_saved_link {
     my $saved_link_id = $self->sql->insert_saved_link(
         saved_url           => $saved_url,
         legacy_url          => $legacy_url,
-        session_step_object => freeze($session_step_object),
+        session_step_object => nfreeze($session_step_object),
         link_group          => $link_group,
         link_title          => $link_title,
         link_comment        => $link_comment,
