@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.38 2007-09-28 20:17:07 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.39 2008-01-28 21:33:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -281,7 +281,7 @@ LINE:
 
             unless ( $evidence_type_acc_exists{$evidence_type_acc} ) {
                 if ( $self->evidence_type_data($evidence_type_acc) ) {
-                    $evidence_type_acc_exists{$evidence_type_acc};
+                    $evidence_type_acc_exists{$evidence_type_acc} = 1;
                 }
                 else {
                     $self->Print( "Evidence type accession '"
