@@ -39,7 +39,7 @@
 - Removed Bio::Perl from the base requirements.
 - Deleting objects will also delete their xrefs.
 - Increased speed of importing correspondences.
-- Tightened up against security.
+- Tightened up security.
 - Modified the internal link generation to only use relative links.
 - Changed the word "Crop" to "Show only" for the map arrow pop-ups because it
   was confusing.
