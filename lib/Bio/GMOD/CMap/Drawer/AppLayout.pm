@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.57 2008-01-17 17:07:51 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.58 2008-02-12 20:43:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT   => 3;
 use constant ZONE_Y_BUFFER           => 30;
@@ -1945,6 +1945,10 @@ Lays out correspondences between two zones
 
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
+    my $draw_offscreen_corrs = (
+               $app_display_data->offscreen_corrs_visible($zone_key1)
+            or $app_display_data->offscreen_corrs_visible($zone_key2)
+    ) ? 1 : 0;
 
     # TEMPORARY - don't layout if neither end is visible
     # Put in test here
@@ -2103,15 +2107,60 @@ Lays out correspondences between two zones
                 + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
         }
 
-        # Don't display if one of the ends isn't being displayed
-        next
-            if (
-            (      $zone_layout1->{'viewable_internal_x1'} > $corr_x1
-                or $zone_layout1->{'viewable_internal_x2'} < $corr_x1
-            )
-            or (   $zone_layout2->{'viewable_internal_x1'} > $corr_x2
-                or $zone_layout2->{'viewable_internal_x2'} < $corr_x2 )
-            );
+        my $x1_stunted = 0;
+        my $x2_stunted = 0;
+        if ($draw_offscreen_corrs) {
+            if ( $zone_layout1->{'viewable_internal_x1'} > $corr_x1 ) {
+                $corr_x1    = $zone_layout1->{'viewable_internal_x1'};
+                $x1_stunted = 1;
+            }
+            if ( $zone_layout1->{'viewable_internal_x2'} < $corr_x1 ) {
+                $corr_x1    = $zone_layout1->{'viewable_internal_x2'};
+                $x1_stunted = 1;
+            }
+            if ( $zone_layout2->{'viewable_internal_x1'} > $corr_x2 ) {
+                $corr_x2    = $zone_layout2->{'viewable_internal_x1'};
+                $x2_stunted = 1;
+            }
+            if ( $zone_layout2->{'viewable_internal_x2'} < $corr_x2 ) {
+                $corr_x2    = $zone_layout2->{'viewable_internal_x2'};
+                $x2_stunted = 1;
+            }
+
+            # The following commented out code places the y value of the
+            # stunted correspondence in between the maps rather than in line
+            # with the map but I don't really like how that looks.
+            #if ($x1_stunted) {
+            #    $corr_y1 = int(
+            #        (         $corr_y1
+            #                + $zone1_y_offset
+            #                + $corr_y2
+            #                + $zone2_y_offset
+            #        ) / 2
+            #    ) - $zone1_y_offset;
+            #}
+            #if ($x2_stunted) {
+            #   $corr_y2 = int(
+            #        (         $corr_y1
+            #                + $zone1_y_offset
+            #                + $corr_y2
+            #                + $zone2_y_offset
+            #        ) / 2
+            #    ) - $zone2_y_offset;
+            #}
+        }
+        else {
+
+            # Don't display if one of the ends isn't being displayed
+            next
+                if (
+                (      $zone_layout1->{'viewable_internal_x1'} > $corr_x1
+                    or $zone_layout1->{'viewable_internal_x2'} < $corr_x1
+                )
+                or (   $zone_layout2->{'viewable_internal_x1'} > $corr_x2
+                    or $zone_layout2->{'viewable_internal_x2'} < $corr_x2 )
+                );
+        }
 
         unless (
             $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2} )
@@ -2148,6 +2197,11 @@ Lays out correspondences between two zones
             = $draw_downward2
             ? $y_end2 + $end_line_height
             : $y_end2 - $end_line_height;
+
+        my $corr_color = 'red';
+        if ( $x1_stunted or $x2_stunted ) {
+            $corr_color = 'pink';
+        }
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
                 {$map_key2}{'items'} },
             (
@@ -2155,7 +2209,7 @@ Lays out correspondences between two zones
                 [   $x_end1, $y_end1, $x_mid1, $y_mid1,
                     $x_mid2, $y_mid2, $x_end2, $y_end2,
                 ],
-                { -linecolor => 'red', -linewidth => '1', }
+                { -linecolor => $corr_color, -linewidth => '2', }
             ]
             );
     }

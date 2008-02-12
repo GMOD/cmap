@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.70 2008-01-17 17:07:51 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.71 2008-02-12 20:43:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -726,7 +726,10 @@ Adds control buttons to the controls_pane.
        #print STDERR
        #    "            --------------BEFORE SHOW SELF CORRS---------\n";
        #$self->app_controller()->app_display_data()->set_corrs_map_set(
-       #    'map_set_id' => '7',
+       #    'map_set_ids' =>[
+       #                      '1',
+       #                      '3'
+       #                    ],
        #    'zone_key'   => 2,
        #    'corrs_on'   => 1,
        #    'window_key' => 1
@@ -761,7 +764,7 @@ Adds control buttons to the controls_pane.
        #$self->app_controller()->zoom_zone(
        #    window_key => $window_key,
        #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-       #    zoom_value => 32,
+       #    zoom_value => 2,
        #);
        #print STDERR
        #    "            --------------BEFORE SELECT-------------------\n";
@@ -788,7 +791,7 @@ Adds control buttons to the controls_pane.
        #$self->app_controller()->scroll_zone(
        #    window_key   => $window_key,
        #    zone_key     => 1,
-       #    scroll_value => -13500,
+       #    scroll_value => -150,
        #);
        #print STDERR
        #    "            ----------------BEFORE SPLIT-----------------\n";
@@ -2575,6 +2578,19 @@ sub popup_corr_menu {
             },
         ];
     }
+    my $offscreen_corrs_visible
+        = $app_display_data->offscreen_corrs_visible($zone_key);
+    push @$menu_items, [
+        'checkbutton' => '',
+        -variable     => \$offscreen_corrs_visible,
+        -onvalue      => 1,
+        -offvalue     => 0,
+        -label        => 'Show Correspondences that lead off-screen',
+        -command      => sub {
+            $app_display_data->set_offscreen_corrs_visibility( $zone_key,
+                $offscreen_corrs_visible, );
+        },
+    ];
 
     push @$menu_items, [
         Button   => 'Cancel',

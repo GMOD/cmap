@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.70 2008-01-17 17:07:51 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.71 2008-02-12 20:43:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -181,11 +181,12 @@ Adds the first slot
     my $zone_key = $self->initialize_zone(
         window_key => $window_key,
         map_set_id => $self->get_map_set_id_from_map_id( $map_ids->[0] ),
-        attached_to_parent => 0,
-        expanded           => 1,
-        is_top             => 1,
-        show_features      => 1,
-        map_labels_visible => 1,
+        attached_to_parent      => 0,
+        expanded                => 1,
+        is_top                  => 1,
+        show_features           => 1,
+        map_labels_visible      => 1,
+        offscreen_corrs_visible => 0,
     );
 
     $self->{'head_zone_key'}{$window_key} = $zone_key;
@@ -267,13 +268,14 @@ hierarchy
     return unless ( %{ $map_data || {} } );
 
     my $zone_key = $self->initialize_zone(
-        window_key         => $window_key,
-        map_set_id         => $map_data->{'map_set_id'},
-        attached_to_parent => 0,
-        expanded           => 0,
-        is_top             => 1,
-        show_features      => 1,
-        map_labels_visible => 1,
+        window_key              => $window_key,
+        map_set_id              => $map_data->{'map_set_id'},
+        attached_to_parent      => 0,
+        expanded                => 0,
+        is_top                  => 1,
+        show_features           => 1,
+        map_labels_visible      => 1,
+        offscreen_corrs_visible => 0,
     );
 
     $self->{'head_zone_key'}{$window_key} = $zone_key;
@@ -361,13 +363,14 @@ sub create_sub_zone_from_saved_view {
         window_key => $window_key,
         map_set_id =>
             $self->get_map_set_id_from_map_id( $sub_maps->[0]{'sub_map_id'} ),
-        parent_zone_key    => $parent_zone_key,
-        parent_map_key     => $parent_map_key,
-        attached_to_parent => 1,
-        expanded           => 0,
-        is_top             => 0,
-        show_features      => 0,
-        map_labels_visible => 0,
+        parent_zone_key         => $parent_zone_key,
+        parent_map_key          => $parent_map_key,
+        attached_to_parent      => 1,
+        expanded                => 0,
+        is_top                  => 0,
+        show_features           => 0,
+        map_labels_visible      => 0,
+        offscreen_corrs_visible => 0,
     );
 
     $zone_view_data_queue = $self->create_maps_from_saved_view(
@@ -583,15 +586,16 @@ sub assign_and_initialize_new_maps {
         # If it's in a new zone, create the zone
         unless ($child_zone_key) {
             $child_zone_key = $self->initialize_zone(
-                window_key         => $window_key,
-                map_set_id         => $map_set_id,
-                parent_zone_key    => $parent_zone_key,
-                parent_map_key     => $parent_map_key,
-                attached_to_parent => 1,
-                expanded           => 0,
-                is_top             => 0,
-                show_features      => 0,
-                map_labels_visible => 0,
+                window_key              => $window_key,
+                map_set_id              => $map_set_id,
+                parent_zone_key         => $parent_zone_key,
+                parent_map_key          => $parent_map_key,
+                attached_to_parent      => 1,
+                expanded                => 0,
+                is_top                  => 0,
+                show_features           => 0,
+                map_labels_visible      => 0,
+                offscreen_corrs_visible => 0,
             );
         }
 
@@ -1843,6 +1847,49 @@ sub set_map_labels_visibility {
     my $value    = shift;
 
     $self->map_labels_visible( $zone_key, $value, );
+
+    my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
+
+    # Redraw
+    $self->redraw_the_whole_window( window_key => $window_key, );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub offscreen_corrs_visible {
+
+=pod
+
+=head2 offscreen_corrs_visible
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    if ( defined $value ) {
+        $self->{'offscreen_corrs_visible'}{$zone_key} = $value;
+    }
+
+    return $self->{'offscreen_corrs_visible'}{$zone_key};
+}
+
+# ----------------------------------------------------
+sub set_offscreen_corrs_visibility {
+
+=pod
+
+=head2 set_offscreen_corrs_visility
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
+
+    $self->offscreen_corrs_visible( $zone_key, $value, );
 
     my $window_key = $self->{'scaffold'}{$zone_key}{'window_key'};
 
@@ -5389,6 +5436,8 @@ another (and possibly on a different parent).
                 show_features => $old_sub_zone_scaffold->{'show_features'},
                 map_labels_visible =>
                     $self->map_labels_visible($old_sub_zone_key),
+                offscreen_corrs_visible =>
+                    $self->offscreen_corrs_visible($old_sub_zone_key),
                 copy_zone_key => $old_sub_zone_key,
             );
         }
@@ -8038,7 +8087,8 @@ Initializes zone
     my $flipped            = $args{'flipped'};
     my $show_features      = $args{'show_features'};
     my $map_labels_visible = $args{'map_labels_visible'};
-    my $copy_zone_key      = $args{'copy_zone_key'};
+    my $offscreen_corrs_visible = $args{'offscreen_corrs_visible'};
+    my $copy_zone_key           = $args{'copy_zone_key'};
 
     unless ( defined $flipped ) {
         $flipped = 0;
@@ -8058,13 +8108,16 @@ Initializes zone
             unless ( defined $show_features );
         $map_labels_visible = $copy_scaffold->{'map_labels_visible'}
             unless ( defined $map_labels_visible );
+        $offscreen_corrs_visible = $copy_scaffold->{'offscreen_corrs_visible'}
+            unless ( defined $offscreen_corrs_visible );
     }
 
-    $attached_to_parent ||= 0;
-    $expanded           ||= 0;
-    $is_top             ||= 0;
-    $show_features      ||= 0;
-    $map_labels_visible ||= 0;
+    $attached_to_parent      ||= 0;
+    $expanded                ||= 0;
+    $is_top                  ||= 0;
+    $show_features           ||= 0;
+    $map_labels_visible      ||= 0;
+    $offscreen_corrs_visible ||= 0;
     $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,
         map_set_id         => $map_set_id,
@@ -8084,6 +8137,7 @@ Initializes zone
 
     $self->map_set_id_to_zone_keys( $map_set_id, $zone_key, );
     $self->map_labels_visible( $zone_key, $map_labels_visible, );
+    $self->offscreen_corrs_visible( $zone_key, $offscreen_corrs_visible, );
     $self->features_visible( $zone_key, $show_features, );
 
     if ($copy_zone_key) {
