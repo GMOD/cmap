@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.174 2008-01-10 22:14:53 mwz444 Exp $
+# $Id: Generic.pm,v 1.175 2008-02-12 22:13:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.174 $)[-1];
+$VERSION = (qw$Revision: 1.175 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -11350,6 +11350,10 @@ sub insert_saved_link {
 
 =over 4
 
+=item * IMPORTANT NOTE
+
+This method is overwritten in the Bio::GMOD::CMap::Data::Oracle module
+
 =item * Description
 
 Insert into the database.
@@ -11442,6 +11446,10 @@ sub update_saved_link {
 =head2 update_saved_link()
 
 =over 4
+
+=item * IMPORTANT NOTE
+
+This method is overwritten in the Bio::GMOD::CMap::Data::Oracle module
 
 =item * Description
 

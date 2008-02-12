@@ -1,0 +1,174 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+upgrade-16-to-1.0.pod
+
+=head1 SYNOPSIS
+
+Where we discuss updating CMap from version 0.16 to 1.0.
+
+=head1 INTRODUCTION
+
+Congratulations on your decision to upgrade from CMap version 0.16 to
+1.0.  This guide will take you through the upgrade of the database,
+configuration files and the software.
+ 
+Please make sure you back up both your database and you configuration
+files.  While this process has been tested, it is best not to take any
+chances.
+
+=head1 INSTALLING VERSION 1.0
+
+Then run the build commands as you normally would 
+
+ $ perl Build.PL
+ $ ./Build
+ $ su
+ # ./Build install
+
+Make sure the new template files have been added by doing a 
+
+ # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
+
+=head1 DATABASE UPDATE
+
+Note to Oracle users: The database update is required to fix a bug
+that occurs when running CMap on an Oracle database.  Please see the
+"L<ORACLE SPECIFIC>" subsection below for more information.
+
+The database update isn't specifically required to run version 1.0
+(unless you are running Oracle or planning on using the CMap Assembly
+Editor), it is a good idea to do this now because future CMap releases
+or patches may use some of the new tables.
+
+To make the change to your database, please do the following:
+
+=over 4
+
+=item * 
+
+Either back up your database or create a new database to work on,
+e.g., for MySQL:
+
+  $ mysqldump cmap16 > cmap16.sql
+  $ mysqladmin create cmap1_0
+  $ mysql cmap1_0 < cmap16.sql
+
+And then work on the "cmap1_0" database.
+
+=item * 
+
+Execute "cmap_16_to_cmap_1.0.sql" on your database.  This modifies
+your data in place, which is why it is essential that you back up your
+data in case anything happens during the upgrade process.
+
+NOTE: The SQL file is written for MySQL.  You may need to modify it
+for other relational databases management systems.
+
+With MySQL the command looks something like this:
+
+  $ mysql -uroot -p cmap1_0 < cmap_16_to_cmap_1.0.sql
+
+Now your database should have some new tables and the
+session_step_object column in the cmap_saved_link table will be
+changed to type blob.
+
+=head2 ORACLE SPECIFIC
+
+As mentioned before, there was a significant bug in how CMap was
+storing saved links in Oracle.  The issue was caused because a binary
+object was being stored in a text field (type clob).  
+
+The solution is to change the column type of the session_step_object
+column in the cmap_saved_link table from clob to blob.  
+
+Unfortunately, Oracle does not provide an easy way to make this change
+on table that is already holding data.  The solution is to dump out
+the data, recreate the table with the new data type and re-import the
+data.  
+
+Please contact your database administrator for help if needed.
+
+=head1 CONFIGURATION FILE UPDATE
+
+There are no required changes to the configuration files.  It is a
+good idea to validate the individual configuration files.
+
+=head2 CONFIGURATION VALIDATION
+
+Validate individual using the validation script,
+cmap_validate_config.pl, included with the distribution.
+
+  $ cmap_validate_config.pl /path/to/cmap.conf/example.conf > output_file
+
+The output lists any problems with the configuration file as well as
+any optional configuration options that are not being used.  The last
+line will tell you if the file is valid.  
+
+If the is reported as "INVALID" on the last line, look through the
+output for the reasons it was declared INVALID.
+
+Note: It will probably report "unit_granularity" as missing for map
+types.  This value is the smallest unit that the map can be broken
+into.  For example, a sequence has a unit_granularity of 1 whereas a
+genetic map might have a granularity of .01. 
+
+=head2 NEW USEFUL CONFIGURATIONS
+
+The following are some of the more useful configurations that have
+been added.  See the ADMINISTRATION document for more information.
+
+=over 4
+
+=item * Unit Granularity For Map Types
+
+The unit_granularity must be defined for each map_type for a
+configuration file to be considered valid by the validator.  However,
+CMap will work without it.
+
+Define the smallest unit that the map can be broken into.  For
+example, a sequence has a unit_granularity of 1 whereas a genetic map
+might have a granularity of .01.
+
+=item * Additional Buttons   
+
+Define additional buttons in the configuration file that will be displayed in
+the CMap menu only when certain criteria are met.  
+
+=item * Default Species
+
+Define a default species that will be pre-selected in the menu when a
+new visitor arrives at the site.
+
+=item * Feature Display Defaults For Map Types
+
+Define a different set of feature display defaults in each map type.
+If markers should be displayed by default only when viewing a genetic
+map but not a sequence map, this allows the map type to define the
+behavior.
+
+=item * Evidence Display Defaults
+
+Define the default display option for each evidence type in a similar
+way that feature display defaults can be defined.
+
+=back
+
+=head1 CONCLUSION
+
+That should do it for the upgrade process.  If you have any troubles
+email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+Please see the CMap home page (http://www.gmod.org/CMap) for other
+information and patches.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut

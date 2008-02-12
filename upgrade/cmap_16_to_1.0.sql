@@ -41,3 +41,5 @@ CREATE TABLE cmap_commit_log (
   PRIMARY KEY (commit_log_id)
 ) TYPE=MyISAM;
 
+
+ALTER TABLE cmap_saved_link CHANGE COLUMN session_step_object session_step_object blob NOT NULL;
