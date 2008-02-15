@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.175 2008-02-12 22:13:08 mwz444 Exp $
+# $Id: Generic.pm,v 1.176 2008-02-15 21:49:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.175 $)[-1];
+$VERSION = (qw$Revision: 1.176 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6340,6 +6340,7 @@ Array of Hashes:
     evidence_type_acc,
     evidence_type,
     line_color,
+    line_type,
     evidence_rank,
 
 
@@ -6513,6 +6514,11 @@ Array of Hashes:
                 {'color'}
                 || $self->config_data('connecting_line_color')
                 || DEFAULT->{'connecting_line_color'};
+            $row->{'line_type'}
+                = $evidence_type_data->{ $row->{'evidence_type_acc'} }
+                {'line_type'}
+                || $self->config_data('connecting_line_type')
+                || DEFAULT->{'connecting_line_type'};
             $row->{'evidence_type'}
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
                 {'evidence_type'};

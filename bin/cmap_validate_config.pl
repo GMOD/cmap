@@ -31,7 +31,7 @@ use Config::General;
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
 
-my $conf_file = shift or die "Missing original 'cmap.conf' file\n";
+my $conf_file = shift or die "Missing configuration file to validate.\n";
 
 if ( $conf_file eq 'global.conf' ) {
     print "This will not validate the global.conf file.  "
@@ -238,6 +238,11 @@ my %config_defs = (
             attribute => \%attribute_def,
             xref      => \%xref_def,
             shape     => { %generic_scalar_def, no_validation_hash => 1, },
+            min_color_value =>
+                { %generic_scalar_def, no_validation_hash => 1, },
+            max_color_value =>
+                { %generic_scalar_def, no_validation_hash => 1, },
+            width => { %generic_scalar_def, no_validation_hash => 1, },
             glyph_overlap => {
                 deprecated => 1,
                 warning    => 'Warning: glyph_overlap is no longer used.',
@@ -340,7 +345,9 @@ my %config_defs = (
                 required => 1,
                 %generic_scalar_def,
             },
-            color      => { %generic_scalar_def, },
+            color => { %generic_scalar_def, },
+            line_type =>
+                { %generic_scalar_def, valid_values => CORR_GLYPHS, },
             attribute  => \%attribute_def,
             xref       => \%xref_def,
             rank       => { %generic_scalar_def, option_type => 'integer', },
@@ -520,7 +527,6 @@ sub validate_scalar {
         print "$error_start $option_name is not defined.\n";
     }
     elsif ( defined($config_value) and $config_value ne '' ) {
-
         if ( defined($config_value) and ref($config_value) ne '' ) {
             $valid = 0;
             print "$error_start '$option_name' is defined as a "

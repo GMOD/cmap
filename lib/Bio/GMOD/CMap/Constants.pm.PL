@@ -19,30 +19,33 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.53 2007-10-23 15:34:19 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.54 2008-02-15 21:49:20 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
-    GLOBAL_CONFIG_FILE
+    CORR_GLYPHS
     CACHE_LEVELS
     CONFIG_DIR
     CMAP_URL
     DASHED_LINE
     DEFAULT
     FILL
+    FILLED_POLY
     FILLED_RECT
     FILL_TO_BORDER
+    GLOBAL_CONFIG_FILE
     LEFT
     LINE
     NUMBER_RE
     NORTH
+    POLYGON
     PREFERENCE_FIELDS
     REQUIRED_PREFERENCE_FIELDS
     RECTANGLE
@@ -240,8 +243,10 @@ use constant FILLED_RECT    => 'filledRectangle';
 use constant FILL           => 'fill';
 use constant FILL_TO_BORDER => 'fillToBorder';
 use constant RECTANGLE      => 'rectangle';
+use constant POLYGON        => 'openPolygon';
 use constant STRING         => 'string';
 use constant STRING_UP      => 'stringUp';
+use constant FILLED_POLY    => 'filledPolygon';
 
 #
 # More string constants to avoid mis-spells.
@@ -263,6 +268,17 @@ use constant SHAPE_XY => {
     RECTANGLE     , { x => [ 1, 3 ],  y => [ 2, 4 ] },
     STRING        , { x => [ 2    ],  y => [ 3    ] },
     STRING_UP     , { x => [ 2    ],  y => [ 3    ] },
+    FILLED_POLY   , { x => [ 1    ],  y => [ 2    ] },
+    POLYGON       , { x => [ 1    ],  y => [ 2    ] },
+};
+
+#
+# These are the valid correspondence glyphs
+#
+use constant CORR_GLYPHS => {
+    direct   => 1,
+    indirect => 1,
+    ribbon   => 1,
 };
 
 #
@@ -298,6 +314,12 @@ use constant DEFAULT => {
     # Default: lightblue
     #
     connecting_line_color => 'lightblue',
+
+    #
+    # The type of the line to be drawn for correspondences
+    # Default: line
+    #
+    connecting_line_type => 'direct',
 
     #
     # Determines if correspondence lines go to the feature or map

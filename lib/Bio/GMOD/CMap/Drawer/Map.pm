@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.209 2008-01-11 21:38:50 mwz444 Exp $
+# $Id: Map.pm,v 1.210 2008-02-15 21:49:21 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.209 $)[-1];
+$VERSION = (qw$Revision: 1.210 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1652,6 +1652,7 @@ MAP:
                     has_corr           => $has_corr,
                     map_id             => $map_id,
                     slot_no            => $slot_no,
+                    is_flipped         => $is_flipped,
                 );
 
                 if ( $label_collapsed_features or $glyph_drawn ) {
@@ -3260,6 +3261,11 @@ sub add_feature_to_map {
         || $drawer->config_data('feature_color');
     my @coords = ();
     my $label_y;
+    my $label = $feature->{'feature_name'};
+
+    # Execute code written in the config file that can modify the feature
+    eval $self->feature_type_data( $feature->{'feature_type_acc'},
+        'feature_modification_code' );
 
     #
     # Here we try to reduce the redundant drawing of glyphs.
@@ -3272,7 +3278,8 @@ sub add_feature_to_map {
         . int($y_pos2) . '_'
         . $has_corr . '_'
         . $feature->{'direction'} . '_'
-        . $is_highlighted;
+        . $is_highlighted . '_'
+        . $color;
     my $draw_this = 1;
     if ( $collapse_features and $drawn_glyphs->{$glyph_key} ) {
         $draw_this = 0;
@@ -3288,8 +3295,6 @@ sub add_feature_to_map {
         my $font_height         = $reg_font->height;
         my $label_side          = $drawer->label_side($slot_no);
         my $feature_details_url = DEFAULT->{'feature_details_url'};
-
-        my $label = $feature->{'feature_name'};
 
         if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
             $label_y = $y_pos1 - $font_height / 2;
@@ -3431,16 +3436,29 @@ sub add_to_features_with_corr {
     my $features_with_corr = $args{'features_with_corr'};
     my $has_corr           = $args{'has_corr'}, my $map_id = $args{'map_id'};
     my $slot_no            = $args{'slot_no'};
+    my $is_flipped         = $args{'is_flipped'};
 
     if ($has_corr) {
         my $mid_feature
             = $coords->[1] + ( ( $coords->[3] - $coords->[1] ) / 2 );
+        my $y1 = $coords->[1];
+        my $y2 = $coords->[3];
+        if ($feature->{'direction'}
+            and (  ( $feature->{'direction'} < 0 and !$is_flipped )
+                or ( $feature->{'direction'} > 0 and $is_flipped ) )
+            )
+        {
+            ( $y1, $y2 ) = ( $y2, $y1 );
+        }
+
         $features_with_corr->{ $feature->{'feature_id'} } = {
             feature_id => $feature->{'feature_id'},
             slot_no    => $slot_no,
             map_id     => $map_id,
             left       => [ $coords->[0], $mid_feature ],
             right      => [ $coords->[2], $mid_feature ],
+            y1         => $y1,
+            y2         => $y2,
             tick_y     => $mid_feature,
         };
     }
@@ -3651,11 +3669,19 @@ sub add_labels_to_map {
             }
         }
 
-        push @{$drawing_data},
-            $drawer->add_connection(
-            $label_connect_x1, $label_connect_y1, $label_connect_x2,
-            $label_connect_y2, 'grey'
-            );
+        push @{$drawing_data}, $drawer->add_connection(
+            x1       => $label_connect_x1,
+            y1       => $label_connect_y1,
+            x2       => $label_connect_x2,
+            y2       => $label_connect_y2,
+            same_map => 0,
+
+            #label_side  => $position_set->{'label_side'} || '',
+            line_type   => 'direct',
+            feature1_ys => [ $label_connect_y1, $label_connect_y1 ],
+            feature2_ys => [ $label_connect_y2, $label_connect_y2 ],
+            line_color  => 'black',
+        );
 
         #
         # If the feature got a label, then update the right

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.143 2007-11-26 21:07:16 mwz444 Exp $
+# $Id: Drawer.pm,v 1.144 2008-02-15 21:49:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.143 $)[-1];
+$VERSION = (qw$Revision: 1.144 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -601,11 +601,27 @@ so that it's positive.
         )
     {
         my $shape = $rec->[0];
-        for my $y_field ( @{ SHAPE_XY->{$shape}{'y'} } ) {
-            $rec->[$y_field] += $y_shift;
+        if ( $shape eq FILLED_POLY or $shape eq POLYGON ) {
+            for (
+                my $i = SHAPE_XY->{$shape}{'x'}[0];
+                $i <= $#{$rec};
+                $i += 2
+                )
+            {
+                unless ( $rec->[$i] =~ m/^-?\d+$/ ) {
+                    last;
+                }
+                $rec->[$i]       += $x_shift;
+                $rec->[ $i + 1 ] += $y_shift;
+            }
         }
-        for my $x_field ( @{ SHAPE_XY->{$shape}{'x'} } ) {
-            $rec->[$x_field] += $x_shift;
+        else {
+            for my $y_field ( @{ SHAPE_XY->{$shape}{'y'} } ) {
+                $rec->[$y_field] += $y_shift;
+            }
+            for my $x_field ( @{ SHAPE_XY->{$shape}{'x'} } ) {
+                $rec->[$x_field] += $x_shift;
+            }
         }
     }
 
@@ -616,6 +632,8 @@ so that it's positive.
                 $feature_pos->{'right'}[1] += $y_shift;
                 $feature_pos->{'left'}[0]  += $x_shift;
                 $feature_pos->{'left'}[1]  += $y_shift;
+                $feature_pos->{'y1'}       += $y_shift;
+                $feature_pos->{'y2'}       += $y_shift;
             }
         }
     }
@@ -648,17 +666,47 @@ Draws a line from one point to another.
 
 =cut
 
-    my ($self,  $x1,       $y1,         $x2, $y2,
-        $color, $same_map, $label_side, $line_type
-    ) = @_;
+    my ( $self, %args ) = @_;
+
+    my $x1          = $args{'x1'};
+    my $y1          = $args{'y1'};
+    my $x2          = $args{'x2'};
+    my $y2          = $args{'y2'};
+    my $color       = $args{'line_color'};
+    my $same_map    = $args{'same_map'};
+    my $label_side  = $args{'label_side'};
+    my $line_type   = $args{'line_type'};
+    my $feature1_ys = $args{'feature1_ys'};
+    my $feature2_ys = $args{'feature2_ys'};
+
     my $layer = 0;      # bottom-most layer of image
     my @lines = ();
     my $line  = LINE;
 
-    if ( !$line_type or $line_type eq 'direct' ) {
+    unless ( CORR_GLYPHS->{$line_type} ) {
+        $line_type = 'direct';
+    }
+
+    if ( $line_type eq 'direct' ) {
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
     }
-    else {
+    elsif ( $line_type eq 'ribbon' ) {
+        push @lines,
+            [
+            FILLED_POLY,       $x1, $feature1_ys->[1], $x1,
+            $feature1_ys->[0], $x2, $feature2_ys->[0], $x2,
+            $feature2_ys->[1], $x1, $feature1_ys->[1], $color,
+            $layer
+            ];
+        push @lines,
+            [
+            POLYGON,           $x1, $feature1_ys->[1], $x1,
+            $feature1_ys->[0], $x2, $feature2_ys->[0], $x2,
+            $feature2_ys->[1], $x1, $feature1_ys->[1], $color,
+            'black'
+            ];
+    }
+    elsif ( $line_type eq 'indirect' ) {
         my $extention_length = 15;
         if ( $y1 == $y2 ) {
             push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
@@ -791,8 +839,20 @@ Accepts a list of attributes to describe how to draw an object.
         my $layer       = $attr[-1];
         my @x_locations = @{ SHAPE_XY->{$shape}{'x'} || [] } or next;
         my @y_locations = @{ SHAPE_XY->{$shape}{'y'} || [] } or next;
-        push @x, @attr[@x_locations];
-        push @y, @attr[@y_locations];
+
+        if ( $shape eq FILLED_POLY or $shape eq POLYGON ) {
+            for ( my $i = $x_locations[0]; $i <= $#attr; $i += 2 ) {
+                unless ( $attr[$i] =~ m/^-?\d+$/ ) {
+                    last;
+                }
+                push @x, @attr[$i];
+                push @y, @attr[ $i + 1 ];
+            }
+        }
+        else {
+            push @x, @attr[@x_locations];
+            push @y, @attr[@y_locations];
+        }
 
         if ( $shape eq STRING ) {
             my $font   = $attr[1];
@@ -1333,12 +1393,20 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             $self->add_drawing(
                 $self->add_connection(
-                    @positions,
-                    $evidence_info->{'line_color'}
-                        || $self->config_data('connecting_line_color'),
-                    $position_set->{'same_map'}   || 0,
-                    $position_set->{'label_side'} || '',
-                    $position_set->{'line_type'},
+                    x1          => $positions[0],
+                    y1          => $positions[1],
+                    x2          => $positions[2],
+                    y2          => $positions[3],
+                    same_map    => $position_set->{'same_map'} || 0,
+                    sabel_side  => $position_set->{'label_side'} || '',
+                    feature1_ys => $position_set->{'feature1_ys'},
+                    feature2_ys => $position_set->{'feature2_ys'},
+                    line_color  => $evidence_info->{'line_color'}
+                        || $self->config_data('connecting_line_color')
+                        || DEFAULT->{'connecting_line_color'},
+                    line_type => $evidence_info->{'line_type'}
+                        || $self->config_data('connecting_line_type')
+                        || DEFAULT->{'connecting_line_type'},
                 )
             );
         }
@@ -1784,12 +1852,13 @@ Do the actual drawing.
 
     my $self = shift;
 
-    my @data      = $self->drawing_data;
-    my $height    = $self->map_height;
-    my $width     = $self->map_width;
-    my $img_class = $self->image_class;
-    my $img       = $img_class->new( $width, $height );
-    my %colors    = (
+    my @data       = $self->drawing_data;
+    my $height     = $self->map_height;
+    my $width      = $self->map_width;
+    my $img_class  = $self->image_class;
+    my $poly_class = $self->polygon_class;
+    my $img        = $img_class->new( $width, $height );
+    my %colors     = (
         (   map {
                 $_,
                     $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
@@ -1815,7 +1884,20 @@ Do the actual drawing.
         my $layer  = pop @$obj;
         my @colors = pop @$obj;
         push @colors, pop @$obj if $method eq FILL_TO_BORDER;
-        $img->$method( @$obj, map { $colors{ lc $_ } } @colors );
+
+        if ( $method eq FILLED_POLY or $method eq POLYGON ) {
+            my $poly = $poly_class->new();
+            for ( my $i = 0; $i <= $#{$obj}; $i += 2 ) {
+                unless ( $obj->[$i] =~ m/^-?\d+$/ ) {
+                    last;
+                }
+                $poly->addPt( $obj->[$i], $obj->[ $i + 1 ] );
+            }
+            $img->$method( $poly, map { $colors{ lc $_ } } @colors );
+        }
+        else {
+            $img->$method( @$obj, map { $colors{ lc $_ } } @colors );
+        }
     }
 
     #
@@ -1904,8 +1986,7 @@ Returns a distinct list of all the correspondence evidence types seen.
 
     my $self = shift;
     unless ( $self->{'correspondence_evidence_seen'} ) {
-        my %types
-            = map { $_->{'evidence_type'}, $_ }
+        my %types = map { $_->{'evidence_type'}, $_ }
             values %{ $self->{'data'}{'correspondence_evidence'} };
 
         $self->{'correspondence_evidence_seen'} = [
@@ -2048,6 +2129,10 @@ to connect corresponding features on two maps.
     for my $f1 ( keys %{ $self->{'feature_position'}{$slot_no} } ) {
         my $self_label_side = $self->label_side($slot_no);
 
+        my $f1_ys = [
+            $self->{'feature_position'}{$slot_no}{$f1}{'y1'},
+            $self->{'feature_position'}{$slot_no}{$f1}{'y2'}
+        ];
         my @f1_pos
             = @{ $self->{'feature_position'}{$slot_no}{$f1}{$cur_side} || [] }
             or next;
@@ -2058,16 +2143,25 @@ to connect corresponding features on two maps.
             or next;
         for my $f2 ( $self->feature_correspondences($f1) ) {
             my @same_map = ();
+            my $same_ys  = [];
             if ( $self->{'feature_position'}{$slot_no}{$f2} ) {
                 @same_map = @{ $self->{'feature_position'}{$slot_no}{$f2}
                         {$self_label_side} || [] };
+                $same_ys = [
+                    $self->{'feature_position'}{$slot_no}{$f2}{'y1'},
+                    $self->{'feature_position'}{$slot_no}{$f2}{'y2'}
+                ];
             }
 
             my @ref_pos = ();
-
+            my $ref_ys  = [];
             if ( defined( $self->{'feature_position'}{$ref_slot_no}{$f2} ) ) {
                 @ref_pos = @{ $self->{'feature_position'}{$ref_slot_no}{$f2}
                         {$ref_side} || [] };
+                $ref_ys = [
+                    $self->{'feature_position'}{$ref_slot_no}{$f2}{'y1'},
+                    $self->{'feature_position'}{$ref_slot_no}{$f2}{'y2'}
+                ];
             }
 
             push @return,
@@ -2075,6 +2169,8 @@ to connect corresponding features on two maps.
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_self_pos, @same_map ],
+                feature1_ys => $f1_ys,
+                feature2_ys => $same_ys,
                 same_map    => 1,
                 label_side  => $self->label_side($slot_no),
                 line_type   => 'direct',
@@ -2086,6 +2182,8 @@ to connect corresponding features on two maps.
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
+                feature1_ys => $f1_ys,
+                feature2_ys => $ref_ys,
                 line_type   => 'direct',
                 }
                 if @ref_pos;
@@ -2093,16 +2191,28 @@ to connect corresponding features on two maps.
         for my $f2 ( $self->intraslot_correspondences($f1) ) {
             my @same_map = @{ $self->{'feature_position'}{$slot_no}{$f2}
                     {$self_label_side} || [] };
+            my $same_ys = [
+                $self->{'feature_position'}{$slot_no}{$f2}{'y1'},
+                $self->{'feature_position'}{$slot_no}{$f2}{'y2'}
+                ]
+                if (@same_map);
 
             my @ref_pos
                 = @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
                     || [] };
+            my $ref_ys = [
+                $self->{'feature_position'}{$ref_slot_no}{$f2}{'y1'},
+                $self->{'feature_position'}{$ref_slot_no}{$f2}{'y2'}
+                ]
+                if (@ref_pos);
 
             push @return,
                 {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_self_pos, @same_map ],
+                feature1_ys => $f1_ys,
+                feature2_ys => $same_ys,
                 same_map    => 1,
                 label_side  => $self->label_side($slot_no),
                 line_type   => 'indirect',
@@ -2114,6 +2224,8 @@ to connect corresponding features on two maps.
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
+                feature1_ys => $f1_ys,
+                feature2_ys => $ref_ys,
                 line_type   => 'indirect',
                 }
                 if @ref_pos;
@@ -2236,7 +2348,11 @@ Returns 'GD::SVG::Font' if $self->image_type returns 'svg'; otherwise
 =cut
 
     my $self = shift;
-    return $self->image_type eq 'svg' ? 'GD::SVG::Font' : 'GD::Font';
+    unless ( $self->{'font_class'} ) {
+        $self->{'font_class'}
+            = $self->image_type eq 'svg' ? 'GD::SVG::Font' : 'GD::Font';
+    }
+    return $self->{'font_class'};
 }
 
 # ----------------------------------------------------
@@ -2251,7 +2367,30 @@ Returns 'GD::SVG' if $self->image_type returns 'svg'; otherwise 'GD.'
 =cut
 
     my $self = shift;
-    return $self->image_type eq 'svg' ? 'GD::SVG::Image' : 'GD::Image';
+    unless ( $self->{'image_class'} ) {
+        $self->{'image_class'}
+            = $self->image_type eq 'svg' ? 'GD::SVG::Image' : 'GD::Image';
+    }
+    return $self->{'image_class'};
+}
+
+# ----------------------------------------------------
+sub polygon_class {
+
+=pod
+
+=head2 polygon_class
+
+Returns 'GD::SVG::Polygon' if $self->image_type returns 'svg'; otherwise 'GD::Polygon'.
+
+=cut
+
+    my $self = shift;
+    unless ( $self->{'polygon_class'} ) {
+        $self->{'polygon_class'}
+            = $self->image_type eq 'svg' ? 'GD::SVG::Polygon' : 'GD::Polygon';
+    }
+    return $self->{'polygon_class'};
 }
 
 # ----------------------------------------------------
@@ -2900,8 +3039,10 @@ Remembers the feature position on a map.
     return unless defined $slot_no;
 
     $self->{'feature_position'}{$slot_no}{$feature_id} = {
-        right  => $args{'right'},
         left   => $args{'left'},
+        right  => $args{'right'},
+        y1     => $args{'y1'},
+        y2     => $args{'y2'},
         tick_y => $args{'tick_y'},
         map_id => $args{'map_id'},
     };

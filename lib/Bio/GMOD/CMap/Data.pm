@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.292 2007-10-30 20:30:38 mwz444 Exp $
+# $Id: Data.pm,v 1.293 2008-02-15 21:49:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.292 $)[-1];
+$VERSION = (qw$Revision: 1.293 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -791,6 +791,7 @@ sub get_feature_correspondences {
             evidence_type     => $corr->{'evidence_type'},
             evidence_rank     => $corr->{'evidence_rank'},
             line_color        => $corr->{'line_color'},
+            line_type         => $corr->{'line_type'},
             };
     }
 
@@ -1954,16 +1955,14 @@ Given a list of feature names, find any maps they occur on.
     #
     my @found_features = ();
     if ( $order_by eq 'feature_start' ) {
-        @found_features
-            = map { $_->[1] }
-            sort  { $a->[0] <=> $b->[0] }
+        @found_features = map { $_->[1] }
+            sort { $a->[0] <=> $b->[0] }
             map { [ $_->{$order_by}, $_ ] } values %features;
     }
     else {
         my @sort_fields = split( /,/, $order_by );
-        @found_features
-            = map { $_->[1] }
-            sort  { $a->[0] cmp $b->[0] }
+        @found_features = map { $_->[1] }
+            sort { $a->[0] cmp $b->[0] }
             map { [ join( '', @{$_}{@sort_fields} ), $_ ] } values %features;
     }
 
@@ -2037,8 +2036,7 @@ Return data for a list of evidence type acc. IDs.
 
     my @return_array;
 
-    my @evidence_types
-        = keys( %{ $self->config_data('evidence_type') } );
+    my @evidence_types = keys( %{ $self->config_data('evidence_type') } );
 
     my $evidence_type_data = $self->evidence_type_data();
     my %supplied_evidence_types;
@@ -2139,8 +2137,7 @@ Return data for a list of feature type acc. IDs.
     my $feature_type_data = $self->feature_type_data();
     my %supplied_feature_types;
     if ( $args{'feature_types'} ) {
-        %supplied_feature_types
-            = map { $_ => 1 } @{ $args{'feature_types'} };
+        %supplied_feature_types = map { $_ => 1 } @{ $args{'feature_types'} };
     }
     foreach my $feature_type (@feature_types) {
         if (%supplied_feature_types) {
@@ -3960,8 +3957,7 @@ Sets and returns the sorted map ids for each slot
     if ($slot_data) {
         my @map_ids = keys(%$slot_data);
         if ( $slot_no == 0 ) {
-            @map_ids
-                = map { $_->[0] }
+            @map_ids = map { $_->[0] }
                 sort {
                 (          $self->cmp_ref_map_order( $a->[0], $b->[0] )
                         || $a->[1] <=> $b->[1]
@@ -3976,9 +3972,8 @@ Sets and returns the sorted map ids for each slot
                 } @map_ids;
         }
         else {
-            @map_ids
-                = map { $_->[0] }
-                sort  { $b->[1] <=> $a->[1] }
+            @map_ids = map { $_->[0] }
+                sort { $b->[1] <=> $a->[1] }
                 map { [ $_, $slot_data->{$_}{'no_correspondences'} ] }
                 @map_ids;
         }
@@ -4052,7 +4047,7 @@ Data Structures:
             next;
         }
         $slots->{$slot_no}->{'stack_slot'} = $stack_slot->{$slot_no};
-        $slots->{$slot_no}->{'min_corrs'} = $slot_min_corrs->{$slot_no}
+        $slots->{$slot_no}->{'min_corrs'}  = $slot_min_corrs->{$slot_no}
             if defined( $slot_min_corrs->{$slot_no} );
     }
 }

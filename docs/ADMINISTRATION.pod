@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.39 $
+$Revision: 1.40 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -612,10 +612,15 @@ will only be used when NOT aggregating.
 
 The rank of the evidence relative to the others
 
-=item * Line Style: 
+=item * Line Type (line_type): 
 
-How lines representing this evidence type will be drawn (not currently
-supported)
+How lines representing this evidence type will be drawn.  
+
+ Values:
+    direct:   Line directly from feature to feature.
+    indirect: Line that starts perpendicular to the map for a short distance
+              before traveling to the other feature.
+    ribbon:   A ribbon is drawn that spans the top and bottom of each feature. 
 
 =item * Evidence Default Display (evidence_default_display)
 
