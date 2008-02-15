@@ -221,7 +221,7 @@ CREATE TABLE cmap_saved_link (
   saved_link_id int(11) NOT NULL default '0',
   saved_on date default NULL,
   last_access date default NULL,
-  session_step_object text NOT NULL,
+  session_step_object blob NOT NULL,
   saved_url text NOT NULL,
   legacy_url  text NOT NULL,
   link_title varchar(50) default '',
