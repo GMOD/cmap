@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.144 2008-02-15 21:49:21 mwz444 Exp $
+# $Id: Drawer.pm,v 1.145 2008-02-16 03:58:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.144 $)[-1];
+$VERSION = (qw$Revision: 1.145 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -608,7 +608,7 @@ so that it's positive.
                 $i += 2
                 )
             {
-                unless ( $rec->[$i] =~ m/^-?\d+$/ ) {
+                unless ( $rec->[$i] =~ m/^-?[\d.]+$/ ) {
                     last;
                 }
                 $rec->[$i]       += $x_shift;
@@ -702,8 +702,7 @@ Draws a line from one point to another.
             [
             POLYGON,           $x1, $feature1_ys->[1], $x1,
             $feature1_ys->[0], $x2, $feature2_ys->[0], $x2,
-            $feature2_ys->[1], $x1, $feature1_ys->[1], $color,
-            'black'
+            $feature2_ys->[1], $x1, $feature1_ys->[1], 'black'
             ];
     }
     elsif ( $line_type eq 'indirect' ) {
@@ -842,7 +841,7 @@ Accepts a list of attributes to describe how to draw an object.
 
         if ( $shape eq FILLED_POLY or $shape eq POLYGON ) {
             for ( my $i = $x_locations[0]; $i <= $#attr; $i += 2 ) {
-                unless ( $attr[$i] =~ m/^-?\d+$/ ) {
+                unless ( $attr[$i] =~ m/^-?[\d.]+$/ ) {
                     last;
                 }
                 push @x, @attr[$i];
@@ -1888,7 +1887,7 @@ Do the actual drawing.
         if ( $method eq FILLED_POLY or $method eq POLYGON ) {
             my $poly = $poly_class->new();
             for ( my $i = 0; $i <= $#{$obj}; $i += 2 ) {
-                unless ( $obj->[$i] =~ m/^-?\d+$/ ) {
+                unless ( $obj->[$i] =~ m/^-?[\d.]+$/ ) {
                     last;
                 }
                 $poly->addPt( $obj->[$i], $obj->[ $i + 1 ] );
