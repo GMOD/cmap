@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.210 2008-02-15 21:49:21 mwz444 Exp $
+# $Id: Map.pm,v 1.211 2008-02-19 18:48:02 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.210 $)[-1];
+$VERSION = (qw$Revision: 1.211 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -224,11 +224,7 @@ box.
         my $url  = $buttons->[0]{'url'};
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
-        my $eval_area_code
-            = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        if ($eval_area_code) {
-            eval $eval_area_code;
-        }
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
         push @{$map_area_data},
             {
             coords => [
@@ -607,11 +603,7 @@ for this map to be stacked on others.  Return the bounds of the box.
         my $url  = $buttons->[0]{'url'};
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
-        my $eval_area_code
-            = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        if ($eval_area_code) {
-            eval $eval_area_code;
-        }
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
         push @{$map_area_data},
             {
             coords => [
@@ -2781,11 +2773,7 @@ sub add_topper {
             my $url  = $buttons->[0]{'url'};
             my $alt  = $buttons->[0]{'alt'};
             my $code = '';
-            my $eval_area_code
-                = $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-            if ($eval_area_code) {
-                eval $eval_area_code;
-            }
+            eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
             push @{ $map_area_data->{$map_id} },
                 {
                 coords => \@topper_bounds,
