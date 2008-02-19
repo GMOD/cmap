@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.54 2008-02-15 21:49:20 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.55 2008-02-19 20:54:42 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -320,6 +320,12 @@ use constant DEFAULT => {
     # Default: line
     #
     connecting_line_type => 'direct',
+
+    #
+    # The color of the ribbon if using ribbons
+    # Default: lightgrey
+    #
+    connecting_ribbon_color => 'lightgrey',
 
     #
     # Determines if correspondence lines go to the feature or map

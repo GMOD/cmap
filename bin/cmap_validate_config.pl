@@ -139,6 +139,8 @@ my %config_defs = (
     slot_border_color              => { %generic_scalar_def, },
     feature_color                  => { %generic_scalar_def, },
     connecting_line_color          => { %generic_scalar_def, },
+    connecting_line_type           => { %generic_scalar_def, },
+    connecting_ribbon_color        => { %generic_scalar_def, },
     feature_highlight_bg_color     => { %generic_scalar_def, },
     feature_highlight_fg_color     => { %generic_scalar_def, },
     feature_correspondence_color   => { %generic_scalar_def, },
@@ -219,11 +221,12 @@ my %config_defs = (
                     'Warning: feature_type_accession has been changed to feature_type_acc.',
                 validation_method => \&deprecated_value,
             },
-            feature_type_acc   => { %generic_scalar_def, required => 1, },
-            feature_type       => { %generic_scalar_def, required => 1, },
-            color              => { %generic_scalar_def, },
-            area_code          => { %generic_scalar_def, },
-            required_page_code => {
+            feature_type_acc => { %generic_scalar_def, required => 1, },
+            feature_type     => { %generic_scalar_def, required => 1, },
+            color            => { %generic_scalar_def, },
+            area_code        => { %generic_scalar_def, },
+            feature_modification_code => { %generic_scalar_def, },
+            required_page_code        => {
                 validation_method        => \&validate_array,
                 print_valididated_method => \&print_validated_array,
                 print_corrections_method => \&print_corrected_array,
@@ -348,8 +351,9 @@ my %config_defs = (
             color => { %generic_scalar_def, },
             line_type =>
                 { %generic_scalar_def, valid_values => CORR_GLYPHS, },
-            attribute  => \%attribute_def,
-            xref       => \%xref_def,
+            ribbon_color => { %generic_scalar_def, },
+            attribute    => \%attribute_def,
+            xref         => \%xref_def,
             rank       => { %generic_scalar_def, option_type => 'integer', },
             line_style => { %generic_scalar_def, },
             aggregated_correspondence_colors => {

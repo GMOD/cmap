@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.145 2008-02-16 03:58:03 mwz444 Exp $
+# $Id: Drawer.pm,v 1.146 2008-02-19 20:54:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.145 $)[-1];
+$VERSION = (qw$Revision: 1.146 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -668,16 +668,17 @@ Draws a line from one point to another.
 
     my ( $self, %args ) = @_;
 
-    my $x1          = $args{'x1'};
-    my $y1          = $args{'y1'};
-    my $x2          = $args{'x2'};
-    my $y2          = $args{'y2'};
-    my $color       = $args{'line_color'};
-    my $same_map    = $args{'same_map'};
-    my $label_side  = $args{'label_side'};
-    my $line_type   = $args{'line_type'};
-    my $feature1_ys = $args{'feature1_ys'};
-    my $feature2_ys = $args{'feature2_ys'};
+    my $x1                = $args{'x1'};
+    my $y1                = $args{'y1'};
+    my $x2                = $args{'x2'};
+    my $y2                = $args{'y2'};
+    my $color             = $args{'line_color'};
+    my $same_map          = $args{'same_map'};
+    my $label_side        = $args{'label_side'};
+    my $line_type         = $args{'line_type'};
+    my $feature1_ys       = $args{'feature1_ys'};
+    my $feature2_ys       = $args{'feature2_ys'};
+    my $evidence_type_acc = $args{'evidence_type_acc'};
 
     my $layer = 0;      # bottom-most layer of image
     my @lines = ();
@@ -691,18 +692,28 @@ Draws a line from one point to another.
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
     }
     elsif ( $line_type eq 'ribbon' ) {
+        my $ribbon_color
+            = $self->evidence_type_data( $evidence_type_acc, 'ribbon_color' )
+            || $self->config_data('connecting_ribbon_color')
+            || DEFAULT->{'connecting_ribbon_color'}
+            || 'lightgrey';
+
         push @lines,
             [
-            FILLED_POLY,       $x1, $feature1_ys->[1], $x1,
-            $feature1_ys->[0], $x2, $feature2_ys->[0], $x2,
-            $feature2_ys->[1], $x1, $feature1_ys->[1], $color,
-            $layer
+            FILLED_POLY,       $x1,
+            $feature1_ys->[1], $x1,
+            $feature1_ys->[0], $x2,
+            $feature2_ys->[0], $x2,
+            $feature2_ys->[1], $x1,
+            $feature1_ys->[1], $ribbon_color,
+            -1,
             ];
         push @lines,
             [
             POLYGON,           $x1, $feature1_ys->[1], $x1,
             $feature1_ys->[0], $x2, $feature2_ys->[0], $x2,
-            $feature2_ys->[1], $x1, $feature1_ys->[1], 'black'
+            $feature2_ys->[1], $x1, $feature1_ys->[1], $color,
+            $layer,
             ];
     }
     elsif ( $line_type eq 'indirect' ) {
@@ -844,8 +855,8 @@ Accepts a list of attributes to describe how to draw an object.
                 unless ( $attr[$i] =~ m/^-?[\d.]+$/ ) {
                     last;
                 }
-                push @x, @attr[$i];
-                push @y, @attr[ $i + 1 ];
+                push @x, $attr[$i];
+                push @y, $attr[ $i + 1 ];
             }
         }
         else {
@@ -1400,7 +1411,9 @@ Lays out the image and writes it to the file system, set the "image_name."
                     sabel_side  => $position_set->{'label_side'} || '',
                     feature1_ys => $position_set->{'feature1_ys'},
                     feature2_ys => $position_set->{'feature2_ys'},
-                    line_color  => $evidence_info->{'line_color'}
+                    evidence_type_acc =>
+                        $evidence_info->{'evidence_type_acc'},
+                    line_color => $evidence_info->{'line_color'}
                         || $self->config_data('connecting_line_color')
                         || DEFAULT->{'connecting_line_color'},
                     line_type => $evidence_info->{'line_type'}
@@ -1454,8 +1467,8 @@ Lays out the image and writes it to the file system, set the "image_name."
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
         my @slot_bounds = ( $left, $self->min_y, $right, $max_y, );
 
-        $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -1 );
-        $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, 10 );
+        $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -50 );
+        $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, -40 );
     }
 
     my $font = $self->regular_font;

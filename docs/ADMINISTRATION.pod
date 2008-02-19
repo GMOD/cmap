@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.40 $
+$Revision: 1.41 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -550,6 +550,21 @@ gradient.  It is represented as a string, writen in rgb format
 Also, a feature type with this glyph must have it's own drawing lane.
 
 =back
+
+=item * feature_modification_code
+
+The feature_modification_code is similar to the area_code option (see above).  It allows you to inject Perl code into CMap when the feature is about to be drawn.  Also, like area_code, it can access variables that are in the environment where it is run.  To see what this has access to, you can search for "feature_modification_code" in .../path/to/Bio/GMOD/CMap/Drawer/Map.pm.
+
+The following will change the color of the feature if the name matches a specified pattern.
+
+  feature_modification_code <<EOF
+    if ($feature->{'feature_name'} =~ /^sb(\S+)_/){
+        $color = 'black';
+    }
+    elsif ($feature->{'feature_name'} =~ /^os(\S+)_/){
+        $color = 'orange';
+    }
+  EOF
 
 =item * glyph_overlap; 
 
