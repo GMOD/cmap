@@ -5,6 +5,7 @@
 - Added three new feature glyphs: heatmap, i_beam and bar.
 - Added a feature that will stack comparative maps in real time.
 - Added a dot-plot view.
+- Added a ribbon glyph for correspondences
 - Added the unused feature types into the legend, colored grey with a little +
   box which will add them to the display.
 - Added an image_only parameter that will cause CMap to only return the htmp
@@ -28,6 +29,8 @@
 - Added the ability to add custom colors to feature glyphs which are outside
   the pre-decided set.
 - Added start and stop parameters to View Feature on Map view.
+- Added the feature_modification_code option to the feature_type definition in
+  the config file which allows code that will modify the look of a feature.
 - A network install script is included that will download and install CMap and
   all it's pre-requisites.  It is based on the GBrowse script
   gbrowse_netinstall.pl.
