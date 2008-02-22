@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.58 2008-02-12 20:43:27 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.59 2008-02-22 21:30:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,17 +31,18 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
-use constant ZONE_SEPARATOR_HEIGHT   => 3;
-use constant ZONE_Y_BUFFER           => 30;
-use constant MAP_Y_BUFFER            => 15;
-use constant MAP_X_BUFFER            => 5;
-use constant MAP_X_NO_DETAILS_BUFFER => 0;
-use constant SMALL_BUFFER            => 2;
-use constant MIN_MAP_WIDTH           => 4;
-use constant MIN_MAP_DETAIL_WIDTH    => 50;
-use constant BETWEEN_ZONE_BUFFER     => 5;
+use constant ZONE_SEPARATOR_HEIGHT    => 3;
+use constant ZONE_LOCATION_BAR_HEIGHT => 10;
+use constant ZONE_Y_BUFFER            => 30;
+use constant MAP_Y_BUFFER             => 15;
+use constant MAP_X_BUFFER             => 5;
+use constant MAP_X_NO_DETAILS_BUFFER  => 0;
+use constant SMALL_BUFFER             => 2;
+use constant MIN_MAP_WIDTH            => 4;
+use constant MIN_MAP_DETAIL_WIDTH     => 50;
+use constant BETWEEN_ZONE_BUFFER      => 5;
 
 use base 'Exporter';
 
@@ -388,6 +389,17 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
             $zone_layout->{'bounds'}[3]
                 += ZONE_SEPARATOR_HEIGHT + SMALL_BUFFER;
         }
+        unless (
+            $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'} )
+        {
+
+            # Make room for location bar if it is possible to have one.
+            #$zone_layout->{'bounds'}[1]
+            #+= ZONE_LOCATION_BAR_HEIGHT + SMALL_BUFFER;
+            #$zone_layout->{'bounds'}[3]
+            #+= ZONE_LOCATION_BAR_HEIGHT + SMALL_BUFFER;
+
+        }
     }
 
     my $zone_height_change = 0;
@@ -468,10 +480,10 @@ Lays out head maps in a zone
         || 0;
 
     if ( !$relayout ) {
-        $zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0, ];
+        $zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width - 1, 0, ];
     }
     else {
-        $zone_layout->{'internal_bounds'}[2] = $zone_width;
+        $zone_layout->{'internal_bounds'}[2] = $zone_width - 1;
     }
 
     # Set the viewable space by using the window
@@ -540,6 +552,18 @@ Lays out head maps in a zone
     my $row_min_y = MAP_Y_BUFFER;
     my $row_max_y = $row_min_y;
     my $row_index = 0;
+
+    # Draw the location bar
+    $app_display_data->destroy_items(
+        items      => $zone_layout->{'location_bar'},
+        window_key => $window_key,
+    );
+    unless ( $app_display_data->{'scaffold'}{$zone_key}{'scale'} == 1 ) {
+        layout_location_bar(
+            zone_layout => $zone_layout,
+            zone_width  => $zone_width,
+        );
+    }
 
     # The zone level maps_min_x is used for creating the overview
     $zone_layout->{'maps_min_x'} = $map_min_x;
@@ -1173,6 +1197,52 @@ Lays out sub maps in a slot.
     #$app_display_data->create_zone_coverage_array( zone_key => $zone_key, );
 
     return $height_change;
+}
+
+# ----------------------------------------------------
+sub layout_location_bar {
+
+=pod
+
+=head2 layout_location_bar
+
+Lays out location_bar for a zone.
+
+=cut
+
+    my %args          = @_;
+    my $zone_layout   = $args{'zone_layout'};
+    my $zone_width    = $args{'zone_width'};
+    my $visible_width = $zone_layout->{'viewable_internal_x2'}
+        - $zone_layout->{'viewable_internal_x1'} + 1;
+    my $location_bar_start = (
+        (   (         $zone_layout->{'viewable_internal_x1'}
+                    - $zone_layout->{'internal_bounds'}[0] + 1
+            ) / ($zone_width)
+        ) * $visible_width
+    ) + $zone_layout->{'viewable_internal_x1'};
+    my $location_bar_stop = (
+        (   (         $zone_layout->{'viewable_internal_x2'}
+                    - $zone_layout->{'internal_bounds'}[0] + 1
+            ) / ($zone_width)
+        ) * $visible_width
+    ) + $zone_layout->{'viewable_internal_x1'};
+    $zone_layout->{'location_bar'} = [
+        [   1, undef,
+            'rectangle',
+            [   $location_bar_start,
+                $zone_layout->{'internal_bounds'}[1],
+                $location_bar_stop,
+                $zone_layout->{'internal_bounds'}[1]
+                    + ZONE_LOCATION_BAR_HEIGHT,
+            ],
+            {   -fillcolor => 'black',
+                -linecolor => 'black',
+                -linewidth => 1,
+                -filled    => 1
+            }
+        ],
+    ];
 }
 
 # ----------------------------------------------------

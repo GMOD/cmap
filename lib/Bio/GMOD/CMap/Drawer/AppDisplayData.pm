@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.72 2008-02-22 17:07:43 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.73 2008-02-22 21:30:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -670,6 +670,37 @@ sub get_highlight_string {
     my $window_key = $args{'window_key'} or return;
 
     return $self->{'highlight_string'}{$window_key};
+}
+
+# ----------------------------------------------------
+sub location_bar_drag {
+
+=pod
+
+=head2 location_bar_drag
+
+The location bar is being dragged, figure out how much to scroll and then do
+it.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
+    my $drag_value = $args{'drag_value'} or return;
+
+    my $zone_layout   = $self->{'zone_layout'}{$zone_key};
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    my $scroll_value = -1 * $zone_scaffold->{'scale'} * $drag_value;
+
+    $self->scroll_zone(
+        window_key   => $window_key,
+        zone_key     => $zone_key,
+        scroll_value => $scroll_value,
+    );
+
+    return;
 }
 
 # ----------------------------------------------------

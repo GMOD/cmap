@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.72 2008-02-22 17:07:43 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.73 2008-02-22 21:30:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1129,6 +1129,16 @@ Draws and re-draws on the zinc
             tags     => [
                 'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
+        );
+
+        $self->draw_items(
+            zinc     => $zinc,
+            x_offset => $zone_x_offset,
+            y_offset => $zone_y_offset,
+            items    => $zone_layout->{'location_bar'},
+            group_id => $zone_group_id,
+            tags =>
+                [ 'on_top', 'location_bar_' . $window_key . '_' . $zone_key ],
         );
 
 # The following places bars on the slot for debugging
@@ -4178,6 +4188,24 @@ Handle down click of the left mouse button
 
         $self->fill_info_box( window_key => $window_key, );
     }
+    elsif ( @tags = grep /^location_bar_/,
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    {
+        unless ($control) {
+            $self->reset_object_selections(
+                zinc       => $zinc,
+                window_key => $window_key,
+            );
+        }
+        $tags[0] =~ /^location_bar_(\S+)_(\S+)/;
+        $self->{'drag_zone_key'} = $2;
+        $self->{'drag_obj'}      = 'location_bar';
+
+        #$self->app_controller()->hide_corrs(
+        #    window_key => $self->{'drag_window_key'},
+        #    zone_key   => $self->{'drag_zone_key'},
+        #);
+    }
     elsif ( @tags = grep /^background_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
@@ -4302,6 +4330,24 @@ Handle down click of the right mouse button
         );
         $self->{'drag_mouse_to_edge_x'} = $x - $highlight_bounds->[0];
     }
+    elsif ( @tags = grep /^location_bar_/,
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    {
+        unless ($control) {
+            $self->reset_object_selections(
+                zinc       => $zinc,
+                window_key => $window_key,
+            );
+        }
+        $tags[0] =~ /^location_bar_(\S+)_(\S+)/;
+        $self->{'drag_zone_key'} = $2;
+        $self->{'drag_obj'}      = 'location_bar';
+
+        #$self->app_controller()->hide_corrs(
+        #    window_key => $self->{'drag_window_key'},
+        #    zone_key   => $self->{'drag_zone_key'},
+        #);
+    }
     elsif ( @tags = grep /^background_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
@@ -4371,12 +4417,12 @@ Stubbed out, not currently used.
     my $dx = $x - $self->{'drag_last_x'};
     my $dy = $y - $self->{'drag_last_y'};
 
-    #    my $new_zone_key = $self->get_zone_key_from_drawn_id(
-    #        window_key =>$window_key,
-    #        drawn_id =>$zinc->find( 'closest', $x,$y ),
-    #        zinc => $zinc,
-    #);
-    if ( $self->{'drag_obj'} ) {
+    if ( $self->{'drag_obj'} eq 'location_bar' ) {
+        $self->app_controller()->app_display_data->location_bar_drag(
+            window_key => $self->{'drag_window_key'},
+            zone_key   => $self->{'drag_zone_key'},
+            drag_value => $dx,
+        );
     }
 
     $self->{drag_last_x} = $x;
@@ -4434,6 +4480,13 @@ Handle the drag event
                     dy   => $dy,
                 );
             }
+        }
+        elsif ( $self->{'drag_obj'} eq 'location_bar' ) {
+            $self->app_controller()->app_display_data->location_bar_drag(
+                window_key => $self->{'drag_window_key'},
+                zone_key   => $self->{'drag_zone_key'},
+                drag_value => $dx,
+            );
         }
         elsif ( $self->{'drag_obj'} eq 'background' ) {
             $self->app_controller()->scroll_zone(
