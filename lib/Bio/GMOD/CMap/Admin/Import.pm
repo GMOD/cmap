@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.83 2007-09-28 20:17:07 mwz444 Exp $
+# $Id: Import.pm,v 1.84 2008-02-22 22:19:50 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -294,7 +294,7 @@ appended to the list of xrefs.
                 = $sql_object->get_features_simple( map_id => $map_id, );
 
             for (@$features) {
-                $maps->{$map_name}{'features'}{ $_->{'feature_id'} } = 1;
+                $maps->{$map_name}{'features'}{ $_->{'feature_id'} } = 0;
             }
 
             $self->Print(
