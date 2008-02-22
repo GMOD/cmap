@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.1 2008-01-22 22:23:23 mwz444 Exp $
+# $Id: Interactive.pm,v 1.2 2008-02-22 14:22:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -530,7 +530,7 @@ If command_line is not true, uses a menu system to get the species options.
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -550,8 +550,8 @@ If command_line is not true, uses a menu system to get the species options.
         return if $answer =~ m/^[Nn]/;
     }
 
-    my $admin = $self->admin;
-    $admin->species_create(
+    my $admin      = $self->admin;
+    my $species_id = $admin->species_create(
         species_acc         => $species_acc         || '',
         species_common_name => $species_common_name || '',
         species_full_name   => $species_full_name   || '',
@@ -565,6 +565,7 @@ If command_line is not true, uses a menu system to get the species options.
     print $log_fh "Species $species_common_name created\n";
 
     $self->purge_query_cache( cache_level => 1 );
+    return $species_id;
 }
 
 # ----------------------------------------------------
@@ -632,7 +633,7 @@ If command_line is not true, uses a menu system to get the map_set options.
         if ($species_id) {
             my $return
                 = $sql_object->get_species( species_id => $species_id );
-            unless ( defined($return) and %$return ) {
+            unless ( @{ $return || [] } ) {
                 print STDERR "The species_id, '$species_id' is not valid.\n";
                 push @missing, 'species_id or species_acc';
             }
@@ -666,7 +667,7 @@ If command_line is not true, uses a menu system to get the map_set options.
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -760,6 +761,7 @@ If command_line is not true, uses a menu system to get the map_set options.
 
     $self->purge_query_cache( cache_level => 1 );
 
+    return $map_set_id;
 }
 
 # ----------------------------------------------------
@@ -804,6 +806,7 @@ No Parameters
 
     $self->$action();
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -909,7 +912,7 @@ If command_line is not true, uses a menu system to get the delete correspondence
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -1025,6 +1028,7 @@ If command_line is not true, uses a menu system to get the delete correspondence
         }
     }
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1126,7 +1130,7 @@ If command_line is not true, uses a menu system to get the delete maps options.
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -1206,6 +1210,7 @@ If command_line is not true, uses a menu system to get the delete maps options.
             or return $self->error( $admin->error );
     }
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1309,7 +1314,7 @@ If command_line is not true, uses a menu system to get the delete features optio
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -1415,6 +1420,7 @@ If command_line is not true, uses a menu system to get the delete features optio
         return;
     }
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1459,6 +1465,7 @@ No Parameters
     );
 
     $self->$action();
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1639,11 +1646,11 @@ Directory where output file is to be placed
                 }
             }
             unless ($valid) {
-                exit(0);
+                return 0;
             }
             if ( @exclude_fields == @col_names ) {
                 print "\nError:  Can't exclude all the fields!\n";
-                exit(0);
+                return 0;
             }
         }
         $dir = $self->_get_dir( dir_str => $dir_str ) or return;
@@ -1653,7 +1660,7 @@ Directory where output file is to be placed
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -1786,6 +1793,7 @@ Directory where output file is to be placed
 
         close $fh;
     }
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1914,7 +1922,7 @@ Hint: Oracle and Sybase like 'doubled', MySQL likes 'backslash',
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -2046,6 +2054,7 @@ Hint: Oracle and Sybase like 'doubled', MySQL likes 'backslash',
     }
 
     print $fh "\n--\n-- Finished dumping Cmap data\n--\n";
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2151,7 +2160,7 @@ Directory where output file is to be placed
                 }
             }
             unless ($valid) {
-                exit(0);
+                return 0;
             }
         }
 
@@ -2221,7 +2230,7 @@ Directory where output file is to be placed
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -2648,7 +2657,7 @@ No Parameters
         ],
     );
 
-    $self->$action();
+    return $self->$action();
 }
 
 # ----------------------------------------------------
@@ -2690,6 +2699,7 @@ No Parameters
     );
 
     $self->$action();
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2749,7 +2759,7 @@ Comma delimited string of file names to be imported
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -2792,6 +2802,7 @@ Comma delimited string of file names to be imported
             return;
             };
     }
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2858,6 +2869,7 @@ No Parameters
         print "Error: ", $link_manager->error, "\n";
         return;
         };
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2939,7 +2951,7 @@ Comma delimited string of file names to be imported
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -3015,6 +3027,7 @@ Comma delimited string of file names to be imported
             };
     }
     $self->purge_query_cache( cache_level => 4 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3073,7 +3086,7 @@ If command_line is not true, uses a menu system to get the delete duplicate corr
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -3103,6 +3116,7 @@ If command_line is not true, uses a menu system to get the delete duplicate corr
     $admin->delete_duplicate_correspondences( map_set_id => $map_set_id, );
 
     $self->purge_query_cache( cache_level => 4 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3168,6 +3182,7 @@ No Parameters
         cache_level => $cache_level,
         purge_all   => $purge_all,
     );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3220,6 +3235,7 @@ active datasource will be purged.
     foreach my $namespace ( @{ $namespaces_purged || [] } ) {
         print "Purged $namespace\n";
     }
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3266,6 +3282,7 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
     my $map_set_acc  = $args{'map_set_acc'};
     my $overwrite    = $args{'overwrite'} || 0;
     my $allow_update = $args{'allow_update'} || 0;
+    my $quiet        = $args{'quiet'} || 0;
     my $sql_object   = $self->sql;
     my ( $map_set, $files );
 
@@ -3296,7 +3313,7 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -3369,9 +3386,11 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
 
     my $time_end = new Benchmark;
     print STDERR "import time: "
-        . timestr( timediff( $time_end, $time_start ) ) . "\n";
+        . timestr( timediff( $time_end, $time_start ) ) . "\n"
+        unless ($quiet);
 
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3429,7 +3448,7 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -3485,6 +3504,7 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
             };
     }
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -3568,7 +3588,8 @@ Options: exact_match, read_pair
 
     my @from_map_set_ids;
     my @to_map_set_ids;
-    my @skip_feature_type_accs, my $name_regex;
+    my @skip_feature_type_accs;
+    my $name_regex;
     my $regex_options = [
         {   regex_title => 'exact match only',
             regex       => '',
@@ -3702,7 +3723,7 @@ Options: exact_match, read_pair
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
-            exit(0);
+            return 0;
         }
     }
     else {
@@ -3847,7 +3868,8 @@ Options: exact_match, read_pair
 
     my $time_end = new Benchmark;
     print STDERR "make correspondence time: "
-        . timestr( timediff( $time_end, $time_start ) ) . "\n";
+        . timestr( timediff( $time_end, $time_start ) ) . "\n"
+        unless ($quiet);
 
     $self->purge_query_cache( cache_level => 4 );
     return 1;
@@ -3986,6 +4008,7 @@ No Parameters
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
         };
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -4087,6 +4110,7 @@ No Parameters
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
         };
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -4143,6 +4167,7 @@ No Parameters
         return;
         };
     $self->purge_query_cache( cache_level => 1 );
+    return 1;
 }
 
 # ----------------------------------------------------

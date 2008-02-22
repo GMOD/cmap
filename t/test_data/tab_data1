@@ -1,0 +1,3 @@
+map_name	map_acc	feature_name	feature_acc	feature_start	feature_stop	feature_type_acc	feature_aliases
+T1	T1	F1	T1.1	0	1000	contig	F1.A,F1.AA
+T1	T1	R1.g1	T1.2	0	500	read	

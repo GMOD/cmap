@@ -1,0 +1,3 @@
+feature_acc1	feature_acc2	feature_name1	feature_name2	evidence
+T1.1	T2.1	F1	F1	ANB
+T1.1	T2.2	F1	F1.A	ANB
