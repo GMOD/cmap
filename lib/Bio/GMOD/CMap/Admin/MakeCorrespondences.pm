@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.62 2007-09-28 20:17:07 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.63 2008-02-22 03:10:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -200,11 +200,11 @@ would match.
             my @to_map_ids = $self->_get_map_ids($to_map_set_id);
 
             $self->compare_map_sets(
-                from_map_set_id              => $from_map_set_id,
-                to_map_set_id                => $to_map_set_id,
-                from_map_ids                 => \@from_map_ids,
-                to_map_ids                   => \@to_map_ids,
-                add_name_correspondences     => \%add_name_correspondences,
+                from_map_set_id          => $from_map_set_id,
+                to_map_set_id            => $to_map_set_id,
+                from_map_ids             => \@from_map_ids,
+                to_map_ids               => \@to_map_ids,
+                add_name_correspondences => \%add_name_correspondences,
                 disallow_name_correspondence =>
                     \%disallow_name_correspondence,
             );
@@ -217,9 +217,7 @@ would match.
         $self->{'num_checked_maps'} == 1 ? '' : 's',
         $self->{'num_new_corr'},
         $self->{'num_new_corr'} == 1 ? '' : 's'
-    );
-
-    $SIG{'INT'} = $orig_handler;
+    ) unless ( $self->{'quiet'} );
 
     return 1;
 }
@@ -465,8 +463,8 @@ sub _get_features {
         )
     {
         my $tmp_min_feature_id = ( $i == $min_feature_id ) ? 0 : $i;
-        my $tmp_max_feature_id =
-            ( $i + $feature_id_group_size >= $max_feature_id )
+        my $tmp_max_feature_id
+            = ( $i + $feature_id_group_size >= $max_feature_id )
             ? 0
             : $i + $feature_id_group_size;
 
