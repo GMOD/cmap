@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.71 2008-02-12 20:43:27 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.72 2008-02-22 17:07:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -545,55 +545,6 @@ Adds control buttons to the controls_pane.
         -font => $font,
     );
 
-    my $corr_menu_button = $controls_pane->Button(
-        -text    => "Correspondences",
-        -command => sub {
-            $self->popup_corr_menu(
-                window_key => $window_key,
-                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-            );
-        },
-        -font => $font,
-    );
-    my $display_options_menu_button = $controls_pane->Button(
-        -text    => "Display Options",
-        -command => sub {
-            $self->popup_display_options_menu(
-                window_key => $window_key,
-                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-            );
-        },
-        -font => $font,
-    );
-    my $expand_button = $controls_pane->Button(
-        -text    => "Add Sub Maps",
-        -command => sub {
-            $self->app_controller()->expand_zone(
-                window_key => $window_key,
-                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-            );
-        },
-        -font => $font,
-    );
-    my $refresh_button = $controls_pane->Button(
-        -text    => "Refresh From Database",
-        -command => sub {
-            my $answer = $self->main_window()->Dialog(
-                -title => 'Refresh From the Database?',
-                -text  => 'Are you certain that you want to refresh?  '
-                    . 'Any changes that you have made will be lost.  '
-                    . 'This cannot be undone.',
-                -default_button => 'Cancel',
-                -buttons        => [ 'OK', 'Cancel', ],
-            )->Show();
-
-            if ( $answer eq 'OK' ) {
-                $self->app_controller()->app_display_data()
-                    ->refresh_program_from_database();
-            }
-        },
-        -font => $font,
-    );
     my $reattach_button = $controls_pane->Button(
         -text    => "Reattach Slot to Parent",
         -command => sub {
@@ -649,18 +600,6 @@ Adds control buttons to the controls_pane.
         -font => $font,
     );
 
-    my $show_features_check_box = $controls_pane->Checkbutton(
-        -text     => "Show Features",
-        -variable => \$self->{'show_features'},
-        -command  => sub {
-            $self->app_controller()->app_display_data()
-                ->change_feature_status(
-                zone_key      => ${ $self->{'selected_zone_key_scalar'} },
-                show_features => $self->{'show_features'},
-                );
-        },
-        -font => $font,
-    );
     $self->{'attach_to_parent_check_box'} = $controls_pane->Checkbutton(
         -text     => "Attached to Parent",
         -variable => \$self->{'attached_to_parent'},
@@ -836,16 +775,15 @@ Adds control buttons to the controls_pane.
     );
     Tk::grid(
         $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
-        '-',                                  $corr_menu_button,
-        $display_options_menu_button,    #$reattach_button,
+        '-',                                  '-', '-',
+
+        #$reattach_button,
         -sticky => "nw",
     );
     Tk::grid(
         $scroll_far_left_button, $scroll_left_button,
         $zoom_button1,           $zoom_button2,
         $scroll_type_1,          $scroll_far_type_1,
-        $expand_button,                  # $show_features_check_box,
-        $refresh_button,
 
         #$debug_button1, #$debug_button2,
 
@@ -1979,6 +1917,24 @@ Populates the file menu with menu_items
                 },
             ],
             [   'command',
+                '~Refresh From Database',
+                -command => sub {
+                    my $answer = $self->main_window()->Dialog(
+                        -title => 'Refresh From the Database?',
+                        -text => 'Are you certain that you want to refresh?  '
+                            . 'Any changes that you have made will be lost.  '
+                            . 'This cannot be undone.',
+                        -default_button => 'Cancel',
+                        -buttons        => [ 'OK', 'Cancel', ],
+                    )->Show();
+
+                    if ( $answer eq 'OK' ) {
+                        $self->app_controller()->app_display_data()
+                            ->refresh_program_from_database();
+                    }
+                },
+            ],
+            [   'command',
                 '~Commit Changes',
                 -command => sub {
                     $self->commit_changes( window_key => $window_key, );
@@ -2183,29 +2139,26 @@ Bind events to a zinc
             $self->drag_right_mouse( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
+    if ( $^O eq 'MSWin32' ) {
+        $zinc->Tk::bind(
+            '<MouseWheel>' => sub {
+                $self->mouse_wheel_event( $zinc, ( Ev('D') < 0 ) ? 0.5 : 2 );
+            }
+        );
+    }
+    else {
+        $zinc->Tk::bind(
+            '<4>' => sub {
+                $self->mouse_wheel_event( $zinc, 0.5 );
+            }
+        );
+        $zinc->Tk::bind(
+            '<5>' => sub {
+                $self->mouse_wheel_event( $zinc, 2 );
+            }
+        );
 
-    # BF READD THESE BINDINGS
-    #    if ( $^O eq 'MSWin32' ) {
-    #        $zinc->CanvasBind(
-    #            '<MouseWheel>' => sub {
-    #                $self->mouse_wheel_event( $zinc,
-    #                    ( Ev('D') < 0 ) ? 0.5 : 2 );
-    #            }
-    #        );
-    #    }
-    #    else {
-    #        $zinc->CanvasBind(
-    #            '<4>' => sub {
-    #                $self->mouse_wheel_event( $zinc, 0.5 );
-    #            }
-    #        );
-    #        $zinc->CanvasBind(
-    #            '<5>' => sub {
-    #                $self->mouse_wheel_event( $zinc, 2 );
-    #            }
-    #        );
-    #
-    #    }
+    }
 
 }
 
@@ -2488,6 +2441,99 @@ sub popup_map_menu {
 }
 
 # ----------------------------------------------------
+sub popup_background_menu {
+
+=pod
+
+=head2 popup_background_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc             = $args{'zinc'};
+    my $window_key       = $args{'window_key'};
+    my $zone_key         = $args{'zone_key'};
+    my $mouse_x          = $args{'mouse_x'};
+    my $mouse_y          = $args{'mouse_y'};
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my $menu_items = [];
+
+    #push @$menu_items,
+    #    [
+    #     cascade   => 'Correspondence Options',
+    #    -tearoff   => 0,
+    #    -menuitems => $self->popup_corr_menu(
+    #        window_key => $window_key,
+    #        zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+    #    ),
+    #    ];
+    #}
+
+    push @$menu_items, [
+        Button   => '+Correspondence Options',
+        -command => sub {
+            $self->popup_corr_menu(
+                window_key => $window_key,
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+            );
+        },
+    ];
+    push @$menu_items, [
+        Button   => '+Display Options',
+        -command => sub {
+            $self->popup_display_options_menu(
+                window_key => $window_key,
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+            );
+        },
+    ];
+    push @$menu_items, [
+        Button   => 'Add Sub Maps',
+        -command => sub {
+            $self->app_controller()->expand_zone(
+                window_key => $window_key,
+                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+            );
+        },
+    ];
+
+    #    $self->app_controller()->plugin_set()->modify_right_click_menu(
+    #        window_key        => $window_key,
+    #        menu_items        => $menu_items,
+    #        report_menu_items => $report_menu_items,
+    #    );
+
+    push @$menu_items, [
+        Button   => 'Cancel',
+        -command => sub {
+            return;
+        },
+    ];
+
+    my $menu = $self->main_window()->Menu(
+        -title => 'Dude',
+        -type  => 'tearoff',
+
+        #-type => 'normal',
+        -tearoff   => 0,
+        -menuitems => $menu_items,
+    );
+
+    $menu->bind(
+        '<FocusOut>',
+        sub {
+            $menu->destroy();
+        },
+    );
+    $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
+
+    return;
+}
+
+# ----------------------------------------------------
 sub popup_corr_menu {
 
 =pod
@@ -2604,15 +2650,8 @@ sub popup_corr_menu {
         -menuitems => $menu_items,
     );
 
-    #$menu->bind(
-    #'<FocusOut>',
-    #sub {
-    #$menu->destroy();
-    #},
-    #);
     $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
-
-    return;
+    return $menu_items;
 }
 
 # ----------------------------------------------------
@@ -4181,6 +4220,8 @@ Handle down click of the right mouse button
     $self->{'draggable'}   = 0;
     $self->{'drag_last_x'} = $x;
     $self->{'drag_last_y'} = $y;
+    $self->{'drag_ori_x'}  = $x;
+    $self->{'drag_ori_y'}  = $y;
     $self->{'drag_ori_id'} = $zinc->find( 'withtag', 'current' );
     if ( ref( $self->{'drag_ori_id'} ) eq 'ARRAY' ) {
         $self->{'drag_ori_id'} = $self->{'drag_ori_id'}[0];
@@ -4208,7 +4249,8 @@ Handle down click of the right mouse button
         my $object_selected_type
             = $self->object_selected_type( window_key => $window_key );
 
-# User is trying to combine features and maps.  We can't have that.  If control is not pressed, wipe the selections and keep going.
+       # User is trying to combine features and maps.  We can't have that.  If
+       # control is not pressed, wipe the selections and keep going.
         if (    $object_selected_type
             and $object_selected_type ne 'map' )
         {
@@ -4272,10 +4314,11 @@ Handle down click of the right mouse button
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         $self->{'drag_obj'}      = 'background';
-        $self->app_controller()->hide_corrs(
-            window_key => $self->{'drag_window_key'},
-            zone_key   => $self->{'drag_zone_key'},
-        );
+
+        #$self->app_controller()->hide_corrs(
+        #    window_key => $self->{'drag_window_key'},
+        #    zone_key   => $self->{'drag_zone_key'},
+        #);
     }
     else {
         unless ($control) {
@@ -4486,10 +4529,21 @@ Handle the stopping drag event
         elsif ($self->{'drag_obj'} eq 'background'
             or $self->{'drag_obj'} eq 'viewed_region' )
         {
-            $self->app_controller()->unhide_corrs(
-                window_key => $self->{'drag_window_key'},
-                zone_key   => $self->{'drag_zone_key'},
-            );
+            if ( $self->{'drag_ori_x'} == $x and $self->{'drag_ori_y'} == $y )
+            {
+                $self->popup_background_menu(
+                    zinc       => $zinc,
+                    window_key => $self->{'drag_window_key'},
+                    zone_key   => $self->{'drag_zone_key'},
+                    mouse_x    => $x,
+                    mouse_y    => $y,
+                );
+            }
+
+            #$self->app_controller()->unhide_corrs(
+            #    window_key => $self->{'drag_window_key'},
+            #    zone_key   => $self->{'drag_zone_key'},
+            #);
         }
     }
 

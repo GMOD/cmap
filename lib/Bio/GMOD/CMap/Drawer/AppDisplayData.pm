@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.71 2008-02-12 20:43:26 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.72 2008-02-22 17:07:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2455,30 +2455,30 @@ Hide Corrs for moving
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $slot_key1  = $args{'slot_key'}   or return;
+    my $zone_key1  = $args{'zone_key'}   or return;
 
     return unless ( $self->{'correspondences_hidden'} );
 
-    foreach my $slot_key2 (
-        @{ $self->{'correspondences_hidden'}{$slot_key1} || {} } )
+    foreach my $zone_key2 (
+        @{ $self->{'correspondences_hidden'}{$zone_key1} || [] } )
     {
-        delete $self->{'correspondences_hidden'}{$slot_key1};
-        $self->add_slot_corrs(
+        delete $self->{'correspondences_hidden'}{$zone_key1};
+        $self->add_zone_corrs(
             window_key => $window_key,
-            slot_key1  => $slot_key1,
-            slot_key2  => $slot_key2,
+            zone_key1  => $zone_key1,
+            zone_key2  => $zone_key2,
         );
-        $self->{'correspondences_on'}{$slot_key1}{$slot_key2} = 1;
-        $self->{'correspondences_on'}{$slot_key2}{$slot_key1} = 1;
+        $self->{'correspondences_on'}{$zone_key1}{$zone_key2} = 1;
+        $self->{'correspondences_on'}{$zone_key2}{$zone_key1} = 1;
     }
 
-    foreach my $child_slot_key (
-        @{ $self->{'scaffold'}{$slot_key1}{'children'} || [] } )
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key1}{'children'} || [] } )
     {
-        if ( $self->{'scaffold'}{$child_slot_key}{'attached_to_parent'} ) {
+        if ( $self->{'scaffold'}{$child_zone_key}{'attached_to_parent'} ) {
             $self->unhide_corrs(
                 window_key => $window_key,
-                slot_key   => $child_slot_key,
+                zone_key   => $child_zone_key,
             );
         }
     }

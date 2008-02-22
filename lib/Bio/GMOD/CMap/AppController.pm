@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.46 2008-01-17 17:07:51 mwz444 Exp $
+# $Id: AppController.pm,v 1.47 2008-02-22 17:07:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -366,7 +366,7 @@ sub load_new_window {
 
 =head2 load_new_window
 
-Load the first slot of a page.
+Load the first zone of a page.
 
 =cut
 
@@ -660,7 +660,7 @@ Hide correspondences while moving.
 
     $self->app_display_data()->hide_corrs(
         window_key => $args{'window_key'},
-        slot_key   => $args{'slot_key'},
+        zone_key   => $args{'zone_key'},
     );
 
     return;
@@ -681,7 +681,7 @@ Hide correspondences while moving.
 
     $self->app_display_data()->unhide_corrs(
         window_key => $args{'window_key'},
-        slot_key   => $args{'slot_key'},
+        zone_key   => $args{'zone_key'},
     );
 
     return;
