@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::ExampleModifyRightClickMenu;
 
-# $Id: ExampleModifyRightClickMenu.pm,v 1.8 2007-09-28 20:17:10 mwz444 Exp $
+# $Id: ExampleModifyRightClickMenu.pm,v 1.9 2008-02-25 21:24:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -39,180 +39,199 @@ sub modify_right_click_menu {
     my $window_key        = $args{'window_key'};
     my $menu_items        = $args{'menu_items'};
     my $report_menu_items = $args{'report_menu_items'};
+    my $type              = $args{'type'} || '';
     my $app_interface     = $self->app_interface();
     my $app_display_data  = $self->app_display_data();
-    my $app_data_module   = $self->data_module();
+    my $app_data_module   = $self->app_data_module();
 
-    return
-        unless (
-        $app_interface->number_of_object_selections( $window_key, ) );
+    if ( $type eq 'map' or $type eq 'feature' ) {
 
-    # Using Attributes Example
-    push @{$menu_items}, [
-        Button   => 'Use Search Terms',
-        -command => sub {
-            my $selected_type = $app_interface->object_selected_type(
-                window_key => $window_key, );
-            my @urls;
-            my $template_processor = $self->template;
-            if ( $selected_type eq 'map' ) {
-                foreach my $map_key (
-                    $app_interface->object_selection_keys( $window_key, ) )
-                {
-                    my $map_id = $app_display_data->map_key_to_id($map_key);
+        # Using Attributes Example
+        push @{$menu_items}, [
+            Button   => 'Use Search Terms',
+            -command => sub {
+                my $selected_type
+                    = $app_interface->object_selected_type(
+                    window_key => $window_key, )
+                    || '';
+                my @urls;
+                my $template_processor = $self->template;
+                if ( $selected_type eq 'map' ) {
+                    foreach my $map_key (
+                        $app_interface->object_selection_keys( $window_key, )
+                        )
+                    {
+                        my $map_id
+                            = $app_display_data->map_key_to_id($map_key);
 
-                    # Get the Attributes
-                    my $attribs
-                        = $app_display_data->app_data_module()
-                        ->generic_get_data(
-                        method_name => 'get_attributes',
-                        parameters  => {
-                            object_id      => $map_id,
-                            object_type    => 'map',
-                            attribute_name => "search_term",
-                        },
+                        # Get the Attributes
+                        my $attribs = $app_data_module->generic_get_data(
+                            method_name => 'get_attributes',
+                            parameters  => {
+                                object_id      => $map_id,
+                                object_type    => 'map',
+                                attribute_name => "search_term",
+                            },
                         );
-                    next unless ( @{ $attribs || [] } );
+                        next unless ( @{ $attribs || [] } );
 
-                    my @search_terms;
-                    foreach my $attrib ( @{ $attribs || [] } ) {
-                        push @search_terms, $attrib->{'attribute_value'};
-                    }
-                    next unless (@search_terms);
-                    my $url = "http://www.google.com/search?q="
-                        . join( '+', @search_terms );
-                    push @urls, $url;
-                }
-            }
-            elsif ( $selected_type eq 'feature' ) {
-                foreach my $feature_acc (
-                    $app_interface->object_selection_keys(
-                        window_key => $window_key,
-                    )
-                    )
-                {
-                    my $feature_data = $app_display_data->app_data_module()
-                        ->feature_data( feature_acc => $feature_acc, );
-                    my $feature_id = $feature_data->{'feature_id'};
-
-                    # Get the Xrefs
-                    my $attribs
-                        = $app_display_data->app_data_module()
-                        ->generic_get_data(
-                        method_name => 'get_attributes',
-                        parameters  => {
-                            object_id      => $feature_id,
-                            object_type    => 'feature',
-                            attribute_name => "search_term",
-                        },
-                        );
-                    next unless ( @{ $attribs || [] } );
-
-                    my @search_terms;
-                    foreach my $attrib ( @{ $attribs || [] } ) {
-                        push @search_terms, $attrib->{'attribute_value'};
-                    }
-                    next unless (@search_terms);
-                    my $url = "http://www.google.com/search?q="
-                        . join( '+', @search_terms );
-                    push @urls, $url;
-                }
-            }
-            if (@urls) {
-                foreach my $url (@urls) {
-                    system( "/usr/bin/firefox " . $url );
-                }
-            }
-            else {
-                $self->app_interface->popup_warning( text =>
-                        "There are no search terms attached to the object(s).\n",
-                );
-            }
-        },
-    ];
-
-    # External Links Example
-    push @{$menu_items}, [
-        Button   => 'Open External Links',
-        -command => sub {
-            my $selected_type = $app_interface->object_selected_type(
-                window_key => $window_key, );
-            my @urls;
-            my $template_processor = $self->template;
-            if ( $selected_type eq 'map' ) {
-                foreach my $map_key (
-                    $app_interface->object_selection_keys( $window_key, ) )
-                {
-                    my $map_id = $app_display_data->map_key_to_id($map_key);
-
-                    # Get the Xrefs
-                    my $xrefs
-                        = $app_display_data->app_data_module()
-                        ->generic_get_data(
-                        method_name => 'get_xrefs',
-                        parameters  => {
-                            object_id   => $map_id,
-                            object_type => 'map',
-                        },
-                        );
-                    next unless ( @{ $xrefs || [] } );
-
-                    my $map_data = $app_display_data->app_data_module()
-                        ->map_data( map_id => $map_id, );
-
-                    foreach my $xref ( @{ $xrefs || [] } ) {
-                        my $url;
-                        $template_processor->process( \$xref->{'xref_url'},
-                            { object => $map_data }, \$url );
-
+                        my @search_terms;
+                        foreach my $attrib ( @{ $attribs || [] } ) {
+                            push @search_terms, $attrib->{'attribute_value'};
+                        }
+                        next unless (@search_terms);
+                        my $url = "http://www.google.com/search?q="
+                            . join( '+', @search_terms );
                         push @urls, $url;
                     }
                 }
-            }
-            elsif ( $selected_type eq 'feature' ) {
-                foreach my $feature_acc (
-                    $app_interface->object_selection_keys(
-                        window_key => $window_key,
-                    )
-                    )
-                {
-                    my $feature_data = $app_display_data->app_data_module()
-                        ->feature_data( feature_acc => $feature_acc, );
-                    my $feature_id = $feature_data->{'feature_id'};
+                elsif ( $selected_type eq 'feature' ) {
+                    foreach my $feature_acc (
+                        $app_interface->object_selection_keys(
+                            window_key => $window_key,
+                        )
+                        )
+                    {
+                        my $feature_data = $app_data_module->feature_data(
+                            feature_acc => $feature_acc, );
+                        my $feature_id = $feature_data->{'feature_id'};
 
-                    # Get the Xrefs
-                    my $xrefs
-                        = $app_display_data->app_data_module()
-                        ->generic_get_data(
-                        method_name => 'get_xrefs',
-                        parameters  => {
-                            object_id   => $feature_id,
-                            object_type => 'feature',
-                        },
+                        # Get the Xrefs
+                        my $attribs = $app_data_module->generic_get_data(
+                            method_name => 'get_attributes',
+                            parameters  => {
+                                object_id      => $feature_id,
+                                object_type    => 'feature',
+                                attribute_name => "search_term",
+                            },
                         );
-                    next unless ( @{ $xrefs || [] } );
+                        next unless ( @{ $attribs || [] } );
 
-                    foreach my $xref ( @{ $xrefs || [] } ) {
-                        my $url;
-                        $template_processor->process( \$xref->{'xref_url'},
-                            { object => $feature_data }, \$url );
-
+                        my @search_terms;
+                        foreach my $attrib ( @{ $attribs || [] } ) {
+                            push @search_terms, $attrib->{'attribute_value'};
+                        }
+                        next unless (@search_terms);
+                        my $url = "http://www.google.com/search?q="
+                            . join( '+', @search_terms );
                         push @urls, $url;
                     }
                 }
-            }
-            if (@urls) {
-                foreach my $url (@urls) {
-                    system( "/usr/bin/firefox " . $url );
+                if (@urls) {
+                    foreach my $url (@urls) {
+                        system( "/usr/bin/firefox " . $url );
+                    }
                 }
-            }
-            else {
-                $self->app_interface->popup_warning(
-                    text => "There are no external references to present.\n",
-                );
-            }
-        },
-    ];
+                else {
+                    $app_interface->popup_warning( text =>
+                            "There are no search terms attached to the object(s).\n",
+                    );
+                }
+            },
+        ];
+
+        # External Links Example
+        push @{$menu_items}, [
+            Button   => 'Open External Links',
+            -command => sub {
+                my $selected_type = $app_interface->object_selected_type(
+                    window_key => $window_key, );
+                my @urls;
+                my $template_processor = $self->template;
+                if ( $selected_type eq 'map' ) {
+                    foreach my $map_key (
+                        $app_interface->object_selection_keys( $window_key, )
+                        )
+                    {
+                        my $map_id
+                            = $app_display_data->map_key_to_id($map_key);
+
+                        # Get the Xrefs
+                        my $xrefs = $app_data_module->generic_get_data(
+                            method_name => 'get_xrefs',
+                            parameters  => {
+                                object_id   => $map_id,
+                                object_type => 'map',
+                            },
+                        );
+                        next unless ( @{ $xrefs || [] } );
+
+                        my $map_data
+                            = $app_data_module->map_data( map_id => $map_id,
+                            );
+
+                        foreach my $xref ( @{ $xrefs || [] } ) {
+                            my $url;
+                            $template_processor->process(
+                                \$xref->{'xref_url'},
+                                { object => $map_data }, \$url );
+
+                            push @urls, $url;
+                        }
+                    }
+                }
+                elsif ( $selected_type eq 'feature' ) {
+                    foreach my $feature_acc (
+                        $app_interface->object_selection_keys(
+                            window_key => $window_key,
+                        )
+                        )
+                    {
+                        my $feature_data = $app_data_module->feature_data(
+                            feature_acc => $feature_acc, );
+                        my $feature_id = $feature_data->{'feature_id'};
+
+                        # Get the Xrefs
+                        my $xrefs = $app_data_module->generic_get_data(
+                            method_name => 'get_xrefs',
+                            parameters  => {
+                                object_id   => $feature_id,
+                                object_type => 'feature',
+                            },
+                        );
+                        next unless ( @{ $xrefs || [] } );
+
+                        foreach my $xref ( @{ $xrefs || [] } ) {
+                            my $url;
+                            $template_processor->process(
+                                \$xref->{'xref_url'},
+                                { object => $feature_data }, \$url );
+
+                            push @urls, $url;
+                        }
+                    }
+                }
+                if (@urls) {
+                    foreach my $url (@urls) {
+                        system( "/usr/bin/firefox " . $url );
+                    }
+                }
+                else {
+                    $app_interface->popup_warning( text =>
+                            "There are no external references to present.\n",
+                    );
+                }
+            },
+        ];
+    }
+    elsif ( $type eq 'zone' ) {
+        push @{$menu_items}, [
+            Button   => 'Search Web for Map Set',
+            -command => sub {
+                my $zone_key
+                    = ${ $app_interface->{'selected_zone_key_scalar'} };
+                my $map_set_id = $app_display_data->{'scaffold'}{$zone_key}
+                    {'map_set_id'};
+                my $map_set_data = $app_data_module->get_map_set_data(
+                    map_set_id => $map_set_id, );
+                my $url = "http://www.google.com/search?q=%22"
+                    . join( '+',
+                    split( /\s/, $map_set_data->{'map_set_name'} ) )
+                    . "%22";
+                system( "/usr/bin/firefox " . $url );
+            },
+        ];
+    }
 
     return;
 }

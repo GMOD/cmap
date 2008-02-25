@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::AppPlugins::AppPlugin;
 
-# $Id: AppPlugin.pm,v 1.9 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: AppPlugin.pm,v 1.10 2008-02-25 21:24:13 mwz444 Exp $
 # base class for plugins for the Generic Genome Browser
 
 =head1 NAME
@@ -269,6 +269,7 @@ sub modify_right_click_menu {
     my $window_key        = $args{'window_key'};
     my $menu_items        = $args{'menu_items'};
     my $report_menu_items = $args{'report_menu_items'};
+    my $type              = $args{'type'};
     return;
 }
 

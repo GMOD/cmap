@@ -5,7 +5,7 @@ use strict;
 # Modified from the GBrowse module Bio::Graphics::Browser::AppPluginSet
 # which was written by Lincoln Stein
 
-#  $Id: AppPluginSet.pm,v 1.10 2007-09-28 20:17:09 mwz444 Exp $
+#  $Id: AppPluginSet.pm,v 1.11 2008-02-25 21:24:13 mwz444 Exp $
 
 use Data::Dumper;
 
@@ -207,6 +207,7 @@ sub modify_right_click_menu {
     my $window_key        = $args{'window_key'};
     my $menu_items        = $args{'menu_items'};
     my $report_menu_items = $args{'report_menu_items'};
+    my $type              = $args{'type'};
 
     for my $p ( $self->plugins ) {
         next unless $p->type eq 'modify_right_click_menu';
@@ -214,6 +215,7 @@ sub modify_right_click_menu {
             window_key        => $window_key,
             menu_items        => $menu_items,
             report_menu_items => $report_menu_items,
+            type              => $type,
         );
     }
 }

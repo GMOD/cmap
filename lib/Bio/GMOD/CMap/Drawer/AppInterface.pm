@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.73 2008-02-22 21:30:09 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.74 2008-02-25 21:24:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -703,7 +703,7 @@ Adds control buttons to the controls_pane.
        #$self->app_controller()->zoom_zone(
        #    window_key => $window_key,
        #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-       #    zoom_value => 2,
+       #    zoom_value => 4,
        #);
        #print STDERR
        #    "            --------------BEFORE SELECT-------------------\n";
@@ -730,7 +730,7 @@ Adds control buttons to the controls_pane.
        #$self->app_controller()->scroll_zone(
        #    window_key   => $window_key,
        #    zone_key     => 1,
-       #    scroll_value => -150,
+       #    scroll_value => -500,
        #);
        #print STDERR
        #    "            ----------------BEFORE SPLIT-----------------\n";
@@ -2415,6 +2415,7 @@ sub popup_map_menu {
         window_key        => $window_key,
         menu_items        => $menu_items,
         report_menu_items => $report_menu_items,
+        type              => 'map',
     );
 
     push @$menu_items,
@@ -2510,11 +2511,22 @@ sub popup_background_menu {
         },
     ];
 
-    #    $self->app_controller()->plugin_set()->modify_right_click_menu(
-    #        window_key        => $window_key,
-    #        menu_items        => $menu_items,
-    #        report_menu_items => $report_menu_items,
-    #    );
+    my $report_menu_items = [];
+
+    $self->app_controller()->plugin_set()->modify_right_click_menu(
+        window_key        => $window_key,
+        menu_items        => $menu_items,
+        report_menu_items => $report_menu_items,
+        type              => 'zone',
+    );
+
+    push @$menu_items,
+        [
+         cascade   => 'Reports',
+        -tearoff   => 0,
+        -menuitems => $report_menu_items,
+        ]
+        if (@$report_menu_items);
 
     push @$menu_items, [
         Button   => 'Cancel',
