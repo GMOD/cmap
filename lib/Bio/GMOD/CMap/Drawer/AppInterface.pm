@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.75 2008-02-26 19:03:21 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.76 2008-02-26 19:57:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1164,7 +1164,13 @@ Draws and re-draws on the zinc
                         y_offset => $zone_y_offset,
                         items    => $feature_layout->{'items'},
                         group_id => $zone_group_id,
-                        tags     => [ 'feature_' . $zone_key, 'display', ],
+                        tags     => [
+                            'feature_'
+                                . $zone_key . '_'
+                                . $map_key . '_'
+                                . $feature_acc,
+                            'display',
+                        ],
                     );
                     $self->record_feature_acc_drawn_id(
                         feature_acc => $feature_acc,
@@ -2399,6 +2405,74 @@ sub popup_map_menu {
         },
     );
     $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub popup_feature_menu {
+
+=pod
+
+=head2 popup_feature_menu
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc             = $args{'zinc'};
+    my $moved            = $args{'moved'};
+    my $feature_acc      = $args{'feature_acc'};
+    my $mouse_x          = $args{'mouse_x'};
+    my $mouse_y          = $args{'mouse_y'};
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+
+    my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
+
+    my $menu_items        = [];
+    my $report_menu_items = [];
+
+    $self->app_controller()->plugin_set()->modify_right_click_menu(
+        window_key        => $window_key,
+        menu_items        => $menu_items,
+        report_menu_items => $report_menu_items,
+        type              => 'feature',
+    );
+
+    push @$menu_items,
+        [
+         cascade   => 'Reports',
+        -tearoff   => 0,
+        -menuitems => $report_menu_items,
+        ]
+        if (@$report_menu_items);
+
+    if (@$menu_items) {
+        push @$menu_items, [
+            Button   => 'Cancel',
+            -command => sub {
+                return;
+            },
+        ];
+
+        my $menu = $self->main_window()->Menu(
+            -tearoff   => 0,
+            -menuitems => $menu_items,
+        );
+
+        $menu->bind(
+            '<FocusOut>',
+            sub {
+                $self->reset_object_selections(
+                    zinc       => $zinc,
+                    window_key => $window_key,
+                ) if ($moved);
+                $menu->destroy();
+            },
+        );
+        $menu->Popup( -popover => "cursor", -popanchor => 'nw' );
+    }
 
     return;
 }
@@ -4106,8 +4180,10 @@ Handle down click of the left mouse button
     elsif ( @tags = grep /^feature_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
-        $tags[0] =~ /^feature_(\S+)/;
-        $self->{'drag_zone_key'} = $1;
+        $tags[0] =~ /^feature_(\S+)_(\S+)_(\S+)/;
+        $self->{'drag_zone_key'}    = $1;
+        $self->{'drag_map_key'}     = $2;
+        $self->{'drag_feature_acc'} = $3;
 
         my $feature_acc
             = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} )
@@ -4293,6 +4369,57 @@ Handle down click of the right mouse button
             object_key => $map_key,
         );
         $self->{'drag_mouse_to_edge_x'} = $x - $highlight_bounds->[0];
+    }
+    elsif ( @tags = grep /^feature_/,
+        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    {
+        $tags[0] =~ /^feature_(\S+?)_(\S+?)_(\S+)/;
+        $self->{'drag_zone_key'}    = $1;
+        $self->{'drag_map_key'}     = $2;
+        $self->{'drag_feature_acc'} = $3;
+
+        my $feature_acc
+            = $self->drawn_id_to_feature_acc( $self->{'drag_ori_id'} )
+            or return;
+
+        my $object_selected_type
+            = $self->object_selected_type( window_key => $window_key );
+
+        # User is trying to combine features and maps.  We can't have that.
+        if (    $control
+            and $object_selected_type
+            and $object_selected_type ne 'feature' )
+        {
+            return;
+        }
+        $self->{'drag_obj'} = 'feature';
+
+        my $object_selected = $self->object_selected(
+            window_key  => $window_key,
+            feature_acc => $feature_acc,
+        );
+
+        # If it was previously highlighted, remove it
+        if ($object_selected) {
+            $self->remove_object_selection(
+                zinc       => $zinc,
+                object_key => $feature_acc,
+                window_key => $window_key,
+            );
+            $self->fill_info_box( window_key => $window_key, );
+        }
+        else {
+
+            # Add to the object_selection list
+            $self->add_object_selection(
+                zinc        => $zinc,
+                zone_key    => $self->{'drag_zone_key'},
+                feature_acc => $feature_acc,
+                window_key  => $window_key,
+            );
+        }
+
+        $self->fill_info_box( window_key => $window_key, );
     }
     elsif ( @tags = grep /^location_bar_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
@@ -4541,6 +4668,19 @@ Handle the stopping drag event
                 map_key => $map_key,
                 mouse_x => $x,
                 mouse_y => $y,
+            );
+        }
+        elsif ( $self->{'drag_obj'} eq 'feature' ) {
+            $self->{'drag_feature_acc'} = $3;
+            my $feature_acc = $self->{'drag_feature_acc'};
+
+            $self->popup_feature_menu(
+                zinc  => $zinc,
+                moved => $self->{'highlight_map_moved'}
+                    { $self->{'drag_window_key'} },
+                feature_acc => $feature_acc,
+                mouse_x     => $x,
+                mouse_y     => $y,
             );
         }
         elsif ($self->{'drag_obj'} eq 'background'
