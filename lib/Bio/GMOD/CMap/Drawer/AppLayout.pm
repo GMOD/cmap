@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.59 2008-02-22 21:30:09 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.60 2008-02-26 19:03:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -101,11 +101,6 @@ sub layout_new_window {
     my $window_height_change
         = $app_display_data->{'zone_layout'}{$head_zone_key}{'bounds'}[3]
         - $app_display_data->{'zone_layout'}{$head_zone_key}{'bounds'}[1];
-
-    $app_display_data->modify_window_bottom_bound(
-        window_key    => $window_key,
-        bounds_change => $window_height_change,
-    );
 
     $window_layout->{'changed'}     = 1;
     $window_layout->{'sub_changed'} = 1;

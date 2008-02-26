@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.74 2008-02-25 21:24:13 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.75 2008-02-26 19:03:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -97,7 +97,7 @@ This method will create the Application.
     $self->populate_menu_bar( window_key => $window_key, );
     $self->top_pane( window_key => $window_key, );
     $self->bottom_pane( window_key => $window_key, );
-    $self->middle_pane( window_key => $window_key, );
+    $self->zinc( window_key => $window_key, );
     $self->pack_panes( $window_key, $app_display_data, );
 
     # Window Bindings
@@ -304,64 +304,6 @@ Returns the top_pane object.
 }
 
 # ----------------------------------------------------
-sub zinc_pane {
-
-=pod
-
-=head2 zinc_pane
-
-Returns the zinc_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return undef;
-    unless ( $self->{'zinc_pane'}{$window_key} ) {
-        my $middle_pane = $self->{'middle_pane'}{$window_key};
-        $self->{'zinc_pane'}{$window_key} = $middle_pane->Frame(
-            -relief     => 'groove',
-            -border     => 0,
-            -background => "blue",
-        );
-        $self->zinc( window_key => $window_key, );
-
-        # Pack later in pack_panes()
-    }
-    return $self->{'zinc_pane'}{$window_key};
-}
-
-# ----------------------------------------------------
-sub middle_pane {
-
-=pod
-
-=head2 middle_pane
-
-Returns the middle_pane object.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return undef;
-
-    unless ( $self->{'middle_pane'}{$window_key} ) {
-        my $y_val  = $args{'y_val'};
-        my $height = $args{'height'};
-        my $window = $self->{'windows'}{$window_key};
-        $self->{'middle_pane'}{$window_key} = $window->Scrolled(
-            "Pane",
-            -scrollbars => "oe",
-            -background => "white",
-            -height     => $window->screenheight(),
-        );
-        $self->zinc_pane( window_key => $window_key, );
-
-        # Pack later in pack_panes()
-    }
-    return $self->{'middle_pane'}{$window_key};
-}
-
-# ----------------------------------------------------
 sub bottom_pane {
 
 =pod
@@ -375,7 +317,6 @@ Returns the bottom_pane object.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'bottom_pane'}{$window_key} ) {
-        my $y_val  = $args{'y_val'};
         my $height = $args{'height'};
         my $window = $self->{'windows'}{$window_key};
         $self->{'bottom_pane'}{$window_key} = $window->Frame(
@@ -411,7 +352,6 @@ Returns the info_pane object.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'info_pane'}{$window_key} ) {
-        my $y_val    = $args{'y_val'};
         my $height   = $args{'height'};
         my $top_pane = $self->{'top_pane'}{$window_key};
         $self->{'info_pane'}{$window_key} = $top_pane->Frame(
@@ -440,7 +380,6 @@ Returns the controls_pane object.
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'controls_pane'}{$window_key} ) {
-        my $y_val       = $args{'y_val'};
         my $height      = $args{'height'};
         my $bottom_pane = $self->{'bottom_pane'}{$window_key};
         if (1) {
@@ -2041,7 +1980,8 @@ Returns the zinc object.
     my $window_key = $args{'window_key'} or return undef;
 
     unless ( $self->{'zinc'}{$window_key} ) {
-        my $zinc_frame = $self->{'zinc_pane'}{$window_key};
+
+        #my $zinc_frame = $self->{'zinc_pane'}{$window_key};
 
         #        $self->{'zinc'}{$window_key} = $zinc_frame->Scrolled(
         #            'Canvas',
@@ -2063,12 +2003,23 @@ Returns the zinc object.
 
         # Using the -render flag allows transparency but slows it down
         # considerably
-        $self->{'zinc'}{$window_key} = $zinc_frame->Zinc(
+        #$self->{'zinc'}{$window_key} = $zinc_frame->Zinc(
+        #    -width       => 1100,
+        #    -height      => 800,
+        #    -backcolor   => 'white',
+        #    -borderwidth => 2,
+        #    -relief      => 'sunken',
+        #    #-render      => 1,
+        #);
+        my $window = $self->{'windows'}{$window_key};
+        $self->{'zinc'}{$window_key} = $window->Scrolled(
+            "Zinc",
             -width       => 1100,
             -height      => 800,
             -backcolor   => 'white',
             -borderwidth => 2,
             -relief      => 'sunken',
+            -scrollbars  => 'oe',
 
             #-render      => 1,
         );
@@ -2076,9 +2027,10 @@ Returns the zinc object.
         $self->{'zinc'}{$window_key}
             ->addtag( 'window_key_' . $window_key, 'withtag', 1 );
 
-        $self->bind_zinc( zinc => $self->{'zinc'}{$window_key} );
+        $self->bind_zinc(
+            zinc => $self->{'zinc'}{$window_key}->Subwidget("zinc") );
     }
-    return $self->{'zinc'}{$window_key};
+    return $self->{'zinc'}{$window_key}->Subwidget("zinc");
 }
 
 # ----------------------------------------------------
@@ -3939,7 +3891,7 @@ Deletes all widgets in the current window.
 
     $self->{'top_pane'}{$window_key}->destroy();
     $self->{'bottom_pane'}{$window_key}->destroy();
-    $self->{'middle_pane'}{$window_key}->destroy();
+    $self->{'zinc'}{$window_key}->destroy();
 
     # Maybe clear bindings if they aren't destroyed with delete.
 
@@ -5911,7 +5863,7 @@ Pack the frames
         -side   => 'top',
         -fill   => 'x',
         -anchor => 'n',
-        -expand => 1,
+        -expand => 0,
     );
 
     # Bottom Pane
@@ -5924,21 +5876,12 @@ Pack the frames
         -fill => 'both',
     );
 
-    # Middle Pane
+    # Zinc Pane
     $self->{'zinc'}{$window_key}->pack(
-        -side => 'top',
-        -fill => 'both',
-    );
-    $self->{'zinc_pane'}{$window_key}->pack(
-        -side   => 'left',
-        -fill   => 'x',
+        -side   => 'top',
         -anchor => 'n',
+        -fill   => 'both',
     );
-    $self->{'middle_pane'}{$window_key}->pack(
-        -side => 'top',
-        -fill => 'both',
-    );
-
 }
 
 sub text_dimensions {
