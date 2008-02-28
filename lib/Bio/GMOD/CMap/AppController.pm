@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.47 2008-02-22 17:07:43 mwz444 Exp $
+# $Id: AppController.pm,v 1.48 2008-02-28 17:12:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -295,10 +295,10 @@ Returns a handle to the data module.
     $self->{'app_interface'} = shift if @_;
 
     unless ( $self->{'app_interface'} ) {
-        $self->{'app_interface'}
-            = Bio::GMOD::CMap::Drawer::AppInterface->new(
-            app_controller => $self, )
-            or die "Couldn't initialize AppInterface\n";
+        $self->{'app_interface'} = Bio::GMOD::CMap::Drawer::AppInterface->new(
+            config         => $self->config,
+            app_controller => $self,
+        ) or die "Couldn't initialize AppInterface\n";
     }
 
     return $self->{'app_interface'};

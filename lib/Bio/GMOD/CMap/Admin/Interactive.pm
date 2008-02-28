@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.2 2008-02-22 14:22:21 mwz444 Exp $
+# $Id: Interactive.pm,v 1.3 2008-02-28 17:12:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -147,6 +147,7 @@ No Parameters
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
             db          => $self->db,
             data_source => $self->data_source,
+            config      => $self->{'config'},
         );
     }
 
@@ -678,8 +679,9 @@ If command_line is not true, uses a menu system to get the map_set options.
             return  => 'species_id,species_common_name',
             data    => $sql_object->get_species(),
         );
+
         my $species_common_name;
-        ( $species_id, $species_common_name ) = @$species_info;
+        ( $species_id, $species_common_name ) = @{ $species_info || [] };
 
         unless ($species_id) {
             print "No species!  Please use cmap_admin.pl to create.\n";
@@ -2312,7 +2314,9 @@ Directory where output file is to be placed
     }
 
     my $exporter = Bio::GMOD::CMap::Admin::Export->new(
-        data_source => $self->data_source );
+        config      => $self->config,
+        data_source => $self->data_source
+    );
 
     $exporter->export(
         objects     => \@db_objects,
@@ -2790,7 +2794,9 @@ Comma delimited string of file names to be imported
     }
 
     my $link_manager = Bio::GMOD::CMap::Admin::SavedLink->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
 
     foreach my $file (@$files) {
         $link_manager->read_saved_links_file(
@@ -2829,7 +2835,9 @@ No Parameters
     my $name_space = $self->get_link_name_space;
 
     my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     my @link_set_names = $link_manager->list_set_names(
         name_space => $self->get_link_name_space, );
     my @link_set_name_display;
@@ -3012,7 +3020,9 @@ Comma delimited string of file names to be imported
     }
 
     my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $self->file($file);
@@ -3363,7 +3373,9 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
     }
 
     my $importer = Bio::GMOD::CMap::Admin::Import->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
 
     my $time_start = new Benchmark;
     my %maps;    #stores the maps info between each file
@@ -3489,7 +3501,9 @@ Boolean:  When true, removes any old data that wasn't in the new data file.
     }
 
     my $importer = Bio::GMOD::CMap::Admin::Import->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $self->file($file);
@@ -3849,6 +3863,7 @@ Options: exact_match, read_pair
     }
 
     my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
+        config      => $self->config,
         db          => $self->db,
         data_source => $self->data_source,
     );
@@ -3999,7 +4014,9 @@ No Parameters
     my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
     my @feature_type_accs = map { $_->[0] } @feature_types;
     my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     $gbrowse_liason->prepare_data_for_gbrowse(
         map_set_ids       => \@map_set_ids,
         feature_type_accs => \@feature_type_accs,
@@ -4101,7 +4118,9 @@ No Parameters
     my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
     my @feature_type_accs = map { $_->[0] } @feature_types;
     my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     $gbrowse_liason->copy_data_into_gbrowse(
         map_set_ids       => \@map_set_ids,
         feature_type_accs => \@feature_type_accs,
@@ -4160,7 +4179,9 @@ No Parameters
     return if $answer =~ /^[Nn]/;
 
     my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, );
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
     $gbrowse_liason->copy_data_into_cmap( map_set_id => $map_set_id, )
         or do {
         print "Error: ", $gbrowse_liason->error, "\n";

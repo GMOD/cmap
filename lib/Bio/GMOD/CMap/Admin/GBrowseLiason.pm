@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.12 2007-09-28 20:17:03 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.13 2008-02-28 17:12:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -571,7 +571,9 @@ sub admin {
 
     unless ( $self->{'admin'} ) {
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
-            data_source => $self->data_source );
+            config      => $self->config,
+            data_source => $self->data_source,
+        );
     }
     return $self->{'admin'};
 }

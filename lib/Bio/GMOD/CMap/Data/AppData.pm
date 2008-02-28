@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.32 2008-01-07 18:27:34 mwz444 Exp $
+# $Id: AppData.pm,v 1.33 2008-02-28 17:12:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -1332,7 +1332,9 @@ Update the db.
     }
     else {
         my $admin = Bio::GMOD::CMap::Admin->new(
-            data_source => $self->data_source() );
+            config      => $self->config,
+            data_source => $self->data_source(),
+        );
         return $admin->commit_changes($actions);
     }
 

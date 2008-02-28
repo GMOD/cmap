@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.211 2008-02-19 18:48:02 mwz444 Exp $
+# $Id: Map.pm,v 1.212 2008-02-28 17:12:58 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You will never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.211 $)[-1];
+$VERSION = (qw$Revision: 1.212 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3308,7 +3308,10 @@ sub add_feature_to_map {
 
             my $buffer = 2;
             my $column_index;
-            my $glyph         = Bio::GMOD::CMap::Drawer::Glyph->new();
+            my $glyph = Bio::GMOD::CMap::Drawer::Glyph->new(
+                config      => $self->config(),
+                data_source => $self->data_source(),
+            );
             my $feature_glyph = $feature_shape;
             $feature_glyph =~ s/-/_/g;
             if ( $glyph->can($feature_glyph) ) {

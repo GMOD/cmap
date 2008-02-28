@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Remote;
 
 # vim: set ft=perl:
 
-# $Id: Remote.pm,v 1.15 2007-09-28 20:17:09 mwz444 Exp $
+# $Id: Remote.pm,v 1.16 2008-02-28 17:12:58 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -221,8 +221,10 @@ sub handler {
     elsif ( $action eq 'commit_changes' ) {
         return 1 unless ($data_manipulation);
         my $change_actions = thaw $apr->param('change_actions');
-        my $admin          = Bio::GMOD::CMap::Admin->new(
-            data_source => $self->data_source() );
+        my $admin = Bio::GMOD::CMap::Admin->new(
+            config      => $self->config,
+            data_source => $self->data_source(),
+        );
         my $temp_to_real_map_id = $admin->commit_changes($change_actions);
         print nfreeze($temp_to_real_map_id);
     }

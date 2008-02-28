@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.60 2008-02-26 19:03:22 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.61 2008-02-28 17:12:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1701,7 +1701,10 @@ Lays out feautures
         return $min_y;
     }
 
-    my $glyph = Bio::GMOD::CMap::Drawer::AppGlyph->new();
+    my $glyph = Bio::GMOD::CMap::Drawer::AppGlyph->new(
+        config      => $app_display_data->config(),
+        data_source => $app_display_data->data_source(),
+    );
 
     my $map_start = $map->{'map_start'};
 

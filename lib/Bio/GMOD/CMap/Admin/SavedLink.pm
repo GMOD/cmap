@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.6 2008-01-24 16:43:08 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.7 2008-02-28 17:12:57 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -32,6 +32,7 @@ sub create_saved_link {
     delete $parsed_options_ref->{'next_step'};
 
     # Create the drawer object to use it's link creation abilities
+    # Note the config object is already set in parsed_options_ref
     my $drawer = Bio::GMOD::CMap::Drawer->new(
         skip_drawing => 1,
         %$parsed_options_ref,

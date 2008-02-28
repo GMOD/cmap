@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.108 2008-01-28 18:17:54 mwz444 Exp $
+# $Id: Admin.pm,v 1.109 2008-02-28 17:12:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -18,6 +18,7 @@ to be used.  This information is found in the config file as the
   use Bio::GMOD::CMap::Admin;
 
   my $admin = Bio::GMOD::CMap::Admin->new(
+      config      => $self->config,
       data_source => $data_source
   );
 
@@ -35,7 +36,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;

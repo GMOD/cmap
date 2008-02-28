@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.123 2008-01-24 16:43:07 mwz444 Exp $
+# $Id: CMap.pm,v 1.124 2008-02-28 17:12:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -300,6 +300,11 @@ Basically a front for set_config()
             or return $self->error(
             "Couldn't set data source to '$arg': " . $config->error );
         $self->{'data_source'} = $config->get_config('database')->{'name'};
+        if ( $arg ne $self->{'data_source'} ) {
+            warn(     "Requested Datasource, '$arg', Not Available.  Using '"
+                    . $self->{'data_source'}
+                    . "'\n" );
+        }
         if ( defined $self->{'db'} ) {
             my $db = $self->db;
             $db->disconnect;
@@ -1164,8 +1169,6 @@ Example configurations:
         $additional_buttons->{'button'} = [ $additional_buttons->{'button'} ];
     }
 
-    #print STDERR Dumper($additional_buttons)."\n";
-
     my %radio_button = (
         label_features          => 1,
         collapse_features       => 1,
@@ -1581,7 +1584,8 @@ Returns the correct SQL module driver for the RDBMS we're using.
     my $db_driver = lc shift;
 
     unless ( defined $self->{'sql_module'} ) {
-        my $db = $self->db or die "Can't access database\n";
+        my $db = $self->db
+            or die "Can't access database: " . $self->error() . "\n";
         $db_driver = lc $db->{'Driver'}->{'Name'} || '';
         $db_driver = DEFAULT->{'sql_driver_module'}
             unless VALID->{'sql_driver_module'}{$db_driver};

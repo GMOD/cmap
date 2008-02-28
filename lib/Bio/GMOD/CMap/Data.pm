@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.293 2008-02-15 21:49:20 mwz444 Exp $
+# $Id: Data.pm,v 1.294 2008-02-28 17:12:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.293 $)[-1];
+$VERSION = (qw$Revision: 1.294 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -166,10 +166,10 @@ Returns a string of tab-delimited data for either a map or map set.
     my $return;
     if ( $format eq 'XML' ) {
         my $object = $map_set_acc ? 'map_set' : 'map';
-        my $exporter
-            = Bio::GMOD::CMap::Admin::Export->new(
-            data_source => $self->data_source )
-            or return $self->error( Bio::GMOD::CMap::Admin::Export->error );
+        my $exporter = Bio::GMOD::CMap::Admin::Export->new(
+            config      => $self->config,
+            data_source => $self->data_source
+        ) or return $self->error( Bio::GMOD::CMap::Admin::Export->error );
 
         $exporter->export(
             objects  => [$object],
@@ -1877,7 +1877,9 @@ Given a list of feature names, find any maps they occur on.
     my $selected_link_set = $args{'selected_link_set'};
 
     my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        data_source => $self->data_source );
+        config      => $self->config,
+        data_source => $self->data_source
+    );
 
     my @link_set_names = $link_manager->list_set_names(
         name_space => $self->get_link_name_space );

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.146 2008-02-19 20:54:42 mwz444 Exp $
+# $Id: Drawer.pm,v 1.147 2008-02-28 17:12:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -359,7 +359,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146 $)[-1];
+$VERSION = (qw$Revision: 1.147 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1617,7 +1617,10 @@ Lays out the legend.  Used in draw().
                 }
                 else {
                     my @temp_drawing_data;
-                    my $glyph         = Bio::GMOD::CMap::Drawer::Glyph->new();
+                    my $glyph = Bio::GMOD::CMap::Drawer::Glyph->new(
+                        config      => $self->config,
+                        data_source => $self->data_source,
+                    );
                     my $feature_glyph = $ft->{'shape'};
                     $feature_glyph =~ s/-/_/g;
                     if ( $glyph->can($feature_glyph) ) {
