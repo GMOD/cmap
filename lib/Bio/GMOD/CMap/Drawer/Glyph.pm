@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use base 'Class::Base';
 
@@ -371,7 +371,6 @@ sub banding {
     my $x_pos1           = $args{'x_pos1'};
     my $y_pos1           = $args{'y_pos1'};
     my $y_pos2           = $args{'y_pos2'};
-    my $color1           = $args{'color'} || 'red';
     my $name             = $args{'name'};
     my $feature          = $args{'feature'};
     my $calling_obj      = $args{'calling_obj'};
@@ -379,9 +378,14 @@ sub banding {
     my $label_side       = $args{'label_side'} || RIGHT;
     my $feature_type_acc = $args{'feature_type_acc'};
     my @coords;
+
+    # Ignore the imported color
+    my $color1 = $calling_obj->feature_type_data( $feature_type_acc, 'color' )
+        || 'red';
     my $color2
         = $calling_obj->feature_type_data( $feature_type_acc, 'color2' )
         || 'black';
+
     my $oscillating_color_key = 'oscillating_color_' . $feature_type_acc;
     my $color = $calling_obj->{$oscillating_color_key} || $color1;
 
