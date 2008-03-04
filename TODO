@@ -1,11 +1,12 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.13 $
+                             $Revision: 1.14 $
 
 -   Rewrite the tutorial
 -   Add Gbrowse-style uploading of maps and features to place on existing 
     maps;  expand to allow querying of Gbrowse, Chado or Ensembl (per 
     Doreen)
--   Write some (post-installation) tests!  (Tests need to assume some
+-   Write more (post-installation) tests!  (Tests need to assume some
     data in the database, a working Apache installation, etc.)
+-   Modify the object export so that it doesn't include the table ids.
 
