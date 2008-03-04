@@ -2,7 +2,7 @@
 
 =head1 VERSION
 
-$Revision: 1.4 $
+$Revision: 1.5 $
 
 There are a number of support scripts included with the CMap distribution.
 They are located in the bin/ directory inside the CMap source directory.  
@@ -282,6 +282,26 @@ Correspondences between the HSPs are created.
 =head3 See Also
 
   $ perldoc cmap_import_alignment.pl
+
+=head2 cmap_insert_gnomspace_xml.pl
+
+=head3 Description
+
+This script parses an XML file from the GnomSpace program, inserts the fragment
+data into CMap and creates correspondences between them as defined in the
+map_alignment section of the file.  It is an exelent example of how to use the
+CMap API to insert features.
+
+=head3 Usage
+
+  $ cmap_insert_gnomspace_xml.pl -f FILE -d DATASOURCE -r REF_MAP_SET_ACC \
+    -a ALIGN_MAP_SET_ACC -t FEATURE_TYPE_ACC -e EVIDENCE_TYPE_ACC
+
+=head3 See Also
+
+  $ perldoc cmap_insert_gnomspace_xml.pl
+
+
 
 
 =head1 DATA MODIFICATION
