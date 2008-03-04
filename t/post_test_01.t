@@ -32,6 +32,7 @@ my @wipe_corr_fields = qw[
     published_on2   feature_correspondence_id
     feature_correspondence_acc
 ];
+my @wipe_matrix_fields = qw[];
 
 my $interactive = Bio::GMOD::CMap::Admin::Interactive->new(
     user       => $>,                         # effective UID
@@ -42,6 +43,8 @@ my $interactive = Bio::GMOD::CMap::Admin::Interactive->new(
 );
 my $sql_object = $interactive->sql();
 
+# ----------------------------------------------
+### Return Objects
 my $get_species_return = [
     {   'display_order'       => '1',
         'species_full_name'   => 'species_full_name1',
@@ -331,6 +334,24 @@ my $get_corrs_return3 = [
     }
 ];
 
+my $get_matrix_return = [
+    {   'reference_species_acc' => 'species_acc1',
+        'correspondences'       => '3',
+        'map_count'             => '1',
+        'link_map_set_acc'      => 'map_set_acc2',
+        'reference_map_set_acc' => 'map_set_acc1',
+        'link_species_acc'      => 'species_acc1'
+    },
+    {   'reference_species_acc' => 'species_acc1',
+        'correspondences'       => '3',
+        'map_count'             => '1',
+        'link_map_set_acc'      => 'map_set_acc1',
+        'reference_map_set_acc' => 'map_set_acc2',
+        'link_species_acc'      => 'species_acc1'
+    }
+];
+
+# -----------------------------------------------------------------------
 ### Species Creation
 my $species_id;
 ok( $species_id = $interactive->create_species(
@@ -351,6 +372,7 @@ wipe_fields_from_array_ref( $actual_get_species_return, @wipe_species_fields,
 is_deeply( $actual_get_species_return, $get_species_return,
     'Get Species Check' );
 
+# -----------------------------------------------------------------------
 ### Map Set Creation
 my $map_set_id1;
 ok( $map_set_id1 = $interactive->create_map_set(
@@ -382,7 +404,6 @@ ok( $map_set_id2 = $interactive->create_map_set(
     "Testing create_map_set"
 );
 
-# Modify the published on date because it changes every day
 my $actual_get_map_sets_return
     = $sql_object->get_map_sets( map_set_id => $map_set_id1, );
 wipe_fields_from_array_ref( $actual_get_map_sets_return, @wipe_map_set_fields,
@@ -391,6 +412,7 @@ wipe_fields_from_array_ref( $actual_get_map_sets_return, @wipe_map_set_fields,
 is_deeply( $actual_get_map_sets_return, $get_map_sets_return,
     'Get Map Set Check' );
 
+# -----------------------------------------------------------------------
 ### Import tab to populate map set 1
 ok( $interactive->import_tab_data(
         allow_update => 0,
@@ -417,6 +439,7 @@ wipe_fields_from_array_ref( $actual_get_features_return1,
 is_deeply( $actual_get_features_return1, $get_features_return1,
     'Get Feature Check' );
 
+# -----------------------------------------------------------------------
 ### Import tab to populate map set 2
 ok( $interactive->import_tab_data(
         allow_update => 0,
@@ -429,6 +452,7 @@ ok( $interactive->import_tab_data(
     "Testing import_tab_data 2"
 );
 
+# -----------------------------------------------------------------------
 ### Import Corrs
 ok( $interactive->import_correspondences(
         map_set_accs => 'map_set_acc1,map_set_acc2',
@@ -447,6 +471,7 @@ wipe_fields_from_array_ref( $actual_get_corrs_return1, @wipe_corr_fields, );
 is_deeply( $actual_get_corrs_return1, $get_corrs_return1,
     'Get Correspondence Check import' );
 
+# -----------------------------------------------------------------------
 ### Make Corrs
 ok( $interactive->make_name_correspondences(
         command_line           => 1,
@@ -492,6 +517,7 @@ wipe_fields_from_array_ref( $actual_get_corrs_return3, @wipe_corr_fields, );
 is_deeply( $actual_get_corrs_return3, $get_corrs_return3,
     'Get Correspondence Check read_pair' );
 
+# -----------------------------------------------------------------------
 ### Delete Duplicate Corrs
 ok( $interactive->delete_duplicate_correspondences(
         command_line => 1,
@@ -509,30 +535,73 @@ wipe_fields_from_array_ref( $actual_get_corrs_return4, @wipe_corr_fields, );
 is_deeply( $actual_get_corrs_return4, $get_corrs_return1,
     'Get Correspondence Check delete_duplicate' );
 
-### Delete Map Set
-ok( $interactive->delete_maps(
-        map_set_acc  => 'map_set_acc1',
-        command_line => 1,
-    ),
-    "Testing delete_maps"
-);
-is_deeply( $sql_object->get_map_sets( map_set_id => $map_set_id1, ),
-    [], 'Delete Map Set Check' );
+# -----------------------------------------------------------------------
+### Reload the Matrix
+ok( $interactive->reload_correspondence_matrix( command_line => '1', ),
+    'Testing reload_correspondence_matrix' );
 
+my $actual_get_matrix_return = $sql_object->get_matrix_relationships();
+wipe_fields_from_array_ref( $actual_get_matrix_return, @wipe_matrix_fields, );
+is_deeply( $actual_get_matrix_return, $get_matrix_return, 'Matrix Check' );
+
+# -----------------------------------------------------------------------
+### Export text file
+ok( $interactive->export_as_text(
+        map_set_accs => 'map_set_acc1',
+        command_line => '1',
+        directory    => 't/test_data',
+
+        #feature_type_accs => '',
+        #exclude_fields => '',
+        #map_type_acc => '',
+        #species_acc => '',
+    ),
+    'Testing export_as_text'
+);
+
+# -----------------------------------------------------------------------
+### Export sql file
+ok( $interactive->export_as_sql(
+        tables       => 'all',
+        export_file  => 't/test_data/export_sql',
+        command_line => '1',
+        add_truncate => '1',
+        quote_escape => 'backslash',
+    ),
+    'Testing export_as_sql'
+);
+
+# -----------------------------------------------------------------------
+### Delete Map Set
+foreach my $vals ( [ $map_set_id1, 'map_set_acc1' ],
+    [ $map_set_id2, 'map_set_acc2' ] )
+{
+    my $map_set_id  = $vals->[0];
+    my $map_set_acc = $vals->[1];
+    ok( $interactive->delete_maps(
+            map_set_acc  => $map_set_acc,
+            command_line => 1,
+        ),
+        "Testing delete_maps"
+    );
+    is_deeply( $sql_object->get_map_sets( map_set_id => $map_set_id, ),
+        [], 'Delete Map Set Check' );
+}
+
+# -----------------------------------------------------------------------
 ### Delete species
 ok( $sql_object->delete_species( species_id => $species_id, ),
     "Testing delete_species" );
 is_deeply( $sql_object->get_species( species_id => $species_id, ),
     [], 'Delete Species Check' );
 
+# -----------------------------------------------------------------------
 sub wipe_fields_from_array_ref {
 
     my $array_ref = shift;
     my @fields    = @_;
     foreach my $row ( @{ $array_ref || [] } ) {
         foreach my $field (@fields) {
-
-            #p#rint STDERR "$field: ".$row->{$field}."\n";
             delete $row->{$field};
         }
     }

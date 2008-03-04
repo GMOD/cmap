@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.176 2008-02-15 21:49:21 mwz444 Exp $
+# $Id: Generic.pm,v 1.177 2008-03-04 17:19:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.176 $)[-1];
+$VERSION = (qw$Revision: 1.177 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -543,6 +543,14 @@ Array of Hashes:
                 feature_id1               => NUM,
                 feature_id2               => NUM,
                 feature_correspondence_id => NUM,
+                feature_start1            => NUM,
+                feature_start2            => NUM,
+                feature_stop1             => NUM,
+                feature_stop2             => NUM,
+                map_id1                   => NUM,
+                map_id2                   => NUM,
+                feature_type_acc1         => STR,
+                feature_type_acc2         => STR,
 
             }
         },
@@ -570,6 +578,7 @@ Array of Hashes:
                 feature_start    => NUM,
                 feature_stop     => NUM,
                 default_rank     => NUM,
+                direction        => NUM,
             }
         },
         {   name   => 'cmap_feature_alias',
@@ -618,7 +627,7 @@ Array of Hashes:
             fields => {
                 map_set_id         => NUM,
                 map_set_acc        => STR,
-                map_set_short_name => STR,
+                map_set_name       => STR,
                 map_set_short_name => STR,
                 map_type_acc       => STR,
                 species_id         => NUM,
@@ -640,6 +649,55 @@ Array of Hashes:
                 display_order => NUM,
                 xref_name     => STR,
                 xref_url      => STR,
+            }
+        },
+
+        # Omit saved links because the step object won't export nicely
+        #{   name   => 'cmap_saved_link',
+        #    fields => {
+        #        saved_link_id       => NUM,
+        #        saved_on            => STR,
+        #        last_access         => STR,
+        #        session_step_object => STR,
+        #        saved_url           => STR,
+        #        legacy_url          => STR,
+        #        link_title          => STR,
+        #        link_comment        => STR,
+        #        link_group          => STR,
+        #        hidden              => STR,
+        #    }
+        #},
+
+        {   name   => 'cmap_map_to_feature',
+            fields => {
+                map_id      => NUM,
+                map_acc     => STR,
+                feature_id  => NUM,
+                feature_acc => STR,
+            }
+        },
+
+        {   name   => 'cmap_transaction',
+            fields => {
+                transaction_id   => NUM,
+                transaction_date => STR,
+            }
+        },
+
+        {   name   => 'cmap_commit_log',
+            fields => {
+                commit_log_id  => NUM,
+                species_id     => NUM,
+                species_acc    => STR,
+                map_set_id     => NUM,
+                map_set_acc    => STR,
+                map_id         => NUM,
+                map_acc        => STR,
+                commit_type    => STR,
+                commit_text    => STR,
+                commit_object  => STR,
+                commit_date    => STR,
+                transaction_id => NUM,
             }
         },
     );

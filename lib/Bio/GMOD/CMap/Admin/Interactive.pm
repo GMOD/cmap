@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.3 2008-02-28 17:12:57 mwz444 Exp $
+# $Id: Interactive.pm,v 1.4 2008-03-04 17:19:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,6 +30,9 @@ Admin.pm.
 =cut
 
 use strict;
+use vars '$VERSION';
+$VERSION = '1.3';
+
 use File::Path;
 use File::Spec::Functions;
 use IO::File;
@@ -1789,7 +1792,13 @@ Directory where output file is to be placed
                         @{ $alias_lookup{ $feature->{'feature_id'} || [] } }
                 );
 
-                print $fh join( OFS, map { $feature->{$_} } @val_names ), ORS;
+                print $fh join(
+                    OFS,
+                    map {
+                        ( defined( $feature->{$_} ) ? $feature->{$_} : q{} )
+                        } @val_names
+                    ),
+                    ORS;
             }
         }
 
@@ -2009,13 +2018,22 @@ Hint: Oracle and Sybase like 'doubled', MySQL likes 'backslash',
     print $log_fh "Making SQL dump of tables to '$file'\n";
     open my $fh, ">$file" or die "Can't write to '$file': $!\n";
     print $fh "--\n-- Dumping data for CMap v", $Bio::GMOD::CMap::VERSION,
-        "\n-- Produced by cmap_admin.pl v", $main::VERSION, "\n-- ",
+        "\n-- Produced by cmap_admin.pl v", $VERSION, "\n-- ",
         scalar localtime, "\n--\n";
 
+    my %table_used
+        = map { my $tmp_table = $_; $tmp_table =~ s/`//g; $tmp_table => 1 }
+        $db->tables( '%', '%', '%', '%' );
     my %dump_tables = map { $_, 1 } @dump_tables;
     for my $table (@tables) {
         my $table_name = $table->{'name'};
         next if %dump_tables && !$dump_tables{$table_name};
+        unless ( $table_used{$table_name} ) {
+            print $log_fh "WARNING: Failed to find table, "
+                . $table_name
+                . " in the database\n";
+            next;
+        }
 
         print $log_fh "Dumping data for '$table_name.'\n";
         print $fh "\n--\n-- Data for '$table_name'\n--\n";
