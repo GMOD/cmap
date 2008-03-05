@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.76 2008-02-26 19:57:28 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.77 2008-03-05 21:27:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1537,6 +1537,18 @@ Item structure:
             $coords[$i]       += $x_offset;
             $coords[ $i + 1 ] += $y_offset;
         }
+
+        ## Maybe don't let it draw out of bounds
+        #my $min_zinc_value = -32868;
+        #my $max_zinc_value = 32756;
+        #for ( my $i = 0; $i <= $#coords; $i++ ) {
+        #    if ( $coords[$i] <= $min_zinc_value ) {
+        #        $coords[$i] = $min_zinc_value;
+        #    }
+        #    if ( $coords[$i] >= $max_zinc_value ) {
+        #        $coords[$i] = $max_zinc_value;
+        #    }
+        #}
 
         if ( defined($item_id) ) {
             $zinc->coords( $item_id, \@coords );
