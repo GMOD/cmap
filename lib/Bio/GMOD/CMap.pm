@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.124 2008-02-28 17:12:56 mwz444 Exp $
+# $Id: CMap.pm,v 1.125 2008-03-05 19:01:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars '$VERSION';
-$VERSION = '0.16';
+$VERSION = '1.0RC1';
 
 use Data::Dumper;
 use Class::Base;
@@ -43,7 +43,7 @@ use URI::Escape;
 use DBI;
 use File::Path;
 use Filesys::DfPortable;
-use File::Spec::Functions qw( abs2rel );
+use File::Spec::Functions qw( abs2rel rootdir );
 use Storable qw(nfreeze thaw);
 use Template;
 
@@ -1092,10 +1092,10 @@ Get the image cache directory using the web document root
 
     unless ( $self->{'web_image_cache_dir'} ) {
         my $image_cache_dir   = $self->config_data('cache_dir');
-        my $web_document_root = $self->config_data('web_document_root');
+        my $web_document_root = $self->config_data('web_document_root_dir');
         if ($web_document_root) {
             $image_cache_dir
-                = abs2rel( $image_cache_dir, $web_document_root );
+                = rootdir() . abs2rel( $image_cache_dir, $web_document_root );
         }
         else {
 
@@ -1510,10 +1510,10 @@ Get the htdocs directory using the web document root
 
     unless ( $self->{'web_cmap_htdocs_dir'} ) {
         my $cmap_htdocs_dir   = $self->config_data('web_cmap_htdocs_dir');
-        my $web_document_root = $self->config_data('web_document_root');
+        my $web_document_root = $self->config_data('web_document_root_dir');
         if ($web_document_root) {
             $cmap_htdocs_dir
-                = abs2rel( $cmap_htdocs_dir, $web_document_root );
+                = rootdir() . abs2rel( $cmap_htdocs_dir, $web_document_root );
         }
         else {
 
