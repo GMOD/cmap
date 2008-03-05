@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.23 $
+$Revision: 1.24 $
 
 =head1 QUICK START
 
@@ -28,12 +28,12 @@ Oracle, Sybase, SQLite); create tables with contents of "sql"
 directory; grant appropriate user permissions
 
 =item * Install Perl 5.6.1 or greater and a web server with CGI
-capabilites (e.g., Apache 1.3.x or 2.x)
+capabilities (e.g., Apache 1.3.x or 2.x)
 
 =item * Execute "perl Build.PL; ./Build; su; ./Build install"; install any
 other Perl modules reported missing by the build process
 
-=item * Modify configuration information in "cmap.conf/*.conf"
+=item * Modify configuration information in "/path/to/conf/cmap.conf/*.conf"
 
 =item * Import your data or the sample data included in the "data" directory
 
@@ -355,6 +355,7 @@ The location where CMap stores it's cache files.  Usually
 The location where CMap stores it's sessions files.  Usually
 "CACHE/sessions".
 
+
 =back
 
 =head2 CPAN MODULES
@@ -471,7 +472,7 @@ mod_perl.
 Several of these modules (e.g., CGI, File::Basename) are in the Perl     
 "core," which means they are installed by default with Perl.  Many of   
 the above modules that will likely need installing will have   
-dependecies of their own which you must resolve.  This can be very
+dependencies of their own which you must resolve.  This can be very
 tedious to do by hand, so if you do need to install any of these Perl
 modules, I'd really recommend you use the CPAN shell, a convenient
 package that automates the downloading and building of modules.  The
@@ -524,10 +525,15 @@ To install the CMap modules and scripts:
   $ su
   # ./Build install
 
-The script will make a best guess for where to place components.
-There are several configuration options that can be set via arguments to Build.PL.
-Execute "perl Build.PL -h" to read a brief help message on what they
-are and how you can specify your choices.  
+The script will make a best guess for where to place components.  If
+the guesses are incorrect, the installation script can ask for the
+locations individually.  They can also be specified at the command
+line when running "perl Build.PL" Execute "perl Build.PL -h" to read a
+brief help message on what they are and how you can specify your
+choices.  
+
+The build options are described above in the L<Directories for CMap Components> 
+section.
 
 To change the directories where components are installed from the
 default locations, specify them in the "./Build install" command by
@@ -590,55 +596,6 @@ from it.
 The "cmap" CGI script will be created in the "cgi-bin" directory and
 will be copied to the "CGIBIN" directory specified to Build.PL and its
 permissions will be changed to make it executable.
-
-=back
-
-The CMap installation script will make a guess at where to install
-components.  These can be modified during installation or by giving
-arguments like "PREFIX=/usr/local/apache2".
-locations.  If you choose to specify "PREFIX," then any other build
-arguments will be relative to the prefix.  If you do not specify a
-"PREFIX," then all paths with be considered absolute.  The final
-installation paths will be reported to you before installation occurs.
-
-Other build options are
-
-=over 4
-
-=item * CONF
-
-The location of the config files.  The final directory in the path will be
-cmap.conf.  Meaning that "/usr/local/apache/conf/" will become
-"/usr/local/apache/conf/cmap.conf/".
-
-=item * CGIBIN
-
-The location of the directory where the web server runs CGI scripts.
-
-=item * TEMPLATES
-
-The location where Template Toolkit templates are stored.  (These can
-be altered after install to suit individual needs.)
-
-=item * WEB_DOCUMENT_ROOT
-
-This is the root directory for the web server.  For example
-"/var/www/" or "/usr/local/apache/htdocs/".
-
-=item * HTDOCS
-
-This is the base directory for the cmap files.  It is generally
-"WEB_DOCUMENT_ROOT/cmap".
-
-=item * CACHE
-
-The location where CMap stores it's cache files.  Usually
-"HTDOCS/tmp".
-
-=item * SESSIONS
-
-The location where CMap stores it's sessions files.  Usually
-"CACHE/sessions".
 
 =back
 

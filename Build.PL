@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.71 2007-10-26 19:53:22 mwz444 Exp $
+# $Id: Build.PL,v 1.72 2008-03-05 21:29:49 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -191,22 +191,37 @@ unless ($using_install_conf) {
     # Let the user define them if they need to.
     my $use_values = Module::Build->y_n( "Use these values?", 'y' );
     if ( !$use_values ) {
-        foreach my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES', 'WEB_DOCUMENT_ROOT', )
+        foreach
+            my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES', 'WEB_DOCUMENT_ROOT', )
         {
-            $OPTIONS{$opt} =
-              Module::Build->prompt( "What should the value of $opt be?\n",
-                $OPTIONS{$opt}, );
+            $OPTIONS{$opt} = Module::Build->prompt(
+                "$opt: "
+                    . $ARGS{$opt}->{'desc'} . "\n"
+                    . "What should the value of $opt be?\n",
+                $OPTIONS{$opt},
+            );
         }
         $OPTIONS{'HTDOCS'} = Module::Build->prompt(
-            "What should the value of HTDOCS be?\n",
-            catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{'HTDOCS'}{'default'} )
+            "HTDOCS: "
+                . $ARGS{'HTDOCS'}->{'desc'} . "\n"
+                . "What should the value of HTDOCS be?\n",
+            catdir(
+                $OPTIONS{'WEB_DOCUMENT_ROOT'},
+                $ARGS{'HTDOCS'}{'default'}
+            )
         );
-        $OPTIONS{'CACHE'} =
-          Module::Build->prompt( "What should the value of CACHE be?\n",
-            catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} ) );
-        $OPTIONS{'SESSIONS'} =
-          Module::Build->prompt( "What should the value of SESSIONS be?\n",
-            catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} ) );
+        $OPTIONS{'CACHE'} = Module::Build->prompt(
+            "CACHE: "
+                . $ARGS{'CACHE'}->{'desc'} . "\n"
+                . "What should the value of CACHE be?\n",
+            catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} )
+        );
+        $OPTIONS{'SESSIONS'} = Module::Build->prompt(
+            "SESSIONS: "
+                . $ARGS{'SESSIONS'}->{'desc'} . "\n"
+                . "What should the value of SESSIONS be?\n",
+            catdir( $OPTIONS{'HTDOCS'}, $ARGS{'SESSIONS'}{'default'} )
+        );
     }
 }
 
