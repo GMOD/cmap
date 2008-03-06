@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.72 2008-03-05 21:29:49 mwz444 Exp $
+# $Id: Build.PL,v 1.73 2008-03-06 16:03:40 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -161,18 +161,22 @@ unless ($using_install_conf) {
     }
 
     $OPTIONS{'CONF'} ||= GuessDirectories->conf()
-      || ask_about_dir( "\nCannot guess the correct CONF directory.\n"
-          . "Please specify the CONF directory.\n" );
+        || ask_about_dir( "\nCannot guess the correct CONF directory.\n"
+            . "Please specify the CONF directory or hit enter to quit.\n" );
     $OPTIONS{'CGIBIN'} ||= GuessDirectories->cgibin()
-      || ask_about_dir( "\nCannot guess the correct CGIBIN directory.\n"
-          . "Please specify the CGIBIN directory.\n" );
+        || ask_about_dir( "\nCannot guess the correct CGIBIN directory.\n"
+            . "If using Ubuntu, you may need to create "
+            . "the /usr/lib/cgi-bin/ directory.\n"
+            . "Please enter the CGIBIN directory or hit enter to quit.\n" );
     $OPTIONS{'TEMPLATES'} ||= GuessDirectories->templates()
-      || ask_about_dir( "\nCannot guess the correct TEMPLATES directory.\n"
-          . "Please specify the TEMPLATES directory.\n" );
+        || ask_about_dir( "\nCannot guess the correct TEMPLATES directory.\n"
+            . "Please specify the TEMPLATES directory or hit enter to quit.\n"
+        );
     $OPTIONS{'WEB_DOCUMENT_ROOT'} ||= GuessDirectories->web_document_root()
-      || ask_about_dir(
-            "\nCannot guess the correct WEB_DOCUMENT_ROOT directory.\n"
-          . "Please specify the WEB_DOCUMENT_ROOT directory.\n" );
+        || ask_about_dir(
+              "\nCannot guess the correct WEB_DOCUMENT_ROOT directory.\n"
+            . "Please specify the WEB_DOCUMENT_ROOT directory or hit enter to quit.\n"
+        );
 
     # These options are dependent on other options
     $OPTIONS{'HTDOCS'} ||=
