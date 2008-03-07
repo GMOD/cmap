@@ -524,7 +524,6 @@ sub ACTION_demo {
     # Import Files
     my $importer
         = Bio::GMOD::CMap::Admin::Import->new( data_source => $datasource, );
-    my %maps;    #stores the maps info between each file
     my $file1 = catfile( 'data', 'tabtest1' );
     my $file2 = catfile( 'data', 'tabtest2' );
     my $fh = IO::File->new($file1) or die "Can't read $file1: $!";
@@ -534,16 +533,14 @@ sub ACTION_demo {
         map_type_acc => 'Seq',
         overwrite    => 1,
         allow_update => 0,
-        maps         => \%maps,
     ) or die "Error: ", $importer->error, "\n";
     $fh = IO::File->new($file2) or die "Can't read $file2: $!";
     $importer->import_tab(
         map_set_id   => $map_set_id2,
         fh           => $fh,
         map_type_acc => 'Seq',
-        overwrite    => 0,
+        overwrite    => 1,
         allow_update => 0,
-        maps         => \%maps,
     ) or die "Error: ", $importer->error, "\n";
 
     # Create Correspondences
