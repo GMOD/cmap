@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.84 2008-02-22 22:19:50 mwz444 Exp $
+# $Id: Import.pm,v 1.85 2008-03-07 21:26:30 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -230,7 +230,7 @@ appended to the list of xrefs.
         defined( $args{'allow_update'} )
         ? $args{'allow_update'}
         : 2;
-    my $maps = $args{'maps'};
+    my $maps = $args{'maps'} || {};
 
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
@@ -268,10 +268,36 @@ appended to the list of xrefs.
 
     my $map_info = $sql_object->get_maps_simple( map_set_id => $map_set_id, );
 
-    unless ( $maps and %$maps ) {
-        %$maps =
-            map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } }
+    unless (%$maps) {
+        %$maps
+            = map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } }
             @$map_info;
+
+        #
+        # Memorize the features originally on each map.
+        #
+        if ($overwrite) {
+            for my $map_name ( keys %$maps ) {
+                my $map_id = $maps->{$map_name}{'map_id'}
+                    or return $self->error("Map '$map_name' has no ID!");
+
+                my $features
+                    = $sql_object->get_features_simple( map_id => $map_id, );
+
+                foreach my $feature (@$features) {
+                    $maps->{$map_name}{'features'}{ $feature->{'feature_id'} }
+                        = 0
+                        unless ( $maps->{$map_name}{'features'}
+                        { $feature->{'feature_id'} } );
+                }
+
+                $self->Print(
+                    "Map '$map_name' currently has ",
+                    scalar @$features,
+                    " features\n"
+                );
+            }
+        }
     }
     my %map_accs      = map { $_->{'map_acc'}, $_->{'map_name'} } @$map_info;
     my %modified_maps = ();
@@ -282,28 +308,6 @@ appended to the list of xrefs.
         " maps.\n"
     );
 
-    #
-    # Memorize the features currently on each map.
-    #
-    if ($overwrite) {
-        for my $map_name ( keys %$maps ) {
-            my $map_id = $maps->{$map_name}{'map_id'}
-                or return $self->error("Map '$map_name' has no ID!");
-
-            my $features
-                = $sql_object->get_features_simple( map_id => $map_id, );
-
-            for (@$features) {
-                $maps->{$map_name}{'features'}{ $_->{'feature_id'} } = 0;
-            }
-
-            $self->Print(
-                "Map '$map_name' currently has ",
-                scalar @$features,
-                " features\n"
-            );
-        }
-    }
 
     #
     # Make column names lowercase, convert spaces to underscores
