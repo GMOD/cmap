@@ -541,7 +541,7 @@ sub ACTION_demo {
         map_set_id   => $map_set_id2,
         fh           => $fh,
         map_type_acc => 'Seq',
-        overwrite    => 1,
+        overwrite    => 0,
         allow_update => 0,
         maps         => \%maps,
     ) or die "Error: ", $importer->error, "\n";
