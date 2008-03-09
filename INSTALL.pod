@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.24 $
+$Revision: 1.25 $
 
 =head1 QUICK START
 
@@ -424,7 +424,7 @@ Required Modules:
 
 =item *   File::Temp
 
-=item *   Filesys::Df
+=item *   Filesys::DfPortable
 
 =item *   GD
 
