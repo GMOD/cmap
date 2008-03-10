@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.73 2008-02-22 21:30:09 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.74 2008-03-10 17:48:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -806,6 +806,11 @@ Zoom zones
     # Don't let it zoom out farther than is useful.
     # Maybe Let it zoom out one farther than to scale
     if ( $zone_scaffold->{'scale'} <= 1 and $zoom_value < 1 ) {
+        return;
+    }
+
+    # Don't let it zoom in farther than it can draw
+    if ( $zone_scaffold->{'scale'} > 32 and $zoom_value > 1 ) {
         return;
     }
 
