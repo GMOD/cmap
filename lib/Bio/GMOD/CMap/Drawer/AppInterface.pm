@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.77 2008-03-05 21:27:58 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.78 2008-03-10 19:41:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -4192,7 +4192,7 @@ Handle down click of the left mouse button
     elsif ( @tags = grep /^feature_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
-        $tags[0] =~ /^feature_(\S+)_(\S+)_(\S+)/;
+        $tags[0] =~ /^feature_(\d+?)_(\d+?)_(\S+)/;
         $self->{'drag_zone_key'}    = $1;
         $self->{'drag_map_key'}     = $2;
         $self->{'drag_feature_acc'} = $3;
@@ -4385,7 +4385,7 @@ Handle down click of the right mouse button
     elsif ( @tags = grep /^feature_/,
         $zinc->gettags( $self->{'drag_ori_id'} ) )
     {
-        $tags[0] =~ /^feature_(\S+?)_(\S+?)_(\S+)/;
+        $tags[0] =~ /^feature_(\d+?)_(\d+?)_(\S+)/;
         $self->{'drag_zone_key'}    = $1;
         $self->{'drag_map_key'}     = $2;
         $self->{'drag_feature_acc'} = $3;
@@ -6033,6 +6033,7 @@ Pack the frames
         -side   => 'top',
         -anchor => 'n',
         -fill   => 'both',
+        -expand =>1,
     );
 }
 
