@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.73 2008-03-06 16:03:40 mwz444 Exp $
+# $Id: Build.PL,v 1.74 2008-03-11 14:52:00 mwz444 Exp $
 
 use strict;
 use lib './install_util';
@@ -306,7 +306,7 @@ my $builder = CMapBuilder->new(
         'XML::Parser::PerlSAX'         => 0,
         'XML::Simple'                  => 0,
     },
-    recommends => { 'Apache' => 0, },
+    recommends => { },
 );
 
 $builder->notes( $_, $OPTIONS{$_} ) for @OPTION_LIST;
