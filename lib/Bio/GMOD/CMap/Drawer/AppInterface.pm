@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.80 2008-03-11 18:57:02 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.81 2008-03-11 20:42:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1274,7 +1274,7 @@ MAP1:
                 = $app_display_data->{'scaffold'}{$zone_key1}{'x_offset'};
             my $x_offset2
                 = $app_display_data->{'scaffold'}{$zone_key2}{'x_offset'};
-            my $tags = [];
+            my $tags = [ 'on_bottom', ];
 
             foreach my $corr ( @{ $map_corr_layout->{'corrs'} || [] } ) {
                 foreach my $item ( @{ $corr->{'items'} || [] } ) {
@@ -1291,6 +1291,9 @@ MAP1:
                     $coords[2] += $x_offset1;
                     $coords[4] += $x_offset2;
                     $coords[6] += $x_offset2;
+                    if ( defined( $coords[8] ) ) {
+                        $coords[8] += $x_offset2;
+                    }
 
                     if ( defined($item_id) ) {
                         $zinc->coords( $item_id, \@coords );

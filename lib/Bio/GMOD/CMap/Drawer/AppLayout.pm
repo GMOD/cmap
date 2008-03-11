@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.63 2008-03-11 18:57:03 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.64 2008-03-11 20:42:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -2279,6 +2279,19 @@ Lays out correspondences between two zones
             = $draw_downward2
             ? $y_end2 + $end_line_height
             : $y_end2 - $end_line_height;
+        my $x_mid3 = int( ( $x_end1 + $x_end2 ) / 2 );
+        my $y_mid3 = $y_end2 - ( 4 * $end_line_height );
+
+        my $corr_coords = [
+            $x_end1, $y_end1, $x_mid1, $y_mid1,
+            $x_mid2, $y_mid2, $x_end2, $y_end2,
+        ];
+        if ( $y_end1 == $y_end2 ) {
+            $corr_coords = [
+                $x_end1, $y_end1, $x_mid1, $y_mid1, $x_mid3,
+                $y_mid3, $x_mid2, $y_mid2, $x_end2, $y_end2,
+            ];
+        }
 
         my $corr_color = 'red';
         if ( $x1_stunted or $x2_stunted ) {
@@ -2292,10 +2305,7 @@ Lays out correspondences between two zones
             feature_id1 => $feature_id1,
             feature_id2 => $feature_id2,
             items       => [
-                [   1, undef, 'curve',
-                    [   $x_end1, $y_end1, $x_mid1, $y_mid1,
-                        $x_mid2, $y_mid2, $x_end2, $y_end2,
-                    ],
+                [   1, undef, 'curve', $corr_coords,
                     { -linecolor => $corr_color, -linewidth => '2', }
                 ],
             ],
