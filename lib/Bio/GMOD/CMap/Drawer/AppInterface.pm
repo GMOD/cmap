@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.78 2008-03-10 19:41:45 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.79 2008-03-11 17:07:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -568,117 +568,120 @@ Adds control buttons to the controls_pane.
 
             my $zinc = $self->zinc( window_key => $window_key, );
 
-       #print STDERR "---------------------------------\n";
-       #print STDERR
-       #  "           --------------BEFORE MOVE-------------------\n";
-       #$self->app_controller->app_display_data->move_map(
-       #    map_key            => 16,
-       #    new_parent_map_key => 1,
-       #    new_feature_start  => 1039.96,
-       #    new_feature_stop   => 3239.97,
-       #);
-       #print STDERR
-       #    "            --------------BEFORE DISPLAY LABELS------------\n";
-       #$self->app_controller()->app_display_data()
-       #    ->set_map_labels_visibility( 2, 1, );
-       #print STDERR
-       #    "            --------------BEFORE DISPLAY FEATURES------------\n";
-       #$self->app_controller()->app_display_data()
-       #    ->set_features_visibility( 2, 1, );
-       #print STDERR
-       #    "           --------------BEFORE MERGE-------------------\n";
-       #my ( $selected_map_keys, $zone_key )
-       #    = $self->app_controller()->app_display_data()->merge_maps(
-       #    overlap_amount => 0,
-       #    first_map_key  => 3,
-       #    second_map_key => 4,
-       #    );
-       #print STDERR
-       #    "           --------------BEFORE UNDO-------------------\n";
-       #$self->app_controller()
-       #    ->app_display_data->undo_action( window_key => $window_key, );
-       #
-       #print STDERR
-       #    "            --------------BEFORE SELECT-------------------\n";
-       #$self->app_controller()->new_selected_zone( zone_key => 2, );
-       #print STDERR
-       #    "            --------------BEFORE SHOW SELF CORRS---------\n";
-       #$self->app_controller()->app_display_data()->set_corrs_map_set(
-       #    'map_set_ids' =>[
-       #                      '1',
-       #                      '3'
-       #                    ],
-       #    'zone_key'   => 2,
-       #    'corrs_on'   => 1,
-       #    'window_key' => 1
-       #);
-       #print STDERR
-       #    "            --------------BEFORE MOVE SUBSECTION------------\n";
-       #$self->app_controller()->app_display_data()->move_map_subsection(
-       #    'gap_stop'            => '50467.00',
-       #    'gap_start'           => '50466.00',
-       #    'destination_map_key' => 1,
-       #    'subsection_map_key'  => '13'
-       #);
-       #
-       #print STDERR
-       #    "            --------------BEFORE SHOW ALL CORRS------------\n";
-       #$self->app_controller()->app_display_data()->set_corrs_map_set(
-       #    'map_set_ids' => [ '1', '3' ],
-       #    'zone_key'    => 2,
-       #    'corrs_on'    => 1,
-       #    'window_key'  => 1,
-       #);
-       #print STDERR
-       #    "            -----------BEFORE HIDE ONE CORR-----------------\n";
-       #$self->app_controller()->app_display_data()->set_corrs_map_set(
-       #    'map_set_id' => '1',
-       #    'zone_key'   => 2,
-       #    'corrs_on'   => 0,
-       #    'window_key' => 1,
-       #);
-       #print STDERR
-       #    "           --------------BEFORE ZOOM-------------------\n";
-       #$self->app_controller()->zoom_zone(
-       #    window_key => $window_key,
-       #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-       #    zoom_value => 4,
-       #);
-       #print STDERR
-       #    "            --------------BEFORE SELECT-------------------\n";
-       #  $self->add_object_selection(
-       #      zinc       => $zinc,
-       #      zone_key   => 4,
-       #      map_key    => 12,
-       #      window_key => $window_key,
-       #  );
-       #print STDERR
-       #    "            ----------------BEFORE SELECT ZONE---\n";
-       #$self->app_controller()->new_selected_zone( zone_key => 3, );
-       #print STDERR
-       #    "            -----------BEFORE DISPLAY LABELS-----\n";
-       #$self->app_controller()->app_display_data()
-       #    ->set_map_labels_visibility( 2, 1, );
-       #print STDERR
-       #    "            -----------BEFORE flip-----------------\n";
-       #$self->app_controller()->app_display_data()->flip_map(
-       #    'map_key'   => 4,
-       #);
-       #print STDERR
-       #    "            ----------------BEFORE SCROLL-----------------\n";
-       #$self->app_controller()->scroll_zone(
-       #    window_key   => $window_key,
-       #    zone_key     => 1,
-       #    scroll_value => -500,
-       #);
-       #print STDERR
-       #    "            ----------------BEFORE SPLIT-----------------\n";
-       #$self->app_controller->app_display_data->split_map(
-       #    map_key        => 4,
-       #    split_position => 1000,
-       #    );
-       #print STDERR "  ------------------DONE-----------------------\n";
-       #exit;
+#print STDERR "---------------------------------\n";
+#print STDERR
+#  "           --------------BEFORE MOVE-------------------\n";
+#$self->app_controller->app_display_data->move_map(
+#    map_key            => 16,
+#    new_parent_map_key => 1,
+#    new_feature_start  => 1039.96,
+#    new_feature_stop   => 3239.97,
+#);
+#print STDERR
+#    "            --------------BEFORE DISPLAY LABELS------------\n";
+#$self->app_controller()->app_display_data()
+#    ->set_map_labels_visibility( 2, 1, );
+#print STDERR
+#    "            --------------BEFORE DISPLAY FEATURES------------\n";
+#$self->app_controller()->app_display_data()
+#    ->set_features_visibility( 2, 1, );
+#print STDERR
+#    "           --------------BEFORE MERGE-------------------\n";
+#my ( $selected_map_keys, $zone_key )
+#    = $self->app_controller()->app_display_data()->merge_maps(
+#    overlap_amount => 0,
+#    first_map_key  => 3,
+#    second_map_key => 4,
+#    );
+#print STDERR
+#    "           --------------BEFORE UNDO-------------------\n";
+#$self->app_controller()
+#    ->app_display_data->undo_action( window_key => $window_key, );
+#
+#print STDERR
+#    "            --------------BEFORE SELECT-------------------\n";
+#$self->app_controller()->new_selected_zone( zone_key => 2, );
+#print STDERR
+#    "            --------------BEFORE SHOW SELF CORRS---------\n";
+#$self->app_controller()->app_display_data()->set_corrs_map_set(
+#    'map_set_ids' =>[
+#                      '1',
+#                      '3'
+#                    ],
+#    'zone_key'   => 2,
+#    'corrs_on'   => 1,
+#    'window_key' => 1
+#);
+#print STDERR
+#    "            --------------BEFORE MOVE SUBSECTION------------\n";
+#$self->app_controller()->app_display_data()->move_map_subsection(
+#    'gap_stop'            => '50467.00',
+#    'gap_start'           => '50466.00',
+#    'destination_map_key' => 1,
+#    'subsection_map_key'  => '13'
+#);
+#
+#print STDERR
+#    "            --------------BEFORE SHOW ALL CORRS------------\n";
+#$self->app_controller()->app_display_data()->set_corrs_map_set(
+#    'map_set_ids' => [ '1', '3' ],
+#    'zone_key'    => 2,
+#    'corrs_on'    => 1,
+#    'window_key'  => 1,
+#);
+#print STDERR
+#    "            -----------BEFORE HIDE ONE CORR-----------------\n";
+#$self->app_controller()->app_display_data()->set_corrs_map_set(
+#    'map_set_id' => '1',
+#    'zone_key'   => 2,
+#    'corrs_on'   => 0,
+#    'window_key' => 1,
+#);
+#print STDERR
+#    "           --------------BEFORE ZOOM-------------------\n";
+#$self->app_controller()->zoom_zone(
+#    window_key => $window_key,
+#    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+#    zoom_value => 4,
+#);
+#print STDERR
+#    "            ----------------BEFORE SET OFFSCREEN CORRS-----------------\n";
+#$self->app_controller()->app_display_data()->set_offscreen_corrs_visibility( 2, 1, );
+#print STDERR
+#    "            --------------BEFORE SELECT-------------------\n";
+#  $self->add_object_selection(
+#      zinc       => $zinc,
+#      zone_key   => 2,
+#      map_key    => 4,
+#      window_key => $window_key,
+#  );
+#print STDERR
+#    "            ----------------BEFORE SELECT ZONE---\n";
+#$self->app_controller()->new_selected_zone( zone_key => 3, );
+#print STDERR
+#    "            -----------BEFORE DISPLAY LABELS-----\n";
+#$self->app_controller()->app_display_data()
+#    ->set_map_labels_visibility( 2, 1, );
+#print STDERR
+#    "            -----------BEFORE flip-----------------\n";
+#$self->app_controller()->app_display_data()->flip_map(
+#    'map_key'   => 4,
+#);
+#print STDERR
+#    "            ----------------BEFORE SCROLL-----------------\n";
+#$self->app_controller()->scroll_zone(
+#    window_key   => $window_key,
+#    zone_key     => 1,
+#    scroll_value => -500,
+#);
+#print STDERR
+#    "            ----------------BEFORE SPLIT-----------------\n";
+#$self->app_controller->app_display_data->split_map(
+#    map_key        => 4,
+#    split_position => 1000,
+#    );
+#print STDERR "  ------------------DONE-----------------------\n";
+#exit;
         },
         -font => $font,
     );
@@ -1273,43 +1276,46 @@ MAP1:
                 = $app_display_data->{'scaffold'}{$zone_key2}{'x_offset'};
             my $tags = [];
 
-            foreach my $item ( @{ $map_corr_layout->{'items'} || [] } ) {
+            foreach my $corr ( @{ $map_corr_layout->{'corrs'} || [] } ) {
+                foreach my $item ( @{ $corr->{'items'} || [] } ) {
 
-                # Has item been changed
-                next unless ( $item->[0] or not defined( $item->[0] ) );
+                    # Has item been changed
+                    next unless ( $item->[0] or not defined( $item->[0] ) );
 
-                my $item_id = $item->[1];
-                my $type    = $item->[2];
-                my @coords  = @{ $item->[3] };    # creates duplicate array
-                my $options = $item->[4];
+                    my $item_id = $item->[1];
+                    my $type    = $item->[2];
+                    my @coords  = @{ $item->[3] };   # creates duplicate array
+                    my $options = $item->[4];
 
-                $coords[0] += $x_offset1;
-                $coords[2] += $x_offset1;
-                $coords[4] += $x_offset2;
-                $coords[6] += $x_offset2;
+                    $coords[0] += $x_offset1;
+                    $coords[2] += $x_offset1;
+                    $coords[4] += $x_offset2;
+                    $coords[6] += $x_offset2;
 
-                if ( defined($item_id) ) {
-                    $zinc->coords( $item_id, \@coords );
-                    $zinc->itemconfigure( $item_id, %{ $options || {} } );
-                }
-                else {
-                    if ( $type eq 'text' ) {
-                        $item->[1] = $zinc->add(
-                            $type, $group_id,
-                            -position => \@coords,
-                            %{$options},
-                        );
+                    if ( defined($item_id) ) {
+                        $zinc->coords( $item_id, \@coords );
+                        $zinc->itemconfigure( $item_id, %{ $options || {} } );
                     }
                     else {
-                        $item->[1] = $zinc->add( $type, $group_id, \@coords,
-                            %{$options}, );
-                    }
+                        if ( $type eq 'text' ) {
+                            $item->[1] = $zinc->add(
+                                $type, $group_id,
+                                -position => \@coords,
+                                %{$options},
+                            );
+                        }
+                        else {
+                            $item->[1]
+                                = $zinc->add( $type, $group_id, \@coords,
+                                %{$options}, );
+                        }
 
-                    foreach my $tag (@$tags) {
-                        $zinc->addtag( $tag, 'withtag', $item->[1] );
+                        foreach my $tag (@$tags) {
+                            $zinc->addtag( $tag, 'withtag', $item->[1] );
+                        }
                     }
+                    $item->[0] = 0;
                 }
-                $item->[0] = 0;
             }
             $map_corr_layout->{'changed'} = 0;
 
@@ -2852,20 +2858,113 @@ sub highlight_map_corrs {
 =cut
 
     my ( $self, %args ) = @_;
+    my $zinc       = $args{'zinc'}       or return;
+    my $map_key    = $args{'map_key'}    or return;
+    my $zone_key   = $args{'zone_key'}   or return;
+    my $window_key = $args{'window_key'} or return;
+    my $color      = $args{'color'}      or return;
+
+    my $controller       = $self->app_controller();
+    my $app_display_data = $controller->app_display_data();
+    my $app_data_module  = $controller->app_data_module();
+
+    my $map_corrs = $app_display_data->{'corr_layout'}{'maps'}{$map_key}
+        || {};
+    foreach my $map_key2 ( keys %$map_corrs ) {
+        foreach my $corr ( @{ $map_corrs->{$map_key2}{'corrs'} || [] } ) {
+            my $feature_id1   = $corr->{'feature_id1'};
+            my $feature_id2   = $corr->{'feature_id2'};
+            my $corr_map_key1 = $corr->{'map_key1'};
+            my $corr_map_key2 = $corr->{'map_key2'};
+            my $feature_acc1
+                = $app_data_module->feature_id_to_acc($feature_id1);
+            my $feature_acc2
+                = $app_data_module->feature_id_to_acc($feature_id2);
+            my @corr_drawn_ids;
+            foreach my $item ( @{ $corr->{'items'} || [] } ) {
+                next unless ( $item->[1] );
+                push @corr_drawn_ids, $item->[1];
+            }
+            my ( $tmp_bounds, $tmp_highlight_ids ) = $self->highlight_object(
+                zinc       => $zinc,
+                ori_ids    => \@corr_drawn_ids,
+                zone_key   => $zone_key,
+                window_key => $window_key,
+                color      => $color,
+            );
+            push @{ $map_corrs->{$map_key2}{'highlight_ids'} },
+                @{ $tmp_highlight_ids || [] };
+
+            my @feature_drawn_ids;
+            foreach my $vals (
+                [ $feature_acc1, $corr_map_key1 ],
+                [ $feature_acc2, $corr_map_key2 ]
+                )
+            {
+                my $feature_acc  = $vals->[0];
+                my $corr_map_key = $vals->[1];
+                if (    $feature_acc
+                    and $app_display_data->{'map_layout'}{$corr_map_key}
+                    {'features'}
+                    and $app_display_data->{'map_layout'}{$corr_map_key}
+                    {'features'}{$feature_acc} )
+                {
+                    foreach my $item (
+                        @{  $app_display_data->{'map_layout'}{$corr_map_key}
+                                {'features'}{$feature_acc}{'items'} || []
+                        }
+                        )
+                    {
+                        next unless ( $item->[1] );
+                        push @feature_drawn_ids, $item->[1];
+                    }
+                }
+                my $corr_zone_key
+                    = $app_display_data->map_key_to_zone_key($corr_map_key);
+                my ( $tmp_bounds, $tmp_highlight_ids )
+                    = $self->highlight_object(
+                    zinc       => $zinc,
+                    ori_ids    => \@feature_drawn_ids,
+                    zone_key   => $corr_zone_key,
+                    window_key => $window_key,
+                    color      => 'green'
+                    );
+                push @{ $map_corrs->{$map_key2}{'highlight_ids'} },
+                    @{ $tmp_highlight_ids || [] };
+            }
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub unhighlight_map_corrs {
+
+=pod
+
+=head2 unhighlight_map_corrs
+
+
+=cut
+
+    my ( $self, %args ) = @_;
     my $zinc    = $args{'zinc'}    or return;
     my $map_key = $args{'map_key'} or return;
-    my $color   = $args{'color'}   or return;
 
     my $controller       = $self->app_controller();
     my $app_display_data = $controller->app_display_data();
 
     my $map_corrs = $app_display_data->{'corr_layout'}{'maps'}{$map_key}
         || {};
+
     foreach my $map_key2 ( keys %$map_corrs ) {
-        foreach my $item ( @{ $map_corrs->{$map_key2}{'items'} || [] } ) {
-            next unless ( $item->[1] );
-            $zinc->itemconfigure( $item->[1], -linecolor => $color, );
+        foreach my $highlight_id (
+            @{ $map_corrs->{$map_key2}{'highlight_ids'} || [] } )
+        {
+            $zinc->remove($highlight_id);
         }
+        $map_corrs->{$map_key2}{'highlight_ids'} = [];
     }
 
     return;
@@ -4775,11 +4874,6 @@ This can be used by other modules but probably shouldn't be.
                 map_key    => $map_key,
                 window_key => $window_key,
             );
-            $self->highlight_map_corrs(
-                zinc    => $zinc,
-                map_key => $map_key,
-                color   => 'black',
-            );
         }
     }
     elsif (@$feature_accs) {
@@ -4882,7 +4976,7 @@ Add map or feature selection
         $self->{'object_selections'}{$window_key}{$object_key}
             {'highlight_ids'}
         )
-        = $self->highlight_object_selected(
+        = $self->highlight_object(
         zinc       => $zinc,
         ori_ids    => \@ori_ids,
         zone_key   => $zone_key,
@@ -4900,9 +4994,11 @@ Add map or feature selection
                 {'highlight_bounds'},
             );
         $self->highlight_map_corrs(
-            zinc    => $zinc,
-            map_key => $map_key,
-            color   => 'black',
+            zinc       => $zinc,
+            map_key    => $map_key,
+            color      => 'black',
+            zone_key   => $zone_key,
+            window_key => $window_key,
         );
     }
 
@@ -5105,10 +5201,9 @@ Remove all selected objects from the selection list
         if ( $selected_type eq 'map' ) {
 
             # Unhighlight the correspondences for the map
-            $self->highlight_map_corrs(
+            $self->unhighlight_map_corrs(
                 zinc    => $zinc,
                 map_key => $object_key,
-                color   => 'red',
             );
         }
     }
@@ -5290,23 +5385,22 @@ Handle the ghost map dragging
 }
 
 # ----------------------------------------------------
-sub highlight_object_selected {
+sub highlight_object {
 
 =pod
 
-=head2 highlight_object_selected
+=head2 highlight_object
 
 Draw a highlight over the object
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
-    my $zone_key   = $args{'zone_key'};
-    my $window_key = $args{'window_key'};
-    my $ori_ids    = $args{'ori_ids'} || [];
-
-    my $highlight_color = 'red';
+    my $zinc            = $args{'zinc'};
+    my $zone_key        = $args{'zone_key'};
+    my $window_key      = $args{'window_key'};
+    my $ori_ids         = $args{'ori_ids'} || [];
+    my $highlight_color = $args{'color'} || 'red';
 
     my $app_display_data = $self->app_controller()->app_display_data();
     my $highlight_bounds = [];
@@ -6033,7 +6127,7 @@ Pack the frames
         -side   => 'top',
         -anchor => 'n',
         -fill   => 'both',
-        -expand =>1,
+        -expand => 1,
     );
 }
 

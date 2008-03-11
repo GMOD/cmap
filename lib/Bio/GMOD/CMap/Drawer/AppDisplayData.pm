@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.74 2008-03-10 17:48:51 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.75 2008-03-11 17:07:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -6892,11 +6892,17 @@ Removes correspondences between two maps.
     my $map_key1   = $args{'map_key1'}   or return;
     my $map_key2   = $args{'map_key2'}   or return;
 
-    $self->destroy_items(
-        items =>
-            $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}{'items'},
-        window_key => $window_key,
-    );
+    foreach my $corr (
+        @{  $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}{'corrs'}
+                || []
+        }
+        )
+    {
+        $self->destroy_items(
+            items      => $corr->{'items'},
+            window_key => $window_key,
+        );
+    }
     delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
     delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
 
@@ -7345,12 +7351,23 @@ AppInterface.
             );
             $self->{'map_layout'}{$map_key}{'items'} = [];
             if ( $self->{'corr_layout'}{'maps'}{$map_key} ) {
-                $self->destroy_items(
-                    items =>
-                        $self->{'corr_layout'}{'maps'}{$map_key}{'items'},
-                    window_key => $window_key,
-                );
-                $self->{'corr_layout'}{'maps'}{$map_key}{'items'} = [];
+                foreach my $map_key2 (
+                    keys %{ $self->{'corr_layout'}{'maps'}{$map_key} || {} } )
+                {
+                    foreach my $corr (
+                        @{  $self->{'corr_layout'}{'maps'}{$map_key}
+                                {$map_key2}{'corrs'} || []
+                        }
+                        )
+                    {
+                        $self->destroy_items(
+                            items      => $corr->{'items'},
+                            window_key => $window_key,
+                        );
+                    }
+                    $self->{'corr_layout'}{'maps'}{$map_key}{$map_key2}
+                        {'items'} = [];
+                }
             }
         }
         $self->{'zone_layout'}{$zone_key}{'bounds'}          = [ 0, 0, 0, 0 ];

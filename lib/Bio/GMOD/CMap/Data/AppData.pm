@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::AppData;
 
 # vim: set ft=perl:
 
-# $Id: AppData.pm,v 1.33 2008-02-28 17:12:58 mwz444 Exp $
+# $Id: AppData.pm,v 1.34 2008-03-11 17:07:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ Retrieves and caches the data from the database.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -285,6 +285,8 @@ features.  These do NOT include the sub-maps.
             foreach my $feature (@$features) {
                 $self->{'feature_data_by_acc'}{ $feature->{'feature_acc'} }
                     = $feature;
+                $self->{'feature_id_to_acc'}{ $feature->{'feature_id'} }
+                    = $feature->{'feature_acc'};
             }
         }
         else {
@@ -562,6 +564,10 @@ sub-maps.  These do NOT include the regular features;
         ) || [];
         if (@$features) {
             $self->{'sub_map_data'}{$map_id} = $features;
+            foreach my $feature (@$features) {
+                $self->{'feature_id_to_acc'}{ $feature->{'feature_id'} }
+                    = $feature->{'feature_acc'};
+            }
         }
         else {
             return undef;
@@ -1659,6 +1665,22 @@ sub map_correspondence_report_data {
         = "This is the correspondence report for the following maps:\n" . "  "
         . join( "\n  ", @map_names ) . "\n";
     return ( $report_string, \@report_cells );
+}
+
+# ----------------------------------------------------
+sub feature_id_to_acc {
+
+=pod
+
+=head2 feature_id_to_acc
+
+This is the accessor to the $self->{'feature_id_to_acc'} hash, which had better
+be prepopulated or else things are going to go arry.
+
+=cut
+
+    my ( $self, $feature_id ) = @_;
+    return $self->{'feature_id_to_acc'}{$feature_id};
 }
 
 1;

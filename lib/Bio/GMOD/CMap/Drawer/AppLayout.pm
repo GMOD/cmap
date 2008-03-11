@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.61 2008-02-28 17:12:58 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.62 2008-03-11 17:07:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -2011,6 +2011,8 @@ Lays out correspondences between two zones
     my $zone_key1        = $args{'zone_key1'};
     my $zone_key2        = $args{'zone_key2'};
 
+    my $app_data_module = $app_display_data->app_data_module();
+
     ( $zone_key1, $zone_key2 ) = ( $zone_key2, $zone_key1 )
         if ( $zone_key1 > $zone_key2 );
     my $draw_offscreen_corrs = (
@@ -2077,8 +2079,10 @@ Lays out correspondences between two zones
 
     my %map_flipped;
     foreach my $corr ( @{ $corrs || [] } ) {
-        my $map_id1 = $corr->{'map_id1'};
-        my $map_id2 = $corr->{'map_id2'};
+        my $map_id1     = $corr->{'map_id1'};
+        my $map_id2     = $corr->{'map_id2'};
+        my $feature_id1 = $corr->{'feature_id1'};
+        my $feature_id2 = $corr->{'feature_id2'};
 
         # BF DEBUG
         # next unless($map_id2 == 2898);
@@ -2195,6 +2199,11 @@ Lays out correspondences between two zones
                 $x2_stunted = 1;
             }
 
+            # If neither end are on screen, we don't want to see it.
+            if ( $x1_stunted and $x2_stunted ) {
+                next;
+            }
+
             # The following commented out code places the y value of the
             # stunted correspondence in between the maps rather than in line
             # with the map but I don't really like how that looks.
@@ -2235,12 +2244,13 @@ Lays out correspondences between two zones
         {
             $app_display_data->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
                 = {
-                changed   => 1,
-                items     => [],
-                zone_key1 => $zone_key1,
-                zone_key2 => $zone_key2,
-                map_key1  => $map_key1,
-                map_key2  => $map_key2,
+                changed       => 1,
+                corrs         => [],
+                zone_key1     => $zone_key1,
+                zone_key2     => $zone_key2,
+                map_key1      => $map_key1,
+                map_key2      => $map_key2,
+                highlight_ids => [],
                 };
 
             # point a reference to the corrs from each map.
@@ -2271,15 +2281,21 @@ Lays out correspondences between two zones
             $corr_color = 'pink';
         }
         push @{ $app_display_data->{'corr_layout'}{'maps'}{$map_key1}
-                {$map_key2}{'items'} },
-            (
-            [   1, undef, 'curve',
-                [   $x_end1, $y_end1, $x_mid1, $y_mid1,
-                    $x_mid2, $y_mid2, $x_end2, $y_end2,
+                {$map_key2}{'corrs'} },
+            {
+            map_key1    => $map_key1,
+            map_key2    => $map_key2,
+            feature_id1 => $feature_id1,
+            feature_id2 => $feature_id2,
+            items       => [
+                [   1, undef, 'curve',
+                    [   $x_end1, $y_end1, $x_mid1, $y_mid1,
+                        $x_mid2, $y_mid2, $x_end2, $y_end2,
+                    ],
+                    { -linecolor => $corr_color, -linewidth => '2', }
                 ],
-                { -linecolor => $corr_color, -linewidth => '2', }
-            ]
-            );
+            ],
+            };
     }
 
     return;
