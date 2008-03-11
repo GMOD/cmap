@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.79 2008-03-11 17:07:33 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.80 2008-03-11 18:57:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2041,7 +2041,7 @@ Returns the zinc object.
             -width       => 1100,
             -height      => 800,
             -backcolor   => 'white',
-            -borderwidth => 2,
+            -borderwidth => 0,
             -relief      => 'sunken',
             -scrollbars  => 'oe',
 
