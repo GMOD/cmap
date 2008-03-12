@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Fri Jun 22 09:42:39 2007
+-- Created on Wed Mar 12 09:25:26 2008
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -256,7 +256,7 @@ CREATE TABLE cmap_saved_link (
   saved_link_id number(11) DEFAULT '0' NOT NULL,
   saved_on date DEFAULT NULL,
   last_access date DEFAULT NULL,
-  session_step_object clob NOT NULL,
+  session_step_object blob(65535) NOT NULL,
   saved_url clob NOT NULL,
   legacy_url clob NOT NULL,
   link_title varchar2(50) DEFAULT '',
@@ -284,4 +284,36 @@ TYPE    MyISAM;
 CREATE INDEX map_id01 on cmap_map_to_feature (map_id);
 
 CREATE INDEX feature_id01 on cmap_map_to_feature (feature_id);
+
+--
+-- Table: cmap_transaction
+--
+
+CREATE TABLE cmap_transaction (
+  transaction_id number(11) DEFAULT '0' NOT NULL,
+  transaction_date date DEFAULT NULL,
+  PRIMARY KEY (transaction_id)
+)
+TYPE    MyISAM;
+
+--
+-- Table: cmap_commit_log
+--
+
+CREATE TABLE cmap_commit_log (
+  commit_log_id number(11) DEFAULT '0' NOT NULL,
+  species_id number(11) DEFAULT '0' NOT NULL,
+  species_acc varchar2(30) DEFAULT '' NOT NULL,
+  map_set_id number(11) DEFAULT '0' NOT NULL,
+  map_set_acc varchar2(30) DEFAULT '' NOT NULL,
+  map_id number(11) DEFAULT '0' NOT NULL,
+  map_acc varchar2(30) DEFAULT '' NOT NULL,
+  commit_type varchar2(200) DEFAULT '' NOT NULL,
+  commit_text varchar2(200) DEFAULT '' NOT NULL,
+  commit_object clob DEFAULT '' NOT NULL,
+  commit_date date DEFAULT NULL,
+  transaction_id number(11) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (commit_log_id)
+)
+TYPE    MyISAM;
 

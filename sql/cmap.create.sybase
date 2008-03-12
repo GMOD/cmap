@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Fri Jun 22 09:43:29 2007
+-- Created on Wed Mar 12 09:27:14 2008
 -- 
 --
 -- Table: cmap_attribute
@@ -240,7 +240,7 @@ CREATE TABLE cmap_saved_link (
   saved_link_id numeric(11) DEFAULT '0' NOT NULL,
   saved_on date DEFAULT NULL NULL,
   last_access date DEFAULT NULL NULL,
-  session_step_object varchar(65535) NOT NULL,
+  session_step_object blob(65535) NOT NULL,
   saved_url varchar(65535) NOT NULL,
   legacy_url varchar(65535) NOT NULL,
   link_title varchar(50) DEFAULT '' NULL,
@@ -266,4 +266,34 @@ CREATE TABLE cmap_map_to_feature (
 CREATE INDEX map_id ON cmap_map_to_feature (map_id);
 
 CREATE INDEX feature_id ON cmap_map_to_feature (feature_id);
+
+--
+-- Table: cmap_transaction
+--
+
+CREATE TABLE cmap_transaction (
+  transaction_id numeric(11) DEFAULT '0' NOT NULL,
+  transaction_date date DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_transaction PRIMARY KEY (transaction_id)
+);
+
+--
+-- Table: cmap_commit_log
+--
+
+CREATE TABLE cmap_commit_log (
+  commit_log_id numeric(11) DEFAULT '0' NOT NULL,
+  species_id numeric(11) DEFAULT '0' NOT NULL,
+  species_acc varchar(30) DEFAULT '' NOT NULL,
+  map_set_id numeric(11) DEFAULT '0' NOT NULL,
+  map_set_acc varchar(30) DEFAULT '' NOT NULL,
+  map_id numeric(11) DEFAULT '0' NOT NULL,
+  map_acc varchar(30) DEFAULT '' NOT NULL,
+  commit_type varchar(200) DEFAULT '' NOT NULL,
+  commit_text varchar(200) DEFAULT '' NOT NULL,
+  commit_object varchar(65535) DEFAULT '' NOT NULL,
+  commit_date date DEFAULT NULL NULL,
+  transaction_id numeric(11) DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_commit_log PRIMARY KEY (commit_log_id)
+);
 
