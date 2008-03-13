@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.41 $
+$Revision: 1.42 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -671,6 +671,15 @@ so they can be distinguished.
 
 =over 4
 
+=item * Unit Granularity (unit_granularity)
+
+Define the smallest unit that the map can be broken into.  For example, a
+sequence has a unit_granularity of 1 because 1 base pair is the smallest
+possible unit.  A genetic map however, might have a granularity of .01.
+
+The unit_granularity must be defined for each map_type for a configuration file
+to be considered valid by the validator.  However, CMap will work without it.
+
 =item * Is Relational Map (is_relational_map): 
 
 Are maps in this set only relational maps?  Set this to 1 if there are a lot of
@@ -1148,21 +1157,21 @@ when it is not.  They work together.
 
 Each <button> is it's own element with the following fields.
 
-=over4
+=over 4
 
-=item* text
+=item * text
 
 The text written on the button.  This should be short, otherwise there will be
 some ugly buttons. 
 
-=item* if (Optional)
+=item * if (Optional)
 
 This section contains one or more tests for menu items.  All options must match
 for the button to be displayed.
 
 The individual options are described later in the Testable Parameters section.
 
-=item* if_not (Optional)
+=item * if_not (Optional)
 
 This section contains one or more tests for menu items.  All options must not
 match for the button to be displayed.
@@ -1181,7 +1190,7 @@ The following is an alternate configuration for the "For Publication" button.
 
 The individual options are described later in the Testable Parameters section.
 
-=item* set
+=item * set
 
 This is where the action of the button is defined.  It will set the value of
 the defined parameters to the value supplied.  The defined parameter must be
@@ -1194,7 +1203,7 @@ view source on a CMap page and look for the option that you wish to set.
 
 =over 4
 
-=item- Boolean Parameters
+=item - Boolean Parameters
 
 These parameters can be tested using 1 or 0 (or blank).
 
@@ -1210,7 +1219,7 @@ These parameters can be tested using 1 or 0 (or blank).
     ignore_image_map_sanity
     dotplot
 
-=item- String Parameters
+=item - String Parameters
 
 These parameters are a little more than boolean.  They may be numbers (for
 isntance, the radio button" aggregate" values are 0,1 or 2).  View page source
@@ -1230,7 +1239,7 @@ of the CMap viewer to see the options of radio buttons.
     font_size
     pixel_height
 
-=item- Feature and Evidence Type Parameters
+=item - Feature and Evidence Type Parameters
 
 These parameters are a little different.  To query if a feature type is
 displayed, that feature type must be included as a display_feature_type.
