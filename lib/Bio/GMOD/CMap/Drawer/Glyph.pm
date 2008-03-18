@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use base 'Class::Base';
 
@@ -385,20 +385,98 @@ sub banding {
     my $color2
         = $calling_obj->feature_type_data( $feature_type_acc, 'color2' )
         || 'black';
+    my $color;
 
-    my $oscillating_color_key = 'oscillating_color_' . $feature_type_acc;
-    my $color = $calling_obj->{$oscillating_color_key} || $color1;
-
-    if ( $calling_obj->{$oscillating_color_key} eq $color2 ) {
-        $calling_obj->{$oscillating_color_key} = $color1;
-    }
-    else {
-        $calling_obj->{$oscillating_color_key} = $color2;
-    }
     my $width = $feature->{'width'} || 3;
-    push @$drawing_data,
-        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
     @coords = ( $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2 );
+
+    # clip the decimals off so it doesn't mess with the math
+    $y_pos1 = int($y_pos1);
+    $y_pos2 = int($y_pos2);
+
+    my $last_y = int( $calling_obj->{'last_banding_y'}{$x_pos2} );
+    my $stop_drawing;
+
+    # If it overlaps with the previous one, change the color
+    if ( defined($last_y) and $last_y >= $y_pos1 ) {
+
+       # Basically, we don't want to cover the last pixel of the previous band
+       # unless we have to.  If it overlaps by more than one pixel or it is
+       # only one pixel width (and overlaps) draw the overlap box.
+        if ( $y_pos1 < $last_y
+            or ( $y_pos1 == $last_y and $y_pos2 == $last_y ) )
+        {
+            my $banding_overlap_color_key
+                = 'banding_overlap_color_' . $feature_type_acc;
+
+            unless ( $calling_obj->{$banding_overlap_color_key} ) {
+                if (my $overlap_color = $calling_obj->feature_type_data(
+                        $feature_type_acc, 'overlap_color'
+                    )
+                    )
+                {
+                    $calling_obj->{$banding_overlap_color_key}
+                        = $overlap_color;
+                }
+                else {
+                    my $color1_array = COLORS->{$color1};
+                    my $color2_array = COLORS->{$color2};
+
+                    my $r_color
+                        = (
+                              hex( $color1_array->[0] )
+                            + hex( $color2_array->[0] ) ) / 2;
+                    my $g_color
+                        = (
+                              hex( $color1_array->[1] )
+                            + hex( $color2_array->[1] ) ) / 2;
+                    my $b_color
+                        = (
+                              hex( $color1_array->[2] )
+                            + hex( $color2_array->[2] ) ) / 2;
+
+                    $calling_obj->{$banding_overlap_color_key}
+                        = $drawer->define_color(
+                        [ $r_color, $g_color, $b_color ] );
+                }
+            }
+
+            push @$drawing_data,
+                [
+                FILLED_RECT, $x_pos2,
+                $y_pos1,     $x_pos2 + $width,
+                $last_y,     $calling_obj->{$banding_overlap_color_key},
+                ];
+        }
+
+       # If there is more to draw, go ahead and draw it but don't cover up the
+       # last pixel.
+        if ( $y_pos2 > $last_y ) {
+            $y_pos1 = $last_y + 1;
+        }
+        else {
+            $stop_drawing = 1;
+        }
+    }
+    if ( not $stop_drawing ) {
+        my $oscillating_color_key = 'oscillating_color_' . $feature_type_acc;
+        $color = $calling_obj->{$oscillating_color_key} || $color1;
+
+        if ( $calling_obj->{$oscillating_color_key} eq $color2 ) {
+            $calling_obj->{$oscillating_color_key} = $color1;
+        }
+        else {
+            $calling_obj->{$oscillating_color_key} = $color2;
+        }
+
+        push @$drawing_data,
+            [
+            FILLED_RECT,      $x_pos2, $y_pos1,
+            $x_pos2 + $width, $y_pos2, $color,
+            ];
+    }
+
+    $calling_obj->{'last_banding_y'}{$x_pos2} = $y_pos2;
 
     return \@coords;
 }

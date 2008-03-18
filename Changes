@@ -25,7 +25,8 @@
   option for features.
 - Added a unit granularity for a map type to allow for math with the correct
   significant figures.
-- Added color2 option to banding.
+- Added color2 option to the banding glyph.
+- Added a third overlap color to the banding glyph.
 - Added the ability to add custom colors to feature glyphs which are outside
   the pre-decided set.
 - Added start and stop parameters to View Feature on Map view.

@@ -224,6 +224,8 @@ my %config_defs = (
             feature_type_acc => { %generic_scalar_def, required => 1, },
             feature_type     => { %generic_scalar_def, required => 1, },
             color            => { %generic_scalar_def, },
+            color2           => { %generic_scalar_def, },
+            overlap_color    => { %generic_scalar_def, },
             area_code        => { %generic_scalar_def, },
             feature_modification_code => { %generic_scalar_def, },
             required_page_code        => {

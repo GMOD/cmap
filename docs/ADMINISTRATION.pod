@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.42 $
+$Revision: 1.43 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -481,14 +481,24 @@ filled-in rectangle (trimmed in black).
 A spanning feature where consecutive banding features alternate in 
 color between black and the chosen color.
 
-There is one banding specific option that can be defined
+There are banding specific options that can be defined:
 
 =over 4
+
+=item * color (default: red)
+
+This is the first color that this glyph will oscillate between.  This is used
+in conjunction with the "color2" option.  Technically, this isn't banding
+secific but I thought it was worth a mention here anyway.
 
 =item * color2 (default: black)
 
 This is the second color that this glyph will oscillate between.  This is used
 in conjunction with the "color" option.
+
+=item * overlap_color (default: halfway between between color and color2)
+
+This is the color that overlapping portions will be.
 
 =back
 
