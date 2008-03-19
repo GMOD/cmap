@@ -24,6 +24,11 @@
     </select>
     Display Hidden Links <input type="checkbox" name="display_hidden" id="display_hidden" value="1" [%- IF apr.param('display_hidden') -%]checked[%- END -%]>
     <input type="hidden" name="action" id="action" value="saved_links_viewer">
+    [%- FOREACH db=data_sources -%]
+      [%- IF db.is_current %]
+        <input type="hidden" name="data_source" id="data_source" value="[%- db.name -%]">
+      [%- END -%]
+    [%- END -%]
     <input type="submit" value="Submit">
 </form>
 
