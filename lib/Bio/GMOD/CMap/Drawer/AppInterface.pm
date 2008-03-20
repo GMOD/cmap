@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.82 2008-03-20 17:55:29 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.83 2008-03-20 20:31:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -145,7 +145,7 @@ Add the quck keys;
     # Export Moves
     $self->{'windows'}{$window_key}->bind(
         '<Control-Key-e>' => sub {
-            $self->export_map_moves( window_key => $window_key, );
+            $self->export_changes( window_key => $window_key, );
         },
     );
 
@@ -544,7 +544,8 @@ Adds control buttons to the controls_pane.
         -variable => \$self->{'attached_to_parent'},
         -command  => sub {
             if ( $self->{'attached_to_parent'} ) {
-                print STDERR "DETACH\n";
+
+                #print S#TDERR "DETACH\n";
 
                 #$self->app_controller()->app_display_data()->reattach_zone(
                 #window_key => $window_key,
@@ -552,7 +553,8 @@ Adds control buttons to the controls_pane.
                 #);
             }
             else {
-                print STDERR "ATTACH\n";
+
+                #print S#TDERR "ATTACH\n";
 
                 #$self->app_controller()->app_display_data()->reattach_zone(
                 #window_key => $window_key,
@@ -1398,62 +1400,6 @@ MAP1:
     return;
 }
 
-sub pre_draw_text {
-
-    #print STDERR "AI_NEEDS_MODDED 11\n";
-
-=pod
-
-=head2 pre_draw_text
-
-Draw text and return the id and the boundaries.
-This is an effort to reserve the text space for the app_display_data.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'}
-        or die 'no window key for file_menu_items';
-    my $app_display_data = $args{'app_display_data'};
-    my $x1               = $args{'x1'};
-    my $y1               = $args{'y1'};
-    my $text             = $args{'text'};
-
-    my $zinc = $self->zinc( window_key => $window_key, );
-
-    my $item_id = $zinc->createText(
-        ( $x1, $y1 ),
-        (   '-text'   => $text,
-            '-anchor' => 'nw',
-
-            #-font => $font_string,
-        )
-    );
-    return ( $item_id, [ $zinc->bbox($item_id) ] );
-}
-
-# ----------------------------------------------------
-sub get_zone_key_from_drawn_id {
-
-    #print STDERR "AI_NEEDS_MODDED 13\n";
-
-=pod
-
-=head2 get_zone_key_from_drawn_id
-
-Given a zinc object ID, return the zone_key that it belongs to.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $drawn_id   = $args{'drawn_id'};
-    my $zinc       = $args{'zinc'};
-
-    return;
-
-}
-
 # ----------------------------------------------------
 sub get_zone_group_id {
 
@@ -1720,8 +1666,6 @@ Item structure:
 # ----------------------------------------------------
 sub drawn_id_to_map_key {
 
-    #print STDERR "AI_NEEDS_MODDED 16\n";
-
 =pod
 
 =head2 drawn_id_to_map_key
@@ -1737,8 +1681,6 @@ Accessor method to map_keys from drawn ids
 
 # ----------------------------------------------------
 sub drawn_id_to_zone_bin_info {
-
-    #print STDERR "AI_NEEDS_MODDED 16\n";
 
 =pod
 
@@ -1756,8 +1698,6 @@ Accessor method to zone_bin_infos from drawn ids
 # ----------------------------------------------------
 sub map_key_to_drawn_ids {
 
-    #print STDERR "AI_NEEDS_MODDED 17\n";
-
 =pod
 
 =head2 map_key_to_drawn_ids
@@ -1773,8 +1713,6 @@ Accessor method to drawn ids from a map_key
 
 # ----------------------------------------------------
 sub zone_bin_to_drawn_ids {
-
-    #print STDERR "AI_NEEDS_MODDED 17\n";
 
 =pod
 
@@ -1821,8 +1759,6 @@ Item structure:
 # ----------------------------------------------------
 sub drawn_id_to_feature_acc {
 
-    #print STDERR "AI_NEEDS_MODDED 19\n";
-
 =pod
 
 =head2 drawn_id_to_feature_acc
@@ -1838,8 +1774,6 @@ Accessor method to feature_accs from drawn ids
 
 # ----------------------------------------------------
 sub feature_acc_to_drawn_ids {
-
-    #print STDERR "AI_NEEDS_MODDED 20\n";
 
 =pod
 
@@ -1890,36 +1824,6 @@ Item structure:
 }
 
 # ----------------------------------------------------
-sub add_tags_to_items {
-
-    #print STDERR "AI_NEEDS_MODDED 22\n";
-
-=pod
-
-=head2 add_tags_to_items
-
-Adds tags to items on the zinc.
-
-Item structure:
-
-  [ changed, item_id, type, coord_array, options_hash ]
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $zinc  = $args{'zinc'};
-    my $items = $args{'items'} || [];
-    my $tags  = $args{'tags'} || [];
-
-    foreach my $item ( @{ $items || [] } ) {
-        next unless ( $item->[1] );
-        foreach my $tag (@$tags) {
-            $zinc->addtag( $tag, 'withtag', $item->[1] );
-        }
-    }
-}
-
-# ----------------------------------------------------
 sub file_menu_items {
 
 =pod
@@ -1957,13 +1861,14 @@ Populates the file menu with menu_items
                     $self->save_view( window_key => $window_key, );
                 },
             ],
-            [   'command',
-                '~Export Map Moves',
-                -accelerator => 'Ctrl-e',
-                -command     => sub {
-                    $self->export_map_moves( window_key => $window_key, );
-                },
-            ],
+
+            #[   'command',
+            #    '~Export Changes',
+            #    -accelerator => 'Ctrl-e',
+            #    -command     => sub {
+            #        $self->export_changes( window_key => $window_key, );
+            #    },
+            #],
             [   'command',
                 '~Refresh From Database',
                 -command => sub {
@@ -2250,8 +2155,6 @@ group on the zinc.
 
 # ----------------------------------------------------
 sub bind_overview_zinc {
-
-    #print STDERR "AI_NEEDS_MODDED 28\n";
 
 =pod
 
@@ -3048,87 +2951,11 @@ sub unhighlight_map_corrs {
 }
 
 # ----------------------------------------------------
-sub fill_map_info_box {
-
-    #print STDERR "AI_NEEDS_MODDED 31\n";
+sub export_changes {
 
 =pod
 
-=head2 fill_map_info_box
-
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $drawn_id = $args{'drawn_id'};
-    my $map_key = $args{'map_key'} || $self->drawn_id_to_map_key($drawn_id)
-        or return;
-    my $controller       = $self->app_controller();
-    my $app_display_data = $controller->app_display_data();
-    my $zone_key         = $app_display_data->map_key_to_zone_key($map_key);
-    my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
-
-    my $text_box = $self->{'information_text'}{$window_key};
-    $text_box->configure( -state => 'normal', );
-
-    # Wipe old info
-    $text_box->delete( "1.0", 'end' );
-
-    my $new_text = $controller->get_map_info_text(
-        map_key    => $map_key,
-        window_key => $window_key,
-    );
-
-    $text_box->insert( 'end', $new_text );
-    $text_box->configure( -state => 'disabled', );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub fill_feature_info_box {
-
-    #print STDERR "AI_NEEDS_MODDED 32\n";
-
-=pod
-
-=head2 fill_feature_info_box
-
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $drawn_id    = $args{'drawn_id'};
-    my $feature_acc = $args{'feature_acc'}
-        || $self->drawn_id_to_feature_acc($drawn_id)
-        or return;
-    my $controller       = $self->app_controller();
-    my $app_display_data = $controller->app_display_data();
-
-    my $window_key = 1;
-    my $text_box   = $self->{'information_text'}{$window_key};
-    $text_box->configure( -state => 'normal', );
-
-    # Wipe old info
-    $text_box->delete( "1.0", 'end' );
-
-    my $new_text
-        = $controller->get_feature_info_text( feature_acc => $feature_acc, );
-
-    $text_box->insert( 'end', $new_text );
-    $text_box->configure( -state => 'disabled', );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub export_map_moves {
-
-    #print STDERR "AI_NEEDS_MODDED 33\n";
-
-=pod
-
-=head2 export_map_moves
+=head2 export_changes
 
 Popup a getSaveFile dialog and pass the file info to the controller for
 exporting the map moves.
@@ -3144,7 +2971,7 @@ exporting the map moves.
     );
     return unless ($export_file_name);
 
-    $self->app_controller()->export_map_moves(
+    $self->app_controller()->export_changes(
         window_key       => $window_key,
         export_file_name => $export_file_name,
     );
@@ -3157,7 +2984,7 @@ sub commit_changes {
 
 =pod
 
-=head2 commit_map_moves
+=head2 commit_changes
 
 
 =cut
@@ -3223,43 +3050,11 @@ sub highlight_menu_popup {
 }
 
 # ----------------------------------------------------
-sub commit_map_moves {
-
-    #print STDERR "AI_NEEDS_MODDED 34\n";
-
-=pod
-
-=head2 commit_map_moves
-
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-
-    my $answer = $self->main_window()->Dialog(
-        -title => 'Commit Map Moves?',
-        -text  => 'Would you like to commit the Map moves to the database?',
-        -default_button => 'Cancel',
-        -buttons        => [ 'OK', 'Cancel', ],
-    )->Show();
-
-    if ( $answer eq 'OK' ) {
-        $self->app_controller()
-            ->commit_map_moves( window_key => $window_key, );
-    }
-
-    return;
-}
-
-# ----------------------------------------------------
 sub popup_warning {
 
-    #print STDERR "AI_NEEDS_MODDED 34\n";
-
 =pod
 
-=head2 commit_map_moves
+=head2 popup_warning
 
 
 =cut
@@ -3646,11 +3441,9 @@ sub merge_maps_popup {
 # ----------------------------------------------------
 sub password_box {
 
-    #print STDERR "AI_NEEDS_MODDED 36\n";
-
 =pod
 
-=head2 commit_map_moves
+=head2 password_box
 
 
 =cut
@@ -3691,8 +3484,6 @@ sub password_box {
 
 # ----------------------------------------------------
 sub start_menu {
-
-    #print STDERR "AI_NEEDS_MODDED 37\n";
 
 =pod
 
@@ -3826,8 +3617,6 @@ sub select_data_source {
 
 # ----------------------------------------------------
 sub select_reference_maps {
-
-    #print STDERR "AI_NEEDS_MODDED 37\n";
 
 =pod
 
@@ -3975,8 +3764,6 @@ sub select_reference_maps {
 # ----------------------------------------------------
 sub display_reference_map_sets {
 
-    #print STDERR "AI_NEEDS_MODDED 38\n";
-
 =pod
 
 =head2 display_reference_map_sets
@@ -4020,8 +3807,6 @@ sub display_reference_map_sets {
 # ----------------------------------------------------
 sub display_reference_maps {
 
-    #print STDERR "AI_NEEDS_MODDED 39\n";
-
 =pod
 
 =head2 display_reference_map_sets
@@ -4046,8 +3831,6 @@ sub display_reference_maps {
 # ----------------------------------------------------
 sub clear_buttons {
 
-    #print STDERR "AI_NEEDS_MODDED 40\n";
-
 =pod
 
 =head2 clear_buttons
@@ -4068,8 +3851,6 @@ sub clear_buttons {
 # ----------------------------------------------------
 sub clear_ref_maps {
 
-    #print STDERR "AI_NEEDS_MODDED 41\n";
-
 =pod
 
 =head2 clear_ref_maps
@@ -4087,8 +3868,6 @@ sub clear_ref_maps {
 
 # ----------------------------------------------------
 sub return_to_last_window {
-
-    #print STDERR "AI_NEEDS_MODDED 42\n";
 
 =pod
 
@@ -4679,8 +4458,6 @@ Handle down click of the right mouse button
 # ----------------------------------------------------
 sub drag_left_mouse {
 
-    #print STDERR "AI_NEEDS_MODDED 50\n";
-
 =pod
 
 =head2 drag_left_mouse
@@ -4712,8 +4489,6 @@ Stubbed out, not currently used.
 
 # ----------------------------------------------------
 sub drag_right_mouse {
-
-    #print STDERR "AI_NEEDS_MODDED 51\n";
 
 =pod
 
@@ -4812,7 +4587,7 @@ Stubbed out, Not currently used.
 
     # Move original object
     if ( $self->{'drag_obj'} ) {
-        $self->app_controller()->app_display_data()->end_drag_ghost();
+        $self->app_controller()->app_display_data()->end_drag_highlight();
     }
 
     foreach (
@@ -4829,8 +4604,6 @@ Stubbed out, Not currently used.
 
 # ----------------------------------------------------
 sub stop_drag_right_mouse {
-
-    #print STDERR "AI_NEEDS_MODDED 53\n";
 
 =pod
 
@@ -5412,57 +5185,6 @@ Create the highlight box on the parent map
 }
 
 # ----------------------------------------------------
-sub create_ghost_location_on_map {
-
-    #print STDERR "AI_NEEDS_MODDED 54\n";
-
-=pod
-
-=head2 create_ghost_location_on_map
-
-Handle the ghost map dragging
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
-    my $map_key    = $args{'map_key'};
-    my $window_key = $args{'window_key'};
-
-    my $ghost_color = 'red';
-
-    my %ghost_location_data = $self->app_controller()->app_display_data()
-        ->place_highlight_location_on_parent_map( map_key => $map_key, );
-
-    return unless (%ghost_location_data);
-
-    my $parent_group_id = $self->get_zone_group_id(
-        window_key       => $ghost_location_data{'window_key'},
-        zone_key         => $ghost_location_data{'parent_zone_key'},
-        zinc             => $zinc,
-        app_display_data => $self->app_controller()->app_display_data(),
-    );
-
-    $self->{'ghost_loc_id'}{$window_key} = $zinc->add(
-        'rectangle',
-        $parent_group_id,
-        $ghost_location_data{'location_coords'},
-        -linecolor => $ghost_color,
-        -linewidth => 2,
-        -filled    => 0,
-        -visible   => $ghost_location_data{'visible'},
-
-    );
-    $zinc->addtag( 'on_top', 'withtag',
-        $self->{'ghost_loc_id'}{$window_key} );
-
-    $self->{'ghost_loc_parent_zone_key'}{$window_key}
-        = $ghost_location_data{'parent_zone_key'};
-
-    return;
-}
-
-# ----------------------------------------------------
 sub highlight_object {
 
 =pod
@@ -5627,86 +5349,6 @@ Access the highlight bounds.
 }
 
 # ----------------------------------------------------
-sub create_ghost {
-
-    #print STDERR "AI_NEEDS_MODDED 54\n";
-
-=pod
-
-=head2 create_ghost
-
-Handle the ghost map dragging
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $zinc        = $args{'zinc'};
-    my $map_key     = $args{'map_key'};
-    my $feature_acc = $args{'feature_acc'};
-    my $window_key  = $args{'window_key'};
-
-    my $ghost_color = 'red';
-
-    # Create a ghost item for each item in the original feature glyph
-    my @ori_ids;
-    if ($map_key) {
-        @ori_ids = $self->map_key_to_drawn_ids($map_key);
-    }
-    elsif ($feature_acc) {
-        @ori_ids = $self->feature_acc_to_drawn_ids($feature_acc);
-    }
-    else {
-        return;
-    }
-
-    my $app_display_data = $self->app_controller()->app_display_data();
-    if ($map_key) {
-        $self->{'ghost_bounds'}{$window_key} = [];
-    }
-    my ( $main_x_offset, $main_y_offset );
-    if ($map_key) {
-        my $zone_key = $app_display_data->map_key_to_zone_key($map_key);
-        ( $main_x_offset, $main_y_offset )
-            = $app_display_data->get_main_zone_offsets( zone_key => $zone_key,
-            );
-    }
-
-    foreach my $ori_id (@ori_ids) {
-        my $type = $zinc->type($ori_id);
-        next if ( $type eq 'text' );
-        my $ghost_id = $zinc->clone( $ori_id, -tags => [ 'tmp_on_top', ], );
-
-        push @{ $self->{'ghost_ids'}{$window_key} }, $ghost_id;
-
-        # Make ghost a different color.
-        $zinc->itemconfigure(
-             $ghost_id,
-            -linecolor => $ghost_color,
-            -fillcolor => $ghost_color,
-        );
-        if ($map_key) {
-            $zinc->chggroup( $ghost_id, 1, 1, );
-
-            # modify the coords to be universial because chggroup won't.
-            my @coords = $zinc->coords($ghost_id);
-
-            # Flatten the coords array
-            @coords = map { ( ref($_) eq 'ARRAY' ) ? @$_ : $_ } @coords;
-            $coords[0] += $main_x_offset;
-            $coords[1] += $main_y_offset;
-            $coords[2] += $main_x_offset;
-            $coords[3] += $main_y_offset;
-            $self->{ghost_bounds}{ $self->{'drag_window_key'} }
-                = $self->expand_bounds(
-                $self->{ghost_bounds}{ $self->{'drag_window_key'} },
-                \@coords );
-        }
-    }
-
-    return;
-}
-
-# ----------------------------------------------------
 sub drag_highlight {
 
 =pod
@@ -5748,8 +5390,6 @@ Handle the highlight map dragging
         dx         => $dx,
     );
 
-    #print STDERR "NHB\n";
-    #print STDERR Dumper($new_highlight_bounds)."\n";
     my %location_highlight_data
         = $self->app_controller()->app_display_data()
         ->move_location_highlights(
@@ -5927,8 +5567,6 @@ Handle the highlight map dragging
 # ----------------------------------------------------
 sub mouse_wheel_event {
 
-    #print STDERR "AI_NEEDS_MODDED 55\n";
-
 =pod
 
 =head2 mouse_wheel_event
@@ -6002,8 +5640,6 @@ Modifies the controls to act on this slot.
 # ----------------------------------------------------
 sub int_move_zone {
 
-    #print STDERR "AI_NEEDS_MODDED 57\n";
-
 =pod
 
 =head2 int_move_zone
@@ -6060,38 +5696,6 @@ Handle window resizing
         $self->pack_panes( $window_key, $app_display_data, );
     }
     return;
-}
-
-# ----------------------------------------------------
-sub destroy_ghosts {
-
-    #print STDERR "AI_NEEDS_MODDED 59\n";
-
-=pod
-
-=head2 destroy_ghosts
-
-Destroy the ghost image
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $zinc       = $args{'zinc'};
-    my $window_key = $args{'window_key'};
-
-    foreach my $ghost_id ( @{ $self->{'ghost_ids'}{$window_key} || [] } ) {
-        $zinc->remove($ghost_id);
-    }
-
-    $self->{'ghost_ids'}{$window_key}       = undef;
-    $self->{'ghost_bounds'}{$window_key}    = [];
-    $self->{'ghost_map_moved'}{$window_key} = undef;
-
-    $zinc->remove( $self->{'ghost_loc_id'}{$window_key} )
-        if $self->{'ghost_loc_id'}{$window_key};
-    $self->{'ghost_loc_id'}{$window_key}              = undef;
-    $self->{'ghost_loc_parent_zone_key'}{$window_key} = undef;
-    $self->app_controller()->app_display_data()->end_drag_ghost();
 }
 
 # ----------------------------------------------------

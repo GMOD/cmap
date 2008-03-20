@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.48 2008-02-28 17:12:56 mwz444 Exp $
+# $Id: AppController.pm,v 1.49 2008-03-20 20:31:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -705,11 +705,11 @@ Controls how the ghost map moves.
 }
 
 # ----------------------------------------------------
-sub export_map_moves {
+sub export_changes {
 
 =pod
 
-=head2 export_map_moves
+=head2 export_changes
 
 Export the map moves to a file.
 
@@ -720,16 +720,17 @@ Export the map moves to a file.
     my $export_file_name = $args{'export_file_name'} or return;
     my $app_display_data = $self->app_display_data();
 
+    $self->app_interface->popup_warning(
+        text => "This feature is not available yet.\n", );
+    return;
+
     my $fh;
     unless ( open $fh, ">" . $export_file_name ) {
         print "WARNING: Unable to write to $export_file_name.\n";
         return;
     }
 
-    my $condenced_actions = $app_display_data->condenced_window_actions(
-        window_key => $window_key, );
-
-    foreach my $action ( @{ $condenced_actions || [] } ) {
+    foreach my $action ( @{ [] || [] } ) {
         if ( $action->[0] eq 'move_map' ) {
             my @print_array = (
                 $action->[0],
@@ -787,48 +788,6 @@ Commit the changes made to the cmap db.
     $self->app_display_data->replace_temp_map_ids($temp_id_to_real_map_id);
 
     $app_display_data->refresh_program_from_database();
-
-    return;
-}
-
-# ----------------------------------------------------
-sub commit_map_moves {
-
-=pod
-
-=head2 commit_map_moves
-
-Export the map moves to a file.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $app_display_data = $self->app_display_data();
-
-    my $condenced_actions = $app_display_data->condenced_window_actions(
-        window_key => $window_key, );
-
-    my @moved_features;
-    foreach my $action ( @{ $condenced_actions || [] } ) {
-        if ( $action->[0] eq 'move_map' ) {
-            my $map_key = $action->[1];
-            push @moved_features,
-                {
-                feature_id =>
-                    $app_display_data->{'sub_maps'}{$map_key}{'feature_id'},
-                sub_map_id => $app_display_data->map_key_to_id($map_key),
-                original_parent_map_id =>
-                    $app_display_data->map_key_to_id( $action->[2] ),
-                map_id => $app_display_data->map_key_to_id( $action->[5] ),
-                feature_start => $action->[6],
-                feature_stop  => $action->[7],
-                };
-        }
-    }
-
-    $self->app_data_module->commit_sub_map_moves(
-        features => \@moved_features, );
 
     return;
 }

@@ -1,8 +1,9 @@
 package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
+
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.76 2008-03-20 17:55:28 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.77 2008-03-20 20:31:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +53,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -884,8 +885,6 @@ Scroll slots based on the overview scrolling
 
 =cut
 
-    #print STDERR "ADD_NEEDS_MODDED 2\n";
-
     my ( $self, %args ) = @_;
     my $window_key   = $args{'window_key'};
     my $panel_key    = $args{'panel_key'};
@@ -1290,11 +1289,11 @@ expand zones
 # ----------------------------------------------------
 sub reattach_slot {
 
-    #print STDERR "ADD_NEEDS_MODDED 6\n";
-
 =pod
 
 =head2 reattach_slot
+
+FUTURE FEATURE
 
 Reattach a map and recursively handle the children
 
@@ -1543,73 +1542,6 @@ sub map_label_info {
 }
 
 # ----------------------------------------------------
-sub relayout_ref_map_zone {
-
-    #print STDERR "ADD_NEEDS_MODDED 9\n";
-
-=pod
-
-=head2 relayout_ref_map_zone
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $zone_key   = $args{'zone_key'}   or return;
-
-    $self->clear_zone_maps(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
-
-    # These maps are features of the parent map
-    layout_head_maps(
-        window_key       => $window_key,
-        zone_key         => $zone_key,
-        app_display_data => $self,
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
-sub relayout_sub_map_zone {
-
-    #print STDERR "ADD_NEEDS_MODDED 10\n";
-
-=pod
-
-=head2 relayout_sub_map_zone
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $zone_key   = $args{'zone_key'}   or return;
-
-    $self->clear_zone_maps(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
-
-    # These maps are features of the parent map
-    layout_sub_maps(
-        window_key       => $window_key,
-        zone_key         => $zone_key,
-        app_display_data => $self,
-    );
-
-    # Reset correspondences
-    # BF ADD THIS BACK
-    #    $self->reset_zone_corrs(
-    #        window_key => $window_key,
-    #        zone_key   => $zone_key,
-    #    );
-
-    return;
-}
-
-# ----------------------------------------------------
 sub change_selected_zone {
 
 =pod
@@ -1664,50 +1596,6 @@ sub change_selected_zone {
 }
 
 # ----------------------------------------------------
-sub change_feature_status {
-
-    #print STDERR "ADD_NEEDS_MODDED 13\n";
-
-=pod
-
-=head2 change_feature_status
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $slot_key      = $args{'slot_key'} or return;
-    my $show_features = $args{'show_features'};
-    my $panel_key     = $self->{'scaffold'}{$slot_key}{'panel_key'};
-    my $window_key    = $self->{'scaffold'}{$slot_key}{'window_key'};
-
-    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
-    $slot_scaffold->{'show_features'} = $show_features;
-
-    if ( $slot_scaffold->{'is_top'} ) {
-        $self->relayout_ref_map_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
-        );
-    }
-    else {
-        $self->relayout_sub_map_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
-        );
-    }
-
-    $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
-
-    return;
-}
-
-# ----------------------------------------------------
 sub zone_bgcolor {
 
 =pod
@@ -1744,11 +1632,11 @@ sub zone_bgcolor {
 # ----------------------------------------------------
 sub detach_zone_from_parent {
 
-    #print STDERR "ADD_NEEDS_MODDED 15\n";
-
 =pod
 
 =head2 detach_zone_from_parent
+
+FUTURE_FEATURE
 
 =cut
 
@@ -1769,11 +1657,11 @@ sub detach_zone_from_parent {
 # ----------------------------------------------------
 sub attach_slot_to_parent {
 
-    #print STDERR "ADD_NEEDS_MODDED 16\n";
-
 =pod
 
 =head2 attach_slot_to_parent
+
+FUTURE_FEATURE
 
 =cut
 
@@ -1981,47 +1869,6 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
     #    window_key           => $window_key,
     #    height_change       => $bounds_change,
     #);
-
-    return;
-}
-
-# ----------------------------------------------------
-sub move_lower_slots {
-
-    #print STDERR "ADD_NEEDS_MODDED 19\n";
-
-=pod
-
-=head2 move_lower_slots
-
-Crawls through the panel and move all of the slots below the given slot.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $stationary_slot_key = $args{'stationary_slot_key'} or return;
-    my $panel_key           = $args{'panel_key'}           or return;
-    my $height_change = $args{'height_change'} || 0;
-
-    my $seen_stationary_slot = 0;
-    foreach my $slot_key ( @{ $self->{'slot_order'}{$panel_key} || [] } ) {
-
-        # Don't move it if there isn't a map set id (and it hasn't been drawn
-        if (    $seen_stationary_slot
-            and $self->{'scaffold'}{$slot_key}{'map_set_id'} )
-        {
-            move_slot(
-                panel_key        => $panel_key,
-                slot_key         => $slot_key,
-                y                => $height_change,
-                app_display_data => $self,
-                app_interface    => $self->app_interface(),
-            );
-        }
-        elsif ( $stationary_slot_key == $slot_key ) {
-            $seen_stationary_slot = 1;
-        }
-    }
 
     return;
 }
@@ -2277,40 +2124,6 @@ Initializes overview_layout
 }
 
 # ----------------------------------------------------
-sub copy_slot_scaffold {
-
-    #print STDERR "ADD_NEEDS_MODDED 26\n";
-
-=pod
-
-=head2 copy_slot_scaffold
-
-Copies important info to a new slot.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $old_slot_key = $args{'old_slot_key'};
-    my $new_slot_key = $args{'new_slot_key'};
-
-    # Scaffold Info
-    foreach my $key (
-        qw[
-        parent      scale       attached_to_parent
-        x_offset    is_top      pixels_per_unit
-        map_set_id  window_key
-        children    show_features
-        ]
-        )
-    {
-        $self->{'scaffold'}{$new_slot_key}{$key}
-            = $self->{'scaffold'}{$old_slot_key}{$key};
-    }
-
-    return;
-}
-
-# ----------------------------------------------------
 sub set_default_window_layout {
 
 =pod
@@ -2335,45 +2148,6 @@ Set the default window layout.
         width       => 0,
     };
 
-}
-
-# ----------------------------------------------------
-sub clear_zone_maps {
-
-    #print STDERR "ADD_NEEDS_MODDED 28\n";
-
-=pod
-
-=head2 clear_zone_maps
-
-Clears a zone of map data and calls on the interface to remove the drawings.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return;
-    my $zone_key   = $args{'zone_key'}   or return;
-
-    delete $self->{'slot_info'}{$zone_key};
-    foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } ) {
-        foreach my $feature_acc (
-            keys %{ $self->{'map_layout'}{$map_key}{'features'} || {} } )
-        {
-            $self->destroy_items(
-                items =>
-                    $self->{'map_layout'}{$map_key}{'features'}{$feature_acc}
-                    {'items'},
-                window_key => $window_key,
-            );
-        }
-        $self->destroy_items(
-            items      => $self->{'map_layout'}{$map_key}{'items'},
-            window_key => $window_key,
-        );
-        $self->initialize_map_layout($map_key);
-    }
-
-    return;
 }
 
 # ----------------------------------------------------
@@ -5746,53 +5520,6 @@ Redo the action that was last undone.
 }
 
 # ----------------------------------------------------
-sub condenced_window_actions {
-
-=pod
-
-=head2 condenced_window_actions
-
-Condence redundant window actions for commits and exporting.  
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'} or return undef;
-
-    my %moves;
-    my @return_array;
-    my $window_actions = $self->{'window_actions'}{$window_key};
-    for ( my $i = 0; $i <= $window_actions->{'last_action_index'}; $i++ ) {
-        my $action = $window_actions->{'actions'}[$i];
-        if ( $action->{'action'} eq 'move_map' ) {
-            my $map_key = $action->{'map_key'};
-            if ( $moves{$map_key} ) {
-
-                # leave the original loc alone but change the end
-                $moves{$map_key}->{'new_parent_map_key'}
-                    = $action->{'new_parent_map_key'};
-                $moves{$map_key}->{'new_parent_map_id'}
-                    = $action->{'new_parent_map_id'};
-                $moves{$map_key}->{'new_feature_start'}
-                    = $action->{'new_feature_start'};
-                $moves{$map_key}->{'new_feature_stop'}
-                    = $action->{'new_feature_stop'};
-            }
-            else {
-                $moves{$map_key} = $action;
-            }
-        }
-    }
-
-    # Add Moves to the return array
-    foreach my $map_key ( keys %moves ) {
-        push @return_array, $moves{$map_key};
-    }
-
-    return \@return_array;
-}
-
-# ----------------------------------------------------
 sub remove_from_map_order {
 
 =pod
@@ -5896,8 +5623,6 @@ left alone).
 
 # ----------------------------------------------------
 sub window_actions {
-
-    #print STDERR "ADD_NEEDS_MODDED 76\n";
 
 =pod
 
@@ -6701,21 +6426,20 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
 }
 
 # ----------------------------------------------------
-sub end_drag_ghost {
+sub end_drag_highlight {
 
 =pod
 
-=head2 end_drag_ghost
+=head2 end_drag_highlight
 
-Clear all of the values used during the ghost dragging so they don't muck up
-the works next time.
+Clear all of the values used during the highlight dragging so they don't muck
+up the works next time.
 
 =cut
 
     my ( $self, %args ) = @_;
 
-    #$self->{'current_highlight_parent_map_key'} = undef;
-    $self->{'ghost_parent_maps'} = undef;
+    $self->{'current_highlight_parent_map_key'} = undef;
 
     return;
 }
@@ -7090,8 +6814,6 @@ copy a zone of correspondences
 # ----------------------------------------------------
 sub clear_window {
 
-    #print STDERR "ADD_NEEDS_MODDED 45\n";
-
 =pod
 
 =head2 clear_window
@@ -7281,8 +7003,6 @@ Deletes the zone data and wipes them from the canvas
 
 # ----------------------------------------------------
 sub wipe_window_canvases {
-
-    #print STDERR "ADD_NEEDS_MODDED 48\n";
 
 =pod
 
@@ -8012,8 +7732,6 @@ returns
 # ----------------------------------------------------
 sub get_map_ids {
 
-    #print STDERR "ADD_NEEDS_MODDED 50\n";
-
 =pod
 
 =head2 get_map_ids
@@ -8029,48 +7747,6 @@ returns
         return [ map { $self->{'map_key_to_id'}{$_} } @$map_keys ];
     }
 
-    return undef;
-}
-
-# ----------------------------------------------------
-sub map_truncated {
-
-    #print STDERR "ADD_NEEDS_MODDED 51\n";
-
-=pod
-
-=head2 map_truncated
-
-Test if the map is truncated (taken from Bio::GMOD::CMAP::Data ).
-
-=cut
-
-    my $self     = shift;
-    my $slot_key = shift;
-    my $map_id   = shift;
-    return undef
-        unless ( defined($slot_key) and defined($map_id) );
-
-    if (    $self->{'slot_info'}->{$slot_key}
-        and %{ $self->{'slot_info'}->{$slot_key} }
-        and @{ $self->{'slot_info'}->{$slot_key}{$map_id} } )
-    {
-        my $map_info          = $self->{'slot_info'}->{$slot_key}{$map_id};
-        my $map_top_truncated = ( defined( $map_info->[0] )
-                and $map_info->[0] != $map_info->[2] );
-        my $map_bottom_truncated = ( defined( $map_info->[1] )
-                and $map_info->[1] != $map_info->[3] );
-        if ( $map_top_truncated and $map_bottom_truncated ) {
-            return 3;
-        }
-        elsif ($map_top_truncated) {
-            return 1;
-        }
-        elsif ($map_bottom_truncated) {
-            return 2;
-        }
-        return 0;
-    }
     return undef;
 }
 

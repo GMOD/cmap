@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.65 2008-03-20 17:55:30 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.66 2008-03-20 20:31:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -110,8 +110,6 @@ sub layout_new_window {
 
 # ----------------------------------------------------
 sub layout_overview {
-
-    #print STDERR "AL_NEEDS_MODDED 2\n";
 
 =pod
 
@@ -1287,23 +1285,23 @@ sub set_zone_bgcolor {
 # ----------------------------------------------------
 sub add_zone_separator {
 
-    #print STDERR "AL_NEEDS_MODDED 5\n";
-
 =pod
 
 =head2 add_zone_separator
+
+When this method is used again, it'll have to be revisited.
 
 Lays out reference maps in a new zone
 
 =cut
 
     my %args        = @_;
-    my $slot_layout = $args{'slot_layout'};
+    my $zone_layout = $args{'zone_layout'};
 
-    my $border_x1 = $slot_layout->{'bounds'}[0];
-    my $border_y1 = $slot_layout->{'bounds'}[1];
-    my $border_x2 = $slot_layout->{'bounds'}[2];
-    $slot_layout->{'separator'} = [
+    my $border_x1 = $zone_layout->{'bounds'}[0];
+    my $border_y1 = $zone_layout->{'bounds'}[1];
+    my $border_x2 = $zone_layout->{'bounds'}[2];
+    $zone_layout->{'separator'} = [
         [   1, undef,
             'rectangle',
             [   $border_x1, $border_y1,
@@ -1997,8 +1995,6 @@ Also, destroys the features.
 # ----------------------------------------------------
 sub add_correspondences {
 
-    #print STDERR "AL_NEEDS_MODDED 11\n";
-
 =pod
 
 =head2 add_correspondences
@@ -2457,8 +2453,6 @@ returns the number of pixesl per map unit.
 
 # ----------------------------------------------------
 sub overview_selected_area {
-
-    #print STDERR "AL_NEEDS_MODDED 14\n";
 
 =pod
 
