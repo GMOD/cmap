@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.81 2008-03-11 20:42:50 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.82 2008-03-20 17:55:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -642,7 +642,8 @@ Adds control buttons to the controls_pane.
 #$self->app_controller()->zoom_zone(
 #    window_key => $window_key,
 #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-#    zoom_value => 4,
+#    #zoom_value => 512,
+#    zoom_value => 256,
 #);
 #print STDERR
 #    "            ----------------BEFORE SET OFFSCREEN CORRS-----------------\n";
@@ -672,7 +673,14 @@ Adds control buttons to the controls_pane.
 #$self->app_controller()->scroll_zone(
 #    window_key   => $window_key,
 #    zone_key     => 1,
-#    scroll_value => -500,
+#    scroll_value => -140,
+#);
+#print STDERR
+#    "            ----------------BEFORE SCROLL2-----------------\n";
+#$self->app_controller()->scroll_zone(
+#    window_key   => $window_key,
+#    zone_key     => 1,
+#    scroll_value => -10,
 #);
 #print STDERR
 #    "            ----------------BEFORE SPLIT-----------------\n";
@@ -680,8 +688,9 @@ Adds control buttons to the controls_pane.
 #    map_key        => 4,
 #    split_position => 1000,
 #    );
-#print STDERR "  ------------------DONE-----------------------\n";
-#exit;
+            print STDERR "  ------------------DONE-----------------------\n";
+
+            #exit;
         },
         -font => $font,
     );
@@ -806,14 +815,15 @@ Draws and re-draws on the zinc
             keys %{ $app_display_data->{'zone_in_window'}{$window_key} || {} }
             )
         {
-            my $zone_group_id = $self->draw_zone(
-                zone_key         => $zone_key,
-                zinc             => $zinc,
-                app_display_data => $app_display_data,
+            next unless $app_display_data->{'scaffold'}{$zone_key}{'is_top'};
+            $self->recursive_draw_zone(
+                zone_key            => $zone_key,
+                zinc                => $zinc,
+                app_display_data    => $app_display_data,
+                cumulative_x_offset => 0,
+                cumulative_y_offset => 0,
             );
 
-            # Raise this zone above the earlier zones
-            $zinc->raise( $zone_group_id, );
         }
         $window_layout->{'sub_changed'} = 0;
     }
@@ -998,6 +1008,61 @@ Draws and re-draws on the zinc
 }
 
 # ----------------------------------------------------
+sub recursive_draw_zone {
+
+=pod
+
+=head2 recursive_draw_zone
+
+Handles the recursion for draw zone.  This accumulates the zone offset.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zone_key = $args{'zone_key'}
+        or die 'no zone key for draw';
+    my $cumulative_x_offset = $args{'cumulative_x_offset'};
+    my $cumulative_y_offset = $args{'cumulative_y_offset'};
+    my $zinc                = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
+    my $app_display_data = $args{'app_display_data'};
+
+    my $zone_scaffold = $app_display_data->{'scaffold'}{$zone_key};
+    my $zone_layout   = $app_display_data->{'zone_layout'}{$zone_key};
+
+    my $zone_x_offset = $cumulative_x_offset + $zone_layout->{'bounds'}[0];
+    my $zone_y_offset = $cumulative_y_offset + $zone_layout->{'bounds'}[1];
+
+    my $zone_scroll_x_offset
+        = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
+
+    my $zone_group_id = $self->draw_zone(
+        zone_key             => $zone_key,
+        zinc                 => $zinc,
+        app_display_data     => $app_display_data,
+        zone_x_offset        => $zone_x_offset,
+        zone_y_offset        => $zone_y_offset,
+        zone_scroll_x_offset => $zone_scroll_x_offset,
+    );
+
+    # Raise this zone above the earlier zones
+    $zinc->raise( $zone_group_id, );
+
+    # Draw Children Zones
+    foreach my $child_zone_key ( @{ $zone_scaffold->{'children'} || [] } ) {
+        $self->recursive_draw_zone(
+            zone_key            => $child_zone_key,
+            zinc                => $zinc,
+            app_display_data    => $app_display_data,
+            cumulative_x_offset => $zone_x_offset + $zone_scroll_x_offset,
+            cumulative_y_offset => $zone_y_offset,
+        );
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
 sub draw_zone {
 
 =pod
@@ -1015,18 +1080,22 @@ Draws and re-draws on the zinc
         || $self->zinc( window_key => $args{'window_key'}, );
     my $app_display_data = $args{'app_display_data'};
     my $window_key = $app_display_data->{'scaffold'}{$zone_key}{'window_key'};
+    my $zone_layout          = $app_display_data->{'zone_layout'}{$zone_key};
+    my $zone_x_offset        = $args{'zone_x_offset'};
+    my $zone_y_offset        = $args{'zone_y_offset'};
+    my $zone_scroll_x_offset = $args{'zone_scroll_x_offset'};
 
-    my $parent_zone_key
-        = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    #my $parent_zone_key
+    #    = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'};
+    #my $parent_zone_x_offset
+    #    = ($parent_zone_key)
+    #    ? $app_display_data->{'scaffold'}{$parent_zone_key}->{'x_offset'}
+    #    : 0;
 
-    my $zone_x_offset
-        = $app_display_data->{'scaffold'}{$zone_key}->{'x_offset'};
-    my $zone_y_offset = 0;
+    my $zone_scroll_y_offset = 0;
 
-    my $parent_zone_x_offset
-        = ($parent_zone_key)
-        ? $app_display_data->{'scaffold'}{$parent_zone_key}->{'x_offset'}
-        : 0;
+    my $total_x_offset = $zone_x_offset + $zone_scroll_x_offset;
+    my $total_y_offset = $zone_y_offset + $zone_scroll_y_offset;
 
     my $zone_group_id = $self->get_zone_group_id(
         window_key       => $window_key,
@@ -1035,28 +1104,27 @@ Draws and re-draws on the zinc
         app_display_data => $app_display_data,
     );
 
-    my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
     if ( $zone_layout->{'changed'} ) {
 
         # Move the zone to where it is supposed to be
-        $zinc->coords(
-            $zone_group_id,
-            [   $parent_zone_x_offset + $zone_layout->{'bounds'}[0],
-                $zone_layout->{'bounds'}[1]
-            ]
-        );
+        #        $zinc->coords(
+        #            $zone_group_id,
+        #            [   $parent_zone_x_offset + $zone_layout->{'bounds'}[0],
+        #                $zone_layout->{'bounds'}[1]
+        #            ]
+        #        );
 
-        $self->set_zone_clip(
-            zone_key      => $zone_key,
-            zone_group_id => $zone_group_id,
-            zinc          => $zinc,
-            zone_layout   => $zone_layout,
-        );
+        #$self->set_zone_clip(
+        #    zone_key      => $zone_key,
+        #    zone_group_id => $zone_group_id,
+        #    zinc          => $zinc,
+        #    zone_layout   => $zone_layout,
+        #);
 
         $self->draw_items(
             zinc     => $zinc,
-            x_offset => $zone_x_offset,
-            y_offset => $zone_y_offset,
+            x_offset => $total_x_offset,
+            y_offset => $total_y_offset,
             items    => $zone_layout->{'separator'},
             group_id => $zone_group_id,
             tags     => [ 'on_top', ],
@@ -1064,8 +1132,8 @@ Draws and re-draws on the zinc
 
         $self->draw_items(
             zinc     => $zinc,
-            x_offset => 0,                              #$zone_x_offset,
-            y_offset => 0,                              #$zone_y_offset,
+            x_offset => $zone_x_offset,                #$zone_scroll_x_offset,
+            y_offset => $zone_y_offset,                #$total_y_offset,
             items    => $zone_layout->{'background'},
             group_id => $zone_group_id,
             tags     => [
@@ -1075,8 +1143,8 @@ Draws and re-draws on the zinc
 
         $self->draw_items(
             zinc     => $zinc,
-            x_offset => $zone_x_offset,
-            y_offset => $zone_y_offset,
+            x_offset => $total_x_offset,
+            y_offset => $total_y_offset,
             items    => $zone_layout->{'location_bar'},
             group_id => $zone_group_id,
             tags =>
@@ -1088,8 +1156,8 @@ Draws and re-draws on the zinc
 #for ( my $i = 1; $i <= 10; $i++ ) {
 #    $self->draw_items(
 #        zinc     => $zinc,
-#        x_offset => 0,       #$zone_x_offset,
-#        y_offset => 0,       #$zone_y_offset,
+#        x_offset => 0,       #$zone_scroll_x_offset,
+#        y_offset => 0,       #$total_y_offset,
 #        items    => [
 #            [   1, undef, 'curve',
 #                [ $i*100, 10, $i*100, 100 ],
@@ -1118,25 +1186,26 @@ Draws and re-draws on the zinc
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
             # Debug
+            #foreach my $i ( 1 .. 6 ) {
             #    $self->draw_items(
             #        zinc     => $zinc,
-            #        x_offset => $zone_x_offset,
-            #        y_offset => $zone_y_offset,
+            #        x_offset => $total_x_offset,
+            #        y_offset => $total_y_offset,
             #        items    => [
             #            [   1, undef, 'rectangle',
-            #                [1,1,200,200],
-            #                #$map_layout->{'bounds'},
-            #                { -linecolor => 'red', -linewidth => '3', }
+            #                [ 1, 1, $i * 100, $i * 100 ],
+            #                { -linecolor => 'blue', -linewidth => '1', }
             #            ],
             #        ],
             #        group_id => $zone_group_id,
             #        tags     => [ 'on_top', ],
-            #    );
+            #    ) if ( $zone_key == 1 or $i == 0 );
+            #}
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
                     zinc     => $zinc,
-                    x_offset => $zone_x_offset,
-                    y_offset => $zone_y_offset,
+                    x_offset => $total_x_offset,
+                    y_offset => $total_y_offset,
                     items    => $map_layout->{$drawing_section},
                     tags     => [
                         'middle_layer',
@@ -1163,8 +1232,8 @@ Draws and re-draws on the zinc
                         = $map_layout->{'features'}{$feature_acc};
                     $self->draw_items(
                         zinc     => $zinc,
-                        x_offset => $zone_x_offset,
-                        y_offset => $zone_y_offset,
+                        x_offset => $total_x_offset,
+                        y_offset => $total_y_offset,
                         items    => $feature_layout->{'items'},
                         group_id => $zone_group_id,
                         tags     => [
@@ -1198,8 +1267,8 @@ Draws and re-draws on the zinc
                 [$bin_index];
             $self->draw_items(
                 zinc     => $zinc,
-                x_offset => $zone_x_offset,
-                y_offset => $zone_y_offset,
+                x_offset => $total_x_offset,
+                y_offset => $total_y_offset,
                 items    => $bin_layout->{'items'},
                 tags     => [
                     'middle_layer',
@@ -1531,6 +1600,7 @@ Item structure:
     my $group_id = $args{'group_id'} || 1;
     my $items    = $args{'items'} || return;
     my $tags     = $args{'tags'} || [];
+    my $debug    = $args{'debug'} || 0;
 
     for ( my $i = 0; $i <= $#{ $items || [] }; $i++ ) {
 
@@ -1550,14 +1620,16 @@ Item structure:
         ## Maybe don't let it draw out of bounds
         #my $min_zinc_value = -32868;
         #my $max_zinc_value = 32756;
-        #for ( my $i = 0; $i <= $#coords; $i++ ) {
-        #    if ( $coords[$i] <= $min_zinc_value ) {
-        #        $coords[$i] = $min_zinc_value;
-        #    }
-        #    if ( $coords[$i] >= $max_zinc_value ) {
-        #        $coords[$i] = $max_zinc_value;
-        #    }
-        #}
+        my $min_zinc_value = -30868;
+        my $max_zinc_value = 30756;
+        for ( my $i = 0; $i <= $#coords; $i++ ) {
+            if ( $coords[$i] <= $min_zinc_value ) {
+                $coords[$i] = $min_zinc_value;
+            }
+            if ( $coords[$i] >= $max_zinc_value ) {
+                $coords[$i] = $max_zinc_value;
+            }
+        }
 
         if ( defined($item_id) ) {
             $zinc->coords( $item_id, \@coords );
@@ -2826,6 +2898,8 @@ sub fill_info_box {
                 map_key    => $map_key,
                 window_key => $window_key,
             );
+
+            #$new_text = "$map_key:". $new_text;###DEBUG
         }
         else {
             $new_text = $self->number_of_object_selections( $window_key, )
@@ -4365,6 +4439,7 @@ Handle down click of the left mouse button
     {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
+        $self->{'drag_obj'}      = 'background';
     }
 
     # BF ADD THIS BACK LATER
@@ -5445,10 +5520,12 @@ Draw a highlight over the object
 
         # Flatten the coords array
         @coords = map { ( ref($_) eq 'ARRAY' ) ? @$_ : $_ } @coords;
-        $coords[0] += $main_x_offset;
-        $coords[1] += $main_y_offset;
-        $coords[2] += $main_x_offset;
-        $coords[3] += $main_y_offset;
+
+        # The highlight bounds are now in the universal coordinate system
+        # $coords[0] += $main_x_offset;
+        # $coords[1] += $main_y_offset;
+        # $coords[2] += $main_x_offset;
+        # $coords[3] += $main_y_offset;
         $highlight_bounds
             = $self->expand_bounds( $highlight_bounds, \@coords );
     }
@@ -5670,6 +5747,9 @@ Handle the highlight map dragging
         object_key => $map_key,
         dx         => $dx,
     );
+
+    #print STDERR "NHB\n";
+    #print STDERR Dumper($new_highlight_bounds)."\n";
     my %location_highlight_data
         = $self->app_controller()->app_display_data()
         ->move_location_highlights(

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.64 2008-03-11 20:42:50 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.65 2008-03-20 17:55:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -867,10 +867,6 @@ Lays out sub maps in a slot.
     my $depth            = $args{'depth'} || 0;
     my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
 
-    # Is this simply a move?  This will offer speed advantages.
-    my $simple_move
-        = ( $move_offset_x or $move_offset_y or $force_relayout ) ? 0 : 1;
-
     # Get the parent zone info
     my $parent_zone_key
         = $app_display_data->{'scaffold'}{$zone_key}{'parent_zone_key'};
@@ -1188,9 +1184,6 @@ Lays out sub maps in a slot.
     $zone_layout->{'sub_changed'} = 1;
     $zone_layout->{'changed'}     = 1;
 
-    # BF DON'T KNOW IF I NEED THIS ANYMORE
-    #$app_display_data->create_zone_coverage_array( zone_key => $zone_key, );
-
     return $height_change;
 }
 
@@ -1391,6 +1384,12 @@ Lays out a maps in a contained area.
             : ( $last_viewable_x2 > $max_x ) ? -2    # After Map
             :                                  $last_viewable_x2 - $min_x;
 
+      # I haven't been able to figure out why but simply moving maps seems to
+      # cause problems with the sub zones.  The sub zones move fine until they
+      # get redrawn then they move over too much.
+      # So until, I can figure that out, I'm setting $force_relayout to 1.
+        $force_relayout = 1;
+
         if (    !$force_relayout
             and defined($last_viewable_x1_location_on_map)
             and defined($last_viewable_x2_location_on_map)
@@ -1562,8 +1561,8 @@ Lays out a maps in a contained area.
                 zone_bounds      => $zone_bounds,
                 app_display_data => $app_display_data,
                 relayout         => $relayout,
-                move_offset_x    => 0,
-                move_offset_y    => 0,
+                move_offset_x    => $move_offset_x,
+                move_offset_y    => $move_offset_y,
                 force_relayout   => $force_relayout,
                 depth            => $depth + 1,
             );
@@ -2183,6 +2182,9 @@ Lays out correspondences between two zones
                 + ( $map2_pixels_per_unit * ( $corr_avg_x2 - $map_start2 ) );
         }
 
+        $corr_x1 = int($corr_x1);
+        $corr_x2 = int($corr_x2);
+
         my $x1_stunted = 0;
         my $x2_stunted = 0;
         if ($draw_offscreen_corrs) {
@@ -2202,6 +2204,9 @@ Lays out correspondences between two zones
                 $corr_x2    = $zone_layout2->{'viewable_internal_x2'};
                 $x2_stunted = 1;
             }
+
+            $corr_x1 = int($corr_x1);
+            $corr_x2 = int($corr_x2);
 
             # If neither end are on screen, we don't want to see it.
             if ( $x1_stunted and $x2_stunted ) {

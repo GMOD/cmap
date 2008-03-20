@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.75 2008-03-11 17:07:33 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.76 2008-03-20 17:55:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -811,7 +811,8 @@ Zoom zones
 
     # Don't let it zoom in farther than it can draw
     if ( $zone_scaffold->{'scale'} > 32 and $zoom_value > 1 ) {
-        return;
+
+        #return;
     }
 
     my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
@@ -1609,63 +1610,6 @@ sub relayout_sub_map_zone {
 }
 
 # ----------------------------------------------------
-sub create_slot_coverage_array {
-
-    #print STDERR "ADD_NEEDS_MODDED 11\n";
-
-=pod
-
-=head2 create_slot_coverage_array
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $slot_key = $args{'slot_key'} or return;
-
-    $self->{'slot_coverage'}{$slot_key} = [];
-    my @slot_coverage = ();
-
-    # Maps are ordered by start and then stop positions
-    # Once that's done, maps that overlap the end of the
-    #  previous map extend the coverage, otherwise its
-    #  a new coverage zone
-
-    # Keep the x_offset in mind
-    my $x_offset = $self->{'scaffold'}{$slot_key}{'x_offset'};
-MAP_KEY:
-    foreach my $map_key (
-        sort {
-            $self->{'map_layout'}{$a}{'coords'}[0]
-                <=> $self->{'map_layout'}{$b}{'coords'}[0]
-                || $self->{'map_layout'}{$a}{'coords'}[2]
-                <=> $self->{'map_layout'}{$b}{'coords'}[2]
-        } @{ $self->{'map_order'}{$slot_key} || [] }
-        )
-    {
-        my $coords = $self->{'map_layout'}{$map_key}{'coords'};
-        $coords->[0] += $x_offset;
-        $coords->[2] += $x_offset;
-        unless (@slot_coverage) {
-            push @slot_coverage, [ $coords->[0], $coords->[2] ];
-            next MAP_KEY;
-        }
-
-        if (    $coords->[0] <= $slot_coverage[-1][1]
-            and $coords->[2] > $slot_coverage[-1][1] )
-        {
-            $slot_coverage[-1][1] = $coords->[2];
-        }
-        else {
-            push @slot_coverage, [ $coords->[0], $coords->[2] ];
-        }
-    }
-
-    $self->{'slot_coverage'}{$slot_key} = \@slot_coverage;
-
-    return;
-}
-
-# ----------------------------------------------------
 sub change_selected_zone {
 
 =pod
@@ -2216,8 +2160,6 @@ Destroys then recreates the overview
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
 
-    #BF DEBUG
-    #return;
     my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
     foreach my $zone_key ( $top_zone_key, ) {
@@ -2624,10 +2566,24 @@ Move a map from one place on a parent to another
     $relative_unit_start = round_to_granularity( $relative_unit_start,
         $parent_unit_granularity );
 
-    my $new_feature_start
-        = $relative_unit_start + $parent_map_data->{'map_start'};
-    my $new_feature_stop = $new_feature_start
-        + $self->{'sub_maps'}{$map_key}{'feature_length'};
+    my ( $new_feature_start, $new_feature_stop );
+
+    my $parent_map_flipped = $self->is_map_drawn_flipped(
+        map_key  => $new_parent_map_key,
+        zone_key => $parent_zone_key,
+    );
+    if ($parent_map_flipped) {
+        $new_feature_stop
+            = $parent_map_data->{'map_stop'} - $relative_unit_start;
+        $new_feature_start = $new_feature_stop
+            - $self->{'sub_maps'}{$map_key}{'feature_length'};
+    }
+    else {
+        $new_feature_start
+            = $relative_unit_start + $parent_map_data->{'map_start'};
+        $new_feature_stop = $new_feature_start
+            + $self->{'sub_maps'}{$map_key}{'feature_length'};
+    }
 
 # If the feature end is at the end of the map, simply make the feature end the map end
     if (    $new_location_coords->[0] == $parent_map_coords->[0]
@@ -6174,38 +6130,47 @@ The main highlight bounds must already have been moved.
     my $center_x
         = $highlight_center_x - ( $parent_main_x_offset + $parent_x_offset );
 
+    my $parent_start
+        = $parent_map_layout->{'coords'}[0] 
+        + $parent_main_x_offset
+        + $parent_x_offset;
+    my $parent_stop
+        = $parent_map_layout->{'coords'}[2] 
+        + $parent_main_x_offset
+        + $parent_x_offset;
+
     # Work out x coords
-    my $x1_on_parent = $center_x - int( $feature_pixel_length / 2 );
+    my $x1_on_parent = $highlight_center_x - int( $feature_pixel_length / 2 );
     my $x2_on_parent = $x1_on_parent + $feature_pixel_length;
     my $x1           = $highlight_center_x - int( $feature_pixel_length / 2 );
     my $x2           = $x1 + $feature_pixel_length;
 
-    if (    $parent_map_layout->{'coords'}[0] > $x1_on_parent
-        and $parent_map_layout->{'coords'}[2] < $x2_on_parent )
+    if (    $parent_start > $x1_on_parent
+        and $parent_stop < $x2_on_parent )
     {
 
         # Feature bigger than the map, shrink the feature to the map length.
-        my $x1_offset = $parent_map_layout->{'coords'}[0] - $x1_on_parent;
-        my $x2_offset = $parent_map_layout->{'coords'}[2] - $x2_on_parent;
+        my $x1_offset = $parent_start - $x1_on_parent;
+        my $x2_offset = $parent_stop - $x2_on_parent;
 
         $x1_on_parent += $x1_offset;
         $x2_on_parent += $x2_offset;
         $x1           += $x1_offset;
         $x2           += $x2_offset;
     }
-    elsif ( $parent_map_layout->{'coords'}[0] > $x1_on_parent ) {
+    elsif ( $parent_start > $x1_on_parent ) {
 
         # Not on the map to the right, push to the left
-        my $offset = $parent_map_layout->{'coords'}[0] - $x1_on_parent;
+        my $offset = $parent_start - $x1_on_parent;
         $x1_on_parent += $offset;
         $x2_on_parent += $offset;
         $x1           += $offset;
         $x2           += $offset;
     }
-    elsif ( $parent_map_layout->{'coords'}[2] < $x2_on_parent ) {
+    elsif ( $parent_stop < $x2_on_parent ) {
 
         # Not on the map to the left, push to the right
-        my $offset = $x2_on_parent - $parent_map_layout->{'coords'}[2];
+        my $offset = $x2_on_parent - $parent_stop;
         $x1_on_parent -= $offset;
         $x2_on_parent -= $offset;
         $x1           -= $offset;
@@ -6213,8 +6178,8 @@ The main highlight bounds must already have been moved.
     }
 
     # Get y coords
-    my $y1 = $parent_map_layout->{'coords'}[1];
-    my $y2 = $parent_map_layout->{'coords'}[3];
+    my $y1 = $parent_map_layout->{'coords'}[1] + $parent_main_y_offset;
+    my $y2 = $parent_map_layout->{'coords'}[3] + $parent_main_y_offset;
 
     my $visible = 1;
     if (   $x2_on_parent < $parent_zone_layout->{'viewable_internal_x1'}
@@ -6231,7 +6196,9 @@ The main highlight bounds must already have been moved.
         parent_zone_key => $parent_zone_key,
         window_key      => $window_key,
         parent_map_key  => $parent_map_key,
-        location_coords => [ $x1_on_parent, $y1, $x2_on_parent, $y2 ]
+        location_coords => [ $x1_on_parent, $y1, $x2_on_parent, $y2 ],
+
+        #location_coords => [ $x1, $y1, $x2, $y2 ],
     );
 
     return %return_hash;
@@ -6694,10 +6661,10 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
 =cut
 
     my ( $self, %args ) = @_;
+    my $parent_map_set_id  = $args{'parent_map_set_id'};
+    my $highlight_zone_key = $args{'highlight_zone_key'};
 
-    unless ( $self->{'highlight_parent_maps'} ) {
-        my $parent_map_set_id  = $args{'parent_map_set_id'};
-        my $highlight_zone_key = $args{'highlight_zone_key'};
+    unless ( $self->{'highlight_parent_maps'}{$highlight_zone_key} ) {
         my $window_key
             = $self->{'scaffold'}{$highlight_zone_key}{'window_key'};
 
@@ -6722,13 +6689,15 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
                 $main_bounds->[2] = $x_offset + $map_bounds->[2];
                 $main_bounds->[3] = $y_offset + $map_bounds->[3];
 
-                push @{ $self->{'highlight_parent_maps'} },
+                push @{ $self->{'highlight_parent_maps'}
+                        {$highlight_zone_key} },
                     ( { map_key => $map_key, main_bounds => $main_bounds, } );
             }
         }
+
     }
 
-    return $self->{'highlight_parent_maps'};
+    return $self->{'highlight_parent_maps'}{$highlight_zone_key};
 }
 
 # ----------------------------------------------------
@@ -7738,7 +7707,7 @@ Redraws the whole window
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
 
-    $self->{'highlight_parent_maps'} = undef;
+    #$self->{'highlight_parent_maps'} = undef;
 
     # This probably should be more elegant but for now,
     # just layout the whole thing
