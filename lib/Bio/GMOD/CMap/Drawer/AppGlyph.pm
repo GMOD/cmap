@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use base 'Class::Base';
 
@@ -161,15 +161,23 @@ Up is left in the app.
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
             { -linecolor => $color, }
         ],
-        [   1, undef, 'curve',
-            [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos1 ],
-            { -linecolor => $color, }
-        ],
-        [   1, undef, 'curve',
-            [ $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos2 ],
-            { -linecolor => $color, }
-        ],
         );
+
+    if ( abs( $x_pos1 - $x_pos2 ) >= $arrow_head_half_width ) {
+        push @$items,
+            (
+            [   1, undef, 'curve',
+                [   $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos1
+                ],
+                { -linecolor => $color, }
+            ],
+            [   1, undef, 'curve',
+                [   $x_pos1, $mid_y, $x_pos1 + $arrow_head_half_width, $y_pos2
+                ],
+                { -linecolor => $color, }
+            ],
+            );
+    }
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
 
     return \@coords, $items;
@@ -205,15 +213,23 @@ Down is right in the app
             [ $x_pos1, $mid_y, $x_pos2, $mid_y ],
             { -linecolor => $color, }
         ],
-        [   1, undef, 'curve',
-            [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos1 ],
-            { -linecolor => $color, }
-        ],
-        [   1, undef, 'curve',
-            [ $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos2 ],
-            { -linecolor => $color, }
-        ],
         );
+
+    if ( abs( $x_pos1 - $x_pos2 ) >= $arrow_head_half_width ) {
+        push @$items,
+            (
+            [   1, undef, 'curve',
+                [   $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos1
+                ],
+                { -linecolor => $color, }
+            ],
+            [   1, undef, 'curve',
+                [   $x_pos2, $mid_y, $x_pos2 - $arrow_head_half_width, $y_pos2
+                ],
+                { -linecolor => $color, }
+            ],
+            );
+    }
     @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
 
     return \@coords, $items;
@@ -678,7 +694,8 @@ sub heatmap {
     unless ( $top_value
         = $app_display_data->{ 'hm_top_val_' . $feature_type_acc } )
     {
-        $top_value = $app_display_data->feature_type_data( $feature_type_acc,
+        $top_value
+            = $app_display_data->feature_type_data( $feature_type_acc,
             'max_value' )
             || 100;
         $app_display_data->{ 'hm_top_val_' . $feature_type_acc } = $top_value;
@@ -686,7 +703,8 @@ sub heatmap {
     unless ( $bot_value
         = $app_display_data->{ 'hm_bot_val_' . $feature_type_acc } )
     {
-        $bot_value = $app_display_data->feature_type_data( $feature_type_acc,
+        $bot_value
+            = $app_display_data->feature_type_data( $feature_type_acc,
             'min_value' )
             || 0;
         $app_display_data->{ 'hm_bot_val_' . $feature_type_acc } = $bot_value;
