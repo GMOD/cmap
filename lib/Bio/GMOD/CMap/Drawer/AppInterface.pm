@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.83 2008-03-20 20:31:20 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.84 2008-03-24 13:57:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -644,8 +644,7 @@ Adds control buttons to the controls_pane.
 #$self->app_controller()->zoom_zone(
 #    window_key => $window_key,
 #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-#    #zoom_value => 512,
-#    zoom_value => 256,
+#    zoom_value => 2,
 #);
 #print STDERR
 #    "            ----------------BEFORE SET OFFSCREEN CORRS-----------------\n";
@@ -655,7 +654,7 @@ Adds control buttons to the controls_pane.
 #  $self->add_object_selection(
 #      zinc       => $zinc,
 #      zone_key   => 2,
-#      map_key    => 4,
+#      map_key    => 34,
 #      window_key => $window_key,
 #  );
 #print STDERR
@@ -690,9 +689,8 @@ Adds control buttons to the controls_pane.
 #    map_key        => 4,
 #    split_position => 1000,
 #    );
-            print STDERR "  ------------------DONE-----------------------\n";
-
-            #exit;
+#print STDERR "  ------------------DONE-----------------------\n";
+#exit;
         },
         -font => $font,
     );
@@ -701,28 +699,35 @@ Adds control buttons to the controls_pane.
         -command => sub {
             my $zinc = $self->zinc( window_key => $window_key, );
 
-           #print STDERR "---------------------------------\n";
-           #print STDERR
-           #    "           --------------BEFORE ZOOM-------------------\n";
-           #$self->app_controller()->zoom_zone(
-           #    window_key => $window_key,
-           #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-           #    zoom_value => 2,
-           #);
-           #print STDERR
-           #    "           --------------BEFORE MERGE-------------------\n";
-           #my ( $selected_map_keys, $zone_key )
-           #    = $self->app_controller()->app_display_data()->merge_maps(
-           #    overlap_amount => 0,
-           #    first_map_key  => 2,
-           #    second_map_key => 3,
-           #    );
-           #print STDERR
-           #    "           --------------BEFORE COMMIT-------------------\n";
-           #$self->app_controller()
-           #    ->commit_changes( window_key => 1, );
-           #print STDERR "  ------------------DONE-----------------------\n";
-           #exit;
+          #print STDERR "---------------------------------\n";
+          #print STDERR
+          #    "           --------------BEFORE ZOOM-------------------\n";
+          #$self->app_controller()->zoom_zone(
+          #    window_key => $window_key,
+          #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+          #    zoom_value => 2,
+          #);
+          #print STDERR
+          #    "           --------------BEFORE MERGE-------------------\n";
+          #my ( $selected_map_keys, $zone_key )
+          #    = $self->app_controller()->app_display_data()->merge_maps(
+          #    overlap_amount => 0,
+          #    first_map_key  => 2,
+          #    second_map_key => 3,
+          #    );
+          #print STDERR
+          #    "            ----------------BEFORE SCROLL-----------------\n";
+          #$self->app_controller()->scroll_zone(
+          #    window_key   => $window_key,
+          #    zone_key     => 1,
+          #    scroll_value => -140,
+          #);
+          #print STDERR
+          #    "           --------------BEFORE COMMIT-------------------\n";
+          #$self->app_controller()
+          #    ->commit_changes( window_key => 1, );
+          #print STDERR "  ------------------DONE-----------------------\n";
+          #exit;
         },
         -font => $font,
     );
@@ -864,6 +869,7 @@ Draws and re-draws on the zinc
     # Only add back if using the -render flag
     #$zinc->itemconfigure($top_group_id, -alpha => 50);
 
+    $self->reselect_object_selections( window_key => $window_key, );
     $self->layer_tagged_items( zinc => $zinc, );
 
     return;
@@ -1187,8 +1193,9 @@ Draws and re-draws on the zinc
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
-            # Debug
+            # Debug - Draws marks every 100 pixels
             #foreach my $i ( 1 .. 6 ) {
+            #    my $color = ($i ==1)?'red': 'blue';
             #    $self->draw_items(
             #        zinc     => $zinc,
             #        x_offset => $total_x_offset,
@@ -1196,12 +1203,12 @@ Draws and re-draws on the zinc
             #        items    => [
             #            [   1, undef, 'rectangle',
             #                [ 1, 1, $i * 100, $i * 100 ],
-            #                { -linecolor => 'blue', -linewidth => '1', }
+            #                { -linecolor => $color, -linewidth => '1', }
             #            ],
             #        ],
             #        group_id => $zone_group_id,
             #        tags     => [ 'on_top', ],
-            #    ) if ( $zone_key == 1 or $i == 0 );
+            #    ) if ( $zone_key == 1 or $i == 1 );
             #}
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
@@ -4793,7 +4800,15 @@ Add map or feature selection
     );
 
     # Add to object_selected list
-    $self->{'object_selections'}{$window_key}{$object_key} = {};
+    $self->{'object_selections'}{$window_key}{$object_key} = {
+        zone_key    => $zone_key,
+        map_key     => $map_key || '',
+        feature_acc => $feature_acc || '',
+        bin_key     => $bin_key || '',
+
+    };
+    $self->{'object_selections'}{$window_key}{$object_key}{$zone_key}
+        = $zone_key;
 
     # figure out if this is a new zone.
     if ( $self->{'first_object_selection_zone_key'}{$window_key} ) {
@@ -4834,6 +4849,12 @@ Add map or feature selection
         window_key => $window_key,
         );
 
+    return
+        unless (
+        @{  $self->{'object_selections'}{$window_key}{$object_key}
+                {'highlight_ids'} || []
+        }
+        );
     if ($map_key) {
         $self->{'object_selections'}{$window_key}{$object_key}
             {'highlight_loc'} = $self->create_highlight_location_on_map(
@@ -5057,6 +5078,52 @@ Remove all selected objects from the selection list
                 map_key => $object_key,
             );
         }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub reselect_object_selections {
+
+=pod
+
+=head2 reselect_object_selections
+
+
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zinc = $args{'zinc'} || $self->zinc( window_key => $window_key, );
+
+    my $selected_type
+        = $self->object_selected_type( window_key => $window_key, );
+
+    return unless ($selected_type);
+    my @selected_objects;
+    foreach my $object_key (
+        keys %{ $self->{'object_selections'}{$window_key} || {} } )
+    {
+        my $selected_data
+            = $self->{'object_selections'}{$window_key}{$object_key};
+        push @selected_objects,
+            {
+            zone_key    => $selected_data->{'zone_key'},
+            map_key     => $selected_data->{'map_key'},
+            feature_acc => $selected_data->{'feature_acc'},
+            bin_key     => $selected_data->{'bin_key'},
+            };
+    }
+
+    $self->reset_object_selections( window_key => $window_key, );
+    foreach my $selected_object_data (@selected_objects) {
+        $self->add_object_selection(
+            zinc       => $zinc,
+            window_key => $window_key,
+            %{ $selected_object_data || {} },
+        );
     }
 
     return;
@@ -5629,7 +5696,8 @@ Modifies the controls to act on this slot.
     # Wipe old info
     $text_box->delete( "1.0", 'end' );
 
-    my $new_text = $zone_key . " " . $map_set_data->{'map_set_name'};
+    my $new_text = $map_set_data->{'map_type'} . ": "
+        . $map_set_data->{'map_set_name'};
 
     $text_box->insert( 'end', $new_text );
     $text_box->configure( -state => 'disabled', );

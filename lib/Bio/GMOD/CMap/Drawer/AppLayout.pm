@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.66 2008-03-20 20:31:22 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.67 2008-03-24 13:57:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1382,10 +1382,10 @@ Lays out a maps in a contained area.
             : ( $last_viewable_x2 > $max_x ) ? -2    # After Map
             :                                  $last_viewable_x2 - $min_x;
 
-      # I haven't been able to figure out why but simply moving maps seems to
-      # cause problems with the sub zones.  The sub zones move fine until they
-      # get redrawn then they move over too much.
-      # So until, I can figure that out, I'm setting $force_relayout to 1.
+       # I haven't been able to figure out why but simply moving maps seems to
+       # cause problems with the sub zones.  The sub zones move fine until
+       # they get redrawn then they move over too much.  So until, I can
+       # figure that out, I'm setting $force_relayout to 1.
         $force_relayout = 1;
 
         if (    !$force_relayout
@@ -2833,7 +2833,7 @@ Adds tick marks to a map.
     my @intervals = map { int( $interval_start + ( $_ * $interval ) ) }
         1 .. $no_intervals;
 
-    my $tick_overhang = 8;
+    my $tick_overhang = 3;
     my $min_tick_distance
         = $app_display_data->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;

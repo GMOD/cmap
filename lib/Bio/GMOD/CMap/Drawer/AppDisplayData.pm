@@ -1,9 +1,8 @@
 package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
-
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.77 2008-03-20 20:31:18 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.78 2008-03-24 13:57:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -53,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -5907,8 +5906,17 @@ The main highlight bounds must already have been moved.
     my $y2 = $parent_map_layout->{'coords'}[3] + $parent_main_y_offset;
 
     my $visible = 1;
-    if (   $x2_on_parent < $parent_zone_layout->{'viewable_internal_x1'}
-        or $x1_on_parent > $parent_zone_layout->{'viewable_internal_x2'} )
+    if ($x2_on_parent < (
+                  $parent_zone_layout->{'viewable_internal_x1'}
+                + $parent_main_x_offset
+                + $parent_x_offset
+        )
+        or $x1_on_parent > (
+                  $parent_zone_layout->{'viewable_internal_x2'}
+                + $parent_main_x_offset
+                + $parent_x_offset
+        )
+        )
     {
         $visible = 0;
     }
