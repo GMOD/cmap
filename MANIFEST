@@ -34,6 +34,7 @@ CMapBuilder.pm
 conf/demo.conf.PL
 conf/example.conf
 conf/global.conf.PL
+conf/post_install_test.conf.PL
 CREDITS
 data/sample_saved_link.xml
 data/tabtest-dump.sql
