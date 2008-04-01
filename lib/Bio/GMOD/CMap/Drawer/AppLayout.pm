@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.69 2008-04-01 20:16:54 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.70 2008-04-01 20:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1483,6 +1483,7 @@ Lays out buttons for a zone
     my @button_info_list = (
         [ 'button_display_features', 'F' ],
         [ 'button_display_labels',   'D' ],
+        [ 'button_display_corrs',    'C' ],
         [ 'button_popup_menu',       'M' ],
     );
     my $button_text_buffer = 3;

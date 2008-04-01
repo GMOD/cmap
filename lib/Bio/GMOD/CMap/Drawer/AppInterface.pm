@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.86 2008-04-01 20:16:54 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.87 2008-04-01 20:31:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -4266,6 +4266,14 @@ Handle down click of the left mouse button
             $app_display_data->set_map_labels_visibility(
                 $self->{'drag_zone_key'},
                 $toggled_label_visibility, );
+        }
+        elsif ( $tags[0] =~ /^button_display_corrs(\S+)_(\S+)/ ) {
+            $self->{'drag_zone_key'} = $2;
+            $self->{'drag_obj'}      = 'button';
+            $self->popup_corr_menu(
+                window_key => $window_key,
+                zone_key   => $self->{'drag_zone_key'},
+            );
         }
         elsif ( $tags[0] =~ /^button_popup_menu_(\S+)_(\S+)/ ) {
             $self->{'drag_window_key'} = $1;
