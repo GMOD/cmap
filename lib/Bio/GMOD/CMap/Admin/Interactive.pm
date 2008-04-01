@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.4 2008-03-04 17:19:10 mwz444 Exp $
+# $Id: Interactive.pm,v 1.5 2008-04-01 16:32:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -355,7 +355,7 @@ No Parameters
     if ( defined $self->{'log_fh'} ) {
         my $log_fh = $self->log_fh;
         print $log_fh "Log file closed '", scalar localtime, ".'\n";
-        print "Log file:  ", $self->log_filename, "\nNamaste.\n";
+        print "Log file:  ", $self->log_filename, "\n\n";
     }
 
     exit(0);

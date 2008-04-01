@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.78 2008-03-24 13:57:00 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.79 2008-04-01 16:32:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -369,7 +369,7 @@ sub create_sub_zone_from_saved_view {
         expanded                => 0,
         is_top                  => 0,
         show_features           => 0,
-        map_labels_visible      => 0,
+        map_labels_visible      => 1,
         offscreen_corrs_visible => 0,
     );
 
@@ -594,7 +594,7 @@ sub assign_and_initialize_new_maps {
                 expanded                => 0,
                 is_top                  => 0,
                 show_features           => 0,
-                map_labels_visible      => 0,
+                map_labels_visible      => 1,
                 offscreen_corrs_visible => 0,
             );
         }
@@ -819,8 +819,13 @@ Zoom zones
     my $zone_width  = $zone_bounds->[2] - $zone_bounds->[0] + 1;
 
     my $old_scale = $zone_scaffold->{'scale'};
-    $zone_scaffold->{'scale'}           *= $zoom_value;
-    $zone_scaffold->{'pixels_per_unit'} *= $zoom_value;
+    $self->{'scaffold'}{$zone_key}{'scale'} *= $zoom_value;
+    $self->recursively_modify_ppu_for_zoom(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+        zoom_value => $zoom_value,
+    );
+
     my $move_offset_x = $self->get_zooming_offset(
         window_key => $window_key,
         zone_key   => $zone_key,
@@ -870,6 +875,76 @@ Zoom zones
         window_key => $window_key,
         zone_key   => $zone_key,
     );
+    return;
+}
+
+# ----------------------------------------------------
+sub recursively_modify_ppu_for_zoom {
+
+=pod
+
+=head2 recursively_modify_ppu_for_zoom
+
+Zoom zones
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
+    my $zoom_value = $args{'zoom_value'} or return;
+
+    $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} *= $zoom_value;
+
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
+    {
+        if ( $self->{'scaffold'}{$child_zone_key}{'attached_to_parent'} ) {
+            $self->recursively_modify_ppu_for_zoom(
+                window_key => $window_key,
+                zone_key   => $child_zone_key,
+                zoom_value => $zoom_value,
+            );
+
+            #$self->recursively_wipe_ppu(
+            #    window_key => $window_key,
+            #    zone_key   => $child_zone_key,
+            #    zoom_value => $zoom_value,
+            #);
+        }
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub recursively_wipe_ppu {
+
+=pod
+
+=head2 recursively_modify_scale_for_zoom
+
+Zoom zones
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
+
+    $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
+
+    foreach my $child_zone_key (
+        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
+    {
+        if ( $self->{'scaffold'}{$child_zone_key}{'attached_to_parent'} ) {
+            $self->recursively_wipe_ppu(
+                window_key => $window_key,
+                zone_key   => $child_zone_key,
+            );
+        }
+    }
+
     return;
 }
 
@@ -6943,7 +7018,8 @@ Deletes the zone data and wipes them from the canvas
     my $map_set_id  = $self->{'scaffold'}{$zone_key}{'map_set_id'};
 
     # Remove Drawing info
-    foreach my $drawing_item_name (qw[ separator background ]) {
+    foreach my $drawing_item_name ( 'separator', 'background', 'scale_bar', )
+    {
         $self->destroy_items(
             window_key => $window_key,
             items      => $zone_layout->{$drawing_item_name},
@@ -7072,7 +7148,7 @@ AppInterface.
         $self->{'zone_layout'}{$zone_key}{'maps_min_x'}   = undef;
         $self->{'zone_layout'}{$zone_key}{'maps_max_x'}   = undef;
         $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
-        foreach my $field (qw[ separator background ]) {
+        foreach my $field ( 'separator', 'background', 'scale_bar', ) {
             $self->destroy_items(
                 items      => $self->{'zone_layout'}{$zone_key}{$field},
                 window_key => $window_key,
@@ -7818,11 +7894,12 @@ Initializes zone
             unless ( defined $offscreen_corrs_visible );
     }
 
-    $attached_to_parent      ||= 0;
-    $expanded                ||= 0;
-    $is_top                  ||= 0;
-    $show_features           ||= 0;
-    $map_labels_visible      ||= 0;
+    $attached_to_parent ||= 0;
+    $expanded           ||= 0;
+    $is_top             ||= 0;
+    $show_features      ||= 0;
+    $map_labels_visible
+        = defined($map_labels_visible) ? $map_labels_visible : 1;
     $offscreen_corrs_visible ||= 0;
     $self->{'scaffold'}{$zone_key} = {
         window_key         => $window_key,

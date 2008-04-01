@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.84 2008-03-24 13:57:06 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.85 2008-04-01 16:32:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1147,6 +1147,16 @@ Draws and re-draws on the zinc
             tags     => [
                 'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
+        );
+
+        # Draw the scale bar
+        $self->draw_items(
+            zinc     => $zinc,
+            x_offset => $zone_x_offset,                #$zone_scroll_x_offset,
+            y_offset => $zone_y_offset,                #$total_y_offset,
+            items    => $zone_layout->{'scale_bar'},
+            group_id => $zone_group_id,
+            tags => [ 'background_' . $window_key . '_' . $zone_key ],
         );
 
         $self->draw_items(
