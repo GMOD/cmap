@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.79 2008-04-01 16:32:02 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.80 2008-04-01 20:16:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -7024,7 +7024,17 @@ Deletes the zone data and wipes them from the canvas
             window_key => $window_key,
             items      => $zone_layout->{$drawing_item_name},
         );
+        $zone_layout->{$drawing_item_name} = [];
     }
+
+    # Remove the drawn buttons
+    foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
+        $self->destroy_items(
+            window_key => $window_key,
+            items      => $button->{'items'},
+        );
+    }
+    $zone_layout->{'buttons'} = [];
 
     # Remove zone from window
     delete $self->{'zone_in_window'}{$window_key}{$zone_key};
@@ -7148,6 +7158,8 @@ AppInterface.
         $self->{'zone_layout'}{$zone_key}{'maps_min_x'}   = undef;
         $self->{'zone_layout'}{$zone_key}{'maps_max_x'}   = undef;
         $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} = undef;
+
+        # Remove Drawing info
         foreach my $field ( 'separator', 'background', 'scale_bar', ) {
             $self->destroy_items(
                 items      => $self->{'zone_layout'}{$zone_key}{$field},
@@ -7155,6 +7167,18 @@ AppInterface.
             );
             $self->{'zone_layout'}{$zone_key}{$field} = [];
         }
+
+        # Remove the drawn buttons
+        foreach my $button (
+            @{ $self->{'zone_layout'}{$zone_key}{'buttons'} || [] } )
+        {
+            $self->destroy_items(
+                window_key => $window_key,
+                items      => $button->{'items'},
+            );
+        }
+        $self->{'zone_layout'}{$zone_key}{'buttons'} = [];
+
     }
     $self->{'window_layout'}{$window_key}{'bounds'} = [ 0, 0, 0, 0 ];
     $self->destroy_items(

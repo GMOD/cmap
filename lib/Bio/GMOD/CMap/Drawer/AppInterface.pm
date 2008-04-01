@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.85 2008-04-01 16:32:03 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.86 2008-04-01 20:16:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1148,6 +1148,20 @@ Draws and re-draws on the zinc
                 'on_bottom', 'background_' . $window_key . '_' . $zone_key
             ],
         );
+
+        # Draw the buttons
+        foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
+            my $button_name = $button->{'button_name'};
+            $self->draw_items(
+                zinc     => $zinc,
+                x_offset => $zone_x_offset,       #$zone_scroll_x_offset,
+                y_offset => $zone_y_offset,       #$total_y_offset,
+                items    => $button->{'items'},
+                group_id => $zone_group_id,
+                tags =>
+                    [ $button_name . '_' . $window_key . '_' . $zone_key ],
+            );
+        }
 
         # Draw the scale bar
         $self->draw_items(
@@ -4065,7 +4079,8 @@ Handle down click of the left mouse button
     }
 
     my @tags;
-    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
+    my @tags_gotten = $zinc->gettags( $self->{'drag_ori_id'} );
+    if ( @tags = grep /^map_/, @tags_gotten ) {
         $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         my $map_key = $3;
@@ -4108,9 +4123,7 @@ Handle down click of the left mouse button
 
         $self->fill_info_box( window_key => $window_key, );
     }
-    elsif ( @tags = grep /^bin_maps_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^bin_maps_/, @tags_gotten ) {
         $tags[0] =~ /^bin_maps_(\S+)_(\S+)_(\S+)/;
         my $zone_key  = $2;
         my $bin_index = $3;
@@ -4161,9 +4174,7 @@ Handle down click of the left mouse button
 
         $self->fill_info_box( window_key => $window_key, );
     }
-    elsif ( @tags = grep /^feature_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^feature_/, @tags_gotten ) {
         $tags[0] =~ /^feature_(\d+?)_(\d+?)_(\S+)/;
         $self->{'drag_zone_key'}    = $1;
         $self->{'drag_map_key'}     = $2;
@@ -4212,9 +4223,7 @@ Handle down click of the left mouse button
 
         $self->fill_info_box( window_key => $window_key, );
     }
-    elsif ( @tags = grep /^location_bar_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^location_bar_/, @tags_gotten ) {
         unless ($control) {
             $self->reset_object_selections(
                 zinc       => $zinc,
@@ -4230,17 +4239,51 @@ Handle down click of the left mouse button
         #    zone_key   => $self->{'drag_zone_key'},
         #);
     }
-    elsif ( @tags = grep /^background_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^background_/, @tags_gotten ) {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         $self->{'drag_obj'}      = 'background';
     }
+    elsif ( @tags = grep /^button_/, @tags_gotten ) {
+        my $controller       = $self->app_controller();
+        my $app_display_data = $controller->app_display_data();
+        if ( $tags[0] =~ /^button_display_features_(\S+)_(\S+)/ ) {
+            $self->{'drag_zone_key'} = $2;
+            $self->{'drag_obj'}      = 'button';
+            my $toggled_features_visible
+                = $app_display_data->features_visible(
+                $self->{'drag_zone_key'} ) ? 0 : 1;
+            $app_display_data->set_features_visibility(
+                $self->{'drag_zone_key'},
+                $toggled_features_visible, );
+        }
+        elsif ( $tags[0] =~ /^button_display_labels_(\S+)_(\S+)/ ) {
+            $self->{'drag_zone_key'} = $2;
+            $self->{'drag_obj'}      = 'button';
+            my $toggled_label_visibility
+                = $app_display_data->map_labels_visible(
+                $self->{'drag_zone_key'} ) ? 0 : 1;
+            $app_display_data->set_map_labels_visibility(
+                $self->{'drag_zone_key'},
+                $toggled_label_visibility, );
+        }
+        elsif ( $tags[0] =~ /^button_popup_menu_(\S+)_(\S+)/ ) {
+            $self->{'drag_window_key'} = $1;
+            $self->{'drag_zone_key'}   = $2;
+            $self->{'drag_obj'}        = 'button';
+            $self->popup_background_menu(
+                zinc       => $zinc,
+                window_key => $self->{'drag_window_key'},
+                zone_key   => $self->{'drag_zone_key'},
+                mouse_x    => $x,
+                mouse_y    => $y,
+            );
+        }
+    }
 
     # BF ADD THIS BACK LATER
     #    elsif ( @tags = grep /^viewed_region_/,
-    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    #        @tags_gotten )
     #    {
     #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
     #        $self->{'drag_zone_key'}   = $2;
@@ -4291,7 +4334,8 @@ Handle down click of the right mouse button
     }
 
     my @tags;
-    if ( @tags = grep /^map_/, $zinc->gettags( $self->{'drag_ori_id'} ) ) {
+    my @tags_gotten = $zinc->gettags( $self->{'drag_ori_id'} );
+    if ( @tags = grep /^map_/, @tags_gotten ) {
         $tags[0] =~ /^map_(\S+)_(\S+)_(\S+)/;
         $self->{'drag_zone_key'} = $2;
         $self->{'drag_map_key'}  = $3;
@@ -4355,9 +4399,7 @@ Handle down click of the right mouse button
         );
         $self->{'drag_mouse_to_edge_x'} = $x - $highlight_bounds->[0];
     }
-    elsif ( @tags = grep /^feature_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^feature_/, @tags_gotten ) {
         $tags[0] =~ /^feature_(\d+?)_(\d+?)_(\S+)/;
         $self->{'drag_zone_key'}    = $1;
         $self->{'drag_map_key'}     = $2;
@@ -4406,9 +4448,7 @@ Handle down click of the right mouse button
 
         $self->fill_info_box( window_key => $window_key, );
     }
-    elsif ( @tags = grep /^location_bar_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^location_bar_/, @tags_gotten ) {
         unless ($control) {
             $self->reset_object_selections(
                 zinc       => $zinc,
@@ -4424,9 +4464,7 @@ Handle down click of the right mouse button
         #    zone_key   => $self->{'drag_zone_key'},
         #);
     }
-    elsif ( @tags = grep /^background_/,
-        $zinc->gettags( $self->{'drag_ori_id'} ) )
-    {
+    elsif ( @tags = grep /^background_/, @tags_gotten ) {
         unless ($control) {
             $self->reset_object_selections(
                 zinc       => $zinc,
@@ -4453,7 +4491,7 @@ Handle down click of the right mouse button
 
     # BF ADD THIS BACK LATER
     #    elsif ( @tags = grep /^viewed_region_/,
-    #        $zinc->gettags( $self->{'drag_ori_id'} ) )
+    #        @tags_gotten )
     #    {
     #        $tags[0] =~ /^viewed_region_(\S+)_(\S+)/;
     #        $self->{'drag_window_key'} = $1;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.68 2008-04-01 16:32:03 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.69 2008-04-01 20:16:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -575,15 +575,16 @@ Lays out head maps in a zone
         pixels_per_unit  => $pixels_per_unit,
         map_units        => $map_units,
     );
-
+    $row_min_y += SMALL_BUFFER;
     $row_min_y = _layout_zone_buttons(
         window_key       => $window_key,
         zone_key         => $zone_key,
         zone_layout      => $zone_layout,
         app_display_data => $app_display_data,
-        left_bound       => $left_bound,
+        left_bound       => $left_bound + SMALL_BUFFER,
         right_bound      => $right_bound,
         min_y            => $row_min_y,
+        app_display_data => $app_display_data,
     );
 
     # The zone level maps_min_x is used for creating the overview
@@ -905,7 +906,7 @@ Lays out sub maps in a slot.
         || 0;
 
     #my $row_min_y = MAP_Y_BUFFER;
-    my $row_min_y = SMALL_BUFFER;
+    my $row_min_y = SMALL_BUFFER * 2;
 
     # Save the last vieable to help with scrolling
     $zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0, ];
@@ -988,6 +989,18 @@ Lays out sub maps in a slot.
         pixels_per_unit  => $pixels_per_unit,
         map_units        => $map_units,
     );
+    $row_min_y += SMALL_BUFFER;
+    $row_min_y = _layout_zone_buttons(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        zone_layout      => $zone_layout,
+        app_display_data => $app_display_data,
+        left_bound  => $zone_layout->{'viewable_internal_x1'} + SMALL_BUFFER,
+        right_bound => $zone_layout->{'viewable_internal_x2'},
+        min_y       => $row_min_y,
+        app_display_data => $app_display_data,
+    );
+
     $row_min_y += MAP_Y_BUFFER;
     my $row_max_y = $row_min_y;
 
@@ -1429,7 +1442,7 @@ Lays out a scale bar for a zone.
                 -anchor => 'nw',
                 -color  => 'black',
             }
-        ]
+        ],
     ];
 
     return $max_y;
@@ -1446,38 +1459,97 @@ Lays out buttons for a zone
 
 =cut
 
-    my %args        = @_;
-    my $window_key  = $args{'window_key'} or return;
-    my $zone_key    = $args{'zone_key'} or return;
-    my $zone_layout = $args{'zone_layout'};
-    my $left_bound  = $args{'left_bound'};
-    my $right_bound = $args{'right_bound'};
-    my $min_y       = $args{'min_y'};
+    my %args             = @_;
+    my $window_key       = $args{'window_key'} or return;
+    my $zone_key         = $args{'zone_key'} or return;
+    my $zone_layout      = $args{'zone_layout'};
+    my $left_bound       = $args{'left_bound'};
+    my $right_bound      = $args{'right_bound'};
+    my $min_y            = $args{'min_y'};
+    my $app_display_data = $args{'app_display_data'};
 
-    #$app_display_data->destroy_items(
-    #items      => $zone_layout->{'buttons'},
-    #window_key => $window_key,
-    #);
+    # Destroy the old one first
+    foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
+        $app_display_data->destroy_items(
+            items      => $button->{'items'},
+            window_key => $window_key,
+        );
+    }
+    $zone_layout->{'buttons'} = [];
 
     my $max_y      = $min_y;
     my $zone_width = $right_bound - $left_bound + 1;
 
-    #$zone_layout->{'buttons'}
-    #$zone_layout->{'scale_bar'} = [
-    #    [   1, undef,
-    #        'rectangle',
-    #        [   $location_bar_start,
-    #            $zone_layout->{'internal_bounds'}[1],
-    #            $location_bar_stop,
-    #            $max_y,
-    #        ],
-    #        {   -fillcolor => 'black',
-    #            -linecolor => 'black',
-    #            -linewidth => 1,
-    #            -filled    => 1
-    #        }
-    #    ],
-    #];
+    my @button_info_list = (
+        [ 'button_display_features', 'F' ],
+        [ 'button_display_labels',   'D' ],
+        [ 'button_popup_menu',       'M' ],
+    );
+    my $button_text_buffer = 3;
+
+    # Figure out if the buttons are going to fit.
+    my $total_width = 0;
+    foreach my $button_info (@button_info_list) {
+        my $button_text = $button_info->[1];
+
+        my ( $width, $height )
+            = $app_display_data->app_interface()->text_dimensions(
+            window_key => $window_key,
+            text       => $button_text,
+            );
+        $button_info->[2] = $width;
+        $button_info->[3] = $height;
+        $total_width += ( $button_text_buffer * 2 ) + $width + SMALL_BUFFER;
+    }
+    return $max_y if ( $zone_width < $total_width );
+
+    my $max_x = $left_bound;
+
+    my ( $button_x1, $button_x2, $button_y1, $button_y2, );
+
+    #my $feature_visible = $app_display_data->features_visible($zone_key)
+    my ( $char_width, $char_height );
+    foreach my $button_info (@button_info_list) {
+        my $button_name = $button_info->[0];
+        my $button_text = $button_info->[1];
+        $char_width  = $button_info->[2];
+        $char_height = $button_info->[3];
+
+        $button_x1 = $max_x;
+        $button_x2 = $max_x + $char_width + ( $button_text_buffer * 2 );
+        $button_y1 = $max_y;
+        $button_y2 = $max_y + $char_height + ( $button_text_buffer * 2 );
+        push @{ $zone_layout->{'buttons'} },
+            {
+            button_name => $button_name,
+            items       => [
+                [   1, undef,
+                    'rectangle',
+                    [ $button_x1, $button_y1, $button_x2, $button_y2 ],
+                    {   -fillcolor => 'lightgrey',
+                        -linecolor => 'black',
+                        -linewidth => 1,
+                        -filled    => 1
+                    }
+                ],
+                [   1, undef, 'text',
+                    [   $button_x1 + $button_text_buffer - 1,
+                        $button_y1 + $button_text_buffer - 1,
+                    ],
+                    {   -text   => $button_text,
+                        -anchor => 'nw',
+                        -color  => 'black',
+                    }
+                ],
+            ],
+            };
+        $max_x = $button_x2 + SMALL_BUFFER;
+    }
+    my $button_height = $char_height + ( $button_text_buffer * 2 );
+
+    # End Feature Button
+
+    $max_y += $button_height;
     return $max_y;
 }
 
@@ -2146,6 +2218,15 @@ Destroys the drawing items for a zone because it isn't on the screen anymore .
         );
         $zone_layout->{$descriptor} = [];
     }
+
+    # Remove the drawn buttons
+    foreach my $button ( @{ $zone_layout->{'buttons'} || [] } ) {
+        $app_display_data->destroy_items(
+            window_key => $window_key,
+            items      => $button->{'items'},
+        );
+    }
+    $zone_layout->{'buttons'} = [];
 
     return;
 }
