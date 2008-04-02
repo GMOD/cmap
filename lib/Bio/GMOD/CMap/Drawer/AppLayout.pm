@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.70 2008-04-01 20:31:38 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.71 2008-04-02 17:40:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1577,23 +1577,33 @@ sub set_zone_bgcolor {
         ? "black"
         : $bgcolor;
 
+    my $border_line_width = 2;
+
     my $background_id
         = defined(
         $app_display_data->{'zone_layout'}{$zone_key}{'background'} )
         ? $app_display_data->{'zone_layout'}{$zone_key}{'background'}[0][1]
         : undef;
+    my $internal_bounds
+        = $app_display_data->{'zone_layout'}{$zone_key}{'internal_bounds'};
+
+# Modify the background to be a little bigger so the border doesn't overlap any maps.
+    my $border_coords = [
+        $internal_bounds->[0] - $border_line_width,
+        $internal_bounds->[1] - $border_line_width,
+        $internal_bounds->[2] + $border_line_width,
+        $internal_bounds->[3] + $border_line_width,
+    ];
+
     my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
     $app_display_data->{'zone_layout'}{$zone_key}{'background'} = [
         [   1,
             $background_id,
             'rectangle',
-            [   @{  $app_display_data->{'zone_layout'}{$zone_key}
-                        {'internal_bounds'}
-                    }
-            ],
+            $border_coords,
             {   -fillcolor => $bgcolor,
                 -linecolor => $border_color,
-                -linewidth => 3,
+                -linewidth => $border_line_width,
                 -filled    => 1
             }
         ]
