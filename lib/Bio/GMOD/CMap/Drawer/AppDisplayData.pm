@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.80 2008-04-01 20:16:54 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.81 2008-04-02 21:26:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2433,19 +2433,35 @@ Move a map from one place on a parent to another
             + $self->{'sub_maps'}{$map_key}{'feature_length'};
     }
 
-# If the feature end is at the end of the map, simply make the feature end the map end
+    # If the feature end is at the end of the map, simply make the feature end
+    # the map end
     if (    $new_location_coords->[0] == $parent_map_coords->[0]
         and $new_location_coords->[2] == $parent_map_coords->[2] )
     {
         $new_feature_start = $parent_map_data->{'map_start'};
         $new_feature_stop  = $parent_map_data->{'map_stop'};
     }
-    elsif ( $new_location_coords->[0] == $parent_map_coords->[0] ) {
+    elsif (
+        (   !$parent_map_flipped
+            and $new_location_coords->[0] == $parent_map_coords->[0]
+        )
+        or (    $parent_map_flipped
+            and $new_location_coords->[2] == $parent_map_coords->[2] )
+
+        )
+    {
         $new_feature_start = $parent_map_data->{'map_start'};
         $new_feature_stop  = $new_feature_start
             + $self->{'sub_maps'}{$map_key}{'feature_length'};
     }
-    elsif ( $new_location_coords->[2] == $parent_map_coords->[2] ) {
+    elsif (
+        (   !$parent_map_flipped
+            and $new_location_coords->[2] == $parent_map_coords->[2]
+        )
+        or (    $parent_map_flipped
+            and $new_location_coords->[0] == $parent_map_coords->[0] )
+        )
+    {
         $new_feature_stop  = $parent_map_data->{'map_stop'};
         $new_feature_start = $new_feature_stop
             - $self->{'sub_maps'}{$map_key}{'feature_length'};

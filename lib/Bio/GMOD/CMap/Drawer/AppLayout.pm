@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.71 2008-04-02 17:40:39 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.72 2008-04-02 21:26:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1088,13 +1088,13 @@ Lays out sub maps in a slot.
         my $parent_map_width = ($parent_pixel_width) * $scale;
 
         # Bump the map back if it is overlapping the bounds
-        if ( $x1_on_parent_map < 0 ) {
-            $x1_on_parent_map = 0;
+        if ( $x1_on_parent_map < $parent_x1 ) {
+            $x1_on_parent_map = $parent_x1;
             $x2_on_parent_map = $map_width_in_pixels;
         }
-        elsif ( $x2_on_parent_map > $parent_map_width ) {
-            $x1_on_parent_map = $parent_map_width - $map_width_in_pixels + 1;
-            $x2_on_parent_map = $parent_map_width;
+        elsif ( $x2_on_parent_map > $parent_x2 ) {
+            $x1_on_parent_map = $parent_x2 - $map_width_in_pixels + 1;
+            $x2_on_parent_map = $parent_x2;
         }
 
         # Flipping is considered for $x1 and $x2
@@ -1113,8 +1113,8 @@ Lays out sub maps in a slot.
             # Check if the label goes past the end of the map
             my $label_x2
                 = $x1_on_parent_map + $label_info{$sub_map_key}->{'width'};
-            $label_x2 = $parent_map_width
-                if ( $label_x2 > $parent_map_width );
+            $label_x2 = $parent_x2
+                if ( $label_x2 > $parent_x2 );
             $x2_on_parent_map = $label_x2
                 if ( $label_x2 > $x2_on_parent_map );
         }
@@ -1837,7 +1837,7 @@ Lays out a maps in a contained area.
     $map_layout->{'coords'}[3] = $map_coords->[3];
 
     if (    0
-        and not( $min_x > $viewable_x1 and $max_x < $viewable_x2 )
+        and not( $min_x >= $viewable_x1 and $max_x <= $viewable_x2 )
         and $map_layout->{'show_details'}
 
         #and $map_labels_visible
@@ -3527,7 +3527,7 @@ bounds of the map.
     my $is_flipped       = 0;
 
     my $max_y  = $min_y + $thickness;
-    my $mid_y  = int( 0.5 + ( $min_y + $max_y ) / 2 );
+    my $mid_y  = int( ( $min_y + $max_y ) / 2 ) + 1;
     my @bounds = ( $min_x, $min_y, $max_x, $max_y );
     my ( $left_side_unseen, $right_side_unseen ) = ( 0, 0 );
 
@@ -3547,7 +3547,7 @@ bounds of the map.
             (
             [   1, undef, 'curve',
                 [ $min_x, $min_y, $min_x, $max_y, ],
-                { -linecolor => $color, }
+                { -linecolor => $color, -linewidth => 2, }
             ]
             );
     }
@@ -3563,7 +3563,7 @@ bounds of the map.
             (
             [   1, undef, 'curve',
                 [ $max_x, $min_y, $max_x, $max_y, ],
-                { -linecolor => $color, }
+                { -linecolor => $color, -linewidth => 2, }
             ]
             );
     }
@@ -3573,7 +3573,7 @@ bounds of the map.
         (
         [   1, undef, 'curve',
             [ $main_line_x1, $main_line_y1, $main_line_x2, $main_line_y2 ],
-            { -linecolor => $color, }
+            { -linecolor => $color, -linewidth => 2, }
         ]
         );
 
