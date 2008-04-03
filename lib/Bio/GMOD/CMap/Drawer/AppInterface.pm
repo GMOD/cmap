@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.87 2008-04-01 20:31:38 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.88 2008-04-03 15:20:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1379,6 +1379,12 @@ MAP1:
             my $tags = [ 'on_bottom', ];
 
             foreach my $corr ( @{ $map_corr_layout->{'corrs'} || [] } ) {
+                push @$tags,
+                    join( '_',
+                    'corr', $map_key1, $map_key2,
+                    $corr->{'feature_id1'},
+                    $corr->{'feature_id2'},
+                    );
                 foreach my $item ( @{ $corr->{'items'} || [] } ) {
 
                     # Has item been changed
@@ -2124,6 +2130,11 @@ Bind events to a zinc
             my ($zinc) = @_;
             my $e = $zinc->XEvent;
             $self->stop_drag_right_mouse( $zinc, $e->x, $e->y, );
+        }
+    );
+    $zinc->Tk::bind(
+        '<Motion>' => sub {
+            $self->mouse_move( shift, $Tk::event->x, $Tk::event->y, );
         }
     );
     $zinc->Tk::bind(
@@ -2977,6 +2988,35 @@ sub unhighlight_map_corrs {
         }
         $map_corrs->{$map_key2}{'highlight_ids'} = [];
     }
+
+    return;
+}
+
+# ----------------------------------------------------
+sub motion_unhighlight {
+
+=pod
+
+=head2 motion_unhighlight
+
+Destroy the motion highlights
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $zinc       = $args{'zinc'}       or return;
+    my $window_key = $args{'window_key'} or return;
+
+    foreach my $highlight_id (
+        @{  $self->{'motion_highlight'}{$window_key}{'motion_highlight_ids'}
+                || []
+        }
+        )
+    {
+        $zinc->remove($highlight_id);
+    }
+    $self->{'motion_highlight'}{$window_key}{'motion_highlight_ids'}    = [];
+    $self->{'motion_highlight'}{$window_key}{'motion_highlight_bounds'} = [];
 
     return;
 }
@@ -4012,6 +4052,76 @@ Handle the placement of tagged items in layers
 
 =pod
 
+=head1 Mouse Move methods
+
+Handle what happens when the mouse moves
+
+=cut
+
+# ----------------------------------------------------
+sub mouse_move {
+
+=pod
+
+=head2 mouse_move
+
+Handle the mouse moving.  
+
+=cut
+
+    my $self = shift;
+    my ( $zinc, $x, $y, $control, ) = @_;
+
+    my $window_key = $self->{'drag_window_key'}
+        = $self->get_window_key_from_zinc( zinc => $zinc, );
+
+    my $mouse_over_id = $zinc->find( 'withtag', 'current' );
+    if ( ref($mouse_over_id) eq 'ARRAY' ) {
+        $mouse_over_id = $mouse_over_id->[0];
+    }
+
+    # Remove any previously done things and return
+    if ( $self->{'stuff_drawn_on_motion'} ) {
+        $self->motion_unhighlight(
+            zinc       => $zinc,
+            window_key => $window_key,
+        );
+        $self->{'stuff_drawn_on_motion'} = 0;
+    }
+
+    # If not over anything, there is nothing to do
+    return unless ($mouse_over_id);
+
+    # If this object is a highlight, modify so the code uses the original id
+    $mouse_over_id = $self->get_original_id_from_highlight( $window_key,
+        $mouse_over_id );
+
+    my @tags;
+    my @tags_gotten = $zinc->gettags($mouse_over_id);
+    if ( @tags = grep /^corr_/, @tags_gotten ) {
+        $tags[0] =~ /^corr_(\S+)_(\S+)_(\S+)_(\S+)/;
+        my $map_key1    = $1;
+        my $map_key2    = $2;
+        my $feature_id1 = $3;
+        my $feature_id2 = $4;
+        $self->{'stuff_drawn_on_motion'} = 1;
+        (   $self->{'motion_highlight'}{$window_key}
+                {'motion_highlight_bounds'},
+            $self->{'motion_highlight'}{$window_key}{'motion_highlight_ids'}
+            )
+            = $self->highlight_object(
+            zinc             => $zinc,
+            ori_ids          => [ $mouse_over_id, ],
+            window_key       => $window_key,
+            motion_highlight => 1,
+            color            => 'blue',
+            );
+    }
+
+}
+
+=pod
+
 =head1 Drag and Drop Methods
 
 head2 Type Left
@@ -4070,13 +4180,9 @@ Handle down click of the left mouse button
     return unless ( $self->{'drag_ori_id'} );
 
     # If this object is a highlight, modify so the code uses the original id
-    if ( $self->{'highlight_id_to_ori_id'}{$window_key}
-        { $self->{'drag_ori_id'} } )
-    {
-        $self->{'drag_ori_id'}
-            = $self->{'highlight_id_to_ori_id'}{$window_key}
-            { $self->{'drag_ori_id'} };
-    }
+    $self->{'drag_ori_id'}
+        = $self->get_original_id_from_highlight( $window_key,
+        $self->{'drag_ori_id'} );
 
     my @tags;
     my @tags_gotten = $zinc->gettags( $self->{'drag_ori_id'} );
@@ -4333,13 +4439,9 @@ Handle down click of the right mouse button
     return unless ( $self->{'drag_ori_id'} );
 
     # If this object is a highlight, modify so the code uses the original id
-    if ( $self->{'highlight_id_to_ori_id'}{$window_key}
-        { $self->{'drag_ori_id'} } )
-    {
-        $self->{'drag_ori_id'}
-            = $self->{'highlight_id_to_ori_id'}{$window_key}
-            { $self->{'drag_ori_id'} };
-    }
+    $self->{'drag_ori_id'}
+        = $self->get_original_id_from_highlight( $window_key,
+        $self->{'drag_ori_id'} );
 
     my @tags;
     my @tags_gotten = $zinc->gettags( $self->{'drag_ori_id'} );
@@ -5316,21 +5418,29 @@ sub highlight_object {
 
 Draw a highlight over the object
 
+If the highlight is from simple mouse motion (motion_highlight) then store the
+id separately.
+
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc            = $args{'zinc'};
-    my $zone_key        = $args{'zone_key'};
-    my $window_key      = $args{'window_key'};
-    my $ori_ids         = $args{'ori_ids'} || [];
-    my $highlight_color = $args{'color'} || 'red';
+    my $zinc             = $args{'zinc'};
+    my $zone_key         = $args{'zone_key'};
+    my $window_key       = $args{'window_key'};
+    my $ori_ids          = $args{'ori_ids'} || [];
+    my $highlight_color  = $args{'color'} || 'red';
+    my $motion_highlight = $args{'motion_highlight'} || 0;
 
     my $app_display_data = $self->app_controller()->app_display_data();
     my $highlight_bounds = [];
     my @highlight_ids    = ();
 
-    my ( $main_x_offset, $main_y_offset )
-        = $app_display_data->get_main_zone_offsets( zone_key => $zone_key, );
+    my ( $main_x_offset, $main_y_offset ) = ( 0, 0 );
+    if ($zone_key) {
+        ( $main_x_offset, $main_y_offset )
+            = $app_display_data->get_main_zone_offsets( zone_key => $zone_key,
+            );
+    }
 
     my $top_layer_group_id = $self->get_zone_group_id(
         window_key => $window_key,
@@ -5347,8 +5457,14 @@ Draw a highlight over the object
                 'tmp_on_top', grep {/feature_|map_/} $zinc->gettags($ori_id),
             ],
         );
-        $self->{'highlight_id_to_ori_id'}{$window_key}{$highlight_id}
-            = $ori_id;
+        if ($motion_highlight) {
+            $self->{'motion_highlight_id_to_ori_id'}{$window_key}
+                {$highlight_id} = $ori_id;
+        }
+        else {
+            $self->{'highlight_id_to_ori_id'}{$window_key}{$highlight_id}
+                = $ori_id;
+        }
 
         push @highlight_ids, $highlight_id;
 
@@ -5820,6 +5936,35 @@ Handle window resizing
         $self->pack_panes( $window_key, $app_display_data, );
     }
     return;
+}
+
+# ----------------------------------------------------
+sub get_original_id_from_highlight {
+
+=pod
+
+=head2 new_view
+
+
+=cut
+
+    my $self       = shift;
+    my $window_key = shift;
+    my $obj_id     = shift;
+
+    # If this object is a highlight, modify so the code uses the original id
+    if ( $self->{'highlight_id_to_ori_id'}{$window_key}{$obj_id} ) {
+        $obj_id = $self->{'highlight_id_to_ori_id'}{$window_key}{$obj_id};
+    }
+
+    # If this object is a motion  highlight, modify so the code uses the
+    # original id
+    elsif ( $self->{'motion_highlight_id_to_ori_id'}{$window_key}{$obj_id} ) {
+        $obj_id
+            = $self->{'motion_highlight_id_to_ori_id'}{$window_key}{$obj_id};
+    }
+
+    return $obj_id;
 }
 
 # ----------------------------------------------------
