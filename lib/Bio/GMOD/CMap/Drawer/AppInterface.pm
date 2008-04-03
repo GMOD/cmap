@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.89 2008-04-03 15:45:04 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.90 2008-04-03 16:20:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1242,7 +1242,6 @@ Draws and re-draws on the zinc
                     items    => $map_layout->{$drawing_section},
                     tags     => [
                         'middle_layer',
-                        'display',
                         'map_'
                             . $window_key . '_'
                             . $zone_key . '_'
@@ -1274,7 +1273,6 @@ Draws and re-draws on the zinc
                                 . $zone_key . '_'
                                 . $map_key . '_'
                                 . $feature_acc,
-                            'display',
                         ],
                     );
                     $self->record_feature_acc_drawn_id(
@@ -1305,7 +1303,6 @@ Draws and re-draws on the zinc
                 items    => $bin_layout->{'items'},
                 tags     => [
                     'middle_layer',
-                    'display',
                     'bin_maps_'
                         . $window_key . '_'
                         . $zone_key . '_'
@@ -2668,21 +2665,21 @@ sub popup_corr_menu {
     my $map_set_id = $zone_map_set_data->{'map_set_id'};
     my $corrs_on = ( $zone_map_set_data->{'corrs_on'} ) ? 1 : 0;
 
-    push @$menu_items, [
-        'checkbutton' => '',
-        -variable     => \$corrs_on,
-        -onvalue      => 1,
-        -offvalue     => 0,
-        -label        => 'Self',
-        -command      => sub {
-            $app_display_data->set_corrs_map_set(
-                zone_key   => $zone_key,
-                window_key => $window_key,
-                map_set_id => $map_set_id,
-                corrs_on   => $corrs_on,
-            );
-        },
-    ];
+    #push @$menu_items, [
+    #    'checkbutton' => '',
+    #    -variable     => \$corrs_on,
+    #    -onvalue      => 1,
+    #    -offvalue     => 0,
+    #    -label        => 'Self',
+    #    -command      => sub {
+    #        $app_display_data->set_corrs_map_set(
+    #            zone_key   => $zone_key,
+    #            window_key => $window_key,
+    #            map_set_id => $map_set_id,
+    #            corrs_on   => $corrs_on,
+    #        );
+    #    },
+    #];
 
     foreach my $individual_corr_data (
         sort {

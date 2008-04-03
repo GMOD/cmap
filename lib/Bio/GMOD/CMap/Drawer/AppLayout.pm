@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.73 2008-04-03 16:00:50 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.74 2008-04-03 16:20:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -2666,7 +2666,7 @@ Lays out correspondences between two zones
             feature_id2 => $feature_id2,
             items       => [
                 [   1, undef, 'curve', $corr_coords,
-                    { -linecolor => $corr_color, -linewidth => '2', }
+                    { -linecolor => $corr_color, -linewidth => '1', }
                 ],
             ],
             };

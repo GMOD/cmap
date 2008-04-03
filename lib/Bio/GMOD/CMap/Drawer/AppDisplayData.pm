@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.81 2008-04-02 21:26:44 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.82 2008-04-03 16:20:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2344,6 +2344,8 @@ Return information about correspondences for the menu
         };
         if ( $map_set_id == $self_map_set_id ) {
             $self_return_hash = $return_ref;
+            $return_ref->{'map_set_data'}{'map_set_name'} .= " (Self)";
+            push @return_array, $return_ref;
         }
         else {
             push @return_array, $return_ref;
