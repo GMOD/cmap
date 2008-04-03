@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.88 2008-04-03 15:20:59 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.89 2008-04-03 15:45:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -5817,7 +5817,9 @@ Handle the mouse wheel events
     my $self = shift;
     my ( $zinc, $value ) = @_;
 
-    if ( my @tags = grep /^background_/, $zinc->gettags("current") ) {
+    my @tags_gotten;
+    eval('@tags_gotten = $zinc->gettags("current")');
+    if ( my @tags = grep /^background_/, @tags_gotten ) {
         $tags[0] =~ /^background_(\S+)_(\S+)/;
         my $window_key = $1;
         my $zone_key   = $2;
