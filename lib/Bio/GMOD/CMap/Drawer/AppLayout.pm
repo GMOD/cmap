@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.72 2008-04-02 21:26:44 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.73 2008-04-03 16:00:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1775,15 +1775,28 @@ Lays out a maps in a contained area.
         and $map_layout->{'show_details'}
         and !$hide_label )
     {
+        my $label_x;
+
+        # If the biggining of the map is viewable or the label is bigger than
+        # the map, start the label at the begining of the map
+        if ( $min_x >= $viewable_x1 or $min_x + $label->{'width'} > $max_x ) {
+            $label_x = $min_x;
+        }
+
+        # Don't let the label scroll past the end of the map
+        elsif ( $viewable_x1 + $label->{'width'} > $max_x ) {
+            $label_x = $max_x - $label->{'width'};
+        }
+
+        # Use the begining of the viewabe region
+        else {
+            $label_x = $viewable_x1;
+        }
+
         push @{ $map_layout->{'items'} },
             (
             [   1, undef, 'text',
-                [   ( $min_x > $viewable_x1 + MAP_X_BUFFER ) ? $min_x
-                    : ( $viewable_x1 + MAP_X_BUFFER + $label->{'width'}
-                            > $max_x ) ? $max_x - $label->{'width'}
-                    : $viewable_x1 + MAP_X_BUFFER,
-                    $min_y
-                ],
+                [ $label_x, $min_y ],
                 {   -text   => $label->{'text'},
                     -anchor => 'nw',
                     -color  => 'black',
