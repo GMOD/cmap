@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.74 2008-04-03 16:20:42 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.75 2008-04-03 17:22:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1378,6 +1378,9 @@ Lays out a scale bar for a zone.
     my $optimal_bar_width = 100;
     my $optimal_bar_units
         = int( 0.5 + $optimal_bar_width / $pixels_per_unit );
+
+    # Don't let optimal_bar_units be 0 
+    $optimal_bar_units ||= 1;
 
     # Do the math to figure out how much needs to be rounded off
     my $digits = int( log( abs($optimal_bar_units) ) / log(10) ) + 1;
