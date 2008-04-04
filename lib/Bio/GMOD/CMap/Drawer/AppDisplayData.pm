@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.82 2008-04-03 16:20:40 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.83 2008-04-04 18:27:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -6828,6 +6828,12 @@ reset  a zone of correspondences
     foreach my $zone_key2 (
         keys %{ $self->{'correspondences_on'}{$zone_key1} || {} } )
     {
+
+       # Stop drawing Corrs twice by only drawing when zone_key1 is less than
+       # or equal to zone_key2.  Since each relationship is in there twice, it
+       # will still hit every one.
+        next if ( $zone_key1 > $zone_key2 );
+
         next unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} );
 
         $self->clear_corrs_between_zones(
