@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.90 2008-04-03 16:20:41 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.91 2008-04-04 18:26:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -674,7 +674,7 @@ Adds control buttons to the controls_pane.
 #$self->app_controller()->scroll_zone(
 #    window_key   => $window_key,
 #    zone_key     => 1,
-#    scroll_value => -140,
+#    scroll_value => 500,
 #);
 #print STDERR
 #    "            ----------------BEFORE SCROLL2-----------------\n";
@@ -1217,23 +1217,32 @@ Draws and re-draws on the zinc
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
-            # Debug - Draws marks every 100 pixels
-            #foreach my $i ( 1 .. 6 ) {
-            #    my $color = ($i ==1)?'red': 'blue';
-            #    $self->draw_items(
-            #        zinc     => $zinc,
-            #        x_offset => $total_x_offset,
-            #        y_offset => $total_y_offset,
-            #        items    => [
-            #            [   1, undef, 'rectangle',
-            #                [ 1, 1, $i * 100, $i * 100 ],
-            #                { -linecolor => $color, -linewidth => '1', }
-            #            ],
-            #        ],
-            #        group_id => $zone_group_id,
-            #        tags     => [ 'on_top', ],
-            #    ) if ( $zone_key == 1 or $i == 1 );
-            #}
+          # Debug - Draws marks every 100 pixels
+          #foreach my $id (@{$self->{'debug_ids'}{$zone_key}||[]}){
+          #    $zinc->remove($id);
+          #}
+          #$self->{'debug_ids'}{$zone_key}=[];
+          #my $width = 25;
+          #foreach my $i ( 1 .. 80 ) {
+          #    my $color = ($i % 20 ==0)?'green': ($i % 4 == 0)?'red': 'blue';
+          #    my $items = [
+          #        [   1, undef, 'rectangle',
+          #            [ 1, 1, $i * $width, 100 ],
+          #            { -linecolor => $color, -linewidth => '1', }
+          #        ],
+          #    ];
+          #    $self->draw_items(
+          #        zinc     => $zinc,
+          #        x_offset => $total_x_offset,
+          #        y_offset => $total_y_offset,
+          #        items    => $items,
+          #        group_id => $zone_group_id,
+          #        tags     => [ 'on_top', ],
+          #    ) if ( $zone_key != -1 or $i == 1 );
+          #    push @{$self->{'debug_ids'}{$zone_key}}, map {$_->[1]} @$items;
+          #}
+          # END DEBUG SECTION
+
             foreach my $drawing_section (qw[ items ]) {
                 $self->draw_items(
                     zinc     => $zinc,
@@ -1269,7 +1278,7 @@ Draws and re-draws on the zinc
                         items    => $feature_layout->{'items'},
                         group_id => $zone_group_id,
                         tags     => [
-                            'feature_'
+                                  'feature_'
                                 . $zone_key . '_'
                                 . $map_key . '_'
                                 . $feature_acc,
