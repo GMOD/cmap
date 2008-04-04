@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.75 2008-04-03 17:22:54 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.76 2008-04-04 18:25:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -90,6 +90,7 @@ sub layout_new_window {
 
     # Initialize bounds
     # But have a height of 0.
+    $window_layout->{'width'} = $width;
     $window_layout->{'bounds'} = [ 0, 0, $width, 0, ];
 
     layout_zone(
@@ -1379,7 +1380,7 @@ Lays out a scale bar for a zone.
     my $optimal_bar_units
         = int( 0.5 + $optimal_bar_width / $pixels_per_unit );
 
-    # Don't let optimal_bar_units be 0 
+    # Don't let optimal_bar_units be 0
     $optimal_bar_units ||= 1;
 
     # Do the math to figure out how much needs to be rounded off
