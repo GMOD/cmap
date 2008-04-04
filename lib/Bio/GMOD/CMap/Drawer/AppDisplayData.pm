@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.83 2008-04-04 18:27:07 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.84 2008-04-04 20:26:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -409,6 +409,9 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
     my $map_data
         = $self->app_data_module()->map_data_array( map_accs => \@map_accs, );
 
+    my %zone_view_by_map_acc
+        = map { $_->{'map_acc'} => $_ } @{ $zone_view_data->{'map'} || [] };
+
     foreach my $map ( @{ $map_data || [] } ) {
         my $map_id  = $map->{'map_id'};
         my $map_key = $self->initialize_map(
@@ -423,20 +426,16 @@ Adds sub-maps to the view.  Doesn't do any sanity checking.
             $self->{'sub_maps'}{$map_key} = $sub_maps_hash->{$map_id};
         }
 
-        foreach my $zone_view_map ( @{ $zone_view_data->{'map'} || [] } ) {
-            next unless ( $map->{'map_acc'} eq $zone_view_map->{'map_acc'} );
-            if ( ref( $zone_view_map->{'child_zone'} ) eq 'HASH' ) {
-                $zone_view_map->{'child_zone'}
-                    = [ $zone_view_map->{'child_zone'} ];
-            }
-            foreach
-                my $child_zone ( @{ $zone_view_map->{'child_zone'} || [] } )
-            {
-                $child_zone->{'parent_zone_key'} = $zone_key;
-                $child_zone->{'parent_map_key'}  = $map_key;
-                $child_zone->{'parent_map_id'}   = $map_id;
-                push @{$zone_view_data_queue}, $child_zone;
-            }
+        my $zone_view_map = $zone_view_by_map_acc{ $map->{'map_acc'} };
+        if ( ref( $zone_view_map->{'child_zone'} ) eq 'HASH' ) {
+            $zone_view_map->{'child_zone'}
+                = [ $zone_view_map->{'child_zone'} ];
+        }
+        foreach my $child_zone ( @{ $zone_view_map->{'child_zone'} || [] } ) {
+            $child_zone->{'parent_zone_key'} = $zone_key;
+            $child_zone->{'parent_map_key'}  = $map_key;
+            $child_zone->{'parent_map_id'}   = $map_id;
+            push @{$zone_view_data_queue}, $child_zone;
         }
     }
     return $zone_view_data_queue;
@@ -1535,7 +1534,10 @@ canvases.
         app_display_data => $self,
     );
 
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key  => $window_key,
+        skip_layout => 1,
+    );
 
     return;
 }
@@ -7558,19 +7560,22 @@ Redraws the whole window
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
+    my $skip_layout = $args{'skip_layout'} || 0;
 
     #$self->{'highlight_parent_maps'} = undef;
 
     # This probably should be more elegant but for now,
     # just layout the whole thing
     my $top_zone_key = $self->{'head_zone_key'}{$window_key};
-    layout_zone(
-        window_key       => $window_key,
-        zone_key         => $top_zone_key,    #$zone_key,
-        app_display_data => $self,
-        relayout         => 1,
-        force_relayout   => 1,
-    );
+    unless ($skip_layout) {
+        layout_zone(
+            window_key       => $window_key,
+            zone_key         => $top_zone_key,    #$zone_key,
+            app_display_data => $self,
+            relayout         => 1,
+            force_relayout   => 1,
+        );
+    }
 
     #RELAYOUT OVERVIEW
     $self->recreate_overview( window_key => $window_key, );
