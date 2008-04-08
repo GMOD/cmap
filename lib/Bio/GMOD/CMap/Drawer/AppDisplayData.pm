@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.85 2008-04-08 17:55:44 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.86 2008-04-08 21:27:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -5754,8 +5754,9 @@ Given a zone, figure out the coordinates on the main window.
     my ( $self, %args ) = @_;
     my $zone_key = $args{'zone_key'};
     my $bounds   = $self->{'zone_layout'}{$zone_key}{'bounds'};
-    my $x_offset = $bounds->[0];
-    my $y_offset = $bounds->[1];
+    my $x_offset = $bounds->[0] + $self->{'scaffold'}{$zone_key}{'x_offset'};
+    my $y_offset
+        = $bounds->[1] + ( $self->{'scaffold'}{$zone_key}{'y_offset'} || 0 );
 
     if ( my $parent_zone_key
         = $self->{'scaffold'}{$zone_key}{'parent_zone_key'} )
@@ -6092,17 +6093,13 @@ The main highlight bounds must already have been moved.
         = $self->get_main_zone_offsets( zone_key => $parent_zone_key, );
     my $parent_x_offset = $self->{'scaffold'}{$parent_zone_key}{'x_offset'};
 
-    # Get the center x of the highlight bounds and translate into the parents
-    # coords
-    my $center_x = $mouse_x - ( $parent_main_x_offset + $parent_x_offset );
-
     my $drawn_flipped = $self->is_map_drawn_flipped(
         map_key  => $parent_map_key,
         zone_key => $parent_zone_key,
     );
 
     my $center_in_parent_units = $self->convert_pixel_position_to_map_units(
-        position      => $center_x,
+        position      => $mouse_x,
         map_key       => $parent_map_key,
         zone_key      => $parent_zone_key,
         drawn_flipped => $drawn_flipped,
@@ -6152,14 +6149,14 @@ The main highlight bounds must already have been moved.
         drawn_flipped => $drawn_flipped,
     );
 
-    # Get y coords
     my $y1 = $parent_map_layout->{'coords'}[1];
     my $y2 = $parent_map_layout->{'coords'}[3];
 
     my $visible = 1;
-    if ( $placement_in_pixels < $parent_zone_layout->{'viewable_internal_x1'}
+    if ( $placement_in_pixels
+        < $parent_zone_layout->{'viewable_internal_x1'} + $parent_x_offset
         or $placement_in_pixels
-        > $parent_zone_layout->{'viewable_internal_x2'} )
+        > $parent_zone_layout->{'viewable_internal_x2'} + $parent_x_offset )
     {
         $visible = 0;
     }
@@ -6205,6 +6202,8 @@ sub convert_map_position_to_pixels {
     }
     return undef unless (@$positions);
 
+    my ( $x_offset, $y_offset )
+        = $self->get_main_zone_offsets( zone_key => $zone_key, );
     my $map_id     = $self->map_key_to_id($map_key);
     my $map_data   = $self->app_data_module()->map_data( map_id => $map_id, );
     my $map_coords = $self->{'map_layout'}{$map_key}{'coords'};
@@ -6223,7 +6222,9 @@ sub convert_map_position_to_pixels {
         }
         my $relative_pixel_placement
             = $relative_placement_in_units * $map_pixels_per_unit;
-        push @pixel_array, ( $relative_pixel_placement + $map_coords->[0] );
+
+        push @pixel_array,
+            ( $relative_pixel_placement + $map_coords->[0] + $x_offset );
     }
 
     # If only asking for this one, just return it
@@ -6259,6 +6260,8 @@ sub convert_pixel_position_to_map_units {
     }
     return undef unless (@$positions);
 
+    my ( $x_offset, $y_offset )
+        = $self->get_main_zone_offsets( zone_key => $zone_key, );
     my $map_id     = $self->map_key_to_id($map_key);
     my $map_data   = $self->app_data_module()->map_data( map_id => $map_id, );
     my $map_coords = $self->{'map_layout'}{$map_key}{'coords'};
@@ -6273,7 +6276,7 @@ sub convert_pixel_position_to_map_units {
             push @unit_array, undef;
         }
         else {
-            my $relative_pixel_loc = $pos - $map_coords->[0];
+            my $relative_pixel_loc = $pos - $map_coords->[0] - $x_offset;
 
             my $relative_unit_loc
                 = $relative_pixel_loc / $map_pixels_per_unit;
@@ -6564,8 +6567,11 @@ Given box coords and x and y coords, figure out if the mouse is in a the box.
     my $y          = $args{'y'};
     my $box_coords = $args{'box_coords'};
     my $zone_key   = $args{'zone_key'};
-    my $x_offset   = $self->{'scaffold'}{$zone_key}{'x_offset'} || 0;
-    my $y_offset   = $self->{'scaffold'}{$zone_key}{'y_offset'} || 0;
+
+    #my $x_offset   = $self->{'scaffold'}{$zone_key}{'x_offset'} || 0;
+    #my $y_offset   = $self->{'scaffold'}{$zone_key}{'y_offset'} || 0;
+    my $x_offset = 0;
+    my $y_offset = 0;
 
     return (    $x >= $box_coords->[0] + $x_offset
             and $y >= $box_coords->[1] + $y_offset
