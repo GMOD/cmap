@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.84 2008-04-04 20:26:13 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.85 2008-04-08 17:55:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -2083,6 +2083,7 @@ Destroys then recreates the overview
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
 
+    return;    ### BF RMOVERVIEW
     my $top_zone_key = $self->{'overview'}{$window_key}{'zone_key'};
 
     foreach my $zone_key ( $top_zone_key, ) {
@@ -7726,10 +7727,7 @@ returns
     my ( $self, %args ) = @_;
     my $zone_key = $args{'zone_key'};
 
-    my @child_zone_keys
-        = @{ $self->{'scaffold'}{$zone_key}{'children'} || [] };
-
-    return @child_zone_keys;
+    return @{ $self->{'scaffold'}{$zone_key}{'children'} || [] };
 }
 
 # ----------------------------------------------------
@@ -7747,18 +7745,7 @@ returns
     my $map_key  = $args{'map_key'};
     my $zone_key = $args{'zone_key'};
 
-    my @child_zone_keys;
-    foreach my $child_zone_key (
-        @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } )
-    {
-        if ( $map_key
-            == $self->{'scaffold'}{$child_zone_key}{'parent_map_key'} )
-        {
-            push @child_zone_keys, $child_zone_key;
-        }
-    }
-
-    return @child_zone_keys;
+    return @{ $self->{'map_key_to_child_zones'}{$map_key} || [] };
 }
 
 # ----------------------------------------------------
@@ -7968,6 +7955,8 @@ Initializes zone
         pixels_per_unit    => 0,
         show_features      => $show_features,
     };
+    push @{ $self->{'map_key_to_child_zones'}{$parent_map_key} }, $zone_key
+        if ($parent_map_key);
     $self->initialize_zone_layout( $zone_key, $window_key, );
     $self->{'zone_layout'}{$zone_key}{'flipped'} = $flipped;
 

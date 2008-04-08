@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.91 2008-04-04 18:26:25 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.92 2008-04-08 17:55:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -298,7 +298,7 @@ Returns the top_pane object.
         );
 
         # Pack later in pack_panes()
-        $self->overview_zinc( window_key => $window_key, );
+        #$self->overview_zinc( window_key => $window_key, ); ### BF RMOVERVIEW
     }
     return $self->{'top_pane'}{$window_key};
 }
@@ -353,7 +353,9 @@ Returns the info_pane object.
     my $window_key = $args{'window_key'} or return undef;
     unless ( $self->{'info_pane'}{$window_key} ) {
         my $height   = $args{'height'};
-        my $top_pane = $self->{'top_pane'}{$window_key};
+        my $top_pane = $self->{'bottom_pane'}{$window_key};
+
+        #my $top_pane = $self->{'top_pane'}{$window_key};
         $self->{'info_pane'}{$window_key} = $top_pane->Frame(
             -borderwidth => 0,
             -relief      => 'groove',
@@ -644,7 +646,7 @@ Adds control buttons to the controls_pane.
 #$self->app_controller()->zoom_zone(
 #    window_key => $window_key,
 #    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-#    zoom_value => 2,
+#    zoom_value => 2048,
 #);
 #print STDERR
 #    "            ----------------BEFORE SET OFFSCREEN CORRS-----------------\n";
@@ -888,6 +890,7 @@ Draws and re-draws on the overview zinc
 
     my ( $self, %args ) = @_;
 
+    return;    ### BF RMOVERVIEW
     my $window_key = $args{'window_key'}
         or die 'no panel key for draw_overview';
     my $app_display_data = $args{'app_display_data'};
@@ -1037,6 +1040,8 @@ Handles the recursion for draw zone.  This accumulates the zone offset.
 
     my $zone_scaffold = $app_display_data->{'scaffold'}{$zone_key};
     my $zone_layout   = $app_display_data->{'zone_layout'}{$zone_key};
+
+    return unless ( @{ $zone_layout->{'bounds'} || [] } );
 
     my $zone_x_offset = $cumulative_x_offset + $zone_layout->{'bounds'}[0];
     my $zone_y_offset = $cumulative_y_offset + $zone_layout->{'bounds'}[1];
@@ -6064,10 +6069,10 @@ Pack the frames
     my ( $window_key, $app_display_data, ) = @_;
 
     # Top Pane
-    $self->{'overview_zinc'}{$window_key}->pack(
-        -side => 'left',
-        -fill => 'both',
-    );
+    #$self->{'overview_zinc'}{$window_key}->pack(
+    #-side => 'left',
+    #-fill => 'both',
+    #); ### BF RMOVERVIEW
     $self->{'info_pane'}{$window_key}->pack( -side => 'right', );
     $self->{'top_pane'}{$window_key}->pack(
         -side   => 'top',
@@ -6101,11 +6106,20 @@ sub text_dimensions {
     my $window_key = $args{'window_key'} or return;
     my $text = $args{'text'} || q{};
 
+    my ( $height, $char_width );
     my $font_name = $self->get_font_name( window_key => $window_key, );
-    my $zinc      = $self->zinc( window_key          => $window_key, );
+    if ( $self->{'font_dimentions'}{$font_name} ) {
+        $height     = $self->{'font_dimentions'}{$font_name}[0];
+        $char_width = $self->{'font_dimentions'}{$font_name}[1];
+    }
+    else {
+        my $zinc = $self->zinc( window_key => $window_key, );
+        $height     = $zinc->fontConfigure( $font_name, '-size' ) * -1;
+        $char_width = $zinc->fontMeasure( $font_name,   'W' );
+        $self->{'font_dimentions'}{$font_name} = [ $height, $char_width ];
+    }
 
-    my $height = $zinc->fontConfigure( $font_name, '-size' ) * -1;
-    my $width  = $zinc->fontMeasure( $font_name,   $text );
+    my $width = $char_width * length($text);
 
     return ( $width, $height, );
 }

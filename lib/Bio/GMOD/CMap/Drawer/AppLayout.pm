@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.76 2008-04-04 18:25:25 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.77 2008-04-08 17:55:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -120,7 +120,8 @@ sub layout_overview {
 
 =cut
 
-    my %args             = @_;
+    my %args = @_;
+    return;    ### BF RMOVERVIEW
     my $window_key       = $args{'window_key'};
     my $app_display_data = $args{'app_display_data'};
     my $width
@@ -729,6 +730,14 @@ MAP:
             = ( $map_min_x > $zone_layout->{'viewable_internal_x2'} );
         if ( $left_of_view or $right_of_view ) {
 
+            $map_min_x += $map_container_width;
+            if ($show_details) {
+                $map_min_x += MAP_X_BUFFER;
+            }
+            else {
+                $map_min_x += MAP_X_NO_DETAILS_BUFFER;
+            }
+
            # The map is off to either the left or right, save that information
             if ($left_of_view) {
                 $app_display_data->add_child_zones_to_visibility_hash(
@@ -753,13 +762,6 @@ MAP:
                     window_key       => $window_key,
                     cascade          => 1,
                 );
-            }
-            $map_min_x += $map_container_width;
-            if ($show_details) {
-                $map_min_x += MAP_X_BUFFER;
-            }
-            else {
-                $map_min_x += MAP_X_NO_DETAILS_BUFFER;
             }
             next MAP;
         }
@@ -868,7 +870,8 @@ MAP:
     #    window_key       => $window_key,
     #    app_display_data => $app_display_data,
     #);
-    $app_display_data->recreate_overview( window_key => $window_key, );
+    # BF RMOVERVIEW
+    #$app_display_data->recreate_overview( window_key => $window_key, );
 
     return $height_change;
 }
@@ -1688,9 +1691,6 @@ Lays out a maps in a contained area.
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
-# BF DEBUG
-# return $min_y unless ( $map->{'map_id'} == 2898 or $zone_key == 1 or $map->{'map_id'} == 2870 );
-
     # Just move if the map has already been laid out based on the $relayout
     # value and whether it has any drawing items.
     if ( $relayout and @{ $map_layout->{'items'} || [] } ) {
@@ -2446,9 +2446,6 @@ Lays out correspondences between two zones
         my $feature_id1 = $corr->{'feature_id1'};
         my $feature_id2 = $corr->{'feature_id2'};
 
-        # BF DEBUG
-        # next unless($map_id2 == 2898);
-        # next unless($map_id1 == 2870);
         my $map_key1 = $app_display_data->map_id_to_key_by_zone( $map_id1,
             $zone_key1 );
         my $map_key2 = $app_display_data->map_id_to_key_by_zone( $map_id2,
@@ -2894,6 +2891,7 @@ Shows the selected region.
 
 =cut
 
+    return;    ### BF RMOVERVIEW
     my %args             = @_;
     my $zone_key         = $args{'zone_key'};
     my $window_key       = $args{'window_key'};
