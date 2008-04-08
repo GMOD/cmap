@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.49 2008-03-20 20:31:12 mwz444 Exp $
+# $Id: AppController.pm,v 1.50 2008-04-08 17:19:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -67,6 +67,7 @@ Initializes the object.
         $self->{'remote_url'} = $saved_view_data->{'remote_url'};
         $self->data_source( $saved_view_data->{'data_source'}
                 || $init_params->{'data_source'} );
+        $self->{'remote_url'} = $saved_view_data->{'remote_url'};
         $self->finish_init(
             saved_view_data => $saved_view_data,
             remote_url      => $saved_view_data->{'remote_url'},
@@ -844,6 +845,29 @@ sub print_benchmark {
 =pod
 
 =head2 print_benchmark
+
+=over4
+
+=item * AppLayout
+
+  print STDERR $app_display_data->app_interface()->app_controller()
+    ->print_benchmark( text => 'A1', reset => 0, ) . "\n";
+
+=item * AppDisplayData
+
+  print STDERR $self->app_interface()->app_controller()
+    ->print_benchmark( text => 'A1', reset => 0, ) . "\n";
+
+=item * AppInterface
+
+  print STDERR $self->app_controller()
+    ->print_benchmark( text => 'A1', reset => 0, ) . "\n";
+
+=item * AppController
+
+  print STDERR $self->print_benchmark( text => 'A1', reset => 0, ) . "\n";
+
+=back
 
 =cut
 
