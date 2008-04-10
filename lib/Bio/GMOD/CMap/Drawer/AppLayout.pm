@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.77 2008-04-08 17:55:44 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.78 2008-04-10 13:42:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -503,6 +503,9 @@ Lays out head maps in a zone
             = $window_layout->{'bounds'}[2] - $x_offset;
     }
 
+    my $viewable_internal_x1 = $zone_layout->{'viewable_internal_x1'};
+    my $viewable_internal_x2 = $zone_layout->{'viewable_internal_x2'};
+
     # The left and right bound limit where the maps get layed out to.
     my $left_bound        = 0;
     my $right_bound       = $zone_width - MAP_X_BUFFER;
@@ -598,12 +601,212 @@ Lays out head maps in a zone
         window_key       => $window_key,
     );
 
+#print STDERR $app_display_data->app_interface()->app_controller()->print_benchmark( text => 'LHM1', reset => 1, ) . "\n";
+
     my $row_max_y = $row_min_y;
     my %label_info;
+    my @maps_in_order
+        = @{ $app_display_data->{'map_order'}{$zone_key} || [] };
+    my $start_index = 0;
+    my $last_index  = $#maps_in_order;
+    my $first_viewable_map_index;
+    my $last_viewable_map_index;
+
+    if ( $relayout and !$force_relayout ) {
+
+        my $start_index = undef;
+        my $last_index  = undef;
+
+        my $previous_first_viewable_map_index
+            = $app_display_data->{'previous_first_viewable_map_index'}
+            {$zone_key};
+        my $previous_last_viewable_map_index
+            = $app_display_data->{'previous_last_viewable_map_index'}
+            {$zone_key};
+        if ( $move_offset_x < 0 ) {
+
+            # Get first viewable.  Start at the previous first viewable and go
+            # until one is viewable again.  If it goes w/out finding one, it
+            # will just use the default and start at the begining.
+            for (
+                my $i = $previous_first_viewable_map_index;
+                $i <= $#maps_in_order;
+                $i++
+                )
+            {
+                my $map_key = $maps_in_order[$i];
+                if ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                    > $viewable_internal_x2
+                    or
+                    $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                    < $viewable_internal_x1 )
+                {
+
+                    # Not viewable
+                    $app_display_data->add_child_zones_to_visibility_hash(
+                        app_display_data => $app_display_data,
+                        zone_key         => $zone_key,
+                        map_key          => $map_key,
+                        state            => OFF_TO_THE_LEFT,
+                    );
+                    if (@{  $app_display_data->{'map_layout'}{$map_key}
+                                {'items'} || []
+                        }
+                        )
+                    {
+                        destroy_map_for_relayout(
+                            app_display_data => $app_display_data,
+                            map_key          => $map_key,
+                            window_key       => $window_key,
+                            cascade          => 1,
+                        );
+                    }
+                    next;
+                }
+                else {
+
+                    # Viewable
+                    $start_index = $i;
+                    last;
+                }
+
+            }
+            if ( not defined $start_index ) {
+                $start_index = $#maps_in_order;
+            }
+
+            my $new_start
+                = ( $previous_last_viewable_map_index > $start_index )
+                ? $previous_last_viewable_map_index
+                : $start_index;
+
+            # Get last viewable.  Start at the previous last viewable or the
+            # new start_index and go until one is not viewable.  If it goes
+            # w/out finding one, it will just use the default and end at the
+            # last map.
+            for ( my $i = $start_index; $i <= $#maps_in_order; $i++ ) {
+                my $map_key = $maps_in_order[$i];
+                if ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                    > $viewable_internal_x2
+                    or
+                    $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                    < $viewable_internal_x1 )
+                {
+
+                    # Not viewable
+                    $last_index = $i ? $i - 1 : 0;
+                    last;
+                }
+                else {
+
+                    # Viewable
+                    next;
+                }
+
+            }
+            if ( not defined $last_index ) {
+                $last_index = $#maps_in_order;
+            }
+        }
+        elsif ( $move_offset_x > 0 ) {
+
+            # Get first viewable.  Start at the previous last viewable and go
+            # backwards until one is viewable again.  If it goes w/out finding
+            # one, it will just use the default and end at the last map.
+            for ( my $i = $previous_last_viewable_map_index; $i >= 0; $i-- ) {
+                my $map_key = $maps_in_order[$i];
+                if ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                    > $viewable_internal_x2
+                    or
+                    $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                    < $viewable_internal_x1 )
+                {
+
+                    # Not viewable
+                    $app_display_data->add_child_zones_to_visibility_hash(
+                        app_display_data => $app_display_data,
+                        zone_key         => $zone_key,
+                        map_key          => $map_key,
+                        state            => OFF_TO_THE_RIGHT,
+                    );
+                    if (@{  $app_display_data->{'map_layout'}{$map_key}
+                                {'items'} || []
+                        }
+                        )
+                    {
+                        destroy_map_for_relayout(
+                            app_display_data => $app_display_data,
+                            map_key          => $map_key,
+                            window_key       => $window_key,
+                            cascade          => 1,
+                        );
+                    }
+                    next;
+                }
+                else {
+
+                    # Viewable
+                    $last_index = $i;
+                    last;
+                }
+
+            }
+
+            if ( not defined $last_index ) {
+                $last_index = 0;
+            }
+
+            my $new_last
+                = ( $previous_first_viewable_map_index < $last_index )
+                ? $previous_first_viewable_map_index
+                : $last_index;
+
+          # Get last viewable.  Start at the previous first viewable or at the
+          # new last_index and go backwards until one is not viewable.  If it
+          # goes w/out finding one, it will just use the default and and start
+          # at the begining.
+            for ( my $i = $new_last; $i >= 0; $i-- ) {
+                my $map_key = $maps_in_order[$i];
+                if ( $app_display_data->{'map_layout'}{$map_key}{'bounds'}[0]
+                    > $viewable_internal_x2
+                    or
+                    $app_display_data->{'map_layout'}{$map_key}{'bounds'}[2]
+                    < $viewable_internal_x1 )
+                {
+
+                    # Not Viewable
+                    $start_index
+                        = ( $i == $#maps_in_order )
+                        ? $#maps_in_order
+                        : $i + 1;
+                    last;
+                }
+                else {
+
+                    # Viewable
+                    next;
+                }
+
+            }
+            if ( not defined $start_index ) {
+                $start_index = 0;
+            }
+
+        }
+        else {
+            $start_index = $previous_first_viewable_map_index;
+            $last_index  = $previous_last_viewable_map_index;
+        }
+    }
+
 MAP:
-    foreach
-        my $map_key ( @{ $app_display_data->{'map_order'}{$zone_key} || [] } )
+    for (
+        my $map_index = $start_index;
+        $map_index <= $last_index;
+        $map_index++
+        )
     {
+        my $map_key = $maps_in_order[$map_index];
         $label_info{$map_key} = $app_display_data->map_label_info(
             window_key => $window_key,
             map_key    => $map_key,
@@ -620,6 +823,11 @@ MAP:
             zone_key => $zone_key,
         );
 
+        if ( $relayout and !$force_relayout ) {
+            $map_min_x = $map_layout->{'bounds'}[0];
+        }
+        my $binned_map_max_x = $map_min_x + MIN_MAP_WIDTH;
+
         # If the map is the minimum width,
         # Set the individual ppu otherwise clear it.
         if ( $map_container_width < MIN_MAP_WIDTH ) {
@@ -628,6 +836,28 @@ MAP:
                 { map_key => $map_key, map_id => $map_id, };
             $app_display_data->{'map_pixels_per_unit'}{$map_key}
                 = MIN_MAP_WIDTH / $length_in_units;
+
+            # Store the bounds so we know where this map is when scrolling
+            $map_layout->{'bounds'}
+                = [ $map_min_x, $row_min_y, $binned_map_max_x, $row_min_y, ];
+
+            unless ( defined( $binned_maps->{'min_x'} ) ) {
+                $binned_maps->{'min_x'} = $map_min_x;
+                $binned_maps->{'max_x'} = $binned_map_max_x;
+            }
+            if (    $binned_map_max_x >= $viewable_internal_x1
+                and $map_min_x <= $viewable_internal_x2 )
+            {
+
+                # Check and set the first/last viewable maps
+                if ( not defined $first_viewable_map_index ) {
+                    $first_viewable_map_index = $map_index;
+                }
+
+                # Since the last viewable map will be the last one here, just
+                # set it
+                $last_viewable_map_index = $map_index;
+            }
 
             # If it breaks the width threshold, lay out all the bins
             if ( $binned_maps->{'total_size'} >= MIN_MAP_WIDTH ) {
@@ -642,8 +872,6 @@ MAP:
                     token_map_data   => $token_map_data,
                     row_max_y        => $row_max_y,
                     min_y            => $row_min_y,
-                    min_x            => $map_min_x,
-                    max_x            => $map_min_x + MIN_MAP_WIDTH,
                     label            => $label_info{$map_key},
                     );
             }
@@ -666,8 +894,6 @@ MAP:
                 token_map_data   => $token_map_data,
                 row_max_y        => $row_max_y,
                 min_y            => $row_min_y,
-                min_x            => $map_min_x,
-                max_x            => $map_min_x + MIN_MAP_WIDTH,
                 label => $label_info{ $binned_maps->{'maps'}[0]{'map_key'} },
             );
         }
@@ -679,27 +905,29 @@ MAP:
         }
         $map_layout->{'show_details'} = $show_details;
 
-        if ($show_details) {
-
-            # Since the map has passed the size threshold, add sub maps.
-            $app_display_data->add_sub_maps_to_map(
-                window_key      => $window_key,
-                parent_zone_key => $zone_key,
-                parent_map_key  => $map_key,
-            );
-
-            # Add buffer on the left
-            $map_min_x += MAP_X_BUFFER;
-        }
-
         my $map_pixels_per_unit
             = $app_display_data->{'map_pixels_per_unit'}{$map_key}
             || $pixels_per_unit;
 
-        if ( $stacked and $map_min_x != $left_bound ) {
-            $map_min_x = $left_bound;
-            $row_min_y = $row_max_y + MAP_Y_BUFFER;
-            $row_index++;
+        if ( !$relayout or $force_relayout ) {
+            if ($show_details) {
+
+                # Since the map has passed the size threshold, add sub maps.
+                $app_display_data->add_sub_maps_to_map(
+                    window_key      => $window_key,
+                    parent_zone_key => $zone_key,
+                    parent_map_key  => $map_key,
+                );
+
+                # Add buffer on the left
+                $map_min_x += MAP_X_BUFFER;
+            }
+
+            if ( $stacked and $map_min_x != $left_bound ) {
+                $map_min_x = $left_bound;
+                $row_min_y = $row_max_y + MAP_Y_BUFFER;
+                $row_index++;
+            }
         }
         my $map_max_x = $map_min_x + $map_container_width;
 
@@ -724,10 +952,9 @@ MAP:
         }
 
         # If map is not on the screen, don't lay it out.
-        my $left_of_view = ( ( $map_min_x + $map_container_width )
-            < $zone_layout->{'viewable_internal_x1'} );
-        my $right_of_view
-            = ( $map_min_x > $zone_layout->{'viewable_internal_x2'} );
+        my $left_of_view = (
+            ( $map_min_x + $map_container_width ) < $viewable_internal_x1 );
+        my $right_of_view = ( $map_min_x > $viewable_internal_x2 );
         if ( $left_of_view or $right_of_view ) {
 
             $map_min_x += $map_container_width;
@@ -765,6 +992,17 @@ MAP:
             }
             next MAP;
         }
+        else {
+
+            # Check and set the first/last viewable maps
+            if ( not defined $first_viewable_map_index ) {
+                $first_viewable_map_index = $map_index;
+            }
+
+            # Since the last viewable map will be the last one here, just set
+            # it
+            $last_viewable_map_index = $map_index;
+        }
 
         # Set the row index in case this zone needs to be split
         # BF this may not be needed anymore
@@ -781,8 +1019,8 @@ MAP:
         _add_to_slot_info(
             app_display_data  => $app_display_data,
             zone_key          => $zone_key,
-            visible_min_bound => $zone_layout->{'viewable_internal_x1'},
-            visible_max_bound => $zone_layout->{'viewable_internal_x2'},
+            visible_min_bound => $viewable_internal_x1,
+            visible_max_bound => $viewable_internal_x2,
             map_min_x         => $map_min_x,
             map_max_x         => $map_max_x,
             map_start         => $map->{'map_start'},
@@ -802,8 +1040,8 @@ MAP:
             min_x            => $map_min_x,
             max_x            => $map_max_x,
             min_y            => $row_min_y,
-            viewable_x1      => $zone_layout->{'viewable_internal_x1'},
-            viewable_x2      => $zone_layout->{'viewable_internal_x2'},
+            viewable_x1      => $viewable_internal_x1,
+            viewable_x2      => $viewable_internal_x2,
             last_viewable_x1 => $zone_layout->{'last_viewable_internal_x1'},
             last_viewable_x2 => $zone_layout->{'last_viewable_internal_x2'},
             pixels_per_unit  => $map_pixels_per_unit,
@@ -831,6 +1069,18 @@ MAP:
         }
         $map_layout->{'changed'} = 1;
     }
+
+    # Record the indexes of the first and last viewable maps
+    $app_display_data->{'previous_first_viewable_map_index'}{$zone_key}
+        = defined $first_viewable_map_index
+        ? $first_viewable_map_index
+        : $start_index;
+    $app_display_data->{'previous_last_viewable_map_index'}{$zone_key}
+        = defined $last_viewable_map_index
+        ? $last_viewable_map_index
+        : $last_index;
+
+    # Clear out binned maps
     if ( %{ $binned_maps || {} }
         and my $token_map_id = $binned_maps->{'maps'}[0]{'map_id'} )
     {
@@ -843,8 +1093,6 @@ MAP:
             token_map_data   => $token_map_data,
             row_max_y        => $row_max_y,
             min_y            => $row_min_y,
-            min_x            => $map_min_x,
-            max_x            => $map_min_x + MIN_MAP_WIDTH,
             label => $label_info{ $binned_maps->{'maps'}[0]{'map_key'} },
         );
     }
@@ -873,6 +1121,7 @@ MAP:
     # BF RMOVERVIEW
     #$app_display_data->recreate_overview( window_key => $window_key, );
 
+#print STDERR $app_display_data->app_interface()->app_controller()->print_benchmark( text => 'LHM END', reset => 0, ) . "\n";
     return $height_change;
 }
 
@@ -912,7 +1161,7 @@ Lays out sub maps in a slot.
     #my $row_min_y = MAP_Y_BUFFER;
     my $row_min_y = SMALL_BUFFER * 2;
 
-    # Save the last vieable to help with scrolling
+    # Save the last viewable to help with scrolling
     $zone_layout->{'internal_bounds'} = [ 0, 0, $zone_width, 0, ];
     $zone_layout->{'last_viewable_internal_x1'}
         = $zone_layout->{'viewable_internal_x1'};
@@ -1952,12 +2201,12 @@ Lays out maps that are in a binned region.  This is when zoomed way out.
     my $zone_key         = $args{'zone_key'};
     my $row_max_y        = $args{'row_max_y'};
     my $token_map_data   = $args{'token_map_data'};
-    my $min_x            = $args{'min_x'};
-    my $binned_maps = $args{'binned_maps'} or return ( $row_max_y, $min_x, );
-    my $max_x       = $args{'max_x'};
-    my $min_y       = $args{'min_y'};
-    my $label       = $args{'label'};
-    my $color       = $token_map_data->{'color'}
+    my $binned_maps      = $args{'binned_maps'} or return ( undef, undef );
+    my $min_x            = $binned_maps->{'min_x'};
+    my $max_x            = $binned_maps->{'max_x'};
+    my $min_y            = $args{'min_y'};
+    my $label            = $args{'label'};
+    my $color            = $token_map_data->{'color'}
         || $token_map_data->{'default_color'}
         || $app_display_data->config_data('map_color')
         || 'black';

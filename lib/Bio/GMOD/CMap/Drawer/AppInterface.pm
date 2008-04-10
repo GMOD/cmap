@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.92 2008-04-08 17:55:44 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.93 2008-04-10 13:42:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -427,7 +427,7 @@ Adds information widgets to the info pane
         -font       => $font,
         -background => "white",
         -width      => 40,
-        -height     => 3,
+        -height     => 5,
     );
     $self->{'information_text'}{$window_key}
         ->insert( 'end', "Click on a map to display information." );
@@ -2849,6 +2849,17 @@ sub fill_info_box {
             my ( $map_key, ) = keys %{ $object_selections || {} };
             my $zone_key
                 = $self->{'first_object_selection_zone_key'}{$window_key};
+
+           # If the object selected is a binned map with a single map, extract
+           # the map key.
+            if ( $map_key =~ /^bin_(\d+)_(\d+)/ ) {
+                my $zone_key  = $1;
+                my $bin_index = $2;
+                my $bin_layout
+                    = $app_display_data->get_zone_bin_layouts( $zone_key,
+                    $bin_index );
+                $map_key = $bin_layout->{'map_keys'}[0];
+            }
 
             $new_text = $controller->get_map_info_text(
                 map_key    => $map_key,
