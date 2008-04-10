@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.87 2008-04-10 14:55:15 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.88 2008-04-10 21:28:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -771,13 +771,13 @@ Scroll zones
     }
 
     $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
-    $self->app_interface()->draw_window(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
     $self->cascade_reset_zone_corrs(
         window_key => $window_key,
         zone_key   => $zone_key,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
     );
     return;
 }
@@ -865,15 +865,15 @@ Zoom zones
     }
 
     $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
     );
 
-    $self->cascade_reset_zone_corrs(
-        window_key => $window_key,
-        zone_key   => $zone_key,
-    );
     return;
 }
 
@@ -1058,6 +1058,12 @@ Modify the correspondences for a zone
                 );
             }
         }
+    }
+    if ($corrs_on) {
+        $self->app_interface()->draw_corrs(
+            window_key       => $window_key,
+            app_display_data => $self,
+        );
     }
 
     return;
@@ -1655,8 +1661,6 @@ sub change_selected_zone {
     my $map_set_data = $self->app_data_module()
         ->get_map_set_data( map_set_id => $map_set_id, );
 
-    #return if ( $self->{'debug_thing'} );
-    #$self->{'debug_thing'} = 1;
     $self->app_interface()->int_new_selected_zone(
         map_set_data     => $map_set_data,
         zone_key         => $zone_key,
@@ -2311,6 +2315,10 @@ Hide Corrs for moving
             );
         }
     }
+    $self->app_interface()->draw_corrs(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
     return;
 }
@@ -3179,6 +3187,10 @@ Destroy the two new maps and show the original
     $self->cascade_reset_zone_corrs(
         window_key => $window_key,
         zone_key   => $zone_key,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
     );
 
     return;
@@ -4620,6 +4632,10 @@ Destroy the new map and show the original
         window_key => $window_key,
         zone_key   => $destination_zone_key,
     );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
     return;
 }
@@ -4735,6 +4751,10 @@ Destroy the new map and show the original
     $self->cascade_reset_zone_corrs(
         window_key => $window_key,
         zone_key   => $zone_key,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
     );
 
     return;
@@ -6707,6 +6727,25 @@ Removes correspondences between two maps.
             window_key => $window_key,
         );
     }
+
+    # Unhighlight one of the maps since that will get any that connect to the
+    # other.
+    $self->app_interface()->unhighlight_map_corrs(
+        window_key => $window_key,
+        map_key    => $map_key1,
+    );
+
+    foreach my $corr (
+        @{  $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2}
+                {'highlight_ids'} || []
+        }
+        )
+    {
+        $self->destroy_items(
+            items      => $corr->{'items'},
+            window_key => $window_key,
+        );
+    }
     delete $self->{'corr_layout'}{'maps'}{$map_key1}{$map_key2};
     delete $self->{'corr_layout'}{'maps'}{$map_key2}{$map_key1};
 
@@ -6781,10 +6820,6 @@ Adds a zone of correspondences
             app_display_data => $self,
         );
     }
-    $self->app_interface()->draw_corrs(
-        window_key       => $window_key,
-        app_display_data => $self,
-    );
 
     return;
 }
@@ -6857,7 +6892,6 @@ reset  a zone of correspondences
             zone_key2  => $zone_key2,
         );
     }
-
     return;
 }
 
@@ -7588,15 +7622,13 @@ Redraws the whole window
     #RELAYOUT OVERVIEW
     $self->recreate_overview( window_key => $window_key, );
 
-    $self->app_interface->reset_object_selections( window_key => $window_key,
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $top_zone_key,
     );
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
-    );
-    $self->cascade_reset_zone_corrs(
-        window_key => $window_key,
-        zone_key   => $top_zone_key,
     );
 }
 

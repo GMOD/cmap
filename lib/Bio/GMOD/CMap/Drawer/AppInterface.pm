@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.93 2008-04-10 13:42:07 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.94 2008-04-10 21:28:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -656,7 +656,7 @@ Adds control buttons to the controls_pane.
 #  $self->add_object_selection(
 #      zinc       => $zinc,
 #      zone_key   => 2,
-#      map_key    => 34,
+#      map_key    => 10,
 #      window_key => $window_key,
 #  );
 #print STDERR
@@ -2993,7 +2993,8 @@ sub unhighlight_map_corrs {
 =cut
 
     my ( $self, %args ) = @_;
-    my $zinc    = $args{'zinc'}    or return;
+    my $zinc = $args{'zinc'}
+        || $self->zinc( window_key => $args{'window_key'}, );
     my $map_key = $args{'map_key'} or return;
 
     my $controller       = $self->app_controller();
@@ -5245,11 +5246,6 @@ Remove all selected objects from the selection list
     foreach my $object_key (
         keys %{ $self->{'object_selections'}{$window_key} || {} } )
     {
-        $self->remove_object_selection(
-            zinc       => $zinc,
-            object_key => $object_key,
-            window_key => $window_key,
-        );
         if ( $selected_type eq 'map' ) {
 
             # Unhighlight the correspondences for the map
@@ -5258,6 +5254,11 @@ Remove all selected objects from the selection list
                 map_key => $object_key,
             );
         }
+        $self->remove_object_selection(
+            zinc       => $zinc,
+            object_key => $object_key,
+            window_key => $window_key,
+        );
     }
 
     return;
@@ -5452,6 +5453,7 @@ id separately.
     my $ori_ids          = $args{'ori_ids'} || [];
     my $highlight_color  = $args{'color'} || 'red';
     my $motion_highlight = $args{'motion_highlight'} || 0;
+    my $debug            = $args{'debug'} || 0;
 
     my $app_display_data = $self->app_controller()->app_display_data();
     my $highlight_bounds = [];
@@ -5496,7 +5498,8 @@ id separately.
             -linecolor => $highlight_color,
             -fillcolor => $highlight_color,
         );
-        $zinc->chggroup( $highlight_id, $top_layer_group_id, 1, );
+
+        #$zinc->chggroup( $highlight_id, $top_layer_group_id, 1, );
 
         # modify the coords to be universial because chggroup won't.
         my @coords = $zinc->coords($highlight_id);
