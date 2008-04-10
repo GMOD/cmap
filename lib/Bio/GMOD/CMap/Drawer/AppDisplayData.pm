@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.86 2008-04-08 21:27:38 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.87 2008-04-10 14:55:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -5754,7 +5754,8 @@ Given a zone, figure out the coordinates on the main window.
     my ( $self, %args ) = @_;
     my $zone_key = $args{'zone_key'};
     my $bounds   = $self->{'zone_layout'}{$zone_key}{'bounds'};
-    my $x_offset = $bounds->[0] + $self->{'scaffold'}{$zone_key}{'x_offset'};
+    my $x_offset
+        = $bounds->[0];    # + $self->{'scaffold'}{$zone_key}{'x_offset'};
     my $y_offset
         = $bounds->[1] + ( $self->{'scaffold'}{$zone_key}{'y_offset'} || 0 );
 
