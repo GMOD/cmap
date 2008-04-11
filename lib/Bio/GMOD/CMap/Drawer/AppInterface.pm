@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.95 2008-04-11 16:25:33 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.96 2008-04-11 19:34:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -4143,7 +4143,44 @@ Handle the mouse moving.
             color            => 'blue',
             );
     }
+    elsif ( @tags = grep /^button_/, @tags_gotten ) {
+        if ( $tags[0] =~ /^(button_.+)_(\d+)_(\d+)$/ ) {
+            my $button_name = $1;
+            my $zone_key    = $3;
+            my $app_display_data
+                = $self->app_controller()->app_display_data();
+            foreach my $button (
+                @{  $app_display_data->{'zone_layout'}{$zone_key}{'buttons'}
+                        || []
+                }
+                )
+            {
+                next unless ( $button_name eq $button->{'button_name'} );
+                foreach my $item ( @{ $button->{'items'} || [] } ) {
+                    if ( $item->[2] eq 'rectangle' ) {
+                        my $ori_id = $item->[1];
+                        my $coords = $zinc->coords($ori_id);
 
+                        $self->{'stuff_drawn_on_motion'} = 1;
+                        $self->{'motion_highlight'}{$window_key}
+                            {'motion_highlight_bounds'} = $coords;
+                        my $highlight_id = $zinc->add(
+                            'rectangle',
+                            1,
+                            $coords,
+                            -linecolor => 'yellow',
+                            -linewidth => 2,
+                            -filled    => 0,
+                        );
+                        $self->{'motion_highlight'}{$window_key}
+                            {'motion_highlight_ids'} = [ $highlight_id, ];
+                        $self->{'motion_highlight_id_to_ori_id'}{$window_key}
+                            {$highlight_id} = $ori_id;
+                    }
+                }
+            }
+        }
+    }
 }
 
 =pod
