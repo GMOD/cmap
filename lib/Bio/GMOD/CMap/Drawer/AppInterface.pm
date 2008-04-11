@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.94 2008-04-10 21:28:54 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.95 2008-04-11 16:25:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -2161,19 +2161,22 @@ Bind events to a zinc
     if ( $^O eq 'MSWin32' ) {
         $zinc->Tk::bind(
             '<MouseWheel>' => sub {
-                $self->mouse_wheel_event( $zinc, ( Ev('D') < 0 ) ? 0.5 : 2 );
+                $self->mouse_wheel_event( $zinc, $Tk::event->x, $Tk::event->y,
+                    ( Ev('D') < 0 ) ? 0.5 : 2 );
             }
         );
     }
     else {
         $zinc->Tk::bind(
             '<4>' => sub {
-                $self->mouse_wheel_event( $zinc, 0.5 );
+                $self->mouse_wheel_event( $zinc, $Tk::event->x, $Tk::event->y,
+                    0.5 );
             }
         );
         $zinc->Tk::bind(
             '<5>' => sub {
-                $self->mouse_wheel_event( $zinc, 2 );
+                $self->mouse_wheel_event( $zinc, $Tk::event->x, $Tk::event->y,
+                    2 );
             }
         );
 
@@ -5840,7 +5843,7 @@ Handle the mouse wheel events
 =cut
 
     my $self = shift;
-    my ( $zinc, $value ) = @_;
+    my ( $zinc, $mouse_x, $mouse_y, $value, ) = @_;
 
     my @tags_gotten;
     eval('@tags_gotten = $zinc->gettags("current")');
@@ -5853,6 +5856,7 @@ Handle the mouse wheel events
             window_key => $window_key,
             zone_key   => $zone_key,
             zoom_value => $value,
+            center_x   => $mouse_x,
         );
     }
 

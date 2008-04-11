@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.88 2008-04-10 21:28:51 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.89 2008-04-11 16:25:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -796,6 +796,7 @@ Zoom zones
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'};
     my $zone_key   = $args{'zone_key'};
+    my $center_x   = $args{'center_x'};
     my $zoom_value = $args{'zoom_value'} or return;
 
     $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
@@ -830,6 +831,7 @@ Zoom zones
         zone_key   => $zone_key,
         zoom_value => $zoom_value,
         old_scale  => $old_scale,
+        center_x   => ( $zoom_value > 1 ) ? $center_x : undef,
     );
 
     # Create new zone bounds for this zone, taking into
@@ -1562,6 +1564,7 @@ sub get_zooming_offset {
     my $zone_key   = $args{'zone_key'}   or return;
     my $zoom_value = $args{'zoom_value'} or return;
     my $old_scale  = $args{'old_scale'}  or return;
+    my $center_x   = $args{'center_x'};
 
     my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
 
@@ -1570,12 +1573,17 @@ sub get_zooming_offset {
 
     my $new_width = $old_width * $zoom_value;
 
-    #my $change = ( $new_width - $old_width ) / 2;
     my $viewable_section_change
         = ( ( $viewable_width * $zoom_value ) - $viewable_width ) / 2;
 
+    my $center_offset = 0;
+    if ( defined $center_x ) {
+        $center_offset = int( $center_x - ( $viewable_width / 2 ) + 0.5 );
+    }
+
     my $old_offset = $self->{'scaffold'}{$zone_key}{'x_offset'};
-    my $new_offset = ( $old_offset * $zoom_value ) - $viewable_section_change;
+    my $new_offset = ( ( $old_offset - $center_offset ) * $zoom_value )
+        - $viewable_section_change;
 
     # If it zooms out to the point of viewing past the end, push the view over
     my $new_offset_plus_viewable_width

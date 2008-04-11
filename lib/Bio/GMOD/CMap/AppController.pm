@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::AppController;
 
 # vim: set ft=perl:
 
-# $Id: AppController.pm,v 1.50 2008-04-08 17:19:03 mwz444 Exp $
+# $Id: AppController.pm,v 1.51 2008-04-11 16:25:32 mwz444 Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This is the controlling module for the CMap Application.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Data::Dumper;
 use Tk;
@@ -471,11 +471,13 @@ Handler for zooming a zone.
     my $window_key = $args{'window_key'};
     my $zone_key   = $args{'zone_key'};
     my $zoom_value = $args{'zoom_value'} || 1;
+    my $center_x   = $args{'center_x'};
 
     $self->app_display_data()->zoom_zone(
         window_key => $window_key,
         zone_key   => $zone_key,
         zoom_value => $zoom_value,
+        center_x   => $center_x,
     );
 
     return;
