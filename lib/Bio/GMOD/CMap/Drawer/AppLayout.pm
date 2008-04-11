@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.78 2008-04-10 13:42:07 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.79 2008-04-11 21:12:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1827,13 +1827,25 @@ sub set_zone_bgcolor {
     my $app_display_data = $args{'app_display_data'};
 
     my $bgcolor = $app_display_data->zone_bgcolor( zone_key => $zone_key, );
-    my $border_color
-        = (     $app_display_data->{'selected_zone_key'}
-            and $zone_key == $app_display_data->{'selected_zone_key'} )
-        ? "black"
-        : $bgcolor;
-
-    my $border_line_width = 2;
+    my $border_color = $bgcolor;
+    my $attached_to_parent
+        = $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'};
+    my $border_line_width = 1;
+    if (    $app_display_data->{'selected_zone_key'}
+        and $zone_key == $app_display_data->{'selected_zone_key'} )
+    {
+        $border_line_width = 3;
+        if ($attached_to_parent) {
+            $border_color = 'black';
+        }
+        else {
+            $border_color = 'darkblue';
+            $border_color = 'blue';
+        }
+    }
+    elsif ( !$attached_to_parent ) {
+        $border_color = 'blue';
+    }
 
     my $background_id
         = defined(
@@ -1843,7 +1855,8 @@ sub set_zone_bgcolor {
     my $internal_bounds
         = $app_display_data->{'zone_layout'}{$zone_key}{'internal_bounds'};
 
-# Modify the background to be a little bigger so the border doesn't overlap any maps.
+   # Modify the background to be a little bigger so the border doesn't overlap
+   # any maps.
     my $border_coords = [
         $internal_bounds->[0] - $border_line_width,
         $internal_bounds->[1] - $border_line_width,

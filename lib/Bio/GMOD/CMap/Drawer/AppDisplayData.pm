@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.89 2008-04-11 16:25:33 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.90 2008-04-11 21:12:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -809,12 +809,6 @@ Zoom zones
         return;
     }
 
-    # Don't let it zoom in farther than it can draw
-    if ( $zone_scaffold->{'scale'} > 32 and $zoom_value > 1 ) {
-
-        #return;
-    }
-
     my $zone_bounds = $self->{'zone_layout'}{$zone_key}{'bounds'};
     my $zone_width  = $zone_bounds->[2] - $zone_bounds->[0] + 1;
 
@@ -1368,18 +1362,19 @@ expand zones
 }
 
 # ----------------------------------------------------
-sub reattach_slot {
+sub reattach_zone {
 
 =pod
 
-=head2 reattach_slot
+=head2 reattach_zone
 
 FUTURE FEATURE
 
-Reattach a map and recursively handle the children
+Reattach a zone
 
 =cut
 
+    return;
     my ( $self, %args ) = @_;
     my $window_key                  = $args{'window_key'};
     my $panel_key                   = $args{'panel_key'};
@@ -1729,15 +1724,12 @@ FUTURE_FEATURE
 =cut
 
     # No longer allowing zones to detach
-    return;
 
     my ( $self, %args ) = @_;
     my $zone_key = $args{'zone_key'} or return;
 
     $self->{'scaffold'}{$zone_key}{'attached_to_parent'} = 0;
     $self->{'zone_layout'}{$zone_key}{'changed'}         = 1;
-
-    add_zone_separator( zone_layout => $self->{'zone_layout'}{$zone_key}, );
 
     return;
 }
@@ -2357,13 +2349,14 @@ Return information about correspondences for the menu
         my $return_ref = {
             map_set_id   => $map_set_id,
             map_set_data => $map_set_data,
+            map_set_name => $map_set_data->{'map_set_name'},
             corrs_on =>
                 $self->{'zone_to_map_set_correspondences_on'}{$zone_key}
                 {$map_set_id} || 0,
         };
         if ( $map_set_id == $self_map_set_id ) {
             $self_return_hash = $return_ref;
-            $return_ref->{'map_set_data'}{'map_set_name'} .= " (Self)";
+            $return_ref->{'map_set_name'} .= " (Self)";
             push @return_array, $return_ref;
         }
         else {

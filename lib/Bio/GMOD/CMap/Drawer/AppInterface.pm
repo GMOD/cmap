@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.96 2008-04-11 19:34:37 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.97 2008-04-11 21:12:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -546,22 +546,18 @@ Adds control buttons to the controls_pane.
         -variable => \$self->{'attached_to_parent'},
         -command  => sub {
             if ( $self->{'attached_to_parent'} ) {
+                $self->app_controller()->app_display_data()->reattach_zone(
+                    window_key => $window_key,
+                    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                );
 
-                #print S#TDERR "DETACH\n";
-
-                #$self->app_controller()->app_display_data()->reattach_zone(
-                #window_key => $window_key,
-                #zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-                #);
             }
             else {
-
-                #print S#TDERR "ATTACH\n";
-
-                #$self->app_controller()->app_display_data()->reattach_zone(
-                #window_key => $window_key,
-                #zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-                #);
+                $self->app_controller()->app_display_data()
+                    ->detach_zone_from_parent(
+                    window_key => $window_key,
+                    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                    );
             }
         },
         -font => $font,
@@ -747,7 +743,7 @@ Adds control buttons to the controls_pane.
 
         #$debug_button1, #$debug_button2,
 
-        # $self->{'attach_to_parent_check_box'}, -sticky => "nw",
+        #$self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
 }
@@ -1136,15 +1132,6 @@ Draws and re-draws on the zinc
 
         $self->draw_items(
             zinc     => $zinc,
-            x_offset => $total_x_offset,
-            y_offset => $total_y_offset,
-            items    => $zone_layout->{'separator'},
-            group_id => $zone_group_id,
-            tags     => [ 'on_top', ],
-        );
-
-        $self->draw_items(
-            zinc     => $zinc,
             x_offset => $zone_x_offset,                #$zone_scroll_x_offset,
             y_offset => $zone_y_offset,                #$total_y_offset,
             items    => $zone_layout->{'background'},
@@ -1159,8 +1146,8 @@ Draws and re-draws on the zinc
             my $button_name = $button->{'button_name'};
             $self->draw_items(
                 zinc     => $zinc,
-                x_offset => $zone_x_offset,       #$zone_scroll_x_offset,
-                y_offset => $zone_y_offset,       #$total_y_offset,
+                x_offset => $total_x_offset,
+                y_offset => $total_y_offset,      #$zone_y_offset,
                 items    => $button->{'items'},
                 group_id => $zone_group_id,
                 tags =>
@@ -1171,11 +1158,11 @@ Draws and re-draws on the zinc
         # Draw the scale bar
         $self->draw_items(
             zinc     => $zinc,
-            x_offset => $zone_x_offset,                #$zone_scroll_x_offset,
-            y_offset => $zone_y_offset,                #$total_y_offset,
+            x_offset => $total_x_offset,
+            y_offset => $total_y_offset,
             items    => $zone_layout->{'scale_bar'},
             group_id => $zone_group_id,
-            tags => [ 'background_' . $window_key . '_' . $zone_key ],
+            tags     => [ 'background_' . $window_key . '_' . $zone_key ],
         );
 
         $self->draw_items(
@@ -2699,11 +2686,8 @@ sub popup_corr_menu {
     #];
 
     foreach my $individual_corr_data (
-        sort {
-            $a->{'map_set_data'}{'map_set_name'}
-                cmp $b->{'map_set_data'}{'map_set_name'}
-        } @$corr_menu_data
-        )
+        sort { $a->{'map_set_name'} cmp $b->{'map_set_name'} }
+        @$corr_menu_data )
     {
         my $map_set_id = $individual_corr_data->{'map_set_id'};
         my $corrs_on = ( $individual_corr_data->{'corrs_on'} ) ? 1 : 0;
@@ -2713,8 +2697,8 @@ sub popup_corr_menu {
             -variable     => \$corrs_on,
             -onvalue      => 1,
             -offvalue     => 0,
-            -label => $individual_corr_data->{'map_set_data'}{'map_set_name'},
-            -command => sub {
+            -label        => $individual_corr_data->{'map_set_name'},
+            -command      => sub {
                 $app_display_data->set_corrs_map_set(
                     zone_key   => $zone_key,
                     window_key => $window_key,
