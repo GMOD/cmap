@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.97 2008-04-11 21:12:42 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.98 2008-04-14 18:46:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -486,16 +486,6 @@ Adds control buttons to the controls_pane.
         -font => $font,
     );
 
-    my $reattach_button = $controls_pane->Button(
-        -text    => "Reattach Slot to Parent",
-        -command => sub {
-            $self->app_controller()->app_display_data()->reattach_zone(
-                window_key => $window_key,
-                zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-            );
-        },
-        -font => $font,
-    );
     my $scroll_left_button = $controls_pane->Button(
         -text    => "<",
         -command => sub {
@@ -599,9 +589,6 @@ Adds control buttons to the controls_pane.
 #    ->app_display_data->undo_action( window_key => $window_key, );
 #
 #print STDERR
-#    "            --------------BEFORE SELECT-------------------\n";
-#$self->app_controller()->new_selected_zone( zone_key => 2, );
-#print STDERR
 #    "            --------------BEFORE SHOW SELF CORRS---------\n";
 #$self->app_controller()->app_display_data()->set_corrs_map_set(
 #    'map_set_ids' =>[
@@ -611,6 +598,11 @@ Adds control buttons to the controls_pane.
 #    'zone_key'   => 2,
 #    'corrs_on'   => 1,
 #    'window_key' => 1
+#);
+#print STDERR "            --------------BEFORE DETACH---------\n";
+#$self->app_controller()->app_display_data()->detach_zone_from_parent(
+#    window_key => $window_key,
+#    zone_key   => 3,
 #);
 #print STDERR
 #    "            --------------BEFORE MOVE SUBSECTION------------\n";
@@ -641,8 +633,9 @@ Adds control buttons to the controls_pane.
 #    "           --------------BEFORE ZOOM-------------------\n";
 #$self->app_controller()->zoom_zone(
 #    window_key => $window_key,
-#    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
-#    zoom_value => 2048,
+#    zone_key   => 3,#${ $self->{'selected_zone_key_scalar'} },
+#    zoom_value => 2,
+#    center_x => 346,
 #);
 #print STDERR
 #    "            ----------------BEFORE SET OFFSCREEN CORRS-----------------\n";
@@ -671,9 +664,12 @@ Adds control buttons to the controls_pane.
 #    "            ----------------BEFORE SCROLL-----------------\n";
 #$self->app_controller()->scroll_zone(
 #    window_key   => $window_key,
-#    zone_key     => 1,
-#    scroll_value => 500,
+#    zone_key     => 4,
+#    scroll_value => -50,
 #);
+#print STDERR
+#    "            --------------BEFORE SELECT-------------------\n";
+#$self->app_controller()->new_selected_zone( zone_key => 4, );
 #print STDERR
 #    "            ----------------BEFORE SCROLL2-----------------\n";
 #$self->app_controller()->scroll_zone(
@@ -684,8 +680,8 @@ Adds control buttons to the controls_pane.
 #print STDERR
 #    "            ----------------BEFORE SPLIT-----------------\n";
 #$self->app_controller->app_display_data->split_map(
-#    map_key        => 4,
-#    split_position => 1000,
+#    map_key        => 10,
+#    split_position => 100,
 #    );
 #print STDERR "  ------------------DONE-----------------------\n";
 #exit;
@@ -729,13 +725,8 @@ Adds control buttons to the controls_pane.
         },
         -font => $font,
     );
-    Tk::grid(
-        $self->{'selected_map_set_text_box'}, '-', '-', '-', '-',
-        '-',                                  '-', '-',
-
-        #$reattach_button,
-        -sticky => "nw",
-    );
+    Tk::grid( $self->{'selected_map_set_text_box'},
+        '-', '-', '-', '-', '-', '-', '-', -sticky => "nw", );
     Tk::grid(
         $scroll_far_left_button, $scroll_left_button,
         $zoom_button1,           $zoom_button2,
@@ -743,7 +734,7 @@ Adds control buttons to the controls_pane.
 
         #$debug_button1, #$debug_button2,
 
-        #$self->{'attach_to_parent_check_box'}, -sticky => "nw",
+        $self->{'attach_to_parent_check_box'}, -sticky => "nw",
     );
     return;
 }
@@ -798,6 +789,7 @@ Draws and re-draws on the zinc
     my $window_key = $args{'window_key'}
         or die 'no window key for draw';
     my $app_display_data = $args{'app_display_data'};
+    my $reset_selections = $args{'reset_selections'};
 
     my $zinc = $self->zinc( window_key => $window_key, );
 
@@ -867,7 +859,12 @@ Draws and re-draws on the zinc
     # Only add back if using the -render flag
     #$zinc->itemconfigure($top_group_id, -alpha => 50);
 
-    $self->reselect_object_selections( window_key => $window_key, );
+    if ($reset_selections) {
+        $self->reset_object_selections( window_key => $window_key, );
+    }
+    else {
+        $self->reselect_object_selections( window_key => $window_key, );
+    }
     $self->layer_tagged_items( zinc => $zinc, );
 
     return;
@@ -1123,12 +1120,14 @@ Draws and re-draws on the zinc
         #            ]
         #        );
 
-        #$self->set_zone_clip(
-        #    zone_key      => $zone_key,
-        #    zone_group_id => $zone_group_id,
-        #    zinc          => $zinc,
-        #    zone_layout   => $zone_layout,
-        #);
+        $self->set_zone_clip(
+            zone_key      => $zone_key,
+            zone_group_id => $zone_group_id,
+            zinc          => $zinc,
+            zone_layout   => $zone_layout,
+            zone_x_offset => $zone_x_offset,
+            zone_y_offset => $zone_y_offset,
+        );
 
         $self->draw_items(
             zinc     => $zinc,
@@ -1201,7 +1200,7 @@ Draws and re-draws on the zinc
 #}
         $zone_layout->{'changed'} = 0;
     }
-    if ( $zone_layout->{'sub_changed'} ) {
+    if ( 1 or $zone_layout->{'sub_changed'} ) {
 
         # MAPS
         foreach my $map_key (
@@ -1353,7 +1352,7 @@ corr can be different.
 
     my $corr_layout = $app_display_data->{'corr_layout'};
 
-    return unless ( $corr_layout->{'changed'} );
+    return unless ( 1 or $corr_layout->{'changed'} );
 
 MAP1:
     foreach my $tmp_map_key1 ( keys %{ $corr_layout->{'maps'} || {} } ) {
@@ -1513,19 +1512,29 @@ Sets the group clip object
         or die 'no zone key set_zone_clip';
     my $zone_group_id = $args{'zone_group_id'}
         or die 'no zone group_id set_zone_clip';
-    my $zinc = $args{'zinc'}
+    my $zone_x_offset = $args{'zone_x_offset'};
+    my $zone_y_offset = $args{'zone_y_offset'};
+    my $zinc          = $args{'zinc'}
         || $self->zinc( window_key => $args{'window_key'}, );
     my $zone_layout = $args{'zone_layout'};
 
     # return unless it has been layed out.
     return unless ( defined $zone_layout->{'internal_bounds'}[0] );
 
-    #my $fillcolor = ( $zone_key == 1 ) ? 'blue' : 'red';
+    my $border_line_width = $zone_layout->{'border_line_width'} || 0;
     my $clip_bounds = [
-        $zone_layout->{'internal_bounds'}[0],
-        $zone_layout->{'internal_bounds'}[1],
-        $zone_layout->{'internal_bounds'}[2],
-        $zone_layout->{'internal_bounds'}[3]
+        $zone_layout->{'internal_bounds'}[0] 
+            + $zone_x_offset
+            - $border_line_width,
+        $zone_layout->{'internal_bounds'}[1] 
+            + $zone_y_offset
+            - $border_line_width,
+        $zone_layout->{'internal_bounds'}[2] 
+            + $zone_x_offset
+            + $border_line_width,
+        $zone_layout->{'internal_bounds'}[3] 
+            + $zone_y_offset
+            + $border_line_width,
     ];
 
     if ( $clip_bounds->[0] < MIN_ZINC_X_COORD ) {
@@ -1540,6 +1549,8 @@ Sets the group clip object
         );
     }
     else {
+
+        #my $fillcolor = ( $zone_key == 1 ) ? 'blue' : 'red';
         $self->{'zone_group_clip_id'}{$zone_key} = $zinc->add(
             'rectangle', $zone_group_id,
             $clip_bounds,
@@ -1548,10 +1559,8 @@ Sets the group clip object
             #-filled    => 1,
             #-fillcolor => $fillcolor,
         );
-        $zinc->addtag( 'on_top', 'withtag',
+        $zinc->addtag( 'on_bottom', 'withtag',
             $self->{'zone_group_clip_id'}{$zone_key} );
-        $zinc->itemconfigure( $zone_group_id,
-            -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
     }
     $zinc->itemconfigure( $zone_group_id,
         -clip => $self->{'zone_group_clip_id'}{$zone_key}, );
@@ -2853,7 +2862,7 @@ sub fill_info_box {
                 window_key => $window_key,
             );
 
-            #$new_text = "$map_key:". $new_text;###DEBUG
+            $new_text = "$map_key:" . $new_text;    ###DEBUG
         }
         else {
             $new_text = $self->number_of_object_selections( $window_key, )
@@ -4543,8 +4552,13 @@ Handle down click of the right mouse button
             );
         }
 
-        # Only allow dragging the map if a single map is selected
-        if ( $self->number_of_object_selections( $window_key, ) == 1 ) {
+        # Only allow dragging the map if a single map is selected and the zone
+        # is attached to parent
+        if (    $self->number_of_object_selections( $window_key, ) == 1
+            and $self->app_controller()
+            ->app_display_data->{'scaffold'}{ $self->{'drag_zone_key'} }
+            {'attached_to_parent'} )
+        {
             $self->{'draggable'} = 1;
         }
 

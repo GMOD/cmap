@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.79 2008-04-11 21:12:42 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.80 2008-04-14 18:46:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -273,7 +273,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
     # Refresh the layout hash if this is the first zone to be layed out.
     unless ($depth) {
-        $app_display_data->refresh_zone_visibility_hash();
+        $app_display_data->refresh_zone_visibility_hash($zone_key);
     }
 
     # Add the zone to the layout hash letting the world know that it has been
@@ -293,7 +293,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
             $new_zone_bounds = $zone_layout->{'bounds'};
         }
 
-        $zone_width = $new_zone_bounds->[2] - $new_zone_bounds->[0];
+        $zone_width = $new_zone_bounds->[2] - $new_zone_bounds->[0] + 1;
 
         # This is being layed out again
         # Meaning we can reuse some of the work that has been done.
@@ -352,9 +352,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
                     # let the program know that the child zones are visible
                     $app_display_data->add_child_zones_to_visibility_hash(
-                        app_display_data => $app_display_data,
-                        zone_key         => $zone_key,
-                    );
+                        zone_key => $zone_key, );
                     return 0;
                 }
             }
@@ -1340,14 +1338,18 @@ Lays out sub maps in a slot.
 
         my $parent_map_width = ($parent_pixel_width) * $scale;
 
+        my $scale_adjusted_parent_x2
+            = $parent_x1 + ( $parent_x2 - $parent_x1 + 1 ) * $scale;
+
         # Bump the map back if it is overlapping the bounds
         if ( $x1_on_parent_map < $parent_x1 ) {
             $x1_on_parent_map = $parent_x1;
             $x2_on_parent_map = $map_width_in_pixels;
         }
-        elsif ( $x2_on_parent_map > $parent_x2 ) {
-            $x1_on_parent_map = $parent_x2 - $map_width_in_pixels + 1;
-            $x2_on_parent_map = $parent_x2;
+        elsif ( $x2_on_parent_map > $scale_adjusted_parent_x2 ) {
+            $x1_on_parent_map
+                = $scale_adjusted_parent_x2 - $map_width_in_pixels + 1;
+            $x2_on_parent_map = $scale_adjusted_parent_x2;
         }
 
         # Flipping is considered for $x1 and $x2
@@ -1877,6 +1879,8 @@ sub set_zone_bgcolor {
             }
         ]
     ];
+    $app_display_data->{'zone_layout'}{$zone_key}{'border_line_width'}
+        = $border_line_width;
 
     $app_display_data->{'zone_layout'}{$zone_key}{'changed'}         = 1;
     $app_display_data->{'window_layout'}{$window_key}{'sub_changed'} = 1;
@@ -2117,10 +2121,7 @@ Lays out a maps in a contained area.
 
     if (    0
         and not( $min_x >= $viewable_x1 and $max_x <= $viewable_x2 )
-        and $map_layout->{'show_details'}
-
-        #and $map_labels_visible
-        )
+        and $map_layout->{'show_details'} )
     {
 
         # Unit tick marks
@@ -2708,6 +2709,8 @@ Lays out correspondences between two zones
         my $feature_id1 = $corr->{'feature_id1'};
         my $feature_id2 = $corr->{'feature_id2'};
 
+        #next unless ($feature_id1==81 and $feature_id2==117);
+
         my $map_key1 = $app_display_data->map_id_to_key_by_zone( $map_id1,
             $zone_key1 );
         my $map_key2 = $app_display_data->map_id_to_key_by_zone( $map_id2,
@@ -3138,8 +3141,9 @@ returns the number of pixesl per map unit.
             = $pixels_per_unit;
     }
 
-    return $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'}
-        * $scale;
+    # We don't need to modify with the scale because that is already done when
+    # zooming.
+    return $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'};
 }
 
 # ----------------------------------------------------

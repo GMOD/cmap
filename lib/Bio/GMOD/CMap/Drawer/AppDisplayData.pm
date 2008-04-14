@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.90 2008-04-11 21:12:41 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.91 2008-04-14 18:46:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -724,21 +724,22 @@ Scroll zones
     my $half_screen_width = ( $zone_layout->{'viewable_internal_x2'}
             - $zone_layout->{'viewable_internal_x1'} ) / 2;
 
+    my $scroll_buffer = 50;
+
     # Halt movement right when on left edge
-    if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value
-        > $half_screen_width + $zone_layout->{'viewable_internal_x1'} )
+    if ( $zone_layout->{'internal_bounds'}[0] + $scroll_value + $scroll_buffer
+        > $zone_layout->{'viewable_internal_x2'} )
     {
-        $scroll_value = -1 * $x_offset + $half_screen_width;
+        $scroll_value = $zone_layout->{'viewable_internal_x2'}
+            - ( $zone_layout->{'internal_bounds'}[0] + $scroll_buffer );
     }
 
     # Halt movement left when on right edge
-    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value
-        < $zone_layout->{'viewable_internal_x2'} - $half_screen_width )
+    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value - $scroll_buffer
+        < $zone_layout->{'viewable_internal_x1'} )
     {
-        $scroll_value
-            = $zone_layout->{'viewable_internal_x2'}
-            - $zone_layout->{'internal_bounds'}[2]
-            - $half_screen_width;
+        $scroll_value = $zone_layout->{'viewable_internal_x1'}
+            - ( $zone_layout->{'internal_bounds'}[2] - $scroll_buffer );
     }
 
     return unless ($scroll_value);
@@ -803,6 +804,10 @@ Zoom zones
 
     my $zone_scaffold = $self->{'scaffold'}{$zone_key};
 
+    unless ( $zone_scaffold->{'is_top'} ) {
+        return;
+    }
+
     # Don't let it zoom out farther than is useful.
     # Maybe Let it zoom out one farther than to scale
     if ( $zone_scaffold->{'scale'} <= 1 and $zoom_value < 1 ) {
@@ -829,7 +834,9 @@ Zoom zones
     );
 
     # Create new zone bounds for this zone, taking into
-    $zone_bounds->[2] += ( $zone_width * $zoom_value ) - $zone_width;
+    if ( $zone_scaffold->{'is_top'} ) {
+        $zone_bounds->[2] += ( $zone_width * $zoom_value ) - $zone_width;
+    }
 
     layout_zone(
         window_key       => $window_key,
@@ -1356,153 +1363,11 @@ expand zones
     }
 
     # Redraw
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key       => $window_key,
+        reset_selections => 1,
+    );
 
-    return;
-}
-
-# ----------------------------------------------------
-sub reattach_zone {
-
-=pod
-
-=head2 reattach_zone
-
-FUTURE FEATURE
-
-Reattach a zone
-
-=cut
-
-    return;
-    my ( $self, %args ) = @_;
-    my $window_key                  = $args{'window_key'};
-    my $panel_key                   = $args{'panel_key'};
-    my $slot_key                    = $args{'slot_key'};
-    my $cascading                   = $args{'cascading'} || 0;
-    my $unattached_child_zoom_value = $args{'unattached_child_zoom_value'}
-        || 0;
-    my $scroll_value = $args{'scroll_value'} || 0;
-
-    my $slot_scaffold = $self->{'scaffold'}{$slot_key};
-    my $overview_slot_layout
-        = $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key};
-
-    if ($cascading) {
-        if ( $slot_scaffold->{'attached_to_parent'} ) {
-            if ($overview_slot_layout) {
-                $overview_slot_layout->{'scale_factor_from_main'}
-                    /= $unattached_child_zoom_value;
-            }
-
-            # Get Offset from parent
-            $slot_scaffold->{'x_offset'}
-                = $self->{'scaffold'}{ $slot_scaffold->{'parent_zone_key'} }
-                {'x_offset'};
-
-            $self->relayout_sub_map_slot(
-                window_key => $window_key,
-                panel_key  => $panel_key,
-                slot_key   => $slot_key,
-            );
-        }
-        else {
-            if ($unattached_child_zoom_value) {
-                $slot_scaffold->{'scale'} /= $unattached_child_zoom_value;
-            }
-            if ($slot_scaffold->{'scale'} == 1
-                and ( $slot_scaffold->{'x_offset'} - $scroll_value
-                    == $self->{'scaffold'}
-                    { $slot_scaffold->{'parent_zone_key'} }{'x_offset'} )
-                )
-            {
-                $self->attach_slot_to_parent(
-                    slot_key  => $slot_key,
-                    panel_key => $panel_key,
-                );
-                $self->relayout_sub_map_slot(
-                    window_key => $window_key,
-                    panel_key  => $panel_key,
-                    slot_key   => $slot_key,
-                );
-            }
-            else {
-
-                # Reset correspondences
-                # BF ADD THIS BACK
-                #$self->reset_slot_corrs(
-                #    window_key => $window_key,
-                #    panel_key  => $panel_key,
-                #    slot_key   => $slot_key,
-                #);
-            }
-        }
-    }
-    elsif ( $slot_scaffold->{'is_top'} ) {
-        return;
-    }
-    else {
-
-        # Get Zoom level from parent
-        $unattached_child_zoom_value = 1 / $slot_scaffold->{'scale'};
-        $slot_scaffold->{'scale'} = 1;
-
-        # Get Offset from parent
-        $slot_scaffold->{'x_offset'}
-            = $self->{'scaffold'}{ $slot_scaffold->{'parent_zone_key'} }
-            {'x_offset'};
-
-        $overview_slot_layout->{'scale_factor_from_main'}
-            /= $unattached_child_zoom_value
-            if ($overview_slot_layout);
-
-        $self->attach_slot_to_parent(
-            slot_key  => $slot_key,
-            panel_key => $panel_key,
-        );
-
-        $self->relayout_sub_map_slot(
-            window_key => $window_key,
-            panel_key  => $panel_key,
-            slot_key   => $slot_key,
-        );
-    }
-
-    # handle overview highlighting
-    if ( $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key} ) {
-        $self->destroy_items(
-            items =>
-                $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-                {'viewed_region'},
-            panel_key   => $panel_key,
-            is_overview => 1,
-        );
-        $self->{'overview_layout'}{$panel_key}{'slots'}{$slot_key}
-            {'viewed_region'} = [];
-        overview_selected_area(
-            slot_key         => $slot_key,
-            panel_key        => $panel_key,
-            app_display_data => $self,
-        );
-    }
-
-    foreach my $child_slot_key ( @{ $slot_scaffold->{'children'} || [] } ) {
-        $self->reattach_slot(
-            window_key                  => $window_key,
-            panel_key                   => $panel_key,
-            slot_key                    => $child_slot_key,
-            unattached_child_zoom_value => $unattached_child_zoom_value,
-            cascading                   => 1,
-        );
-    }
-
-    unless ($cascading) {
-        $self->{'panel_layout'}{$panel_key}{'sub_changed'} = 1;
-        $self->app_interface()->draw_window(
-            window_key       => $window_key,
-            app_display_data => $self,
-        );
-    }
     return;
 }
 
@@ -1726,10 +1591,79 @@ FUTURE_FEATURE
     # No longer allowing zones to detach
 
     my ( $self, %args ) = @_;
-    my $zone_key = $args{'zone_key'} or return;
+    my $window_key = $args{'window_key'} or return;
+    my $zone_key   = $args{'zone_key'}   or return;
 
     $self->{'scaffold'}{$zone_key}{'attached_to_parent'} = 0;
     $self->{'zone_layout'}{$zone_key}{'changed'}         = 1;
+
+    set_zone_bgcolor(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub reattach_zone {
+
+=pod
+
+=head2 reattach_zone
+
+Reattach a zone
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key                  = $args{'window_key'};
+    my $zone_key                    = $args{'zone_key'};
+    my $cascading                   = $args{'cascading'} || 0;
+    my $unattached_child_zoom_value = $args{'unattached_child_zoom_value'}
+        || 0;
+    my $scroll_value = $args{'scroll_value'} || 0;
+
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    if ( $zone_scaffold->{'is_top'} ) {
+        return;
+    }
+
+    $zone_scaffold->{'scale'}    = 1;
+    $zone_scaffold->{'x_offset'} = 0;
+
+    $zone_scaffold->{'attached_to_parent'} = 1;
+    $self->{'zone_layout'}{$zone_key}{'changed'} = 1;
+
+    $self->{'window_layout'}{$window_key}{'sub_changed'} = 1;
+    $self->cascade_reset_zone_corrs(
+        window_key => $window_key,
+        zone_key   => $zone_key,
+    );
+
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        move_offset_x    => 0,
+        move_offset_y    => 0,
+    );
+    set_zone_bgcolor(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
+    );
 
     return;
 }
@@ -2060,14 +1994,15 @@ Initializes zone_layout
     $self->{'zone_in_window'}{$window_key}{$zone_key} = 1;
 
     $self->{'zone_layout'}{$zone_key} = {
-        bounds         => [],
-        separator      => [],
-        background     => [],
-        buttons        => [],
-        layed_out_once => 0,
-        changed        => 0,
-        sub_changed    => 0,
-        flipped        => 0,
+        bounds            => [],
+        separator         => [],
+        background        => [],
+        buttons           => [],
+        layed_out_once    => 0,
+        changed           => 0,
+        sub_changed       => 0,
+        flipped           => 0,
+        border_line_width => 1,
     };
 
     return;
@@ -3091,7 +3026,10 @@ Create two new maps and hide the original
     );
 
     # Redraw
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key       => $window_key,
+        reset_selections => 1,
+    );
 
     return ( [ $first_map_key, $second_map_key, ], $zone_key );
 
@@ -3564,7 +3502,10 @@ Merging/Flipped logic:
     );
 
     # Redraw
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key       => $window_key,
+        reset_selections => 1,
+    );
 
     return ( [ $merged_map_key, ], $zone_key );
 
@@ -5556,7 +5497,10 @@ Undo the action that was just performed.
     $self->{'window_actions'}{$window_key}{'last_action_index'}--;
 
     # Redraw
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key       => $window_key,
+        reset_selections => 1,
+    );
 
     return;
 }
@@ -5630,7 +5574,10 @@ Redo the action that was last undone.
     }
 
     # Redraw
-    $self->redraw_the_whole_window( window_key => $window_key, );
+    $self->redraw_the_whole_window(
+        window_key       => $window_key,
+        reset_selections => 1,
+    );
 
     return;
 }
@@ -6878,7 +6825,7 @@ reset  a zone of correspondences
        # Stop drawing Corrs twice by only drawing when zone_key1 is less than
        # or equal to zone_key2.  Since each relationship is in there twice, it
        # will still hit every one.
-        next if ( $zone_key1 > $zone_key2 );
+       #next if ( $zone_key1 > $zone_key2 );
 
         next unless ( $self->{'correspondences_on'}{$zone_key1}{$zone_key2} );
 
@@ -7410,7 +7357,10 @@ will be reset.
         );
 
         # Redraw the window
-        $self->redraw_the_whole_window( window_key => $window_key, );
+        $self->redraw_the_whole_window(
+            window_key       => $window_key,
+            reset_selections => 1,
+        );
     }
 }
 
@@ -7602,8 +7552,9 @@ Redraws the whole window
 =cut
 
     my ( $self, %args ) = @_;
-    my $window_key = $args{'window_key'};
-    my $skip_layout = $args{'skip_layout'} || 0;
+    my $window_key       = $args{'window_key'};
+    my $skip_layout      = $args{'skip_layout'} || 0;
+    my $reset_selections = $args{'reset_selections'} || 0;
 
     #$self->{'highlight_parent_maps'} = undef;
 
@@ -7630,6 +7581,7 @@ Redraws the whole window
     $self->app_interface()->draw_window(
         window_key       => $window_key,
         app_display_data => $self,
+        reset_selections => $reset_selections,
     );
 }
 
@@ -7807,6 +7759,8 @@ returns
     my ( $zone_x_offset, $zone_y_offset )
         = $self->get_main_zone_offsets( zone_key => $zone_key, );
 
+    my $x_offset = $self->{'scaffold'}{$zone_key}{'x_offset'};
+
     my $map_pixel_start = $self->{'map_layout'}{$map_key}{'coords'}[0];
     my $map_pixel_stop  = $self->{'map_layout'}{$map_key}{'coords'}[2];
     my $map_pixel_width = $map_pixel_stop - $map_pixel_start + 1;
@@ -7819,11 +7773,11 @@ returns
         )
     {
         $relative_pixel_position_from_map_start
-            = ( $map_pixel_stop + $zone_x_offset ) - $mouse_x;
+            = ( $map_pixel_stop + $zone_x_offset + $x_offset ) - $mouse_x;
     }
     else {
         $relative_pixel_position_from_map_start
-            = $mouse_x - ( $map_pixel_start + $zone_x_offset );
+            = $mouse_x - ( $map_pixel_start + $zone_x_offset + $x_offset );
     }
 
     my $map_data = $self->app_data_module()
@@ -7933,6 +7887,7 @@ Initializes zone
         is_top             => $is_top,
         show_features      => $show_features,
         copy_zone_key      => $zone_key_to_copy,
+        border_line_width  => $border_line_width,
     );
 
 =cut
@@ -7951,6 +7906,7 @@ Initializes zone
     my $map_labels_visible = $args{'map_labels_visible'};
     my $offscreen_corrs_visible = $args{'offscreen_corrs_visible'};
     my $copy_zone_key           = $args{'copy_zone_key'};
+    my $border_line_width       = $args{'border_line_width'} || 1;
 
     unless ( defined $flipped ) {
         $flipped = 0;
@@ -7999,6 +7955,8 @@ Initializes zone
         if ($parent_map_key);
     $self->initialize_zone_layout( $zone_key, $window_key, );
     $self->{'zone_layout'}{$zone_key}{'flipped'} = $flipped;
+    $self->{'zone_layout'}{$zone_key}{'border_line_width'}
+        = $border_line_width;
 
     $self->map_set_id_to_zone_keys( $map_set_id, $zone_key, );
     $self->map_labels_visible( $zone_key, $map_labels_visible, );
@@ -8045,9 +8003,7 @@ Initializes map
         $feature_direction ||= 1;
         my $zone_flipped = $self->{'zone_layout'}{$zone_key}{'flipped'};
         $draw_flipped = 0;
-        if (   ( $feature_direction < 0 and !$zone_flipped )
-            or ( $feature_direction > 0 and $zone_flipped ) )
-        {
+        if ( $feature_direction < 0 ) {
             $draw_flipped = 1;
         }
     }
@@ -8307,8 +8263,15 @@ layed out yet.
 
 # ----------------------------------------------------
 sub refresh_zone_visibility_hash {
-    my $self = shift;
-    $self->{'zone_visibility_hash'} = undef;
+    my $self     = shift;
+    my $zone_key = shift;
+
+    delete $self->{'zone_visibility_hash'}{$zone_key};
+    foreach my $child_zone_key (
+        $self->get_children_zones_of_zone( zone_key => $zone_key, ) )
+    {
+        $self->refresh_zone_visibility_hash($child_zone_key);
+    }
     return;
 }
 
@@ -8325,7 +8288,7 @@ sub add_zone_to_zone_visibility_hash {
     my $self     = shift;
     my $zone_key = shift or return;
     my $state    = shift || ON_SCREEN;
-    $self->{'zone_visibility_hash'}{$state}{$zone_key} = 1;
+    $self->{'zone_visibility_hash'}{$zone_key}{$state} = 1;
     return;
 }
 
@@ -8339,32 +8302,29 @@ Recursively adds children zone to the layout hash.
 
 # ----------------------------------------------------
 sub add_child_zones_to_visibility_hash {
-    my $self             = shift;
-    my %args             = @_;
-    my $app_display_data = $args{'app_display_data'} or return;
-    my $zone_key         = $args{'zone_key'} or return;
-    my $map_key          = $args{'map_key'};
-    my $state            = $args{'state'} || ON_SCREEN;
+    my $self     = shift;
+    my %args     = @_;
+    my $zone_key = $args{'zone_key'} or return;
+    my $map_key  = $args{'map_key'};
+    my $state    = $args{'state'} || ON_SCREEN;
 
     # Get the child zones differently if a map key is given
     my @children_zone_keys;
     if ($map_key) {
-        @children_zone_keys = $app_display_data->get_children_zones_of_map(
+        @children_zone_keys = $self->get_children_zones_of_map(
             map_key  => $map_key,
             zone_key => $zone_key,
         );
     }
     else {
-        @children_zone_keys = $app_display_data->get_children_zones_of_zone(
-            zone_key => $zone_key, );
+        @children_zone_keys
+            = $self->get_children_zones_of_zone( zone_key => $zone_key, );
     }
 
     foreach my $child_zone_key (@children_zone_keys) {
         $self->add_zone_to_zone_visibility_hash( $child_zone_key, $state, );
         $self->add_child_zones_to_visibility_hash(
-            app_display_data => $app_display_data,
-            zone_key         => $child_zone_key,
-        );
+            zone_key => $child_zone_key, );
     }
 
     return;
@@ -8383,7 +8343,7 @@ sub is_zone_layed_out {
     my $self           = shift;
     my $zone_key       = shift or return;
     my $visibility_key = ON_SCREEN;
-    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+    return $self->{'zone_visibility_hash'}{$zone_key}{$visibility_key};
 }
 
 =pod
@@ -8399,7 +8359,7 @@ sub is_zone_off_screen_left {
     my $self           = shift;
     my $zone_key       = shift or return;
     my $visibility_key = OFF_TO_THE_LEFT;
-    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+    return $self->{'zone_visibility_hash'}{$zone_key}{$visibility_key};
 }
 
 =pod
@@ -8415,7 +8375,7 @@ sub is_zone_off_screen_right {
     my $self           = shift;
     my $zone_key       = shift or return;
     my $visibility_key = OFF_TO_THE_RIGHT;
-    return $self->{'zone_visibility_hash'}{$visibility_key}{$zone_key};
+    return $self->{'zone_visibility_hash'}{$zone_key}{$visibility_key};
 }
 
 =pod
@@ -8653,6 +8613,7 @@ Revisit
             changed        => 0,
             sub_changed    => 0,
             flipped        => 0,
+            border_line_width => 1,
         }
     }
 
