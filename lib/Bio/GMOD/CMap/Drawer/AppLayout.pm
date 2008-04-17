@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.80 2008-04-14 18:46:03 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.81 2008-04-17 18:14:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -480,7 +480,7 @@ Lays out head maps in a zone
     }
 
     # Set the viewable space by using the window
-    # Save the last vieable to help with scrolling
+    # Save the last viewable to help with scrolling
     my $window_layout = $app_display_data->{'window_layout'}{$window_key};
     $zone_layout->{'last_viewable_internal_x1'}
         = $zone_layout->{'viewable_internal_x1'};
@@ -561,6 +561,7 @@ Lays out head maps in a zone
         my $location_bar_max_y = _layout_location_bar(
             zone_layout => $zone_layout,
             zone_width  => $zone_width,
+            head_zone   => 1,
         );
         if ( $location_bar_max_y > $row_min_y ) {
             $row_min_y = $location_bar_max_y + SMALL_BUFFER;
@@ -1112,6 +1113,9 @@ MAP:
     $zone_layout->{'sub_changed'} = 1;
     $zone_layout->{'changed'}     = 1;
 
+    # Modify the internal bounds to only include the area where there are maps
+    $zone_layout->{'internal_bounds'}[2] = $map_min_x += MAP_X_BUFFER;
+
     #layout_overview(
     #    window_key       => $window_key,
     #    app_display_data => $app_display_data,
@@ -1228,6 +1232,27 @@ Lays out sub maps in a slot.
         parent_pixels_per_unit => $parent_pixels_per_unit,
         scale                  => $scale,
     );
+
+    if ( $zone_layout->{'location_bar'} ) {
+        $app_display_data->destroy_items(
+            items      => $zone_layout->{'location_bar'},
+            window_key => $window_key,
+        );
+        $zone_layout->{'location_bar'} = undef;
+    }
+    if ( not $app_display_data->attached_to_parent($zone_key)
+        and $app_display_data->{'scaffold'}{$zone_key}{'scale'} != 1 )
+    {
+        my $location_bar_max_y = _layout_location_bar(
+            zone_layout => $zone_layout,
+            zone_width  => $zone_width * $scale,
+            bar_height  => 8,
+            head_zone   => 0,
+        );
+        if ( $location_bar_max_y > $row_min_y ) {
+            $row_min_y = $location_bar_max_y + SMALL_BUFFER;
+        }
+    }
 
     $row_min_y = _layout_zone_scale_bar(
         window_key  => $window_key,
@@ -1564,8 +1589,10 @@ Lays out location_bar for a zone.
     my %args          = @_;
     my $zone_layout   = $args{'zone_layout'};
     my $zone_width    = $args{'zone_width'};
+    my $bar_height    = $args{'bar_height'} || ZONE_LOCATION_BAR_HEIGHT;
     my $visible_width = $zone_layout->{'viewable_internal_x2'}
         - $zone_layout->{'viewable_internal_x1'} + 1;
+
     my $location_bar_start = (
         (   (         $zone_layout->{'viewable_internal_x1'}
                     - $zone_layout->{'internal_bounds'}[0] + 1
@@ -1578,8 +1605,7 @@ Lays out location_bar for a zone.
             ) / ($zone_width)
         ) * $visible_width
     ) + $zone_layout->{'viewable_internal_x1'};
-    my $max_y
-        = $zone_layout->{'internal_bounds'}[1] + ZONE_LOCATION_BAR_HEIGHT;
+    my $max_y = $zone_layout->{'internal_bounds'}[1] + $bar_height;
     $zone_layout->{'location_bar'} = [
         [   1, undef,
             'rectangle',
@@ -1738,26 +1764,58 @@ Lays out buttons for a zone
     my $max_y      = $min_y;
     my $zone_width = $right_bound - $left_bound + 1;
 
-    my @button_info_list = (
-        [ 'button_display_features', 'F' ],
-        [ 'button_display_labels',   'D' ],
-        [ 'button_display_corrs',    'C' ],
-        [ 'button_popup_menu',       'M' ],
+    my $features_visible   = $app_display_data->features_visible($zone_key);
+    my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
+    my $attached_to_parent = $app_display_data->attached_to_parent($zone_key);
+    my @button_info_list   = (
+        {   name   => 'button_display_features',
+            text   => $features_visible ? 'HF' : 'F',
+            msg    => $features_visible ? 'Hide Features' : 'Show Features',
+            width  => 0,
+            height => 0,
+        },
+        {   name => 'button_display_labels',
+            text => $map_labels_visible ? 'HL' : 'L',
+            msg  => $map_labels_visible
+            ? 'Hide Map Labels'
+            : 'Show Map Labels',
+            width  => 0,
+            height => 0,
+        },
+        {   name   => 'button_attach_to_parent',
+            text   => $attached_to_parent ? 'A' : 'A',
+            msg    => $attached_to_parent ? 'Detach Zone' : 'Reattach Zone',
+            width  => 0,
+            height => 0,
+        },
+        {   name   => 'button_display_corrs',
+            text   => 'C',
+            msg    => 'Correspondence Menu',
+            width  => 0,
+            height => 0,
+        },
+        {   name   => 'button_popup_menu',
+            text   => 'M',
+            msg    => 'Full Zone Menu',
+            width  => 0,
+            height => 0,
+        },
+
     );
     my $button_text_buffer = 3;
 
     # Figure out if the buttons are going to fit.
     my $total_width = 0;
     foreach my $button_info (@button_info_list) {
-        my $button_text = $button_info->[1];
+        my $button_text = $button_info->{'text'};
 
         my ( $width, $height )
             = $app_display_data->app_interface()->text_dimensions(
             window_key => $window_key,
             text       => $button_text,
             );
-        $button_info->[2] = $width;
-        $button_info->[3] = $height;
+        $button_info->{'width'}  = $width;
+        $button_info->{'height'} = $height;
         $total_width += ( $button_text_buffer * 2 ) + $width + SMALL_BUFFER;
     }
     return $max_y if ( $zone_width < $total_width );
@@ -1769,10 +1827,10 @@ Lays out buttons for a zone
     #my $feature_visible = $app_display_data->features_visible($zone_key)
     my ( $char_width, $char_height );
     foreach my $button_info (@button_info_list) {
-        my $button_name = $button_info->[0];
-        my $button_text = $button_info->[1];
-        $char_width  = $button_info->[2];
-        $char_height = $button_info->[3];
+        my $button_name = $button_info->{'name'};
+        my $button_text = $button_info->{'text'};
+        $char_width  = $button_info->{'width'};
+        $char_height = $button_info->{'height'};
 
         $button_x1 = $max_x;
         $button_x2 = $max_x + $char_width + ( $button_text_buffer * 2 );
@@ -1781,6 +1839,7 @@ Lays out buttons for a zone
         push @{ $zone_layout->{'buttons'} },
             {
             button_name => $button_name,
+            msg         => $button_info->{'msg'},
             items       => [
                 [   1, undef,
                     'rectangle',

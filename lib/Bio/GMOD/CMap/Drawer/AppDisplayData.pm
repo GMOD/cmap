@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.91 2008-04-14 18:46:03 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.92 2008-04-17 18:14:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -735,11 +735,19 @@ Scroll zones
     }
 
     # Halt movement left when on right edge
-    if ( $zone_layout->{'internal_bounds'}[2] + $scroll_value - $scroll_buffer
+    my $zone_max_x;
+    if ( $self->{'scaffold'}{$zone_key}{'is_top'} ) {
+        $zone_max_x = $zone_layout->{'internal_bounds'}[2];
+    }
+    else {
+        $zone_max_x = $zone_layout->{'internal_bounds'}[2]
+            * $self->{'scaffold'}{$zone_key}{'scale'};
+    }
+    if ( $zone_max_x + $scroll_value - $scroll_buffer
         < $zone_layout->{'viewable_internal_x1'} )
     {
         $scroll_value = $zone_layout->{'viewable_internal_x1'}
-            - ( $zone_layout->{'internal_bounds'}[2] - $scroll_buffer );
+            - ( $zone_max_x - $scroll_buffer );
     }
 
     return unless ($scroll_value);
@@ -803,10 +811,6 @@ Zoom zones
     $zone_key = $self->get_top_attached_parent( zone_key => $zone_key );
 
     my $zone_scaffold = $self->{'scaffold'}{$zone_key};
-
-    unless ( $zone_scaffold->{'is_top'} ) {
-        return;
-    }
 
     # Don't let it zoom out farther than is useful.
     # Maybe Let it zoom out one farther than to scale
@@ -1438,6 +1442,7 @@ sub get_zooming_offset {
 
     my $center_offset = 0;
     if ( defined $center_x ) {
+        $center_x -= $zone_bounds->[0];
         $center_offset = int( $center_x - ( $viewable_width / 2 ) + 0.5 );
     }
 
@@ -1669,30 +1674,23 @@ Reattach a zone
 }
 
 # ----------------------------------------------------
-sub attach_slot_to_parent {
+sub attached_to_parent {
 
 =pod
 
-=head2 attach_slot_to_parent
-
-FUTURE_FEATURE
+=head2 attached_to_parent
 
 =cut
 
-    my ( $self, %args ) = @_;
-    my $slot_key  = $args{'slot_key'}  or return;
-    my $panel_key = $args{'panel_key'} or return;
+    my $self     = shift;
+    my $zone_key = shift or return;
+    my $value    = shift;
 
-    $self->{'scaffold'}{$slot_key}{'attached_to_parent'} = 1;
-    $self->{'slot_layout'}{$slot_key}{'changed'}         = 1;
+    if ( defined $value ) {
+        $self->{'scaffold'}{$zone_key}{'attached_to_parent'} = $value;
+    }
 
-    $self->destroy_items(
-        items     => $self->{'slot_layout'}{$slot_key}{'separator'},
-        panel_key => $panel_key,
-    );
-    $self->{'slot_layout'}{$slot_key}{'separator'} = [];
-
-    return;
+    return $self->{'scaffold'}{$zone_key}{'attached_to_parent'};
 }
 
 # ----------------------------------------------------

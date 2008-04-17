@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.98 2008-04-14 18:46:03 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.99 2008-04-17 18:14:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -734,7 +734,8 @@ Adds control buttons to the controls_pane.
 
         #$debug_button1, #$debug_button2,
 
-        $self->{'attach_to_parent_check_box'}, -sticky => "nw",
+        #$self->{'attach_to_parent_check_box'},
+        -sticky => "nw",
     );
     return;
 }
@@ -4069,6 +4070,60 @@ Handle the placement of tagged items in layers
     return;
 }
 
+# ----------------------------------------------------
+sub popup_balloon {
+
+=pod
+
+=head2 popup_balloon
+
+Got the idea for handling balloons with zinc from a poster named zentara at
+http://newsgroups.derkeiler.com/Archive/Comp/comp.lang.perl.tk/2006-01/msg00061.html
+
+=cut
+
+    my $self = shift;
+    my ( $zinc, $x, $y, $msg, ) = @_;
+
+    my @ids;
+
+    my $window_key = $self->get_window_key_from_zinc( zinc => $zinc, );
+
+    $x += 10;
+    $y -= 20;
+
+    my $buffer = 3;
+    my ( $width, $height ) = $self->text_dimensions(
+        window_key => $window_key,
+        text       => $msg,
+        debug      => 1,
+    );
+    push @ids,
+        $zinc->add(
+        'rectangle',
+        1,
+        [   $x - $buffer,
+            $y - $buffer,
+            $x + $width + $buffer,
+            $y + $height + $buffer,
+        ],
+        -linecolor => 'black',
+        -fillcolor => 'yellow',
+        -linewidth => 2,
+        -filled    => 1,
+        );
+    push @ids,
+        $zinc->add(
+        'text', 1,
+        -position => [ $x, $y ],
+        -color    => 'black',
+        -text     => $msg,
+        -anchor   => 'nw',
+        );
+
+    return \@ids;
+}
+
 =pod
 
 =head1 Mouse Move methods
@@ -4085,6 +4140,9 @@ sub mouse_move {
 =head2 mouse_move
 
 Handle the mouse moving.  
+
+Got the idea for handling balloons with zinc from a poster named zentara at
+http://newsgroups.derkeiler.com/Archive/Comp/comp.lang.perl.tk/2006-01/msg00061.html
 
 =cut
 
@@ -4110,6 +4168,14 @@ Handle the mouse moving.
 
     # If not over anything, there is nothing to do
     return unless ($mouse_over_id);
+
+    # Remove previous balloons
+    my $moused_over_balloon = 0;
+    foreach my $balloon_id ( @{ $self->{'balloon_ids'} || [] } ) {
+        $zinc->remove($balloon_id);
+        $moused_over_balloon++ if ( $mouse_over_id == $balloon_id );
+    }
+    return if ($moused_over_balloon);
 
     # If this object is a highlight, modify so the code uses the original id
     $mouse_over_id = $self->get_original_id_from_highlight( $window_key,
@@ -4171,6 +4237,11 @@ Handle the mouse moving.
                             {$highlight_id} = $ori_id;
                     }
                 }
+                my $msg = $button->{'msg'} || '';
+                $self->{'balloon_ids'}
+                    = $self->popup_balloon( $zinc, $x, $y, $msg )
+                    if $msg;
+                last;
             }
         }
     }
@@ -4428,6 +4499,27 @@ Handle down click of the left mouse button
             $app_display_data->set_map_labels_visibility(
                 $self->{'drag_zone_key'},
                 $toggled_label_visibility, );
+        }
+        elsif ( $tags[0] =~ /^button_attach_to_parent(\S+)_(\S+)/ ) {
+            $self->{'drag_zone_key'} = $2;
+            $self->{'drag_obj'}      = 'button';
+            if ($app_display_data->attached_to_parent(
+                    $self->{'drag_zone_key'}
+                )
+                )
+            {
+
+                $app_display_data->detach_zone_from_parent(
+                    window_key => $window_key,
+                    zone_key   => $self->{'drag_zone_key'},
+                );
+            }
+            else {
+                $app_display_data->reattach_zone(
+                    window_key => $window_key,
+                    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                );
+            }
         }
         elsif ( $tags[0] =~ /^button_display_corrs(\S+)_(\S+)/ ) {
             $self->{'drag_zone_key'} = $2;
@@ -6157,22 +6249,27 @@ sub text_dimensions {
 
     my ( $self, %args ) = @_;
     my $window_key = $args{'window_key'} or return;
-    my $text = $args{'text'} || q{};
+    my $text  = $args{'text'}  || q{};
+    my $debug = $args{'debug'} || 0;
 
-    my ( $height, $char_width );
+    my ( $char_width, $height, );
     my $font_name = $self->get_font_name( window_key => $window_key, );
     if ( $self->{'font_dimentions'}{$font_name} ) {
-        $height     = $self->{'font_dimentions'}{$font_name}[0];
-        $char_width = $self->{'font_dimentions'}{$font_name}[1];
+        $char_width = $self->{'font_dimentions'}{$font_name}[0];
+        $height     = $self->{'font_dimentions'}{$font_name}[1];
     }
     else {
         my $zinc = $self->zinc( window_key => $window_key, );
+        $char_width = $zinc->fontMeasure( $font_name,   'W' ) + 1;
         $height     = $zinc->fontConfigure( $font_name, '-size' ) * -1;
-        $char_width = $zinc->fontMeasure( $font_name,   'W' );
-        $self->{'font_dimentions'}{$font_name} = [ $height, $char_width ];
+        $self->{'font_dimentions'}{$font_name} = [ $char_width, $height, ];
     }
 
     my $width = $char_width * length($text);
+    if ($debug) {
+        my $zinc = $self->zinc( window_key => $window_key, );
+        $char_width = $zinc->fontMeasure( $font_name, $text );
+    }
 
     return ( $width, $height, );
 }
