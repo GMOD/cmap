@@ -17,7 +17,7 @@ CREATE TABLE cmap_attribute (
   attribute_name varchar(200) NOT NULL default '',
   attribute_value text NOT NULL,
   PRIMARY KEY  (attribute_id),
-  KEY table_name (table_name,object_id,display_order,attribute_name)
+  KEY cx_table_name (table_name,object_id,display_order,attribute_name)
 ) TYPE=MyISAM;
 
 --
@@ -210,7 +210,7 @@ CREATE TABLE cmap_xref (
   xref_name varchar(200) NOT NULL default '',
   xref_url text NOT NULL,
   PRIMARY KEY  (xref_id),
-  KEY table_name (table_name,object_id,display_order)
+  KEY cx_table_name (table_name,object_id,display_order)
 ) TYPE=MyISAM;
 
 --
