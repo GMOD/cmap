@@ -11,7 +11,7 @@ CREATE TABLE "cmap_attribute" (
   "attribute_value" text NOT NULL,
   PRIMARY KEY ("attribute_id")
 );
-CREATE INDEX "table_name" on "cmap_attribute" ("table_name", "object_id", "display_order", "attribute_name");
+CREATE INDEX "ca_table_name" on "cmap_attribute" ("table_name", "object_id", "display_order", "attribute_name");
 
 
 --
@@ -206,7 +206,7 @@ CREATE TABLE "cmap_xref" (
   "xref_url" text NOT NULL,
   PRIMARY KEY ("xref_id")
 );
-CREATE INDEX "table_name" on "cmap_xref" ("table_name", "object_id", "display_order");
+CREATE INDEX "cx_table_name" on "cmap_xref" ("table_name", "object_id", "display_order");
 
 
 --
@@ -216,7 +216,7 @@ CREATE TABLE "cmap_saved_link" (
   "saved_link_id" bigint DEFAULT '0' NOT NULL,
   "saved_on" date DEFAULT NULL,
   "last_access" date DEFAULT NULL,
-  "session_step_object" bytea(65535) NOT NULL,
+  "session_step_object" bytea NOT NULL,
   "saved_url" text NOT NULL,
   "legacy_url" text NOT NULL,
   "link_title" character varying(50) DEFAULT '',
