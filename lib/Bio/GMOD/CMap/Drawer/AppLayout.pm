@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.81 2008-04-17 18:14:39 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.82 2008-04-24 16:01:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1380,8 +1380,8 @@ Lays out sub maps in a slot.
         # Flipping is considered for $x1 and $x2
         my ( $x1, $x2 );
         if ($parent_drawn_flipped) {
-            $x2 = $parent_x2 - $x1_on_parent_map;
-            $x1 = $parent_x2 - $x2_on_parent_map;
+            $x2 = $parent_x1 + $parent_map_width - $x1_on_parent_map;
+            $x1 = $parent_x1 + $parent_map_width - $x2_on_parent_map;
         }
         else {
             $x1 = $parent_x1 + $x1_on_parent_map;
