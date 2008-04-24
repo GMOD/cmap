@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.82 2008-04-24 16:01:06 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.83 2008-04-24 18:34:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -285,6 +285,10 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
     # Store the previous bounds.  This might be useful
     my $prior_zone_bounds = $zone_layout->{'bounds'};
+    my $prior_zone_height
+        = @{ $prior_zone_bounds || [] }
+        ? ( $prior_zone_bounds->[3] - $prior_zone_bounds->[1] + 1 )
+        : 0;
 
     if ($relayout) {
 
@@ -362,6 +366,7 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
                 $new_zone_bounds->[0], $new_zone_bounds->[1],
                 $new_zone_bounds->[2], $new_zone_bounds->[1],
             ];
+            $prior_zone_height = 0;
 
         }
     }
@@ -400,30 +405,32 @@ $new_zone_bounds only needs the first three (min_x,min_y,max_x)
 
         # These maps are "head" maps
         $zone_height_change = layout_head_maps(
-            window_key       => $window_key,
-            zone_key         => $zone_key,
-            zone_width       => $zone_width,
-            app_display_data => $app_display_data,
-            relayout         => $relayout,
-            move_offset_x    => $move_offset_x,
-            move_offset_y    => $move_offset_y,
-            force_relayout   => $force_relayout,
-            depth            => $depth,
+            window_key        => $window_key,
+            zone_key          => $zone_key,
+            zone_width        => $zone_width,
+            app_display_data  => $app_display_data,
+            relayout          => $relayout,
+            move_offset_x     => $move_offset_x,
+            move_offset_y     => $move_offset_y,
+            force_relayout    => $force_relayout,
+            depth             => $depth,
+            prior_zone_height => $prior_zone_height,
         );
     }
     else {
 
         # These maps are features of the parent map
         $zone_height_change = layout_sub_maps(
-            window_key       => $window_key,
-            zone_key         => $zone_key,
-            zone_width       => $zone_width,
-            app_display_data => $app_display_data,
-            relayout         => $relayout,
-            move_offset_x    => $move_offset_x,
-            move_offset_y    => $move_offset_y,
-            force_relayout   => $force_relayout,
-            depth            => $depth,
+            window_key        => $window_key,
+            zone_key          => $zone_key,
+            zone_width        => $zone_width,
+            app_display_data  => $app_display_data,
+            relayout          => $relayout,
+            move_offset_x     => $move_offset_x,
+            move_offset_y     => $move_offset_y,
+            force_relayout    => $force_relayout,
+            depth             => $depth,
+            prior_zone_height => $prior_zone_height,
         );
     }
     unless ( $app_display_data->{'scaffold'}{$zone_key}{'attached_to_parent'}
@@ -452,17 +459,19 @@ Lays out head maps in a zone
 
 =cut
 
-    my %args             = @_;
-    my $window_key       = $args{'window_key'};
-    my $zone_key         = $args{'zone_key'};
-    my $zone_width       = $args{'zone_width'};
-    my $app_display_data = $args{'app_display_data'};
-    my $relayout         = $args{'relayout'} || 0;
-    my $move_offset_x    = $args{'move_offset_x'} || 0;
-    my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $force_relayout   = $args{'force_relayout'} || 0;
-    my $depth            = $args{'depth'} || 0;
-    my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
+    my %args              = @_;
+    my $window_key        = $args{'window_key'};
+    my $zone_key          = $args{'zone_key'};
+    my $zone_width        = $args{'zone_width'};
+    my $app_display_data  = $args{'app_display_data'};
+    my $relayout          = $args{'relayout'} || 0;
+    my $move_offset_x     = $args{'move_offset_x'} || 0;
+    my $move_offset_y     = $args{'move_offset_y'} || 0;
+    my $force_relayout    = $args{'force_relayout'} || 0;
+    my $depth             = $args{'depth'} || 0;
+    my $prior_zone_height = $args{'prior_zone_height'} || 0;
+
+    my $zone_layout = $app_display_data->{'zone_layout'}{$zone_key};
 
     my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
 
@@ -1096,12 +1105,12 @@ MAP:
         );
     }
 
-    my $height_change
-        = $row_max_y + ZONE_Y_BUFFER - $zone_layout->{'bounds'}[3];
+    my $height_change = $row_max_y + ZONE_Y_BUFFER - $prior_zone_height;
     $app_display_data->modify_zone_bottom_bound(
-        window_key    => $window_key,
-        zone_key      => $zone_key,
-        bounds_change => $height_change,
+        window_key          => $window_key,
+        zone_key            => $zone_key,
+        bounds_change       => $height_change,
+        zone_internal_max_y => $row_max_y + ZONE_Y_BUFFER,
     );
     if ( $depth == 0 ) {
         $app_display_data->modify_window_bottom_bound(
@@ -1138,17 +1147,19 @@ Lays out sub maps in a slot.
 
 =cut
 
-    my %args             = @_;
-    my $window_key       = $args{'window_key'};
-    my $zone_key         = $args{'zone_key'};
-    my $zone_width       = $args{'zone_width'};
-    my $app_display_data = $args{'app_display_data'};
-    my $relayout         = $args{'relayout'} || 0;
-    my $move_offset_x    = $args{'move_offset_x'} || 0;
-    my $move_offset_y    = $args{'move_offset_y'} || 0;
-    my $force_relayout   = $args{'force_relayout'} || 0;
-    my $depth            = $args{'depth'} || 0;
-    my $zone_layout      = $app_display_data->{'zone_layout'}{$zone_key};
+    my %args                 = @_;
+    my $window_key           = $args{'window_key'};
+    my $zone_key             = $args{'zone_key'};
+    my $zone_width           = $args{'zone_width'};
+    my $app_display_data     = $args{'app_display_data'};
+    my $relayout             = $args{'relayout'} || 0;
+    my $move_offset_x        = $args{'move_offset_x'} || 0;
+    my $move_offset_y        = $args{'move_offset_y'} || 0;
+    my $force_relayout       = $args{'force_relayout'} || 0;
+    my $depth                = $args{'depth'} || 0;
+    my $prior_zone_height    = $args{'prior_zone_height'} || 0;
+    my $zone_layout          = $app_display_data->{'zone_layout'}{$zone_key};
+    my $starting_zone_height = 0;
 
     # Get the parent zone info
     my $parent_zone_key
@@ -1556,18 +1567,14 @@ Lays out sub maps in a slot.
         $row_min_y = $row_max_y + MAP_Y_BUFFER;
     }
 
-    my $height_change = $row_max_y + ZONE_Y_BUFFER - MAP_Y_BUFFER;
+    my $height_change
+        = $row_max_y + ZONE_Y_BUFFER - MAP_Y_BUFFER - $prior_zone_height;
     $app_display_data->modify_zone_bottom_bound(
-        window_key    => $window_key,
-        zone_key      => $zone_key,
-        bounds_change => $height_change,
+        window_key          => $window_key,
+        zone_key            => $zone_key,
+        bounds_change       => $height_change,
+        zone_internal_max_y => $row_max_y + ZONE_Y_BUFFER - MAP_Y_BUFFER,
     );
-    if ( $depth == 0 ) {
-        $app_display_data->modify_window_bottom_bound(
-            window_key    => $window_key,
-            bounds_change => $height_change,
-        );
-    }
 
     $zone_layout->{'sub_changed'} = 1;
     $zone_layout->{'changed'}     = 1;

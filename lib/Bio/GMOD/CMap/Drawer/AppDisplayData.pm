@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.92 2008-04-17 18:14:36 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.93 2008-04-24 18:34:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1860,13 +1860,14 @@ If bounds_change is given, it will change the y2 value of 'bounds'.
 =cut
 
     my ( $self, %args ) = @_;
-    my $zone_key      = $args{'zone_key'}      or return;
-    my $window_key    = $args{'window_key'}    or return;
-    my $bounds_change = $args{'bounds_change'} or return;
-    my $app_interface = $self->app_interface();
+    my $zone_key   = $args{'zone_key'}   or return;
+    my $window_key = $args{'window_key'} or return;
+    my $bounds_change       = $args{'bounds_change'}       || 0;
+    my $zone_internal_max_y = $args{'zone_internal_max_y'} || 0;
 
-    $self->{'zone_layout'}{$zone_key}{'bounds'}[3]          += $bounds_change;
-    $self->{'zone_layout'}{$zone_key}{'internal_bounds'}[3] += $bounds_change;
+    $self->{'zone_layout'}{$zone_key}{'bounds'}[3] += $bounds_change;
+    $self->{'zone_layout'}{$zone_key}{'internal_bounds'}[3]
+        = $zone_internal_max_y;
     $self->{'zone_layout'}{$zone_key}{'changed'} = 1;
 
     set_zone_bgcolor(
