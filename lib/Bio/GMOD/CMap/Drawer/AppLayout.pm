@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.83 2008-04-24 18:34:19 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.84 2008-04-28 13:50:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1211,7 +1211,9 @@ Lays out sub maps in a slot.
     my $parent_map_id = $app_display_data->map_key_to_id($parent_map_key);
     my $parent_data   = $app_display_data->app_data_module()
         ->map_data( map_id => $parent_map_id, );
-    my $parent_start = $parent_data->{'map_start'};
+    my $parent_start            = $parent_data->{'map_start'};
+    my $parent_unit_granularity = $app_display_data->unit_granularity(
+        $parent_data->{'map_type_acc'} );
     my $parent_pixels_per_unit
         = $app_display_data->{'map_pixels_per_unit'}{$parent_map_key}
         || $app_display_data->{'scaffold'}{$parent_zone_key}
@@ -1233,15 +1235,16 @@ Lays out sub maps in a slot.
         || '';
 
     my $pixels_per_unit = _sub_map_pixels_per_map_unit(
-        map_data_hash          => $map_data_hash,
-        map_ids_to_map_keys    => \%map_ids_to_map_keys,
-        zone_width             => $zone_width,
-        zone_key               => $zone_key,
-        app_display_data       => $app_display_data,
-        unit_granularity       => $unit_granularity,
-        parent_scale           => $scale,
-        parent_pixels_per_unit => $parent_pixels_per_unit,
-        scale                  => $scale,
+        map_data_hash           => $map_data_hash,
+        map_ids_to_map_keys     => \%map_ids_to_map_keys,
+        zone_width              => $zone_width,
+        zone_key                => $zone_key,
+        app_display_data        => $app_display_data,
+        unit_granularity        => $unit_granularity,
+        parent_scale            => $scale,
+        parent_pixels_per_unit  => $parent_pixels_per_unit,
+        parent_unit_granularity => $parent_unit_granularity,
+        scale                   => $scale,
     );
 
     if ( $zone_layout->{'location_bar'} ) {
@@ -3153,16 +3156,17 @@ returns the number of pixesl per map unit.
 
 =cut
 
-    my %args                   = @_;
-    my $map_data_hash          = $args{'map_data_hash'};
-    my $map_ids_to_map_keys    = $args{'map_ids_to_map_keys'};
-    my $zone_width             = $args{'zone_width'};
-    my $zone_key               = $args{'zone_key'};
-    my $app_display_data       = $args{'app_display_data'};
-    my $unit_granularity       = $args{'unit_granularity'};
-    my $parent_scale           = $args{'parent_scale'};
-    my $scale                  = $args{'scale'};
-    my $parent_pixels_per_unit = $args{'parent_pixels_per_unit'};
+    my %args                    = @_;
+    my $map_data_hash           = $args{'map_data_hash'};
+    my $map_ids_to_map_keys     = $args{'map_ids_to_map_keys'};
+    my $zone_width              = $args{'zone_width'};
+    my $zone_key                = $args{'zone_key'};
+    my $app_display_data        = $args{'app_display_data'};
+    my $unit_granularity        = $args{'unit_granularity'};
+    my $parent_scale            = $args{'parent_scale'};
+    my $scale                   = $args{'scale'};
+    my $parent_pixels_per_unit  = $args{'parent_pixels_per_unit'};
+    my $parent_unit_granularity = $args{'parent_unit_granularity'};
 
     unless ( $app_display_data->{'scaffold'}{$zone_key}{'pixels_per_unit'} ) {
         my $pixels_per_unit    = 1;
@@ -3176,12 +3180,17 @@ returns the number of pixesl per map unit.
                 = $app_display_data->{'sub_maps'}{$map_key}{'feature_start'};
             my $feature_stop
                 = $app_display_data->{'sub_maps'}{$map_key}{'feature_stop'};
+            my $feature_length
+                = $feature_stop - $feature_start + $parent_unit_granularity;
             my $feature_pixel_length
-                = (
-                ($feature_stop) * $parent_pixels_per_unit * $parent_scale )
-                - (
-                ($feature_start) * $parent_pixels_per_unit * $parent_scale )
-                + 1;
+                = $feature_length * $parent_pixels_per_unit * $parent_scale;
+
+            #my $feature_pixel_length
+            #    = (
+            #    ($feature_stop) * $parent_pixels_per_unit * $parent_scale )
+            #    - (
+            #    ($feature_start) * $parent_pixels_per_unit * $parent_scale )
+            #    + 1;
 
             my $map_length
                 = $map->{'map_stop'} 
