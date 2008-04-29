@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.94 2008-04-29 18:56:51 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.95 2008-04-29 20:16:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -829,6 +829,10 @@ Zoom zones
         zone_key   => $zone_key,
         zoom_value => $zoom_value,
     );
+
+    # Do a little housekeeping and remove somethings that will have to be
+    # regenerated at the new zoom level.
+    $self->{'highlight_parent_maps'} = {};
 
     my $move_offset_x = $self->get_zooming_offset(
         window_key => $window_key,
@@ -6235,8 +6239,11 @@ sub convert_map_position_to_pixels {
     }
     return undef unless (@$positions);
 
-    my ( $x_offset, $y_offset )
+    my ( $main_x_offset, $main_y_offset )
         = $self->get_main_zone_offsets( zone_key => $zone_key, );
+    my $x_offset = $main_x_offset
+        + ( $self->{'scaffold'}{$zone_key}{'x_offset'} || 0 );
+
     my $map_id     = $self->map_key_to_id($map_key);
     my $map_data   = $self->app_data_module()->map_data( map_id => $map_id, );
     my $map_coords = $self->{'map_layout'}{$map_key}{'coords'};
@@ -6293,23 +6300,32 @@ sub convert_pixel_position_to_map_units {
     }
     return undef unless (@$positions);
 
-    my ( $x_offset, $y_offset )
+    my ( $main_x_offset, $main_y_offset )
         = $self->get_main_zone_offsets( zone_key => $zone_key, );
+    my $x_offset = $main_x_offset
+        + ( $self->{'scaffold'}{$zone_key}{'x_offset'} || 0 );
     my $map_id     = $self->map_key_to_id($map_key);
     my $map_data   = $self->app_data_module()->map_data( map_id => $map_id, );
     my $map_coords = $self->{'map_layout'}{$map_key}{'coords'};
     my $map_pixels_per_unit = ( $self->{'map_pixels_per_unit'}{$map_key}
             || $self->{'scaffold'}{$zone_key}{'pixels_per_unit'} );
 
+    my $scale = $self->{'scaffold'}{$zone_key}{'scale'};
+
     my @unit_array;
     foreach my $pos (@$positions) {
+        my $modded_pos = $pos - $x_offset;
 
         # Check if the position is off the map.
-        if ( $pos < $map_coords->[0] or $pos > $map_coords->[2] ) {
+        if (   $modded_pos < $map_coords->[0]
+            or $modded_pos > $map_coords->[2] )
+        {
             push @unit_array, undef;
         }
         else {
-            my $relative_pixel_loc = $pos - $map_coords->[0] - $x_offset;
+
+            #my $relative_pixel_loc = $pos - $map_coords->[0] - $x_offset;
+            my $relative_pixel_loc = $modded_pos - $map_coords->[0];
 
             my $relative_unit_loc
                 = $relative_pixel_loc / $map_pixels_per_unit;
@@ -6543,16 +6559,20 @@ Given a map_key and x and y coords, figure out if the mouse is in a new parent.
             } keys %{ $self->{'scaffold'} || {} }
             )
         {
-            my ( $x_offset, $y_offset )
+
+            my ( $main_x_offset, $main_y_offset )
                 = $self->get_main_zone_offsets( zone_key => $zone_key, );
+            my $x_offset = $main_x_offset
+                + ( $self->{'scaffold'}{$zone_key}{'x_offset'} || 0 );
+
             foreach my $map_key ( @{ $self->{'map_order'}{$zone_key} || [] } )
             {
                 my $map_bounds = $self->{'map_layout'}{$map_key}{'bounds'};
                 my $main_bounds;
                 $main_bounds->[0] = $x_offset + $map_bounds->[0];
-                $main_bounds->[1] = $y_offset + $map_bounds->[1];
+                $main_bounds->[1] = $main_y_offset + $map_bounds->[1];
                 $main_bounds->[2] = $x_offset + $map_bounds->[2];
-                $main_bounds->[3] = $y_offset + $map_bounds->[3];
+                $main_bounds->[3] = $main_y_offset + $map_bounds->[3];
 
                 push @{ $self->{'highlight_parent_maps'}
                         {$highlight_zone_key} },
