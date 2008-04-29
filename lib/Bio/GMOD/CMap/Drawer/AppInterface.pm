@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.99 2008-04-17 18:14:38 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.100 2008-04-29 18:56:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -1209,7 +1209,7 @@ Draws and re-draws on the zinc
         {
             my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
-          # Debug - Draws marks every 100 pixels
+          # DEBUG - Draws marks every 100 pixels
           #foreach my $id (@{$self->{'debug_ids'}{$zone_key}||[]}){
           #    $zinc->remove($id);
           #}
@@ -4500,7 +4500,7 @@ Handle down click of the left mouse button
                 $self->{'drag_zone_key'},
                 $toggled_label_visibility, );
         }
-        elsif ( $tags[0] =~ /^button_attach_to_parent(\S+)_(\S+)/ ) {
+        elsif ( $tags[0] =~ /^button_attach_to_parent_(\S+)_(\S+)/ ) {
             $self->{'drag_zone_key'} = $2;
             $self->{'drag_obj'}      = 'button';
             if ($app_display_data->attached_to_parent(
@@ -4521,7 +4521,25 @@ Handle down click of the left mouse button
                 );
             }
         }
-        elsif ( $tags[0] =~ /^button_display_corrs(\S+)_(\S+)/ ) {
+        elsif ( $tags[0] =~ /^button_expand_zone_(\S+)_(\S+)/ ) {
+            $self->{'drag_zone_key'} = $2;
+            $self->{'drag_obj'}      = 'button';
+            if ($app_display_data->zone_expanded( $self->{'drag_zone_key'} ) )
+            {
+
+                $app_display_data->contract_zone(
+                    window_key => $window_key,
+                    zone_key   => $self->{'drag_zone_key'},
+                );
+            }
+            else {
+                $app_display_data->expand_zone(
+                    window_key => $window_key,
+                    zone_key   => ${ $self->{'selected_zone_key_scalar'} },
+                );
+            }
+        }
+        elsif ( $tags[0] =~ /^button_display_corrs_(\S+)_(\S+)/ ) {
             $self->{'drag_zone_key'} = $2;
             $self->{'drag_obj'}      = 'button';
             $self->popup_corr_menu(

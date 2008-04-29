@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.84 2008-04-28 13:50:44 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.85 2008-04-29 18:56:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -58,6 +58,7 @@ my @subs = qw[
     set_zone_bgcolor
     move_map
     destroy_map_for_relayout
+    destroy_zone_for_relayout
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -1680,7 +1681,7 @@ Lays out a scale bar for a zone.
         * 10**($places_to_remove);
     my $bar_width = $bar_units * $pixels_per_unit;
 
-    my $bar_height = 4;
+    my $bar_height = 8;
 
     return $max_y if ( $zone_width < $bar_width );
 
@@ -1731,7 +1732,7 @@ Lays out a scale bar for a zone.
             }
         ],
         [   1, undef, 'text',
-            [ $text_x, $min_y, ],
+            [ $text_x, $min_y - SMALL_BUFFER, ],
             {   -text   => $bar_units . ' ' . $map_units,
                 -anchor => 'nw',
                 -color  => 'black',
@@ -1777,6 +1778,7 @@ Lays out buttons for a zone
     my $features_visible   = $app_display_data->features_visible($zone_key);
     my $map_labels_visible = $app_display_data->map_labels_visible($zone_key);
     my $attached_to_parent = $app_display_data->attached_to_parent($zone_key);
+    my $zone_expanded      = $app_display_data->zone_expanded($zone_key);
     my @button_info_list   = (
         {   name   => 'button_display_features',
             text   => $features_visible ? 'HF' : 'F',
@@ -1786,9 +1788,15 @@ Lays out buttons for a zone
         },
         {   name => 'button_display_labels',
             text => $map_labels_visible ? 'HL' : 'L',
-            msg  => $map_labels_visible
-            ? 'Hide Map Labels'
+            msg => $map_labels_visible ? 'Hide Map Labels'
             : 'Show Map Labels',
+            width  => 0,
+            height => 0,
+        },
+        {   name => 'button_expand_zone',
+            text => $zone_expanded ? 'HCh' : 'Ch',
+            msg => $zone_expanded ? 'Hide Child Maps'
+            : 'Show Child Maps',
             width  => 0,
             height => 0,
         },
@@ -2229,7 +2237,10 @@ Lays out a maps in a contained area.
             draw_flipped     => $draw_flipped,
         );
     }
-    if ( $map_layout->{'show_details'} ) {
+
+    if (    $map_layout->{'show_details'}
+        and $app_display_data->{'scaffold'}{$zone_key}{'expanded'} )
+    {
         foreach my $child_zone_key (
             $app_display_data->get_children_zones_of_map(
                 map_key  => $map_key,
@@ -2541,11 +2552,11 @@ Lays out feautures
 }
 
 # ----------------------------------------------------
-sub destroy_zone {
+sub destroy_zone_for_relayout {
 
 =pod
 
-=head2 destroy_zone
+=head2 destroy_zone_for_relayout
 
 Destroys the drawing items for a zone because it isn't on the screen anymore .
 
@@ -2608,7 +2619,7 @@ Also, destroys the features.
     my $app_display_data = $args{'app_display_data'};
     my $map_key          = $args{'map_key'};
     my $window_key       = $args{'window_key'};
-    my $cascade          = $args{'cascade'};
+    my $cascade          = $args{'cascade'} || 0;
 
     my $map_layout = $app_display_data->{'map_layout'}{$map_key};
 
@@ -2641,7 +2652,7 @@ Also, destroys the features.
             )
             )
         {
-            destroy_zone(
+            destroy_zone_for_relayout(
                 app_display_data => $app_display_data,
                 zone_key         => $child_zone_key,
                 window_key       => $window_key,
@@ -3184,13 +3195,6 @@ returns the number of pixesl per map unit.
                 = $feature_stop - $feature_start + $parent_unit_granularity;
             my $feature_pixel_length
                 = $feature_length * $parent_pixels_per_unit * $parent_scale;
-
-            #my $feature_pixel_length
-            #    = (
-            #    ($feature_stop) * $parent_pixels_per_unit * $parent_scale )
-            #    - (
-            #    ($feature_start) * $parent_pixels_per_unit * $parent_scale )
-            #    + 1;
 
             my $map_length
                 = $map->{'map_stop'} 

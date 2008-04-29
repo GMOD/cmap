@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.93 2008-04-24 18:34:17 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.94 2008-04-29 18:56:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -66,6 +66,7 @@ use Bio::GMOD::CMap::Drawer::AppLayout qw[
     add_zone_separator
     set_zone_bgcolor
     destroy_map_for_relayout
+    destroy_zone_for_relayout
 ];
 use Bio::GMOD::CMap::Utils qw[
     round_to_granularity
@@ -1336,6 +1337,23 @@ account the posibility of split/merged maps.
 }
 
 # ----------------------------------------------------
+sub zone_expanded {
+
+=pod
+
+=head2 zone_expanded
+
+=cut
+
+    my $self     = shift;
+    my $zone_key = shift;
+
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    return $self->{'scaffold'}{$zone_key}{'expanded'};
+}
+
+# ----------------------------------------------------
 sub expand_zone {
 
 =pod
@@ -1356,20 +1374,67 @@ expand zones
     return if $zone_scaffold->{'expanded'};
     $zone_scaffold->{'expanded'} = 1;
 
-    foreach my $map_key ( @{ $self->map_order($zone_key) || [] } ) {
+    unless ( @{ $self->{'scaffold'}{$zone_key}{'children'} || [] } ) {
+        foreach my $map_key ( @{ $self->map_order($zone_key) || [] } ) {
 
-        # Add Sub Slots
-        $self->add_sub_maps_to_map(
-            window_key      => $window_key,
-            parent_zone_key => $zone_key,
-            parent_map_key  => $map_key,
-        );
+            # Add Sub Slots
+            $self->add_sub_maps_to_map(
+                window_key      => $window_key,
+                parent_zone_key => $zone_key,
+                parent_map_key  => $map_key,
+            );
+        }
     }
 
     # Redraw
     $self->redraw_the_whole_window(
         window_key       => $window_key,
         reset_selections => 1,
+    );
+
+    return;
+}
+
+# ----------------------------------------------------
+sub contract_zone {
+
+=pod
+
+=head2 contract_zone
+
+Remove Child zones from this zone
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $window_key = $args{'window_key'};
+    my $zone_key   = $args{'zone_key'};
+
+    my $zone_scaffold = $self->{'scaffold'}{$zone_key};
+
+    $zone_scaffold->{'expanded'} = 0;
+
+    destroy_zone_for_relayout(
+        app_display_data => $self,
+        zone_key         => $zone_key,
+        window_key       => $window_key,
+    );
+    layout_zone(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+        relayout         => 1,
+        move_offset_x    => 0,
+        move_offset_y    => 0,
+    );
+    set_zone_bgcolor(
+        window_key       => $window_key,
+        zone_key         => $zone_key,
+        app_display_data => $self,
+    );
+    $self->app_interface()->draw_window(
+        window_key       => $window_key,
+        app_display_data => $self,
     );
 
     return;
