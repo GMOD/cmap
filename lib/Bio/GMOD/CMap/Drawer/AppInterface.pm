@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppInterface;
 
 # vim: set ft=perl:
 
-# $Id: AppInterface.pm,v 1.100 2008-04-29 18:56:51 mwz444 Exp $
+# $Id: AppInterface.pm,v 1.101 2008-04-29 20:15:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ each other in case a better technology than TK comes along.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
@@ -5647,7 +5647,7 @@ id separately.
             -fillcolor => $highlight_color,
         );
 
-        #$zinc->chggroup( $highlight_id, $top_layer_group_id, 1, );
+        $zinc->chggroup( $highlight_id, $top_layer_group_id, 1, );
 
         # modify the coords to be universial because chggroup won't.
         my @coords = $zinc->coords($highlight_id);
