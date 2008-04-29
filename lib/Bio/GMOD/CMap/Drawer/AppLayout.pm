@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.85 2008-04-29 18:56:52 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.86 2008-04-29 19:03:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -39,7 +39,7 @@ use constant ZONE_Y_BUFFER            => 30;
 use constant MAP_Y_BUFFER             => 15;
 use constant MAP_X_BUFFER             => 5;
 use constant MAP_X_NO_DETAILS_BUFFER  => 0;
-use constant SMALL_BUFFER             => 2;
+use constant SMALL_BUFFER             => 3;
 use constant MIN_MAP_WIDTH            => 4;
 use constant MIN_MAP_DETAIL_WIDTH     => 50;
 use constant BETWEEN_ZONE_BUFFER      => 5;
@@ -579,27 +579,28 @@ Lays out head maps in a zone
     }
 
     $row_min_y = _layout_zone_scale_bar(
-        window_key       => $window_key,
-        zone_key         => $zone_key,
-        zone_layout      => $zone_layout,
-        left_bound       => $left_bound + SMALL_BUFFER,
-        right_bound      => $right_bound,
-        min_y            => $row_min_y,
+        window_key  => $window_key,
+        zone_key    => $zone_key,
+        zone_layout => $zone_layout,
+        left_bound  => $zone_layout->{'viewable_internal_x1'} + SMALL_BUFFER,
+        right_bound => $zone_layout->{'viewable_internal_x2'},
+        min_y       => $row_min_y,
         app_display_data => $app_display_data,
         pixels_per_unit  => $pixels_per_unit,
         map_units        => $map_units,
     );
-    $row_min_y += SMALL_BUFFER;
+    $row_min_y += SMALL_BUFFER * 2;
     $row_min_y = _layout_zone_buttons(
         window_key       => $window_key,
         zone_key         => $zone_key,
         zone_layout      => $zone_layout,
         app_display_data => $app_display_data,
-        left_bound       => $left_bound + SMALL_BUFFER,
-        right_bound      => $right_bound,
-        min_y            => $row_min_y,
+        left_bound  => $zone_layout->{'viewable_internal_x1'} + SMALL_BUFFER,
+        right_bound => $zone_layout->{'viewable_internal_x2'},
+        min_y       => $row_min_y,
         app_display_data => $app_display_data,
     );
+    $row_min_y += MAP_Y_BUFFER;
 
     # The zone level maps_min_x is used for creating the overview
     $zone_layout->{'maps_min_x'} = $map_min_x;
@@ -1280,7 +1281,7 @@ Lays out sub maps in a slot.
         pixels_per_unit  => $pixels_per_unit,
         map_units        => $map_units,
     );
-    $row_min_y += SMALL_BUFFER;
+    $row_min_y += SMALL_BUFFER * 2;
     $row_min_y = _layout_zone_buttons(
         window_key       => $window_key,
         zone_key         => $zone_key,
