@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppLayout;
 
 # vim: set ft=perl:
 
-# $Id: AppLayout.pm,v 1.86 2008-04-29 19:03:33 mwz444 Exp $
+# $Id: AppLayout.pm,v 1.87 2008-04-30 17:24:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use constant ZONE_SEPARATOR_HEIGHT    => 3;
 use constant ZONE_LOCATION_BAR_HEIGHT => 10;
@@ -1329,10 +1329,15 @@ Lays out sub maps in a slot.
     # Figure out where the parent start is in this zone's coordinate system
     my $parent_x1
         = $parent_map_layout->{'coords'}[0] - $zone_layout->{'bounds'}[0];
-    my $parent_x2
-        = $parent_map_layout->{'coords'}[2] - $zone_layout->{'bounds'}[0];
     my $parent_pixel_width = $parent_map_layout->{'coords'}[2]
         - $parent_map_layout->{'coords'}[0] + 1;
+    my $parent_map_width = ($parent_pixel_width) * $scale;
+
+# Use the width to find parent_x2 because that already has the scale factored in.
+    my $parent_x2 = $parent_x1 + $parent_map_width - 1;
+
+    my $scale_adjusted_parent_x2
+        = $parent_x1 + ( $parent_x2 - $parent_x1 + 1 ) * $scale;
 
     my %label_info;
 
@@ -1376,11 +1381,6 @@ Lays out sub maps in a slot.
             = $center_x_on_parent_map - int( $map_width_in_pixels / 2 + 0.5 );
         my $x2_on_parent_map
             = $center_x_on_parent_map + int( $map_width_in_pixels / 2 - 0.5 );
-
-        my $parent_map_width = ($parent_pixel_width) * $scale;
-
-        my $scale_adjusted_parent_x2
-            = $parent_x1 + ( $parent_x2 - $parent_x1 + 1 ) * $scale;
 
         # Bump the map back if it is overlapping the bounds
         if ( $x1_on_parent_map < $parent_x1 ) {
