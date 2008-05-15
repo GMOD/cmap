@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.178 2008-03-10 13:39:03 mwz444 Exp $
+# $Id: Generic.pm,v 1.179 2008-05-15 17:02:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.178 $)[-1];
+$VERSION = (qw$Revision: 1.179 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -152,6 +152,8 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_commit_log              => 'commit_log',
         cmap_transaction             => 'transaction',
     };
+
+    $self->{'real_number_regex'} = $RE{'num'}{'real'};
 
     return $self;
 }
@@ -838,6 +840,8 @@ original start and stop.
       from   cmap_map m
       ];
 
+    my $real_number_regex = $self->{'real_number_regex'};
+
     #print S#TDERR Dumper($slots)."\n";
     my $sql_suffix;
     foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
@@ -1140,7 +1144,7 @@ original start and stop.
                     $row->[1] = $maps->{ $row->[5] }{'start'};
                     ### If start is a feature, get the positions
                     ### and store in both places.
-                    if ( not $row->[1] =~ /^$RE{'num'}{'real'}$/ ) {
+                    if ( not $row->[1] =~ /^$real_number_regex$/ ) {
                         $row->[1] = $self->feature_name_to_position(
                             feature_name => $row->[1],
                             map_id       => $row->[0],
@@ -1158,7 +1162,7 @@ original start and stop.
                     $row->[2] = $maps->{ $row->[5] }{'stop'};
                     ### If stop is a feature, get the positions.
                     ### and store in both places.
-                    if ( not $row->[2] =~ /^$RE{'num'}{'real'}$/ ) {
+                    if ( not $row->[2] =~ /^$real_number_regex$/ ) {
                         $row->[2] = $self->feature_name_to_position(
                             feature_name => $row->[2],
                             map_id       => $row->[0],
@@ -1945,7 +1949,8 @@ Array of Hashes:
             $row->{'map_type'}
                 = $map_type_data->{ $row->{'map_type_acc'} }{'map_type'};
             $row->{'map_type_display_order'}
-                = $map_type_data->{ $row->{'map_type_acc'} }{'display_order'};
+                = $map_type_data->{ $row->{'map_type_acc'} }{'display_order'}
+                || 0;
             $row->{'epoch_published_on'}
                 = parsedate( $row->{'published_on'} );
         }
@@ -5007,9 +5012,10 @@ Feature id
     $gclass = undef
         unless ( $self->config_data('gbrowse_compatible') );
 
+    my $real_number_regex = $self->{'real_number_regex'};
     $feature_stop = $feature_start
         unless ( defined($feature_stop)
-        and $feature_stop =~ /^$RE{'num'}{'real'}$/ );
+        and $feature_stop =~ /^$real_number_regex$/ );
 
     if (    defined($feature_stop)
         and defined($feature_start)
@@ -5187,9 +5193,10 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $direction    = $args{'direction'};
     my $db           = $self->db;
 
+    my $real_number_regex = $self->{'real_number_regex'};
     $feature_stop = $feature_start
         unless ( defined($feature_stop)
-        and $feature_stop =~ /^$RE{'num'}{'real'}$/ );
+        and $feature_stop =~ /^real_number_regex$/ );
 
     if (    defined($feature_stop)
         and defined($feature_start)
