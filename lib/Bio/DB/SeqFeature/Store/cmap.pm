@@ -1,6 +1,6 @@
 package Bio::DB::SeqFeature::Store::cmap;
 
-# $Id: cmap.pm,v 1.1 2008-05-13 20:52:39 mwz444 Exp $
+# $Id: cmap.pm,v 1.2 2008-05-15 21:09:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -149,13 +149,20 @@ safest to place a "###" on the line above a new map set.
 
 =head3 Description
 
-To create a map a current map set must be set by using the ##cmap_map_set pragma (or specified in the ##cmap_map pragma described later).   
+To create a map a current map set must be set by using the ##cmap_map_set
+pragma (or specified in the ##cmap_map pragma described later).   
 
-Use the ##sequence-region pragma to define a map which is defined in the GFF3 specification as "##sequence-region seqid start end".  The seqid will be used as the map name and the map will be placed in the whateve the most recently referenced map set.
+Use the ##sequence-region pragma to define a map which is defined in the GFF3
+specification as "##sequence-region seqid start end".  The seqid will be used
+as the map name and the map will be placed in the whateve the most recently
+referenced map set.
 
-To add more information such as map accession (map_acc), you can use the ##cmap_map pragma to create the map IN ADDITION TO the ##sequence-region (doing so after will just be ignored).
+To add more information such as map accession (map_acc), you can use the
+##cmap_map pragma to create the map IN ADDITION TO the ##sequence-region (doing
+so after will just be ignored).
   
-A map must be either in the file or in the database to be referenced by a feature;
+A map must be either in the file or in the database to be referenced by a
+feature;
 
 =head3 Definition
 
@@ -265,6 +272,8 @@ further details.
 
 The values of each tag must be URI encoded.
 
+=over 4
+
 =item * ID
 
 This is a load ID.  It is only used to reference the feature within a single
@@ -288,7 +297,10 @@ Example: Alias=My Favorite Feature
 
 =item * corrs_by_id
 
-This is a way to define a correspodence to a feature in the same file.  It uses the load id (see the ID tag above) to identify which feature the correspondence should be created with.  It also takes an evidence type accession (evidence_type_acc) and an optional score.
+This is a way to define a correspodence to a feature in the same file.  It uses
+the load id (see the ID tag above) to identify which feature the correspondence
+should be created with.  It also takes an evidence type accession
+(evidence_type_acc) and an optional score.
 
 Example: corrs_by_id=read00002 read_pair
 
@@ -296,13 +308,17 @@ Example: corrs_by_id=hsp00002 blast 1e-99
 
 =item * attribute
 
-This tag will store an attribute in the attribute table.  It is a name:value pair separated by a colon.  The name cannot have a colon in it as the first colon in the pair is assumed to be the separator.
+This tag will store an attribute in the attribute table.  It is a name:value
+pair separated by a colon.  The name cannot have a colon in it as the first
+colon in the pair is assumed to be the separator.
 
 Example: attribute=Description:This gene is totally rad.
 
 =item * xref
 
-This tag will store an xref in the xref table.  It is a name:url pair separated by a colon.  The name cannot have a colon in it as the first colon in the pair is assumed to be the separator.
+This tag will store an xref in the xref table.  It is a name:url pair separated
+by a colon.  The name cannot have a colon in it as the first colon in the pair
+is assumed to be the separator.
 
 Example: xref=Google:html://www.google.com/search?q=09H123.g1
 
@@ -312,17 +328,184 @@ Example: xref=Google:html://www.google.com/search?q=09H123.g1
 
 Contig2	.	read	1701	2580	.	+	.	ID=read00004;Name=09B023.b1;Alias=My Second Favorite Feature;corr_by_id=read00001 shared_clone;xref=Organism Map:http://www.gramene.com/viewer?ref_map_accs%3Dorcb0602h-ctg161;
 
+=head2 Correspondence
+
+=head3 Description
+
+The ##cmap_correspondence pragma defines a correspondence between features that
+are either already in the database or are defined in the current file.
+
+=head3 Definition
+
+  ##cmap_correspondence definition_string
+  ##cmap_corr definition_string
+
+The definition string is a list of key=value pairs separated by a semi-colon.
+An example is "ID1=read0001;ID2=read0002;". 
+
+=head3 Options
+
+  evidence_type_acc+
+  Unique identification of feature 1+
+  Unique identification of feature 2+
+  score
+
+ + required for creation
+
+Both features involved in the correspondence must be uniquely identified.  To
+do this provide identification parameters for each feature.  See the section on
+Object Identification With Parameters for more information about the
+identification parameters.  
+
+Parameters refering to one feature must end in a 1 and parameters refering to
+the other must end in a 2.  For instance:
+
+ feature_name1=SSR123;map_name1=Chr2;map_set_acc1=MS1;feature_name2=SSR123;map_name2=Chr4;map_set_acc2=MS2;
+
+=head3 Important Note
+
+If more than one feature matches the description of a feature, then the script
+will die.
+
+=head3 Example
+
+  ##cmap_corr  evidence_type_acc=ANB;feature_name1=feature4;map_name1=Contig2;ID2=read00001;
+
+=head2 Attribute
+
+=head3 Description
+
+The ##cmap_attribute pragma can allow creation of attributes for objects in
+CMap.  Specifically, features, maps, map sets and species.
+
+=head3 Definition
+
+  ##cmap_attribute definition_string
+
+The definition string is a list of key=value pairs separated by a semi-colon.
+An example is "ID=read0001;attribute_name=Description;". 
+
+=head3 Options
+
+  object_type+
+  attribute_name+
+  attribute_value+
+  Unique identification of CMap object+
+  display_order
+  is_public
+
+ + required for creation
+
+The object_type must be either "feature", "map", "map_set" or "species".
+
+The unique identification of the CMap object is described in the section on
+Object Identification With Parameters.
+
+=head3 Examples
+
+  # Feature attribute
+  ##cmap_attribute  object_type=feature;feature_name=feature4;map_name=Contig2;map_set_acc=MS2;attribute_value=This is really my favorite feature;attribute_name=Descrption
+
+  # Map attribute
+  ##cmap_attribute  object_type=map;map_name=Contig2;map_set_acc=MS2;attribute_value=This map has my favorite feature;attribute_name=Descrption
+
+=head3 Important Note
+
+If more than one object matches the description, then the script will die.
+
+Also, both the name and values of the attributes must be uri encoded.
+
+=head2 Cross Reference (XRef)
+
+=head3 Description
+
+The ##cmap_xref pragma can allow creation of cross reference urls for objects
+in CMap.  Specifically, features, maps, map sets and species.
+
+=head3 Definition
+
+  ##cmap_xref definition_string
+
+The definition string is a list of key=value pairs separated by a semi-colon.
+An example is "ID=read0001;xref_name=Google This Feature;". 
+
+=head3 Options
+
+  object_type+
+  xref_name+
+  xref_url+
+  Unique identification of CMap object+
+  display_order
+  is_public
+
+ + required for creation
+
+The object_type must be either "feature", "map", "map_set" or "species".
+
+The unique identification of the CMap object is described in the section on
+Object Identification With Parameters.
+
+=head3 Examples
+
+=head3 Important Note
+
+If more than one object matches the description, then the script will die.
+
+Also, both the name and values of the attributes must be uri encoded.
+
+=head2 Object Identification With Parameters
+
+For some pragmas such as ##cmap_correspondence and ##cmap_attribute, identifying a specific feature is needed.  In that case, parameters can be supplied to identify a feature, map, map set or species.
+
+For instance to identify a feature, a feature_name can be specified.  The search can be narrowed to a particular map using the map parameters, such as map_name.  The map can further defined as belonging to a specific map set.  See the following example:
+
+  feature_name=SSR123;map_name=Chr1;map_set_name=Sample Map Set;species_acc=rice08
+
+Note 1: To refer to the load ID of a feature within the same file, use the ID tag.
+
+Note 2: For identifying features to use in correspondences, use the same tags but with a 1 or 2 after each.  For instance, the feature name would be refered to as feature_name1 or feature_name2.
+
+=over 4 
+
+=item * Feature
+
+  feature_acc
+  feature_name
+  feature_type_acc
+  ID
+
+=item * Map
+
+  map_acc
+  map_name
+
+=item * Map Set
+
+  map_set_name
+  map_set_acc
+  map_set_short_name
+  map_type_acc
+
+=item * Species
+
+  species_acc
+  species_common_name
+  species_full_name
+
+=back
+
 =head1 Developer Notes To Self
 
 Add in unit_granularity
 
 =head1 Other Notes
 
-Attributes and Xrefs don't have display order or is_public.  
+Attributes and Xrefs defined by the feature GFF line don't have display order
+or is_public.  
 
 The ##cmap_attributes and ##cmap_xref pragmas cannot handle correspondence
-attributes.  To do that, it will have to be attached to a ##cmap_correspondence
-pragma.
+attributes.  To do that, it would have to be attached to a
+##cmap_correspondence pragma which has not been implemented.
 
 =head1 Methods
 
@@ -351,11 +534,12 @@ object initialization
 sub init {
     my $self = shift;
 
-    my ( $data_source, $config_dir, $map_set_acc, $cmap_gff_version, $corr_threshold,)
+    my ( $data_source, $config_dir, $map_set_acc, $cmap_gff_version,
+        $insert_threshold, )
         = rearrange(
         [   [qw(DATASOURCE DATA_SOURCE )], [qw(CONFIG_DIR CONFIGDIR )],
             [qw(MAP_SET_ACC MS_ACC )],     [qw(CMAP_GFF_VERSION)],
-            [qw(CORRESPONDENCE_THRESHOLD)],
+            [qw(INSERT_THRESHOLD)],
         ],
         @_
         );
@@ -366,8 +550,8 @@ sub init {
     );
 
     $self->cmap_gff_version($cmap_gff_version);
-    $corr_threshold = 1000 if (not defined $corr_threshold);
-    $self->corr_threshold($corr_threshold);
+    $insert_threshold = 1000 if ( not defined $insert_threshold );
+    $self->insert_threshold($insert_threshold);
 
     # Get the maps that are part of the map set for future use and get other
     # useful information
@@ -559,17 +743,17 @@ sub cmap_gff_version {
 
 =pod
 
-=head2 corr_threshold()
+=head2 insert_threshold()
 
 =cut
 
-sub corr_threshold {
-    my $self        = shift;
+sub insert_threshold {
+    my $self          = shift;
     my $new_threshold = shift;
     if ($new_threshold) {
-        $self->{'corr_threshold'} = $new_threshold;
+        $self->{'insert_threshold'} = $new_threshold;
     }
-    return $self->{'corr_threshold'};
+    return $self->{'insert_threshold'};
 }
 
 # ----------------------------------------------------
@@ -794,6 +978,7 @@ sub get_or_create_map_from_description_line {
         map_stop
         display_order
     );
+
     # map_acc is checked separately
     my @identifying_map_params = qw(
         map_set_id
@@ -893,8 +1078,10 @@ sub find_feature_ids_from_params {
     my $self = shift;
     my $params = shift or return;
 
-    if ($params->{'ID'}){
-        if (my $feature_ids =  $self->load_to_cmap_ids( load_id => $params->{'ID'}, )){
+    if ( $params->{'ID'} ) {
+        if ( my $feature_ids
+            = $self->load_to_cmap_ids( load_id => $params->{'ID'}, ) )
+        {
             return $feature_ids;
         }
     }
@@ -915,11 +1102,11 @@ sub find_feature_ids_from_params {
     return undef unless (%args);
 
     my $map_ids = $self->find_map_ids_from_params($params);
-    if ($map_ids and not @$map_ids){
+    if ( $map_ids and not @$map_ids ) {
         return [];
     }
     my $feature_data;
-    if ( scalar @{$map_ids||[]} > 1 ) {
+    if ( scalar @{ $map_ids || [] } > 1 ) {
         foreach my $map_id (@$map_ids) {
             $args{'map_id'} = $map_id;
             push @{$feature_data},
@@ -927,13 +1114,13 @@ sub find_feature_ids_from_params {
         }
     }
     else {
-        if ( scalar @{$map_ids||[]} == 1 ) {
+        if ( scalar @{ $map_ids || [] } == 1 ) {
             $args{'map_id'} = $map_ids->[0];
         }
         $feature_data = $sql_object->get_features_simple(%args);
     }
 
-    return [map {$_->{'feature_id'}} @{$feature_data||[]}];
+    return [ map { $_->{'feature_id'} } @{ $feature_data || [] } ];
 }
 
 # ----------------------------------------------------
@@ -969,25 +1156,24 @@ sub find_map_ids_from_params {
     return undef unless (%args);
 
     my $map_set_ids = $self->find_map_set_ids_from_params($params);
-    if ($map_set_ids and not @$map_set_ids){
+    if ( $map_set_ids and not @$map_set_ids ) {
         return [];
     }
     my $map_data;
-    if ( scalar @{$map_set_ids||[]} > 1 ) {
+    if ( scalar @{ $map_set_ids || [] } > 1 ) {
         foreach my $map_set_id (@$map_set_ids) {
             $args{'map_set_id'} = $map_set_id;
-            push @{$map_data},
-                @{ $sql_object->get_maps(%args) || [] };
+            push @{$map_data}, @{ $sql_object->get_maps(%args) || [] };
         }
     }
     else {
-        if ( scalar @{$map_set_ids||[]} == 1 ) {
+        if ( scalar @{ $map_set_ids || [] } == 1 ) {
             $args{'map_set_id'} = $map_set_ids->[0];
         }
         $map_data = $sql_object->get_maps(%args);
     }
 
-    return [map {$_->{'map_id'}} @{$map_data||[]}];
+    return [ map { $_->{'map_id'} } @{ $map_data || [] } ];
 }
 
 # ----------------------------------------------------
@@ -1027,13 +1213,13 @@ sub find_map_set_ids_from_params {
     return undef unless ($found_id);
 
     my $species_ids = $self->find_species_ids_from_params($params);
-    if ($species_ids and not @$species_ids){
+    if ( $species_ids and not @$species_ids ) {
         return [];
     }
 
     my $map_set_data;
-    foreach my $species_id ( @{$species_ids||[]} ) {
-        push @{ $args{'species_ids'}}, $species_id;
+    foreach my $species_id ( @{ $species_ids || [] } ) {
+        push @{ $args{'species_ids'} }, $species_id;
     }
 
     my $map_set_array = $sql_object->get_map_sets();
@@ -1043,7 +1229,8 @@ MAP_SET:
     foreach my $map_set ( @{ $map_set_array || [] } ) {
         foreach my $param (@identifying_map_set_params) {
             if ( defined $params->{$param} ) {
-                next MAP_SET unless ( $map_set->{$param} eq $params->{$param} );
+                next MAP_SET
+                    unless ( $map_set->{$param} eq $params->{$param} );
             }
         }
 
@@ -1073,7 +1260,7 @@ sub find_species_ids_from_params {
     my $self = shift;
     my $params = shift or return;
 
-    my $sql_object = $self->cmap_admin()->sql();
+    my $sql_object                 = $self->cmap_admin()->sql();
     my @identifying_species_params = qw(
         species_acc
         species_common_name
@@ -1097,7 +1284,8 @@ SPECIES:
     foreach my $species ( @{ $species_data || [] } ) {
         foreach my $param (@identifying_species_params) {
             if ( defined $params->{$param} ) {
-                next SPECIES unless ( $species->{$param} eq $params->{$param} );
+                next SPECIES
+                    unless ( $species->{$param} eq $params->{$param} );
             }
         }
 
@@ -1107,7 +1295,6 @@ SPECIES:
 
     return \@return_ids;
 }
-
 
 # ----------------------------------------------------
 
@@ -1125,81 +1312,91 @@ sub add_meta_attribute {
     return unless %params;
 
     my $object_type = $params{'object_type'};
-    my $object_id = undef;
-    if (not $object_type){
+    my $object_id   = undef;
+    if ( not $object_type ) {
     }
-    elsif ($object_type eq 'feature'){
-        my $feature_ids = $self->find_feature_ids_from_params(\%params);
-        if (not defined $feature_ids ){
+    elsif ( $object_type eq 'feature' ) {
+        my $feature_ids = $self->find_feature_ids_from_params( \%params );
+        if ( not defined $feature_ids ) {
+
             # Generic attribute for all features
             $object_id = undef;
         }
-        elsif (scalar @$feature_ids > 1){
-            die "Found Multiple feature matching the description: $desc_str\n";
+        elsif ( scalar @$feature_ids > 1 ) {
+            die
+                "Found Multiple feature matching the description: $desc_str\n";
         }
-        elsif(@$feature_ids){
-            $object_id = $feature_ids->[0]; 
+        elsif (@$feature_ids) {
+            $object_id = $feature_ids->[0];
         }
-        else{
-            die "Did not Find a feature matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a feature matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'map'){
-        my $map_ids = $self->find_map_ids_from_params(\%params);
-        if (not defined $map_ids ){
+    elsif ( $object_type eq 'map' ) {
+        my $map_ids = $self->find_map_ids_from_params( \%params );
+        if ( not defined $map_ids ) {
+
             # Generic attribute for all maps
             $object_id = undef;
         }
-        elsif (scalar @$map_ids > 1){
+        elsif ( scalar @$map_ids > 1 ) {
             die "Found Multiple map matching the description: $desc_str\n";
         }
-        elsif(@$map_ids){
-            $object_id = $map_ids->[0]; 
+        elsif (@$map_ids) {
+            $object_id = $map_ids->[0];
         }
-        else{
+        else {
             die "Did not Find a map matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'map_set'){
-        my $map_set_ids = $self->find_map_set_ids_from_params(\%params);
-        if (not defined $map_set_ids ){
+    elsif ( $object_type eq 'map_set' ) {
+        my $map_set_ids = $self->find_map_set_ids_from_params( \%params );
+        if ( not defined $map_set_ids ) {
+
             # Generic attribute for all map_sets
             $object_id = undef;
         }
-        elsif (scalar @$map_set_ids > 1){
-            die "Found Multiple map_set matching the description: $desc_str\n";
+        elsif ( scalar @$map_set_ids > 1 ) {
+            die
+                "Found Multiple map_set matching the description: $desc_str\n";
         }
-        elsif(@$map_set_ids){
-            $object_id = $map_set_ids->[0]; 
+        elsif (@$map_set_ids) {
+            $object_id = $map_set_ids->[0];
         }
-        else{
-            die "Did not Find a map_set matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a map_set matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'species'){
-        my $species_ids = $self->find_species_ids_from_params(\%params);
-        if (not defined $species_ids ){
+    elsif ( $object_type eq 'species' ) {
+        my $species_ids = $self->find_species_ids_from_params( \%params );
+        if ( not defined $species_ids ) {
+
             # Generic attribute for all speciess
             $object_id = undef;
         }
-        elsif (scalar @$species_ids > 1){
-            die "Found Multiple species matching the description: $desc_str\n";
+        elsif ( scalar @$species_ids > 1 ) {
+            die
+                "Found Multiple species matching the description: $desc_str\n";
         }
-        elsif(@$species_ids){
-            $object_id = $species_ids->[0]; 
+        elsif (@$species_ids) {
+            $object_id = $species_ids->[0];
         }
-        else{
-            die "Did not Find a species matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a species matching the description: $desc_str\n";
         }
     }
-    else{
+    else {
         die "Object: $object_type is not allowed: $desc_str\n";
     }
 
     unless ($object_id) {
-        die "Did not find a $object_type matching the description: $desc_str\n";
+        die
+            "Did not find a $object_type matching the description: $desc_str\n";
     }
-
 
     my $cmap_admin = $self->cmap_admin();
     my $sql_object = $cmap_admin->sql();
@@ -1239,81 +1436,91 @@ sub add_meta_xref {
     return unless %params;
 
     my $object_type = $params{'object_type'};
-    my $object_id = undef;
-    if (not $object_type){
+    my $object_id   = undef;
+    if ( not $object_type ) {
     }
-    elsif ($object_type eq 'feature'){
-        my $feature_ids = $self->find_feature_ids_from_params(\%params);
-        if (not defined $feature_ids ){
+    elsif ( $object_type eq 'feature' ) {
+        my $feature_ids = $self->find_feature_ids_from_params( \%params );
+        if ( not defined $feature_ids ) {
+
             # Generic xref for all features
             $object_id = undef;
         }
-        elsif (scalar @$feature_ids > 1){
-            die "Found Multiple feature matching the description: $desc_str\n";
+        elsif ( scalar @$feature_ids > 1 ) {
+            die
+                "Found Multiple feature matching the description: $desc_str\n";
         }
-        elsif(@$feature_ids){
-            $object_id = $feature_ids->[0]; 
+        elsif (@$feature_ids) {
+            $object_id = $feature_ids->[0];
         }
-        else{
-            die "Did not Find a feature matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a feature matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'map'){
-        my $map_ids = $self->find_map_ids_from_params(\%params);
-        if (not defined $map_ids ){
+    elsif ( $object_type eq 'map' ) {
+        my $map_ids = $self->find_map_ids_from_params( \%params );
+        if ( not defined $map_ids ) {
+
             # Generic xref for all maps
             $object_id = undef;
         }
-        elsif (scalar @$map_ids > 1){
+        elsif ( scalar @$map_ids > 1 ) {
             die "Found Multiple map matching the description: $desc_str\n";
         }
-        elsif(@$map_ids){
-            $object_id = $map_ids->[0]; 
+        elsif (@$map_ids) {
+            $object_id = $map_ids->[0];
         }
-        else{
+        else {
             die "Did not Find a map matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'map_set'){
-        my $map_set_ids = $self->find_map_set_ids_from_params(\%params);
-        if (not defined $map_set_ids ){
+    elsif ( $object_type eq 'map_set' ) {
+        my $map_set_ids = $self->find_map_set_ids_from_params( \%params );
+        if ( not defined $map_set_ids ) {
+
             # Generic xref for all map_sets
             $object_id = undef;
         }
-        elsif (scalar @$map_set_ids > 1){
-            die "Found Multiple map_set matching the description: $desc_str\n";
+        elsif ( scalar @$map_set_ids > 1 ) {
+            die
+                "Found Multiple map_set matching the description: $desc_str\n";
         }
-        elsif(@$map_set_ids){
-            $object_id = $map_set_ids->[0]; 
+        elsif (@$map_set_ids) {
+            $object_id = $map_set_ids->[0];
         }
-        else{
-            die "Did not Find a map_set matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a map_set matching the description: $desc_str\n";
         }
     }
-    elsif ($object_type eq 'species'){
-        my $species_ids = $self->find_species_ids_from_params(\%params);
-        if (not defined $species_ids ){
+    elsif ( $object_type eq 'species' ) {
+        my $species_ids = $self->find_species_ids_from_params( \%params );
+        if ( not defined $species_ids ) {
+
             # Generic xref for all speciess
             $object_id = undef;
         }
-        elsif (scalar @$species_ids > 1){
-            die "Found Multiple species matching the description: $desc_str\n";
+        elsif ( scalar @$species_ids > 1 ) {
+            die
+                "Found Multiple species matching the description: $desc_str\n";
         }
-        elsif(@$species_ids){
-            $object_id = $species_ids->[0]; 
+        elsif (@$species_ids) {
+            $object_id = $species_ids->[0];
         }
-        else{
-            die "Did not Find a species matching the description: $desc_str\n";
+        else {
+            die
+                "Did not Find a species matching the description: $desc_str\n";
         }
     }
-    else{
+    else {
         die "Object: $object_type is not allowed: $desc_str\n";
     }
 
     unless ($object_id) {
-        die "Did not find a $object_type matching the description: $desc_str\n";
+        die
+            "Did not find a $object_type matching the description: $desc_str\n";
     }
-
 
     my $cmap_admin = $self->cmap_admin();
     my $sql_object = $cmap_admin->sql();
@@ -1353,28 +1560,29 @@ sub add_meta_corr {
     return unless %params;
 
     my $evidence_type_acc = $params{'evidence_type_acc'}
-        or die
-        "No evidence_type_specified for correspondence: $desc_str\n";
+        or die "No evidence_type_specified for correspondence: $desc_str\n";
     my $score = $params{'score'};
-    
+
     my %feature1_params;
     my %feature2_params;
-    foreach my $param (keys %params){
-        if ($param =~ /^(\S+)1/){
-            $feature1_params{$1}=$params{$param};
+    foreach my $param ( keys %params ) {
+        if ( $param =~ /^(\S+)1/ ) {
+            $feature1_params{$1} = $params{$param};
         }
-        elsif ($param =~ /^(\S+)2/){
-            $feature2_params{$1}=$params{$param};
+        elsif ( $param =~ /^(\S+)2/ ) {
+            $feature2_params{$1} = $params{$param};
         }
     }
 
-    my $feature_ids1 = $self->find_feature_ids_from_params(\%feature1_params);
-    my $feature_ids2 = $self->find_feature_ids_from_params(\%feature2_params);
+    my $feature_ids1
+        = $self->find_feature_ids_from_params( \%feature1_params );
+    my $feature_ids2
+        = $self->find_feature_ids_from_params( \%feature2_params );
 
-    unless (scalar @{$feature_ids1||[]} == 1){
+    unless ( scalar @{ $feature_ids1 || [] } == 1 ) {
         die "Feature 1 failed to find a single feature: $desc_str\n";
     }
-    unless (scalar @{$feature_ids2||[]} == 1){
+    unless ( scalar @{ $feature_ids2 || [] } == 1 ) {
         die "Feature 2 failed to find a single feature: $desc_str\n";
     }
     my $feature_id1 = $feature_ids1->[0];
@@ -1383,11 +1591,11 @@ sub add_meta_corr {
     my $sql_object = $self->cmap_admin->sql();
 
     $sql_object->insert_feature_correspondence(
-        feature_id1 =>$feature_id1,
-        feature_id2 =>$feature_id2,
-        evidence_type_acc =>$evidence_type_acc,
-        score =>$score,
-        threshold =>$self->corr_threshold(),
+        feature_id1       => $feature_id1,
+        feature_id2       => $feature_id2,
+        evidence_type_acc => $evidence_type_acc,
+        score             => $score,
+        threshold         => $self->insert_threshold(),
     );
 
     return;
@@ -1466,7 +1674,7 @@ sub _split_description_string {
     foreach my $fragment ( split( /;/, $desc_str ) ) {
         next unless ( $fragment =~ /\S/ );
         if ( $fragment =~ /(.+?)=(.+)/ ) {
-            $return_hash{uri_unescape($1)} = uri_unescape($2);
+            $return_hash{ uri_unescape($1) } = uri_unescape($2);
         }
         else {
             $self->throw(
@@ -1589,7 +1797,7 @@ sub handle_unrecognized_meta {
     }
     elsif ( $instruction =~ /^cmap_map\s+(.+)/ ) {
         $self->{'current_map_id'}
-         = $self->get_or_create_map_from_description_line($1);
+            = $self->get_or_create_map_from_description_line($1);
     }
     elsif ( $instruction =~ /^cmap_species\s+(.+)/ ) {
         $self->{'current_species_id'}
@@ -1604,6 +1812,7 @@ sub handle_unrecognized_meta {
     elsif ( $instruction =~ /^cmap_corr\S*\s+(.+)/ ) {
         $self->add_meta_corr($1);
     }
+
     #elsif ($instruction =~/^/){
     #}
     elsif ( $instruction =~ /^cmap-gff-version\s+(\S+)/ ) {
@@ -1773,7 +1982,7 @@ sub handle_map {
     unless ($map_id) {
         die "FAILED TO INSERT MAP: $map_name\n";
     }
-    
+
     $self->{'current_map_id'} = $map_id;
 
     return $map_id;
@@ -1797,7 +2006,7 @@ sub handle_feature {
         Alias       => 1,
         load_id     => 1,
         corrs_by_id => 1,
-        xref      => 1,
+        xref        => 1,
         attribute   => 1,
     );
 
@@ -1819,7 +2028,7 @@ sub handle_feature {
     $feature_name
         ||= $feature_type_acc . "_" . $feature_start . "_" . $feature_stop;
 
-    my $feature_id = $cmap_admin->feature_create(
+    my $feature_id = $cmap_admin->sql()->insert_feature(
         map_id           => $map_id,
         feature_name     => $feature_name,
         feature_start    => $feature_start,
@@ -1837,7 +2046,10 @@ sub handle_feature {
     my $load_ids   = $attributes{'load_id'};
 
     foreach my $load_id ( @{ $load_ids || [] } ) {
-        $self->load_to_cmap_ids( load_id => $load_id, cmap_id => $feature_id );
+        $self->load_to_cmap_ids(
+            load_id => $load_id,
+            cmap_id => $feature_id
+        );
     }
 
     # Alias
@@ -1848,7 +2060,8 @@ sub handle_feature {
         $attributes{'corr_by_id'} );
 
     # Attributes
-    $self->handle_feature_attributes( $feature_id, $attributes{'attribute'}, );
+    $self->handle_feature_attributes( $feature_id, $attributes{'attribute'},
+    );
 
     # Xrefs
     $self->handle_feature_xrefs( $feature_id, $attributes{'xref'}, );
@@ -1893,9 +2106,9 @@ sub handle_feature_attributes {
 =cut
 
 sub handle_feature_xrefs {
-    my $self        = shift;
-    my $feature_id  = shift;
-    my $xref_list = shift || return;
+    my $self       = shift;
+    my $feature_id = shift;
+    my $xref_list  = shift || return;
 
     my $sql_object = $self->cmap_admin()->sql();
     foreach my $xref_str ( @{ $xref_list || [] } ) {
@@ -1920,7 +2133,7 @@ sub handle_feature_xrefs {
 
 =cut
 
-    sub handle_aliases {
+sub handle_aliases {
     my $self       = shift;
     my $feature_id = shift;
     my $attributes = shift;
@@ -1999,7 +2212,8 @@ sub finish_saved_correspondences {
         my $evidence_type_acc = $saved_corr->{'evidence_type_acc'};
         my $score             = $saved_corr->{'score'};
         if ($load_id) {
-            my $feature_ids2 = $self->load_to_cmap_ids( load_id => $load_id, );
+            my $feature_ids2
+                = $self->load_to_cmap_ids( load_id => $load_id, );
             if ( @{ $feature_ids2 || [] } ) {
                 $self->load_correspondences(
                     feature_id1       => $feature_id1,
@@ -2061,7 +2275,7 @@ sub load_correspondences {
             is_enabled        => 1,
             evidence_type_acc => $evidence_type_acc,
             score             => $score,
-            threshold         => $self->corr_threshold(),
+            threshold         => $self->insert_threshold(),
         );
         $self->{'inserted_corrs'}{$corr_key1} = 1;
         $self->{'inserted_corrs'}{$corr_key2} = 1;
