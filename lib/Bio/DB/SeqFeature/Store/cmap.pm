@@ -1,6 +1,6 @@
 package Bio::DB::SeqFeature::Store::cmap;
 
-# $Id: cmap.pm,v 1.2 2008-05-15 21:09:38 mwz444 Exp $
+# $Id: cmap.pm,v 1.3 2008-05-19 13:44:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -16,7 +16,7 @@ Bio::DB::SeqFeature::Store::cmap -- A CMap adaptor for importing data
 
   my $loader = Bio::DB::SeqFeature::Store::GFF3Loader->new(
     -store   => $store,
-    -verbose => 0,
+    -verbose => 1,
     -fast    => 0
   );
 
@@ -45,6 +45,67 @@ Bio::DB::SeqFeature::Store::cmap will be returned.
 
 
 =head1 CMap GFF Specification
+
+=head2 Description
+
+The CMap GFF file format was created as a way to express an entire CMap
+datasource in a simple, single file.  It is an extention of GFF3 and therefor
+produces legal GFF3 for use with GBrowse or any other program that can read
+GFF3.
+
+This format should have the following advantages:
+
+=over 4
+
+=item * All data can be in a single file (or spread between multiple files)
+
+=item * The import uses the API so data base structural changes won't affect it.
+
+=item * GFF3 is a simple and well known standard making this an easier format to learn.
+
+=back
+
+CMap GFF introduces several new pragmas (lines that start with "##") to encode
+information including species, map set and correspondences.  The order of these
+pragmas are important as a map set will be added to the last defined species
+and features will be added to maps in the last defined map set.
+
+It's important to note that odd characters need to be URI escaped.  For
+example, '=' becames '%3D'.
+
+The GFF3 specification can be found here: http://song.sourceforge.net/gff3.shtml
+
+=head2 Example
+
+The following is an example CMap GFF file
+
+ ##gff-version 3
+ ##cmap-gff-version 1
+ ##cmap_species  species_acc=rice08;species_full_name=Oriza sativa;species_common_name=Rice;display_order=1;
+ ###
+ ##cmap_map_set map_set_acc=MS1;map_set_name=testlong1;map_set_short_name=testshort1;map_type_acc=Seq;
+
+ ##cmap_map map_acc=ms1_Contig1;map_name=Contig1;map_start=1;map_stop=8970;display_order=2;map_set_acc=MS1;
+ ##sequence-region   Contig1 1   8970  
+ Contig1	CMap	marker	1701	1701	.	+	.	ID=marker00001;Name=marker1;Alias=mymarker1
+ Contig1	CMap	marker	1401	1401	.	+	.	ID=marker00002;Name=marker2;Alias=mymarker2;attribute=Description:This marker is really important
+ Contig1	CMap	marker	7701	7701	.	+	.	ID=marker00003;Name=marker3;Alias=mymarker3;corr_by_id=marker00006 shared_marker
+
+ ###
+ ##cmap_map_set map_set_acc=MS2;map_set_name=testlong2;map_set_short_name=testshort2;map_type_acc=Seq;species_acc=rice08
+ ##cmap_map map_acc=ms2_Contig1;map_name=Contig1;map_start=1;map_stop=10000;display_order=2;map_set_acc=MS2;
+ ##sequence-region   Contig1 1   10000  
+ Contig1	CMap	marker	1801	1801	.	+	.	ID=marker00004;Name=marker1;Alias=mymarker1;corr_by_id=marker00001 shared_marker
+ Contig1	CMap	marker	1601	1601	.	+	.	ID=marker00005;Name=marker2;Alias=mymarker2;xref=Google:http%3A%2F%2Fwww.google.com%2Fsearch%3Fq%3Dmarker2
+ Contig1	CMap	marker	7601	7601	.	+	.	ID=marker00006;Name=marker3;Alias=mymarker3;corr_by_id=marker00003 shared_marker
+ 
+ ##cmap_attribute  object_type=feature;feature_name=marker1;map_name=Contig1;map_set_acc=MS2;attribute_value=This is a cool marker%2C too.;attribute_name=Descrption
+ ##cmap_attribute  object_type=feature;ID=marker00006;attribute_value=This is a cool marker%2C as well.;attribute_name=Descrption
+ ##cmap_attribute  object_type=map;map_name=Contig1;map_set_acc=MS2;attribute_value=This is a map in the second map set.;attribute_name=Descrption
+
+ ##cmap_xref  object_type=feature;feature_name=marker2;map_name=Contig1;map_set_acc=MS1;xref_url=http%3A%2F%2Fwww.google.com%2Fsearch%3Fq%3Dmarker2;xref_name=Google
+
+ ##cmap_corr  evidence_type_acc=shared_marker;feature_name1=marker2;map_name1=Contig1;map_set_acc=MS1;ID2=marker00005
 
 =head2 Species
 
@@ -447,11 +508,16 @@ Object Identification With Parameters.
 
 =head3 Examples
 
-=head3 Important Note
+  ##cmap_xref  object_type=feature;feature_name=marker2;map_name=Contig1;map_set_acc=MS1;xref_url=http%3A%2F%2Fwww.google.com%2Fsearch%3Fq%3Dmarker2;xref_name=Google
+
+=head3 Important Notes
 
 If more than one object matches the description, then the script will die.
 
-Also, both the name and values of the attributes must be uri encoded.
+Both the name and values of the xref must be uri encoded.
+
+The name of the xref cannot contain a colon.  The first colon found is assumed
+to be the separator.
 
 =head2 Object Identification With Parameters
 
@@ -2381,3 +2447,26 @@ sub time {
 sub DESTROY { }
 
 1;
+
+=pod
+
+=head1 SEE ALSO
+
+L<Bio::DB::SeqFeature::Store>.
+L<Bio::DB::SeqFeature::Store::GFF3Loader>.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+Modified from Bio::DB::SeqFeature::Store::DBI::mysql
+
+=head1 COPYRIGHT
+
+Copyright (c) 2008 Cold Spring Harbor Laboratory
+
+This module is free software; you can redistribute it and/or modify it under
+the terms of the GPL (either version 1, or at your option, any later version)
+or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
+DISCLAIMER for additional warranty disclaimers.
+
+=cut
