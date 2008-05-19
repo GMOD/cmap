@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.179 2008-05-15 17:02:25 mwz444 Exp $
+# $Id: Generic.pm,v 1.180 2008-05-19 14:33:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.179 $)[-1];
+$VERSION = (qw$Revision: 1.180 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -5014,8 +5014,7 @@ Feature id
 
     my $real_number_regex = $self->{'real_number_regex'};
     $feature_stop = $feature_start
-        unless ( defined($feature_stop)
-        and $feature_stop =~ /^$real_number_regex$/ );
+        unless ( defined($feature_stop) );
 
     if (    defined($feature_stop)
         and defined($feature_start)
@@ -5195,8 +5194,7 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $real_number_regex = $self->{'real_number_regex'};
     $feature_stop = $feature_start
-        unless ( defined($feature_stop)
-        and $feature_stop =~ /^real_number_regex$/ );
+        unless ( defined($feature_stop) );
 
     if (    defined($feature_stop)
         and defined($feature_start)
