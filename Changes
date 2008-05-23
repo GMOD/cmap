@@ -1,5 +1,12 @@
                       Revision history for CMap
 
+1.01
+
+- Modified the insert_feature_correspondence() method to allow correspondences
+  between relational maps (this was done for speed).  The check to make sure
+  that no correspondences are made between relational maps has been moved to
+  MakeCorrespondences.pm.
+
 1.0
 
 - Added three new feature glyphs: heatmap, i_beam and bar.

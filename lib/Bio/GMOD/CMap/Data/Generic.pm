@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.180 2008-05-19 14:33:10 mwz444 Exp $
+# $Id: Generic.pm,v 1.181 2008-05-23 14:08:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.180 $)[-1];
+$VERSION = (qw$Revision: 1.181 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4955,6 +4955,16 @@ If you don't want CMap to insert into your database, make this a dummy method.
 
 =item - threshold (threshold)
 
+=item - report feature index (report_feature_index)
+
+When using the threshold, the feature ids are not reported.  Set
+report_feature_index to 1 to recieve the index of the feature.  When the
+features are actually inserted, this method will return an array of feature
+ids.  Use the previously recieved index to find out what feature id was
+created. 
+
+Requiring this flag to use this feature is to keep from breaking old code.
+
 =back
 
 =item * Output
@@ -4985,6 +4995,7 @@ Feature id
         direction              => 0,
         gclass                 => 0,
         threshold              => 0,
+        report_feature_index   => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -5003,11 +5014,13 @@ Feature id
     $feature_start = $args{'start_position'} unless defined($feature_start);
     $feature_stop  = $args{'stop_position'}  unless defined($feature_stop);
     $feature_stop  = $feature_start          unless defined($feature_stop);
-    my $default_rank = $args{'default_rank'} || 1;
-    my $direction    = $args{'direction'}    || 1;
-    my $gclass       = $args{'gclass'};
-    my $threshold    = $args{'threshold'}    || 0;
-    my $db           = $self->db;
+
+    my $default_rank         = $args{'default_rank'}         || 1;
+    my $direction            = $args{'direction'}            || 1;
+    my $gclass               = $args{'gclass'};
+    my $threshold            = $args{'threshold'}            || 0;
+    my $report_feature_index = $args{'report_feature_index'} || 0;
+    my $db                   = $self->db;
 
     $gclass = undef
         unless ( $self->config_data('gbrowse_compatible') );
@@ -5024,19 +5037,19 @@ Feature id
         ( $feature_stop, $feature_start ) = ( $feature_start, $feature_stop );
     }
 
+    my $insertion_index = undef;
     if ($feature_type_acc) {
-        push @{ $self->{'insert_features'} },
-            [
+        my @insert_array = (
             $feature_acc,  $map_id,       $feature_type_acc,
             $feature_name, $is_landmark,  $feature_start,
             $feature_stop, $default_rank, $direction
-            ];
-        push @{ $self->{'insert_features'}[-1] }, $gclass
-            if ($gclass);
+        );
+        push @insert_array, $gclass if ($gclass);
+        push @{ $self->{'insert_features'} }, \@insert_array;
+        $insertion_index = $#{ $self->{'insert_features'} };
     }
 
-    if (    $self->{'insert_features'}
-        and scalar( @{ $self->{'insert_features'} } )
+    if (    scalar( @{ $self->{'insert_features'} || [] } )
         and scalar( @{ $self->{'insert_features'} } ) >= $threshold )
     {
         my $no_features     = scalar( @{ $self->{'insert_features'} } );
@@ -5086,15 +5099,20 @@ Feature id
                     ]
             );
         }
+        my @feature_id_array;
+        my $feature_id;
         for ( my $i = 0; $i < $no_features; $i++ ) {
-            my $feature_id = $base_feature_id + $i;
+            $feature_id = $base_feature_id + $i;
             $self->{'insert_features'}[$i][0] ||= $feature_id;
             $sth->execute( $feature_id, @{ $self->{'insert_features'}[$i] } );
+            push @feature_id_array, $feature_id;
         }
         $self->{'insert_features'} = [];
-        return $base_feature_id + $no_features - 1;
+        return $report_feature_index
+            ? ( $insertion_index, \@feature_id_array )
+            : $feature_id;
     }
-    return undef;
+    return $report_feature_index ? ( $insertion_index, undef ) : undef;
 }
 
 #-----------------------------------------------
@@ -5262,6 +5280,28 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $sql_str = $update_sql . $set_sql . $where_sql;
     $db->do( $sql_str, {}, @update_args );
 
+    # Modify the any correspondences that might exist
+    foreach my $params (
+        [ 'map_id',           $map_id ],
+        [ 'feature_type_acc', $feature_type_acc ],
+        [ 'feature_start',    $feature_start ],
+        [ 'feature_stop',     $feature_stop ],
+        )
+    {
+        my $param_name  = $params->[0];
+        my $param_value = $params->[1];
+        if ( defined $param_value ) {
+            foreach my $number ( 1, 2 ) {
+                my $update_str = q[
+                    update cmap_correspondence_lookup
+                    set ] . $param_name . $number . q[ = ?
+                    where feature_id] . $number . q[ = ?  ];
+                $db->do( $update_str, {},
+                    ( $param_value, $feature_id, $param_value, $feature_id, )
+                );
+            }
+        }
+    }
 }
 
 #-----------------------------------------------
@@ -7510,24 +7550,12 @@ Feature Correspondence id
                 = @{ $self->{'insert_correspondences'}[$i] };
             $corr_acc ||= $corr_id;
 
-            my $feature1 = $self->get_features( feature_id => $feature_id1, );
+            my $feature1
+                = $self->get_features_simple( feature_id => $feature_id1, );
             $feature1 = $feature1->[0] if $feature1;
-            my $feature2 = $self->get_features( feature_id => $feature_id2, );
+            my $feature2
+                = $self->get_features_simple( feature_id => $feature_id2, );
             $feature2 = $feature2->[0] if $feature2;
-
-            #
-            # Don't create correspondences among relational maps.
-            #
-            next
-                if $feature1->{'map_set_id'} == $feature2->{'map_set_id'}
-                    && $feature1->{'is_relational_map'} == 1;
-
-            #
-            # Don't create correspondences among relational map sets.
-            #
-            next
-                if $feature1->{'is_relational_map'}
-                    && $feature2->{'is_relational_map'};
 
             $sth_fc->execute(
                 $corr_id,     $corr_acc, $feature_id1,

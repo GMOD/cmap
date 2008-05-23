@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.63 2008-02-22 03:10:23 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.64 2008-05-23 14:08:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -196,8 +196,23 @@ would match.
 
     for my $from_map_set_id (@from_map_set_ids) {
         my @from_map_ids = $self->_get_map_ids($from_map_set_id);
+        my $from_map_set_data
+            = $self->sql()->get_map_sets( map_set_id => $from_map_set_id, );
+        next unless ( @{ $from_map_set_data || [] } );
+        $from_map_set_data = $from_map_set_data->[0];
         for my $to_map_set_id (@to_map_set_ids) {
             my @to_map_ids = $self->_get_map_ids($to_map_set_id);
+            my $to_map_set_data
+                = $self->sql()->get_map_sets( map_set_id => $to_map_set_id, );
+            next unless ( @{ $to_map_set_data || [] } );
+            $to_map_set_data = $to_map_set_data->[0];
+
+            #
+            # Don't create correspondences among relational map sets.
+            #
+            next
+                if $from_map_set_data->{'is_relational_map'}
+                    && $to_map_set_data->{'is_relational_map'};
 
             $self->compare_map_sets(
                 from_map_set_id          => $from_map_set_id,
