@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.109 2008-02-28 17:12:56 mwz444 Exp $
+# $Id: Admin.pm,v 1.110 2008-05-23 14:10:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -36,7 +36,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -779,7 +779,7 @@ integrated with GBrowse and should not be used otherwise.
     my $feature_type_acc = $args{'feature_type_acc'}
         or push @missing, 'feature_type_acc';
     my $feature_start = $args{'feature_start'};
-    push @missing, 'start' unless $feature_start =~ /^$RE{'num'}{'real'}$/;
+    push @missing, 'feature_start' unless $feature_start =~ /^$RE{'num'}{'real'}$/;
     my $feature_stop = $args{'feature_stop'};
     my $is_landmark  = $args{'is_landmark'} || 0;
     my $direction    = $args{'direction'} || 1;
@@ -1886,8 +1886,6 @@ The accession id of a map type that is defined in the config file.
 =item - width
 
 Pixel width of the map
-
-=item - is_relational_map
 
 =item - published_on
 
