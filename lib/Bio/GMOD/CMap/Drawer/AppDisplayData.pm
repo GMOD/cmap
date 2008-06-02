@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::AppDisplayData;
 
 # vim: set ft=perl:
 
-# $Id: AppDisplayData.pm,v 1.95 2008-04-29 20:16:41 mwz444 Exp $
+# $Id: AppDisplayData.pm,v 1.96 2008-06-02 13:09:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -52,7 +52,7 @@ it has already been created.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::AppLayout qw[
@@ -1151,12 +1151,12 @@ The data structure looks like this
                 my $ancestor_start  = $fragment->[3];
                 my $ancestor_stop   = $fragment->[4];
 
-                my $map1_displayed = 0;
+                my $map1_displayed = 1;
                 if ($zone1_displayed) {
                     if (   $fragment_stop < $info_start
                         or $fragment_start > $info_stop )
                     {
-                        $map1_displayed = 1;
+                        $map1_displayed = 0;
                     }
                 }
 
@@ -1271,12 +1271,12 @@ account the posibility of split/merged maps.
                 my $ancestor_start   = $fragment->[3];
                 my $ancestor_stop    = $fragment->[4];
 
-                my $map2_displayed = 0;
+                my $map2_displayed = 1;
                 if ($zone2_displayed) {
                     if (   $fragment_stop < $info_start
                         or $fragment_start > $info_stop )
                     {
-                        $map2_displayed = 1;
+                        $map2_displayed = 0;
                     }
                 }
 
