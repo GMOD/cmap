@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.42 2008-01-14 21:19:30 mwz444 Exp $
+# $Id: Apache.pm,v 1.43 2008-06-02 13:05:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -78,6 +78,7 @@ use Bio::GMOD::CMap::Apache::MatrixViewer;
 use Bio::GMOD::CMap::Apache::SpeciesViewer;
 use Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 use Bio::GMOD::CMap::Apache::Remote;
+use Bio::GMOD::CMap::Apache::CMap3D;
 
 use base 'Bio::GMOD::CMap';
 
@@ -108,6 +109,7 @@ use constant DISPATCH => {
     species_info        => __PACKAGE__ . '::SpeciesViewer',
     view_feature_on_map => __PACKAGE__ . '::ViewFeatureOnMap',
     remote              => __PACKAGE__ . '::Remote',
+    cmap3d              => __PACKAGE__ . '::CMap3D',
     viewer              => __PACKAGE__ . '::MapViewer',
     map_search          => __PACKAGE__ . '::MapSearch',
     spider              => __PACKAGE__ . '::SpiderViewer',
