@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GFFProducer;
 
 # vim: set ft=perl:
 
-# $Id: GFFProducer.pm,v 1.2 2008-05-23 21:16:41 mwz444 Exp $
+# $Id: GFFProducer.pm,v 1.3 2008-06-02 13:01:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ the database or the import module.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -52,15 +52,68 @@ sub export {
 
     # my $map_set_ids = $args{'map_set_ids'};
     my $output_file = $args{'output_file'} || '-';
+    my $map_ids     = $args{'map_ids'}     || [];
+    my $map_set_ids = $args{'map_set_ids'} || [];
+    my $species_ids = $args{'species_ids'} || [];
+
+    $self->set_object_limits(
+        map_ids     => $map_ids,
+        map_set_ids => $map_set_ids,
+        species_ids => $species_ids,
+    );
 
     $self->file_handle($output_file);
     $self->write_header();
     $self->preextract_attributes();
     $self->preextract_xrefs();
     $self->export_species();
-    $self->export_extras();
+    $self->export_extras()
+        unless ( @$map_ids or @$map_set_ids or @$species_ids );
 
     return 1;
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 set_object_limits
+
+=cut
+
+sub set_object_limits {
+    my ( $self, %args ) = @_;
+    my $map_ids     = $args{'map_ids'}     || [];
+    my $map_set_ids = $args{'map_set_ids'} || [];
+    my $species_ids = $args{'species_ids'} || [];
+
+    $self->{'species_id_hash'} = {};
+    $self->{'map_set_id_hash'} = {};
+    $self->{'map_id_hash'}     = {};
+
+    if (@$map_ids) {
+        my $map_data = $self->sql->get_maps( map_ids => $map_ids, );
+        foreach my $map ( @{ $map_data || [] } ) {
+            $self->{'map_id_hash'}{ $map->{'map_id'} }         = 1;
+            $self->{'map_set_id_hash'}{ $map->{'map_set_id'} } = 1;
+            $self->{'species_id_hash'}{ $map->{'species_id'} } = 1;
+        }
+    }
+    if (@$map_set_ids) {
+        my $map_set_data
+            = $self->sql->get_map_sets( map_set_ids => $map_set_ids, );
+        foreach my $map_set ( @{ $map_set_data || [] } ) {
+            $self->{'map_set_id_hash'}{ $map_set->{'map_set_id'} } = 1;
+            $self->{'species_id_hash'}{ $map_set->{'species_id'} } = 1;
+        }
+    }
+    if (@$species_ids) {
+        my $species_data
+            = $self->sql->get_species( species_ids => $species_ids, );
+        foreach my $species ( @{ $species_data || [] } ) {
+            $self->{'species_id_hash'}{ $species->{'species_id'} } = 1;
+        }
+    }
 }
 
 # ----------------------------------------------
@@ -255,7 +308,9 @@ sub export_extras {
 sub export_species {
     my ( $self, %args ) = @_;
 
-    my $species_list = $self->sql->get_species();
+    my @species_ids = keys %{ $self->{'species_id_hash'} || {} };
+    my $species_list
+        = $self->sql->get_species( species_ids => \@species_ids, );
 
     unless ( @{ $species_list || [] } ) {
         print STDERR "WARNING - No Species in the database.\n";
@@ -289,7 +344,11 @@ sub export_map_sets {
     my ( $self, %args ) = @_;
     my $species_id = $args{'species_id'};
 
-    my $map_set_list = $self->sql->get_map_sets( species_id => $species_id, );
+    my @map_set_ids = keys %{ $self->{'map_set_id_hash'} || {} };
+    my $map_set_list = $self->sql->get_map_sets(
+        species_id  => $species_id,
+        map_set_ids => \@map_set_ids,
+    );
 
     my $all_map_set_attributes = $self->attributes_of_type('map_set');
     my $all_map_set_xrefs      = $self->xrefs_of_type('map_set');
@@ -318,7 +377,11 @@ sub export_maps {
     my ( $self, %args ) = @_;
     my $map_set_id = $args{'map_set_id'};
 
-    my $map_list = $self->sql->get_maps( map_set_id => $map_set_id, );
+    my @map_ids = keys %{ $self->{'map_id_hash'} || {} };
+    my $map_list = $self->sql->get_maps(
+        map_set_id => $map_set_id,
+        map_ids    => \@map_ids,
+    );
     return unless ( @{ $map_list || [] } );
 
     my $map_type_acc     = $map_list->[0]{'map_type_acc'};
@@ -359,10 +422,28 @@ sub export_features {
     my $correspondence_list = $self->sql->get_feature_correspondence_details(
         map_id1                 => $map_id,
         disregard_evidence_type => 1,
+        unordered               => 1
     );
 
     my %corrs_by_feature_id;
+    my $species_id_hash = $self->{'species_id_hash'};
+    my $map_set_id_hash = $self->{'map_set_id_hash'};
+    my $map_id_hash     = $self->{'map_id_hash'};
     foreach my $corr_data ( @{ $correspondence_list || [] } ) {
+
+        # Make sure the corr to a feature being reported
+        if ((   $species_id_hash
+                and not $species_id_hash->{ $corr_data->{'species_id2'} }
+            )
+            or ( $map_set_id_hash
+                and not $map_set_id_hash->{ $corr_data->{'map_set_id2'} } )
+            or ( $map_id_hash
+                and not $map_id_hash->{ $corr_data->{'map_id2'} } )
+            )
+        {
+            next;
+        }
+
         push @{ $corrs_by_feature_id{ $corr_data->{'feature_id1'} } },
             $corr_data;
     }
