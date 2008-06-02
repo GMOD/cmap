@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.181 2008-05-23 14:08:50 mwz444 Exp $
+# $Id: Generic.pm,v 1.182 2008-06-02 13:00:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.181 $)[-1];
+$VERSION = (qw$Revision: 1.182 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1271,6 +1271,8 @@ Gets species information
 
 =item - Species ID (species_id)
 
+=item - List of Species IDs (species_ids)
+
 =item - List of Species Accessions (species_accs)
 
 =item - Boolean: is this a relational map (is_relational_map)
@@ -1309,6 +1311,7 @@ Not using cache because this query is quicker.
         cmap_object       => 0,
         no_validation     => 0,
         species_id        => 0,
+        species_ids       => 0,
         species_accs      => 0,
         is_relational_map => 0,
         is_enabled        => 0,
@@ -1317,6 +1320,7 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $species_id        = $args{'species_id'};
+    my $species_ids       = $args{'species_ids'} || [];
     my $species_accs      = $args{'species_accs'} || [];
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
@@ -1347,6 +1351,11 @@ Not using cache because this query is quicker.
     if ($species_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " s.species_id = " . $db->quote($species_id) . " ";
+    }
+    elsif (@$species_ids) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " s.species_id in ("
+            . join( ", ", map { $db->quote($_) } sort @$species_ids ) . ") ";
     }
     elsif (@$species_accs) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
@@ -6016,6 +6025,10 @@ If disregard_evidence_type is not true AND no evidence type info is given, retur
 
 =item - feature_id2 (feature_id2)
 
+=item - species_id2 (species_id2)
+
+=item - species_acc2 (species_acc2)
+
 =item - map_set_id2 (map_set_id2)
 
 =item - map_set_acc2 (map_set_acc2)
@@ -6027,6 +6040,8 @@ If disregard_evidence_type is not true AND no evidence type info is given, retur
 =item - map_acc2 (map_acc2)
 
 =item - disregard_evidence_type (disregard_evidence_type)
+
+=item - Don't bother ordering the corrs (unordered)
 
 =back
 
@@ -6069,6 +6084,8 @@ Array of Hashes:
     published_on2
     map_type_acc2
     map_units2
+    species_id2
+    species_acc2
     species_common_name2
     species_display_order2
     feature_correspondence_id
@@ -6095,6 +6112,8 @@ Not using cache because this query is quicker.
         feature_correspondence_id   => 0,
         feature_id1                 => 0,
         feature_id2                 => 0,
+        species_id2                 => 0,
+        species_acc2                => 0,
         map_set_id2                 => 0,
         map_set_acc2                => 0,
         map_id1                     => 0,
@@ -6105,6 +6124,7 @@ Not using cache because this query is quicker.
         greater_evidence_type_accs  => 0,
         evidence_type_score         => 0,
         disregard_evidence_type     => 0,
+        unordered                   => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -6112,11 +6132,14 @@ Not using cache because this query is quicker.
     my $feature_correspondence_id   = $args{'feature_correspondence_id'};
     my $feature_id1                 = $args{'feature_id1'};
     my $feature_id2                 = $args{'feature_id2'};
+    my $species_id2                 = $args{'species_id2'};
+    my $species_acc2                = $args{'species_acc2'};
     my $map_set_id2                 = $args{'map_set_id2'};
     my $map_set_acc2                = $args{'map_set_acc2'};
     my $map_id1                     = $args{'map_id1'};
     my $map_id2                     = $args{'map_id2'};
     my $map_acc2                    = $args{'map_acc2'};
+    my $unordered                   = $args{'unordered'};
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'}
         || [];
     my $less_evidence_type_accs = $args{'less_evidence_type_accs'} || [];
@@ -6151,6 +6174,8 @@ Not using cache because this query is quicker.
                  ms2.published_on as published_on2,
                  ms2.map_type_acc as map_type_acc2,
                  ms2.map_units as map_units2,
+                 s2.species_id as species_id2,
+                 s2.species_acc as species_acc2,
                  s2.species_common_name as species_common_name2,
                  s2.display_order as species_display_order2,
                  fc.feature_correspondence_id,
@@ -6191,17 +6216,23 @@ Not using cache because this query is quicker.
         $sql_str .= " and cl.map_id1=" . $db->quote($map_id1) . " ";
     }
 
-    if ($map_set_id2) {
+    if ($map_id2) {
+        $sql_str .= " and cl.map_id2=" . $db->quote($map_id2) . " ";
+    }
+    elsif ($map_acc2) {
+        $sql_str .= " and map2.map_acc=" . $db->quote($map_acc2) . " ";
+    }
+    elsif ($map_set_id2) {
         $sql_str .= " and map2.map_set_id=" . $db->quote($map_set_id2) . " ";
     }
     elsif ($map_set_acc2) {
         $sql_str .= " and ms2.map_set_acc=" . $db->quote($map_set_acc2) . " ";
     }
-    elsif ($map_id2) {
-        $sql_str .= " and cl.map_id2=" . $db->quote($map_id2) . " ";
+    elsif ($species_id2) {
+        $sql_str .= " and ms2.species_id=" . $db->quote($species_id2) . " ";
     }
-    elsif ($map_acc2) {
-        $sql_str .= " and map2.map_acc=" . $db->quote($map_acc2) . " ";
+    elsif ($species_acc2) {
+        $sql_str .= " and s2.species_acc=" . $db->quote($species_acc2) . " ";
     }
 
     if (!$disregard_evidence_type
@@ -6243,7 +6274,7 @@ Not using cache because this query is quicker.
             ms2.display_order, ms2.map_set_short_name, map2.display_order,
             map2.map_name, f2.feature_start, f2.feature_name, f2.feature_id,
             fc.feature_correspondence_id
-    ];
+    ] unless ($unordered);
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
