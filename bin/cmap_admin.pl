@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.145 2008-01-22 22:23:23 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.146 2008-06-20 16:25:08 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -10,7 +10,7 @@ use Bio::GMOD::CMap::Admin::Interactive;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.145 $)[-1];
+$VERSION = (qw$Revision: 1.146 $)[-1];
 
 #
 # Get command-line options
@@ -139,6 +139,7 @@ die "$datasource is not a valid data source.\n"
 my %command_line_actions = (
     create_species                   => 1,
     create_map_set                   => 1,
+    import_gff                       => 1,
     import_tab_data                  => 1,
     import_correspondences           => 1,
     import_object_data               => 1,
@@ -226,6 +227,10 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a create_species --species_full_name "Blah Blah" --species_common_name "Blah" --species_acc Blah
 
 # ./bin/cmap_admin.pl -d WashU -a create_map_set --species_acc Blah --map_set_name "MS20" --map_type_acc 2
+
+# ./bin/cmap_admin.pl -d WashU -a import_gff file1 file2
+
+# ./bin/cmap_admin.pl -d WashU -a import_gff --map_set_acc 13  file1 file2
 
 # ./bin/cmap_admin.pl -d WashU -a import_tab_data --map_set_acc 13  file1 file2
 
@@ -401,6 +406,15 @@ cmap_admin.pl [-d data_source] --action  import_correspondences --map_set_accs "
   Required:
     --map_set_accs : A comma (or space) separated list of map set accessions
 
+=head2 import_gff
+
+cmap_admin.pl [-d data_source] --action import_gff [--map_set_acc accession] file1 [file2 ...]
+
+  Optional:
+    --map_set_acc : Accession Id of a map set for information to be inserted
+                    into.  This is not required if the map set is defined in 
+                    the file.
+
 =head2 import_tab_data
 
 cmap_admin.pl [-d data_source] --action import_tab_data --map_set_acc accession [--overwrite] [--allow_update] file1 [file2 ...]
@@ -412,6 +426,7 @@ cmap_admin.pl [-d data_source] --action import_tab_data --map_set_acc accession 
     --allow_update : Include to check for duplicate data (slow)
 
 =head2 import_object_data
+
 cmap_admin.pl [-d data_source] --action import_object_data [--overwrite] file1 [file2 ...]
 
   Optional:

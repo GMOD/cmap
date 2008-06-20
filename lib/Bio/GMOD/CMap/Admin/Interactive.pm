@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.5 2008-04-01 16:32:01 mwz444 Exp $
+# $Id: Interactive.pm,v 1.6 2008-06-20 16:25:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -2667,6 +2667,9 @@ No Parameters
         display => 'display',
         return  => 'action',
         data    => [
+            {   action  => 'import_gff',
+                display => 'Import a CMap GFF file'
+            },
             {   action  => 'import_tab_data',
                 display => 'Import tab-delimited data for existing map set'
             },
@@ -3263,6 +3266,145 @@ active datasource will be purged.
     foreach my $namespace ( @{ $namespaces_purged || [] } ) {
         print "Purged $namespace\n";
     }
+    return 1;
+}
+
+# ----------------------------------------------------
+sub import_gff {
+
+=pod
+
+=head2 import_gff
+
+=head3 Description
+
+Import a tab CMap GFF file
+
+If command_line is true, checks for required options and imports the data.
+
+If command_line is not true, uses a menu system to get the import options.
+
+=head3 Parameters
+
+=over 4
+
+=item * command_line
+
+=item * map_set_acc (Can be defined in GFF file)
+
+=item * file_str (required if command_line)
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $file_str     = $args{'file_str'};
+    my $map_set_acc  = $args{'map_set_acc'};
+    my $overwrite    = $args{'overwrite'} || 0;
+    my $allow_update = $args{'allow_update'} || 0;
+    my $quiet        = $args{'quiet'} || 0;
+    my $sql_object   = $self->sql;
+    my ( $map_set, $files );
+
+    require Bio::DB::SeqFeature::Store;
+    require Bio::DB::SeqFeature::Store::GFF3Loader;
+
+    if ($command_line) {
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if ( defined($map_set_acc) ) {
+            my $map_sets
+                = $sql_object->get_map_sets( map_set_acc => $map_set_acc, );
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                    "Map set Accession, '$map_set_acc' is not valid.\n";
+                push @missing, 'map_set_acc';
+            }
+            $map_set = $map_sets->[0];
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            return 0;
+        }
+    }
+    else {
+
+        ###New File Handling
+        $files = $self->get_files() or return;
+
+        my $get_map_set = $self->show_question(
+            question => "Do you wish to select a map set?\n"
+                . '(This selection will be overwridden if the '
+                . 'map set is defined in the file) [Y/n]' . "\n",
+            allow_null => 1,
+            default    => 'y',
+        );
+
+        unless ( $get_map_set =~ /^[Nn]/ ) {
+            my $map_sets
+                = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+            return unless @{ $map_sets || [] };
+            $map_set = $map_sets->[0];
+        }
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to import?',
+            '  Data source : ' . $self->data_source,
+            "  File        : " . join( ", ", @$files ),
+        ) . "\n";
+        if ($map_set) {
+            print join( "\n",
+                "  Species     : " . $map_set->{species_common_name},
+                "  Map Type    : " . $map_set->{map_type},
+                "  Map Set     : " . $map_set->{map_set_short_name},
+                "  Map Set Acc : " . $map_set->{map_set_acc},
+            ) . "\n";
+        }
+        else {
+            print "  Map Set     : Not Selected\n";
+        }
+        print "[Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
+
+    my $store = Bio::DB::SeqFeature::Store->new(
+        -adaptor     => 'cmap',
+        -data_source => $self->data_source(),
+        -map_set_acc => $map_set ? $map_set->{'map_set_acc'} : '',
+    );
+    my $loader = Bio::DB::SeqFeature::Store::GFF3Loader->new(
+        -store   => $store,
+        -verbose => 1,
+        -fast    => 0
+    );
+
+    my $time_start = new Benchmark;
+    my %maps;    #stores the maps info between each file
+    foreach my $file (@$files) {
+        $loader->load($file);
+    }
+
+    my $time_end = new Benchmark;
+    print STDERR "import time: "
+        . timestr( timediff( $time_end, $time_start ) ) . "\n"
+        unless ($quiet);
+
+    $self->purge_query_cache( cache_level => 1 );
     return 1;
 }
 
