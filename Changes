@@ -6,6 +6,17 @@
   between relational maps (this was done for speed).  The check to make sure
   that no correspondences are made between relational maps has been moved to
   MakeCorrespondences.pm.
+- Significantly, increased the speed of inserting features by removing the numeric check on 
+  the feature_stop value.
+- Added a Bio::DB::SeqFeature::Store adaptor to allow GFF3 to be imported into
+  CMap.  This GFF3 has extra pragma to define objects such as species and map
+  sets.
+- Added a module to output CMap style GFF3.
+- For developers: To allow getting feature ids for features inserted in bulk,
+  added a flag to the Generic.pm method insert_feature() to return an index
+  into an array that is then returned when features are inserted.
+- Added a module to serve data to CMap3D, a 3D viewer being developed by Chris
+  Duran and Dave Edwards.
 
 1.0
 
