@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.6 2008-06-20 16:25:28 mwz444 Exp $
+# $Id: Interactive.pm,v 1.7 2008-06-27 14:54:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -50,6 +50,7 @@ use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 use Bio::GMOD::CMap::Admin::ManageLinks();
 use Bio::GMOD::CMap::Admin::SavedLink;
+use Bio::GMOD::CMap::Admin::GFFProducer;
 use Benchmark;
 
 use base 'Bio::GMOD::CMap';
@@ -1457,6 +1458,9 @@ No Parameters
         display => 'display',
         return  => 'action',
         data    => [
+            {   action  => 'export_as_gff',
+                display => 'Data in CMap GFF3 format',
+            },
             {   action  => 'export_as_text',
                 display => 'Data in tab-delimited CMap format',
             },
@@ -1470,6 +1474,282 @@ No Parameters
     );
 
     $self->$action();
+    return 1;
+}
+
+# ----------------------------------------------------
+sub export_as_gff {
+
+=pod
+
+=head2 export_as_gff
+
+=head3 Description
+
+Exports CMap data a CMap GFF formated file.
+
+See "perldoc Bio::DB::SeqFeature::Store::cmap" for more information on the CMap
+GFF specification.
+
+If command_line is true, checks for required options and exports.
+
+If command_line is not true, uses a menu system to get the export options and
+then exports.
+
+=head3 Parameters
+
+=over 4
+
+=item * command_line
+
+=item * map_set_accs (comma delimited string) or species_accs or map_accs
+
+=item * only_corrs 
+
+Set to true to only output correspondences.
+
+=item * ignore_unit_granularity 
+
+Set to true to tell the exporter not to use the unit_granularity to make all of
+the positions into integers.
+
+=item * export_file
+
+=item * directory
+
+Directory where output file is to be placed 
+
+=back
+
+=cut
+
+    #
+    # Exports data in tab-delimited import format.
+    #
+    my ( $self, %args ) = @_;
+    my $command_line            = $args{'command_line'};
+    my $species_accs            = $args{'species_accs'};
+    my $map_set_accs            = $args{'map_set_accs'};
+    my $map_accs                = $args{'map_accs'};
+    my $dir_str                 = $args{'directory'} || '.';
+    my $only_corrs              = $args{'only_corrs'} || 0;
+    my $ignore_unit_granularity = $args{'ignore_unit_granularity'} || 0;
+    my $export_file             = $args{'export_file'};
+    print STDERR "OC $only_corrs\n";
+    print STDERR "IUG $ignore_unit_granularity\n";
+
+    unless ($export_file) {
+        $export_file = $self->data_source() . ".gff";
+        $export_file =~ s/\s/_/g;
+    }
+
+    my $sql_object = $self->sql or die $self->error;
+    my $log_fh = $self->log_fh;
+    my @species_accs;
+    my $species_data;
+    my @map_set_accs;
+    my $map_set_data;
+    my @map_accs;
+    my $map_data;
+    my @exclude_fields;
+    my $dir;
+
+    if ($command_line) {
+        my @missing = ();
+
+        if ( defined($species_accs) ) {
+
+            # split on space or comma
+            @species_accs = split /[,\s]+/, $species_accs;
+            if (@species_accs) {
+                foreach my $species_acc (@species_accs) {
+                    $species_data = $sql_object->get_species(
+                        species_acc => $species_acc, );
+                    unless ( @{ $species_data || [] } ) {
+                        print STDERR
+                            "Species Accession, '$species_acc' is/are not valid.\n";
+                        push @missing, 'valid species_accs';
+                    }
+                }
+            }
+        }
+        if ( defined($map_set_accs) ) {
+
+            # split on space or comma
+            @map_set_accs = split /[,\s]+/, $map_set_accs;
+            if (@map_set_accs) {
+                foreach my $map_set_acc (@map_set_accs) {
+                    $map_set_data = $sql_object->get_map_sets(
+                        map_set_acc => $map_set_acc, );
+                    unless ( @{ $map_set_data || [] } ) {
+                        print STDERR
+                            "Map Set Accession, '$map_set_acc' is/are not valid.\n";
+                        push @missing, 'valid map_set_accs';
+                    }
+                }
+            }
+        }
+        if ( defined($map_accs) ) {
+
+            # split on space or comma
+            @map_accs = split /[,\s]+/, $map_accs;
+            if (@map_accs) {
+                foreach my $map_acc (@map_accs) {
+                    $map_data = $sql_object->get_maps( map_acc => $map_acc, );
+                    unless ( @{ $map_data || [] } ) {
+                        print STDERR
+                            "Map Set Accession, '$map_acc' is/are not valid.\n";
+                        push @missing, 'valid map_accs';
+                    }
+                }
+            }
+        }
+
+        $dir = $self->_get_dir( dir_str => $dir_str ) or return;
+        $export_file = $self->_get_export_file(
+            file_str => $export_file,
+            dir      => $dir,
+            default  => $export_file,
+        ) or return;
+
+        unless ( defined($dir) ) {
+            push @missing, 'valid directory';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            return 0;
+        }
+    }
+    else {
+        my $select = $self->show_menu(
+            title   => 'Limit Data Export',
+            prompt  => 'How would you like to limit the data export?',
+            display => 'display',
+            return  => 'action',
+            data    => [
+                {   action  => 'by_species',
+                    display => 'By Species',
+                },
+                {   action  => 'by_map_sets',
+                    display => 'By Map Sets',
+                },
+                {   action  => 'by_maps',
+                    display => 'By Maps',
+                },
+                {   action  => 'export_all',
+                    display => 'Export All',
+                },
+            ],
+        );
+
+        if ( $select eq 'by_species' ) {
+            $species_data = $self->get_species or return;
+            @species_accs = map { $_->{'species_acc'} } @$species_data;
+        }
+        elsif ( $select eq 'by_map_sets' ) {
+            $map_set_data = $self->get_map_sets or return;
+            @map_set_accs = map { $_->{'map_set_acc'} } @$map_set_data;
+        }
+        elsif ( $select eq 'by_maps' ) {
+            $map_data = $self->get_maps or return;
+            @map_accs = map { $_->{'map_acc'} } @$map_data;
+        }
+
+        $dir = $self->_get_dir() or return;
+        $export_file
+            = $self->_get_export_file( dir => $dir, default => $export_file, )
+            or return;
+
+        print join( "\n", '', "Export only correspondences? [y/N]", );
+        chomp( $only_corrs = <STDIN> );
+        $only_corrs = ( $only_corrs =~ /^[Yy]/ ) ? 1 : 0;
+
+        print join( "\n",
+            'Unit Granularity:',
+            'The GFF specification requires that all positions be integers.',
+            'To accomodate this, the exporter will devide any start and stops',
+            'by the unit granularity (which is defined in the cofiguration of',
+            'each map_type).  If no unit granularity is defined, it will ',
+            'default to 0.001.  For example, if using the default unit ',
+            'granularity, a feature start of 53.32 will become 53,320.  ',
+            '',
+            'If the exported data is destined to be imported into CMap and not',
+            'used with any other programs, or if the unit granularities are',
+            'not defined but the data consists only of integers, then ignore',
+            'the unit granularity',
+            '',
+            "Ignore Unit Granularity [y/N]",
+        );
+        chomp( $ignore_unit_granularity = <STDIN> );
+        $ignore_unit_granularity
+            = ( $ignore_unit_granularity =~ /^[Yy]/ ) ? 1 : 0;
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to export?',
+            '  Data source              : ' . $self->data_source,
+        ) . "\n";
+        if (@species_accs) {
+            print "  Species                  :\n"
+                . join( "\n",
+                map { "    " . $_->{'species_common_name'} } @$species_data )
+                . "\n";
+        }
+        elsif (@map_set_accs) {
+            print "  Map Sets                 :\n"
+                . join( "\n",
+                map { "    " . $_->{'map_set_name'} } @$map_set_data )
+                . "\n";
+        }
+        elsif (@map_accs) {
+            print "  Maps                     :\n" . join(
+                "\n",
+                map {
+                          "    "
+                        . $_->{'map_name'} . " - "
+                        . $_->{'map_set_name'}
+                    } @$map_data
+            ) . "\n";
+        }
+        else {
+            print "  Data                     : Export All\n";
+        }
+
+        if ($only_corrs) {
+            print "  Export Type              : Only Correspondences\n",;
+        }
+        else {
+            print "  Export Type              : All Data\n",;
+        }
+
+        print join( "\n",
+            "  Ignore Unit Granularity  : "
+                . ( $ignore_unit_granularity ? 'Yes' : 'No' ),
+            "  Directory                : $dir",
+            "  Output File              : $export_file",
+            "[Y/n] " );
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
+
+    my $gff_producer = Bio::GMOD::CMap::Admin::GFFProducer->new(
+        config      => $self->config,
+        data_source => $self->data_source,
+    );
+    $gff_producer->purge_cache( cache_level => 1 );
+
+    $gff_producer->export(
+        output_file             => $export_file,
+        species_accs            => \@species_accs,
+        map_accs                => \@map_accs,
+        map_set_accs            => \@map_set_accs,
+        export_only_corrs       => $only_corrs,
+        ignore_unit_granularity => $ignore_unit_granularity,
+    );
+
     return 1;
 }
 
@@ -2419,6 +2699,79 @@ String defining how to ask the user for the files.
 }
 
 # ----------------------------------------------------
+sub get_species {
+
+=pod
+
+=head2 get_species
+
+=head3 Description
+
+Menu system to select the species the user wants to act apon.
+
+=head3 Parameters
+
+=over 4
+
+=item * explanation
+
+A note to the user
+
+=item * allow_null
+
+Allow not selecting map sets to be a valid option
+
+=item * allow_mult
+
+Allow multiple map sets to be selected.
+
+=back
+
+=cut
+
+    #
+    # Help user choose map sets.
+    #
+    my ( $self, %args ) = @_;
+    my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $allow_null = defined $args{'allow_null'} ? $args{'allow_null'} : 1;
+    my $sql_object = $self->sql or die $self->error;
+    my $log_fh = $self->log_fh;
+
+    if ( my $explanation = $args{'explanation'} ) {
+        print join( "\n",
+            "------------------------------------------------------",
+            "NOTE: $explanation",
+            "------------------------------------------------------",
+        );
+    }
+
+    my $species_choices = $sql_object->get_species();
+
+    my $species_ids = $self->show_menu(
+        title      => 'Select Species',
+        prompt     => 'Which species?',
+        display    => 'species_common_name,species_full_name',
+        return     => 'species_id',
+        allow_null => $allow_null,
+        allow_all  => 1,
+        allow_mult => $allow_mult,
+        data       => $species_choices,
+    );
+    if ( defined($species_ids) and ref $species_ids ne 'ARRAY' ) {
+        $species_ids = [ $species_ids, ];
+    }
+
+    my $species = [];
+    if ( $species_ids and @$species_ids ) {
+        $species = $sql_object->get_species( species_ids => $species_ids, );
+        $species = sort_selectall_arrayref( $species, 'species_common_name' );
+    }
+
+    return $species;
+}
+
+# ----------------------------------------------------
 sub get_map_sets {
 
 =pod
@@ -2581,6 +2934,97 @@ Allow multiple map sets to be selected.
 
     }
     return $map_sets;
+}
+
+# ----------------------------------------------------
+sub get_maps {
+
+=pod
+
+=head2 get_maps
+
+=head3 Description
+
+Menu system to select the maps the user wants to act apon.
+
+=head3 Parameters
+
+=over 4
+
+=item * explanation
+
+A note to the user
+
+=item * allow_null
+
+Allow not selecting map sets to be a valid option
+
+=item * allow_mult
+
+Allow multiple map sets to be selected.
+
+=back
+
+=cut
+
+    #
+    # Help user choose map sets.
+    #
+    my ( $self, %args ) = @_;
+    my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $allow_null = defined $args{'allow_null'} ? $args{'allow_null'} : 1;
+    my $sql_object = $self->sql or die $self->error;
+    my $log_fh = $self->log_fh;
+
+    if ( my $explanation = $args{'explanation'} ) {
+        print join( "\n",
+            "------------------------------------------------------",
+            "NOTE: $explanation",
+            "------------------------------------------------------",
+        );
+    }
+
+    my @map_set_accs;
+    my $do_map_set_search;
+    print join( "\n", '', "Narrow search by map set? [Y/n]", );
+    chomp( $do_map_set_search = <STDIN> );
+    $do_map_set_search = ( $do_map_set_search =~ /^[Nn]/ ) ? 0 : 1;
+
+    if ($do_map_set_search) {
+        my $map_sets
+            = $self->get_map_sets( allow_mult => 1, allow_null => 0 );
+        foreach my $map_set ( @{ $map_sets || [] } ) {
+            push @map_set_accs, $map_set->{'map_set_acc'};
+        }
+    }
+
+    my %get_maps_args = ();
+    if (@map_set_accs) {
+        $get_maps_args{'map_set_accs'} = \@map_set_accs;
+    }
+    my $map_choices = $sql_object->get_maps( %get_maps_args, );
+
+    my $map_ids = $self->show_menu(
+        title      => 'Select Maps',
+        prompt     => 'Which maps?',
+        display    => 'map_name,map_set_name',
+        return     => 'map_id',
+        allow_null => $allow_null,
+        allow_all  => 1,
+        allow_mult => $allow_mult,
+        data       => $map_choices,
+    );
+    if ( defined($map_ids) and ref $map_ids ne 'ARRAY' ) {
+        $map_ids = [ $map_ids, ];
+    }
+
+    my $maps = [];
+    if ( $map_ids and @$map_ids ) {
+        $maps = $sql_object->get_maps( map_ids => $map_ids, );
+        $maps = sort_selectall_arrayref( $maps, 'map_name' );
+    }
+
+    return $maps;
 }
 
 # ----------------------------------------------------
@@ -4659,6 +5103,78 @@ If given, accepts whatever dir_str is set to.
         }
     }
     return $dir;
+}
+
+# ----------------------------------------------------
+sub _get_export_file {
+
+=pod
+
+=head2 _get_export_file
+
+=head3 Description
+
+Get the name of an output file
+
+If given, accepts whatever file_str is set to.
+
+=head3 Parameters
+
+=over 4
+
+=item * file_str
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $file_str = $args{'file_str'};
+    my $dir      = $args{'dir'};
+    my $default  = $args{'default'};
+    my $file;
+    my $fh = \*STDOUT;
+    $fh = \*STDERR if ($file_str);
+    my $continue_loop = 1;
+    while ( not defined($file) and $continue_loop ) {
+        my $answer;
+        if ($file_str) {
+            $continue_loop = 0;
+            $answer        = $file_str;
+        }
+        else {
+            print $fh "\nTo which file should I write the output?\n",
+                "['q' to quit, default: $default ] ";
+            chomp( $answer = <STDIN> );
+            $answer ||= $default;
+            return if $answer =~ m/^[qQ]/;
+        }
+
+        if ( -d $dir . "/" . $answer ) {
+            print $fh
+                "\n'$answer' is a directory, please choose another file name.\n\n";
+            next;
+        }
+        elsif ( -e $dir . "/" . $answer and not $file_str ) {
+            my $response;
+            print $fh "\n'$answer' already exists.  Overwrite? [y/N] ";
+            chomp( $response = <STDIN> );
+            $response ||= 'n';
+            if ( $response =~ m/^[Yy]/ ) {
+                $file = $answer;
+                last;
+            }
+            else {
+                print $fh "\nPlease choose another file name or quit.\n\n";
+                next;
+            }
+        }
+        else {
+            $file = $answer;
+            last;
+        }
+    }
+    return $file;
 }
 
 # ----------------------------------------------------

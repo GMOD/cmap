@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.146 2008-06-20 16:25:08 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.147 2008-06-27 14:54:03 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -10,7 +10,7 @@ use Bio::GMOD::CMap::Admin::Interactive;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.146 $)[-1];
+$VERSION = (qw$Revision: 1.147 $)[-1];
 
 #
 # Get command-line options
@@ -53,6 +53,9 @@ my ( $feature_type_accs, $exclude_fields, $directory, );
 #export text
 my ($export_objects);
 
+#export gff
+my ( $species_accs, $only_corrs, $ignore_unit_granularity, );
+
 #delete map_set
 my ($map_accs);
 
@@ -76,6 +79,7 @@ GetOptions(
     'species_full_name=s'             => \$species_full_name,
     'species_common_name=s'           => \$species_common_name,
     'species_acc=s'                   => \$species_acc,
+    'species_accs=s'                  => \$species_accs,
     'species_id=s'                    => \$species_id,
     'map_set_name=s'                  => \$map_set_name,
     'map_set_short_name=s'            => \$map_set_short_name,
@@ -110,6 +114,8 @@ GetOptions(
     'name_regex=s'                    => \$name_regex,
     'from_group_size=s'               => \$from_group_size,
     'link_group=s'                    => \$link_group,
+    'only_corrs'                      => \$only_corrs,
+    'ignore_unit_granularity'         => \$ignore_unit_granularity,
 ) or pod2usage(2);
 my $file_str = join( ' ', @ARGV );
 
@@ -147,6 +153,7 @@ my %command_line_actions = (
     purge_query_cache                => 1,
     reload_correspondence_matrix     => 1,
     delete_duplicate_correspondences => 1,
+    export_as_gff                    => 1,
     export_as_sql                    => 1,
     export_as_text                   => 1,
     export_objects                   => 1,
@@ -180,46 +187,48 @@ while ($continue) {
 
     # Arguments are only used with command_line
     $interactive->$action(
-        command_line           => $command_line,
-        species_full_name      => $species_full_name,
-        species_common_name    => $species_common_name,
-        species_acc            => $species_acc,
-        map_set_name           => $map_set_name,
-        map_set_short_name     => $map_set_short_name,
-        species_id             => $species_id,
-        species_acc            => $species_acc,
-        map_type_acc           => $map_type_acc,
-        feature_type_acc       => $feature_type_acc,
-        feature_type_accs      => $feature_type_accs,
-        evidence_type_acc      => $evidence_type_acc,
-        evidence_type_accs     => $evidence_type_accs,
-        skip_feature_type_accs => $skip_feature_type_accs,
-        map_set_acc            => $map_set_acc,
-        from_map_set_acc       => $from_map_set_acc,
-        from_map_set_accs      => $from_map_set_accs,
-        to_map_set_acc         => $to_map_set_acc,
-        to_map_set_accs        => $to_map_set_accs,
-        map_set_accs           => $map_set_accs,
-        map_shape              => $map_shape,
-        map_color              => $map_color,
-        map_width              => $map_width,
-        file_str               => $file_str,
-        overwrite              => $overwrite,
-        allow_update           => $allow_update,
-        cache_level            => $cache_level,
-        purge_all              => $purge_all,
-        format                 => $format,
-        add_truncate           => $add_truncate,
-        export_file            => $export_file,
-        export_objects         => $export_objects,
-        tables                 => $tables,
-        quote_escape           => $quote_escape,
-        exclude_fields         => $exclude_fields,
-        directory              => $directory,
-        name_regex             => $name_regex,
-        from_group_size        => $from_group_size,
-        map_accs               => $map_accs,
-        link_group             => $link_group,
+        command_line            => $command_line,
+        species_full_name       => $species_full_name,
+        species_common_name     => $species_common_name,
+        species_acc             => $species_acc,
+        map_set_name            => $map_set_name,
+        map_set_short_name      => $map_set_short_name,
+        species_id              => $species_id,
+        species_accs            => $species_accs,
+        map_type_acc            => $map_type_acc,
+        feature_type_acc        => $feature_type_acc,
+        feature_type_accs       => $feature_type_accs,
+        evidence_type_acc       => $evidence_type_acc,
+        evidence_type_accs      => $evidence_type_accs,
+        skip_feature_type_accs  => $skip_feature_type_accs,
+        map_set_acc             => $map_set_acc,
+        from_map_set_acc        => $from_map_set_acc,
+        from_map_set_accs       => $from_map_set_accs,
+        to_map_set_acc          => $to_map_set_acc,
+        to_map_set_accs         => $to_map_set_accs,
+        map_set_accs            => $map_set_accs,
+        map_shape               => $map_shape,
+        map_color               => $map_color,
+        map_width               => $map_width,
+        file_str                => $file_str,
+        overwrite               => $overwrite,
+        allow_update            => $allow_update,
+        cache_level             => $cache_level,
+        purge_all               => $purge_all,
+        format                  => $format,
+        add_truncate            => $add_truncate,
+        export_file             => $export_file,
+        export_objects          => $export_objects,
+        tables                  => $tables,
+        quote_escape            => $quote_escape,
+        exclude_fields          => $exclude_fields,
+        directory               => $directory,
+        name_regex              => $name_regex,
+        from_group_size         => $from_group_size,
+        map_accs                => $map_accs,
+        link_group              => $link_group,
+        only_corrs              => $only_corrs,
+        ignore_unit_granularity => $ignore_unit_granularity,
 
     );
 }
@@ -351,6 +360,24 @@ cmap_admin.pl [-d data_source] --action delete_maps (--map_set_acc accession [ -
     --map_accs :  A comma (or space) separated list of map accessions to be deleted
 
 To delete all the maps from a map set, supply the --map_set_acc and use "--map_accs all".
+
+=head2 export_as_gff
+
+cmap_admin.pl [-d data_source] --action export_as_gff [ --species_accs "accession [, acc2...]" OR --map_set_accs "accession [, acc2...]" OR --map_accs "accession [, acc2...]" ] [--only_corrs] [--ignore_unit_granularity] [--directory directory] [--export_file file_name]
+
+  Only use one or none of the following options: --species_accs, --map_set_accs 
+    or --map_accs.  Using none, will result in the whole database being exported.
+
+  Optional:
+    --species_accs : A comma (or space) separated list of species accessions
+    --map_set_accs : A comma (or space) separated list of map set accessions
+    --map_accs     : A comma (or space) separated list of map accessions
+    --ignore_unit_granularity : A boolean. Set to true to tell the exporter 
+                                not to use the unit_granularity to make all of
+                                the positions into integers.
+    --only_corrs : A boolean. Set to true to only output correspondences.
+    --directory : Directory to place the output
+    --export_file : Name of the export file (default: DATASOURCE.gff)
 
 =head2 export_as_text
 

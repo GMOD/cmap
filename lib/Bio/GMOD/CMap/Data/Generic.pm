@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.182 2008-06-02 13:00:40 mwz444 Exp $
+# $Id: Generic.pm,v 1.183 2008-06-27 14:54:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.182 $)[-1];
+$VERSION = (qw$Revision: 1.183 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1271,6 +1271,8 @@ Gets species information
 
 =item - Species ID (species_id)
 
+=item - Species Accession (species_acc)
+
 =item - List of Species IDs (species_ids)
 
 =item - List of Species Accessions (species_accs)
@@ -1311,6 +1313,7 @@ Not using cache because this query is quicker.
         cmap_object       => 0,
         no_validation     => 0,
         species_id        => 0,
+        species_acc       => 0,
         species_ids       => 0,
         species_accs      => 0,
         is_relational_map => 0,
@@ -1320,6 +1323,7 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $species_id        = $args{'species_id'};
+    my $species_acc       = $args{'species_id'};
     my $species_ids       = $args{'species_ids'} || [];
     my $species_accs      = $args{'species_accs'} || [];
     my $is_relational_map = $args{'is_relational_map'};
@@ -1351,6 +1355,10 @@ Not using cache because this query is quicker.
     if ($species_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " s.species_id = " . $db->quote($species_id) . " ";
+    }
+    if ($species_acc) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " s.species_acc = " . $db->quote($species_acc) . " ";
     }
     elsif (@$species_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';

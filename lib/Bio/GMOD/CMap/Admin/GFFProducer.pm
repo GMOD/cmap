@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GFFProducer;
 
 # vim: set ft=perl:
 
-# $Id: GFFProducer.pm,v 1.3 2008-06-02 13:01:25 mwz444 Exp $
+# $Id: GFFProducer.pm,v 1.4 2008-06-27 14:54:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ the database or the import module.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -51,10 +51,48 @@ sub export {
     my ( $self, %args ) = @_;
 
     # my $map_set_ids = $args{'map_set_ids'};
-    my $output_file = $args{'output_file'} || '-';
-    my $map_ids     = $args{'map_ids'}     || [];
-    my $map_set_ids = $args{'map_set_ids'} || [];
-    my $species_ids = $args{'species_ids'} || [];
+    my $output_file             = $args{'output_file'}             || '-';
+    my $map_ids                 = $args{'map_ids'}                 || [];
+    my $map_set_ids             = $args{'map_set_ids'}             || [];
+    my $species_ids             = $args{'species_ids'}             || [];
+    my $map_accs                = $args{'map_accs'}                || [];
+    my $map_set_accs            = $args{'map_set_accs'}            || [];
+    my $species_accs            = $args{'species_accs'}            || [];
+    my $export_only_corrs       = $args{'export_only_corrs'}       || 0;
+    my $ignore_unit_granularity = $args{'ignore_unit_granularity'} || 0;
+
+    if (@$map_accs) {
+        $map_ids = [
+            map {
+                $self->sql->acc_id_to_internal_id(
+                    acc_id      => $_,
+                    object_type => 'map',
+                );
+                } @$map_accs
+        ];
+    }
+    if (@$map_set_accs) {
+        $map_set_ids = [
+            map {
+                $self->sql->acc_id_to_internal_id(
+                    acc_id      => $_,
+                    object_type => 'map_set',
+                );
+                } @$map_set_accs
+        ];
+    }
+    if (@$species_accs) {
+        $species_ids = [
+            map {
+                $self->sql->acc_id_to_internal_id(
+                    acc_id      => $_,
+                    object_type => 'species',
+                );
+                } @$species_accs
+        ];
+    }
+
+    $self->ignore_unit_granularity($ignore_unit_granularity);
 
     $self->set_object_limits(
         map_ids     => $map_ids,
@@ -64,11 +102,14 @@ sub export {
 
     $self->file_handle($output_file);
     $self->write_header();
-    $self->preextract_attributes();
-    $self->preextract_xrefs();
-    $self->export_species();
+    $self->preextract_attributes() unless ($export_only_corrs);
+    $self->preextract_xrefs()      unless ($export_only_corrs);
+    $self->export_species( export_only_corrs => $export_only_corrs, );
     $self->export_extras()
-        unless ( @$map_ids or @$map_set_ids or @$species_ids );
+        unless ( @$map_ids
+        or @$map_set_ids
+        or @$species_ids
+        or $export_only_corrs );
 
     return 1;
 }
@@ -307,6 +348,7 @@ sub export_extras {
 
 sub export_species {
     my ( $self, %args ) = @_;
+    my $export_only_corrs = $args{'export_only_corrs'};
 
     my @species_ids = keys %{ $self->{'species_id_hash'} || {} };
     my $species_list
@@ -324,8 +366,10 @@ sub export_species {
             species_data => $species_data,
             attributes   => $all_species_attributes->{$species_id},
             xrefs        => $all_species_xrefs->{$species_id},
-        );
-        $self->export_map_sets( species_id => $species_data->{'species_id'},
+        ) unless ($export_only_corrs);
+        $self->export_map_sets(
+            species_id        => $species_data->{'species_id'},
+            export_only_corrs => $export_only_corrs,
         );
     }
 
@@ -342,7 +386,8 @@ sub export_species {
 
 sub export_map_sets {
     my ( $self, %args ) = @_;
-    my $species_id = $args{'species_id'};
+    my $species_id        = $args{'species_id'};
+    my $export_only_corrs = $args{'export_only_corrs'};
 
     my @map_set_ids = keys %{ $self->{'map_set_id_hash'} || {} };
     my $map_set_list = $self->sql->get_map_sets(
@@ -358,8 +403,11 @@ sub export_map_sets {
             map_set_data => $map_set_data,
             attributes   => $all_map_set_attributes->{$map_set_id},
             xrefs        => $all_map_set_xrefs->{$map_set_id},
+        ) unless ($export_only_corrs);
+        $self->export_maps(
+            map_set_id        => $map_set_data->{'map_set_id'},
+            export_only_corrs => $export_only_corrs,
         );
-        $self->export_maps( map_set_id => $map_set_data->{'map_set_id'}, );
     }
 
     return 1;
@@ -375,7 +423,8 @@ sub export_map_sets {
 
 sub export_maps {
     my ( $self, %args ) = @_;
-    my $map_set_id = $args{'map_set_id'};
+    my $map_set_id        = $args{'map_set_id'};
+    my $export_only_corrs = $args{'export_only_corrs'};
 
     my @map_ids = keys %{ $self->{'map_id_hash'} || {} };
     my $map_list = $self->sql->get_maps(
@@ -396,8 +445,12 @@ sub export_maps {
             unit_granularity => $unit_granularity,
             attributes       => $all_map_attributes->{$map_id},
             xrefs            => $all_map_xrefs->{$map_id},
+        ) unless ($export_only_corrs);
+        $self->export_features(
+            map_id            => $map_data->{'map_id'},
+            export_only_corrs => $export_only_corrs,
+            unit_granularity  => $unit_granularity,
         );
-        $self->export_features( map_id => $map_data->{'map_id'}, );
     }
 
     return 1;
@@ -413,7 +466,9 @@ sub export_maps {
 
 sub export_features {
     my ( $self, %args ) = @_;
-    my $map_id = $args{'map_id'};
+    my $map_id            = $args{'map_id'};
+    my $unit_granularity  = $args{'unit_granularity'};
+    my $export_only_corrs = $args{'export_only_corrs'};
 
     my $feature_list = $self->sql->get_features( map_id => $map_id, );
     return unless ( @{ $feature_list || [] } );
@@ -432,12 +487,12 @@ sub export_features {
     foreach my $corr_data ( @{ $correspondence_list || [] } ) {
 
         # Make sure the corr to a feature being reported
-        if ((   $species_id_hash
+        if ((   %$species_id_hash
                 and not $species_id_hash->{ $corr_data->{'species_id2'} }
             )
-            or ( $map_set_id_hash
+            or ( %$map_set_id_hash
                 and not $map_set_id_hash->{ $corr_data->{'map_set_id2'} } )
-            or ( $map_id_hash
+            or ( %$map_id_hash
                 and not $map_id_hash->{ $corr_data->{'map_id2'} } )
             )
         {
@@ -447,23 +502,32 @@ sub export_features {
         push @{ $corrs_by_feature_id{ $corr_data->{'feature_id1'} } },
             $corr_data;
     }
-
-    my $map_type_acc     = $feature_list->[0]{'map_type_acc'};
-    my $unit_granularity = $self->unit_granularity($map_type_acc);
+    unless ($unit_granularity) {
+        my $map_type_acc = $feature_list->[0]{'map_type_acc'};
+        $unit_granularity = $self->unit_granularity($map_type_acc);
+    }
 
     my $all_feature_attributes = $self->attributes_of_type('feature');
     my $all_feature_xrefs      = $self->xrefs_of_type('feature');
     foreach my $feature_data ( @{ $feature_list || [] } ) {
         my $feature_id = $feature_data->{'feature_id'};
-
-        $self->write_feature(
-            feature_data     => $feature_data,
-            correspondences  => $corrs_by_feature_id{$feature_id},
-            attributes       => $all_feature_attributes->{$feature_id},
-            xrefs            => $all_feature_xrefs->{$feature_id},
-            unit_granularity => $unit_granularity,
-            file_handle      => $self->file_handle(),
-        );
+        if ($export_only_corrs) {
+            $self->write_correspondences(
+                feature_data1   => $feature_data,
+                correspondences => $corrs_by_feature_id{$feature_id},
+                file_handle     => $self->file_handle(),
+            );
+        }
+        else {
+            $self->write_feature(
+                feature_data     => $feature_data,
+                correspondences  => $corrs_by_feature_id{$feature_id},
+                attributes       => $all_feature_attributes->{$feature_id},
+                xrefs            => $all_feature_xrefs->{$feature_id},
+                unit_granularity => $unit_granularity,
+                file_handle      => $self->file_handle(),
+            );
+        }
     }
 
     return 1;
@@ -623,10 +687,12 @@ sub write_map {
         display_order
     );
 
-    $map_data->{'map_start'}
-        = int( $map_data->{'map_start'} / $unit_granularity );
-    $map_data->{'map_stop'}
-        = int( $map_data->{'map_stop'} / $unit_granularity );
+    if ( $unit_granularity != 1 ) {
+        $map_data->{'map_start'}
+            = int( $map_data->{'map_start'} / $unit_granularity );
+        $map_data->{'map_stop'}
+            = int( $map_data->{'map_stop'} / $unit_granularity );
+    }
 
     $self->write_generic_pragma(
         data        => $map_data,
@@ -679,8 +745,12 @@ sub write_feature {
             || "CMap" );
     my $type = $self->feature_type_data( $feature_type_acc, 'gbrowse_type' )
         || $feature_type_acc;
-    my $start   = int( $feature_data->{'feature_start'} / $unit_granularity );
-    my $stop    = int( $feature_data->{'feature_stop'} / $unit_granularity );
+    my $start = $feature_data->{'feature_start'};
+    my $stop  = $feature_data->{'feature_stop'};
+    if ( $unit_granularity != 1 ) {
+        $start = int( $start / $unit_granularity );
+        $stop  = int( $stop / $unit_granularity );
+    }
     my $score   = ".";
     my $strand  = $feature_data->{'direction'} == -1 ? "-" : "+";
     my $phase   = ".";
@@ -734,6 +804,49 @@ sub write_feature {
             $score,  $strand, $phase, $column9,
         )
     ) . "\n";
+    return 1;
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 write_correspondences
+
+=cut
+
+sub write_correspondences {
+    my ( $self, %args ) = @_;
+    my $feature_data1   = $args{'feature_data1'};
+    my $correspondences = $args{'correspondences'};
+    my $fh              = $args{'file_handle'};
+
+    my $id_string1
+        = $self->build_correspondence_id_string_feature1($feature_data1);
+
+    # Correspondences
+    foreach my $corr_data ( @{ $correspondences || [] } ) {
+        my $key1 = $feature_data1->{'feature_id'} . "-"
+            . $corr_data->{'feature_id2'};
+        my $key2 = $corr_data->{'feature_id2'} . "-"
+            . $feature_data1->{'feature_id'};
+        if ( $self->{'wrote_corr'}{$key1} ) {
+            next;
+        }
+        $self->{'wrote_corr'}{$key1} = 1;
+        $self->{'wrote_corr'}{$key2} = 1;
+
+        my $id_string2
+            = $self->build_correspondence_id_string_feature2($corr_data);
+        my $id_string = $id_string1 . ";" . $id_string2;
+        $id_string .= ';evidence_type_acc='
+            . uri_escape( $corr_data->{'evidence_type_acc'} );
+        if ( $corr_data->{'score'} ) {
+            $id_string .= ';score=' . uri_escape( $corr_data->{'score'} );
+        }
+        print $fh "##cmap_correspondence\t$id_string\n";
+    }
+
     return 1;
 }
 
@@ -825,6 +938,12 @@ sub write_xrefs {
 
 =head2 build_generic_id_string
 
+Return a list:
+
+ ($id_string, $finished)
+
+where $finished lets the caller that an accession was used.
+
 =cut
 
 sub build_generic_id_string {
@@ -834,13 +953,13 @@ sub build_generic_id_string {
     my $identifying_params = $args{'identifying_params'} || [];
 
     if ( $data->{$acc_name} !~ /^\d+$/ ) {
-        return $acc_name . "=" . $data->{$acc_name};
+        return ( $acc_name . "=" . $data->{$acc_name}, 1 );
     }
 
     my $id_string
         = join( ";", map { $_ . "=" . $data->{$_} } @$identifying_params );
 
-    return $id_string;
+    return ( $id_string, 0 );
 }
 
 # ----------------------------------------------
@@ -855,11 +974,12 @@ sub build_species_id_string {
     my $self = shift;
     my $data = shift;
 
-    return $self->build_generic_id_string(
+    my ( $id_str, $finished ) = $self->build_generic_id_string(
         data               => $data,
         acc_name           => 'species_acc',
         identifying_params => [ 'species_common_name', 'species_full_name', ],
     );
+    return $id_str;
 }
 
 # ----------------------------------------------
@@ -874,14 +994,14 @@ sub build_map_set_id_string {
     my $self = shift;
     my $data = shift;
 
-    return $self->build_generic_id_string(
+    my ( $id_str, $finished ) = $self->build_generic_id_string(
         data     => $data,
         acc_name => 'map_set_acc',
         identifying_params =>
             [ 'map_set_name', 'map_set_short_name', 'map_type_acc', ],
-        )
-        . ";"
-        . $self->build_species_id_string($data);
+    );
+    $id_str .= ";" . $self->build_species_id_string($data) unless ($finished);
+    return $id_str;
 }
 
 # ----------------------------------------------
@@ -896,13 +1016,13 @@ sub build_map_id_string {
     my $self = shift;
     my $data = shift;
 
-    return $self->build_generic_id_string(
+    my ( $id_str, $finished ) = $self->build_generic_id_string(
         data               => $data,
         acc_name           => 'map_acc',
         identifying_params => [ 'map_name', ],
-        )
-        . ";"
-        . $self->build_map_set_id_string($data);
+    );
+    $id_str .= ";" . $self->build_map_set_id_string($data) unless ($finished);
+    return $id_str;
 }
 
 # ----------------------------------------------
@@ -917,14 +1037,121 @@ sub build_feature_id_string {
     my $self = shift;
     my $data = shift;
 
-    return $self->build_generic_id_string(
-        data     => $data,
-        acc_name => 'feature_acc',
-        identifying_params =>
-            [ 'feature_name', 'feature_start', 'feature_stop', ],
-        )
-        . ";"
-        . $self->build_map_id_string($data);
+    my ( $id_str, $finished ) = $self->build_generic_id_string(
+        data               => $data,
+        acc_name           => 'feature_acc',
+        identifying_params => [
+            'feature_name',  'feature_type_acc',
+            'feature_start', 'feature_stop',
+        ],
+    );
+    $id_str .= ";" . $self->build_map_id_string($data) unless ($finished);
+    return $id_str;
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 build_correspondence_id_string_feature1
+
+=cut
+
+sub build_correspondence_id_string_feature1 {
+    my $self          = shift;
+    my $feature_data1 = shift;
+
+    my $id_string = $self->build_feature_id_string($feature_data1);
+
+    # Give the params a 1 after their names
+    $id_string =~ s/=/1=/g;
+
+    return $id_string;
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 build_correspondence_id_string_feature2
+
+=cut
+
+sub build_correspondence_id_string_feature2 {
+    my $self = shift;
+    my $data = shift;
+
+    # I have to redo the naming the second feature
+    my $id_sting = '';
+    my @id_sections;
+
+    if ( $data->{'feature_acc2'} !~ /^\d+$/ ) {
+        push @id_sections, "feature_acc2=" . $data->{'feature_acc2'};
+        return join( ';', @id_sections );
+    }
+    else {
+        my @identifying_params = (
+            'feature_name2',  'feature_type_acc2',
+            'feature_start2', 'feature_stop2',
+        );
+
+        push @id_sections, map { $_ . "=" . $data->{$_} } @identifying_params;
+    }
+    if ( $data->{'map_acc2'} !~ /^\d+$/ ) {
+        push @id_sections, "map_acc2=" . $data->{'map_acc2'};
+        return join( ';', @id_sections );
+    }
+    else {
+        my @identifying_params = ( 'map_name2', );
+        push @id_sections, map { $_ . "=" . $data->{$_} } @identifying_params;
+    }
+    if ( $data->{'map_set_acc2'} !~ /^\d+$/ ) {
+        push @id_sections, "map_set_acc2=" . $data->{'map_set_acc2'};
+        return join( ';', @id_sections );
+    }
+    else {
+        my $map_set_id2        = $data->{'map_set_id2'};
+        my $map_set_data       = $self->get_map_set_data( $map_set_id2, );
+        my %identifying_params = (
+            map_set_name       => 'map_set_name2',
+            map_set_short_name => 'map_set_short_name2',
+            map_type_acc       => 'map_type_acc2',
+        );
+        push @id_sections,
+            map { $identifying_params{$_} . "=" . $map_set_data->{$_} }
+            keys %identifying_params;
+    }
+    if ( $data->{'species_acc2'} !~ /^\d+$/ ) {
+        push @id_sections, "species_acc2=" . $data->{'species_acc2'};
+        return join( ';', @id_sections );
+    }
+    else {
+        my @identifying_params = ( 'species_common_name2', );
+        push @id_sections, map { $_ . "=" . $data->{$_} } @identifying_params;
+    }
+
+    return join( ';', @id_sections );
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 get_map_set_data
+
+=cut
+
+sub get_map_set_data {
+    my $self       = shift;
+    my $map_set_id = shift;
+
+    unless ( $self->{'map_set_data'}{$map_set_id} ) {
+        my $map_set_data
+            = $self->sql->get_map_sets( map_set_id => $map_set_id, );
+        return undef unless ( @{ $map_set_data || [] } );
+        $self->{'map_set_data'}{$map_set_id} = $map_set_data->[0];
+    }
+    return $self->{'map_set_data'}{$map_set_id};
 }
 
 # ----------------------------------------------
@@ -963,6 +1190,49 @@ sub file_handle {
 
     }
     return $self->{'file_handle'};
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 ignore_unit_granularity
+
+If not ignoring the unit granularity, then the output will use the unit
+granularity make sure the starts and stops are integers.  This essentially
+devides the start/stop by the unit granurity.
+
+=cut
+
+sub ignore_unit_granularity {
+    my ( $self, $value ) = @_;
+
+    if ( defined $value ) {
+        $self->{'ignore_unit_granularity'} = $value;
+    }
+
+    return $self->{'ignore_unit_granularity'} = $value;
+}
+
+# ----------------------------------------------
+
+=pod
+
+=head2 unit_granularity
+
+Overload the parent unit_granularity method to take "ignore_unit_granularity"
+into account
+
+=cut
+
+sub unit_granularity {
+    my ( $self, %args ) = @_;
+
+    if ( $self->{'ignore_unit_granularity'} ) {
+        return 1;
+    }
+
+    return $self->SUPER::unit_granularity(%args);
 }
 
 1;
