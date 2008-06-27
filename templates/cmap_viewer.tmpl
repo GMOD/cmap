@@ -1127,6 +1127,23 @@ function check_radio_for_additional_buttons(radio,val){
                 <td><input type="radio" name="hide_legend" value="0"[%- IF hide_legend==0; ' checked'; END -%]>No</td>
                 <td><input type="radio" name="hide_legend" value="1"[%- IF hide_legend==1; ' checked'; END -%]>Yes</td>
               </tr>
+              <tr>
+                <td align="left" valign="top">Size of Dot Plot Pixels: [% dotplot_ps %]</td>
+                <td>
+                    <select name="dotplot_ps" >
+                      <option value="1"[%- IF not dotplot_ps or dotplot_ps <= 1; ' selected'; END -%]>1</option>
+                      <option value="2"[%- IF dotplot_ps == 2; ' selected'; END -%]>2</option>
+                      <option value="3"[%- IF dotplot_ps == 3; ' selected'; END -%]>3</option>
+                      <option value="4"[%- IF dotplot_ps == 4; ' selected'; END -%]>4</option>
+                      <option value="5"[%- IF dotplot_ps == 5; ' selected'; END -%]>5</option>
+                      <option value="6"[%- IF dotplot_ps == 6; ' selected'; END -%]>6</option>
+                      <option value="7"[%- IF dotplot_ps == 7; ' selected'; END -%]>7</option>
+                      <option value="8"[%- IF dotplot_ps == 8; ' selected'; END -%]>8</option>
+                      <option value="9"[%- IF dotplot_ps == 9; ' selected'; END -%]>9</option>
+                      <option value="10"[%- IF dotplot_ps >= 10; ' selected'; END -%]>10</option>
+                    </select>
+                </td>
+              </tr>
             </table>
             <em><b>*</b>SVG output for high-resolution printing only (no hyperlinks).</em><br>
 

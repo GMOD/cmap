@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Dotplot;
 
 # vim: set ft=perl:
 
-# $Id: Dotplot.pm,v 1.5 2007-11-05 06:51:55 mwz444 Exp $
+# $Id: Dotplot.pm,v 1.6 2008-06-27 20:50:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ The Dot plot drawer. See Bio::GMOD::CMap::Drawer
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Utils qw[ commify ];
 use Bio::GMOD::CMap::Constants;
@@ -54,6 +54,8 @@ Initializes the drawing object.
     my ( $self, $config ) = @_;
 
     $self->initialize_params($config);
+
+    $self->dotplot_ps( $config->{'dotplot_ps'} );
 
     $self->data or return;
 
@@ -267,6 +269,31 @@ Get the pixel_size of each map
     my $map_id    = $args{'map_id'};
 
     return $self->pixel_height();
+}
+
+# ----------------------------------------------------
+sub dotplot_ps {
+
+=pod
+
+=head2 dotplot_ps
+
+Get/set the dotplot pixel size
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    if ($val) {
+        $self->{'dotplot_ps'} = $val;
+    }
+    unless ( defined $self->{'dotplot_ps'} ) {
+        $self->{'dotplot_ps'} = $self->config_data('dotplot_ps')
+            || DEFAULT->{'dotplot_ps'}
+            || 1;
+    }
+
+    return $self->{'dotplot_ps'};
 }
 
 # ----------------------------------------------------
@@ -611,10 +638,11 @@ Draw the actual dotplot for each map
 
     my ( @drawing_data, @map_area_data );
 
-    my $min_x      = $plot_base_x;
-    my $buffer     = 4;
-    my $plot_max_x = $plot_base_x;
-    my $plot_max_y = $plot_base_y;
+    my $min_x         = $plot_base_x;
+    my $buffer        = 4;
+    my $plot_max_x    = $plot_base_x;
+    my $plot_max_y    = $plot_base_y;
+    my $dotplot_width = $self->dotplot_ps();
 
     # Draw left side information here
 
@@ -681,16 +709,37 @@ Draw the actual dotplot for each map
                     = (
                     $comp_to_ref_corrs->{'feature_stop1'} - $comp_map_start )
                     * $comp_factor;
-                push @drawing_data,
-                    [
-                    LINE,
-                    (   $graphable_area_min_x + $start_x,
-                        $graphable_area_max_y - $start_y,
-                        $graphable_area_min_x + $stop_x,
-                        $graphable_area_max_y - $stop_y,
-                    ),
-                    'black',
-                    ];
+                if ($dotplot_width) {
+                    my @points = $self->bresenham_line(
+                        x1 => int $graphable_area_min_x + $start_x,
+                        y1 => int $graphable_area_max_y - $start_y,
+                        x2 => int $graphable_area_min_x + $stop_x,
+                        y2 => int $graphable_area_max_y - $stop_y,
+                    );
+                    foreach my $point (@points) {
+                        my $x = $point->[0];
+                        my $y = $point->[1];
+                        push @drawing_data,
+                            [
+                            ARC, $x, $y, $dotplot_width, $dotplot_width, 0,
+                            360, 'black'
+                            ];
+                        push @drawing_data, [ FILL, $x, $y, 'black' ];
+
+                    }
+                }
+                else {
+                    push @drawing_data,
+                        [
+                        LINE,
+                        (   $graphable_area_min_x + $start_x,
+                            $graphable_area_max_y - $start_y,
+                            $graphable_area_min_x + $stop_x,
+                            $graphable_area_max_y - $stop_y,
+                        ),
+                        'black',
+                        ];
+                }
             }
         }
     }
@@ -715,6 +764,62 @@ Draw the actual dotplot for each map
     $self->add_map_area(@map_area_data);
 
     return ( $max_x, $max_y );
+}
+
+# ----------------------------------------------------
+sub bresenham_line {
+
+=pod
+
+=head2 bresenham_line
+
+Draws a bresenham line between two points.  Ported to perl from psuedocode at
+http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $x1     = $args{'x1'};
+    my $x2     = $args{'x2'};
+    my $y1     = $args{'y1'};
+    my $y2     = $args{'y2'};
+    my @points = ();
+
+    my $is_steep = abs( $y2 - $y1 ) > abs( $x2 - $x1 );
+    if ($is_steep) {
+        ( $y1, $x1 ) = ( $x1, $y1 );
+        ( $y2, $x2 ) = ( $x2, $y2 );
+    }
+    if ( $x1 > $x2 ) {
+        ( $x2, $x1 ) = ( $x1, $x2 );
+        ( $y2, $y1 ) = ( $y1, $y2 );
+    }
+    my $deltax   = $x2 - $x1;
+    my $deltay   = abs( $y2 - $y1 );
+    my $error    = 0;
+    my $deltaerr = $deltax ? ( $deltay / $deltax ) : 0;
+    my $ystep;
+    my $y = $y1;
+    if ( $y1 < $y2 ) {
+        $ystep = 1;
+    }
+    else {
+        $ystep = -1;
+    }
+    for ( my $x = $x1; $x <= $x2; $x++ ) {
+        if ($is_steep) {
+            push @points, [ $y, $x ];
+        }
+        else {
+            push @points, [ $x, $y ];
+        }
+        $error += $deltaerr;
+        if ( $error >= 0.5 ) {
+            $y += $ystep;
+            $error -= 1.0;
+        }
+    }
+    return @points;
 }
 
 1;

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.140 2008-01-24 16:43:08 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.141 2008-06-27 20:50:29 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.140 $)[-1];
+$VERSION = (qw$Revision: 1.141 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -127,8 +127,7 @@ sub handler {
         }
     }
     else {
-        %included_corr_only_features =
-            map { $_ => 1 }
+        %included_corr_only_features = map { $_ => 1 }
             @{ $parsed_url_options{'corr_only_feature_types'} };
         %ignored_feature_types = map { $_ => 1 }
             @{ $parsed_url_options{'ignored_feature_types;'} };
@@ -175,8 +174,7 @@ sub handler {
                 = $drawer->greater_evidence_types;
             $parsed_url_options{'less_evidence_types'}
                 = $drawer->less_evidence_types;
-            %included_corr_only_features =
-                map { $_ => 1 }
+            %included_corr_only_features = map { $_ => 1 }
                 @{ $parsed_url_options{'corr_only_feature_types'} };
             %ignored_feature_types = map { $_ => 1 }
                 @{ $parsed_url_options{'ignored_feature_types'} };
@@ -220,8 +218,7 @@ sub handler {
                 greater_evidence_type_accs =>
                     $parsed_url_options{'greater_evidence_types'},
             );
-            %included_corr_only_features =
-                map { $_ => 1 }
+            %included_corr_only_features = map { $_ => 1 }
                 @{ $parsed_url_options{'corr_only_feature_types'} };
             %ignored_feature_types = map { $_ => 1 }
                 @{ $parsed_url_options{'ignored_feature_types'} };
@@ -240,8 +237,7 @@ sub handler {
                     web_image_cache_dir => $self->web_image_cache_dir(),
                 },
                 \$html
-                )
-                or $html = $t->error;
+            ) or $html = $t->error;
         }
         else {
             $form_data = $data->cmap_form_data(
@@ -267,8 +263,7 @@ sub handler {
                 ref_slot_data   => $drawer
                 ? $drawer->{'data'}->{'slot_data'}{0}
                 : {},
-                )
-                or return $self->error( $data->error );
+            ) or return $self->error( $data->error );
 
             for my $key (qw[ ref_species_acc ref_map_set_acc ]) {
                 $apr->param( $key, $form_data->{$key} );
@@ -327,8 +322,8 @@ sub handler {
                 keys %{ VALID->{'image_size'} }
                 )
             {
-                my $selected =
-                    ( VALID->{'image_size'}{$image_size} == $pixel_height )
+                my $selected
+                    = ( VALID->{'image_size'}{$image_size} == $pixel_height )
                     ? 1
                     : 0;
                 $use_custom_pixel_height = 0 if $selected;
@@ -362,9 +357,8 @@ sub handler {
                     intro          => $INTRO,
                     data_source    => $self->data_source,
                     data_sources   => $self->data_sources,
-                    title          => $self->config_data('cmap_title')
-                        || 'cmap',
-                    stylesheet         => $self->stylesheet,
+                    title      => $self->config_data('cmap_title') || 'cmap',
+                    stylesheet => $self->stylesheet,
                     additional_buttons => $additional_buttons,
                     selected_maps      => {
                         map { $_, 1 } @{ $parsed_url_options{'ref_map_accs'} }
@@ -376,7 +370,7 @@ sub handler {
                     corr_only_feature_types => \%included_corr_only_features,
                     ignored_feature_types   => \%ignored_feature_types,
                     evidence_type_menu_select => \%evidence_type_menu_select,
-                    evidence_type_score       =>
+                    evidence_type_score =>
                         $parsed_url_options{'evidence_type_score'},
                     feature_types => join( ',',
                         @{ $parsed_url_options{'included_feature_types'} } ),
@@ -410,11 +404,10 @@ sub handler {
                     web_image_cache_dir => $self->web_image_cache_dir(),
                     web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
                     dotplot             => $parsed_url_options{'dotplot'},
-
+                    dotplot_ps          => $parsed_url_options{'dotplot_ps'},
                 },
                 \$html
-                )
-                or $html = $t->error;
+            ) or $html = $t->error;
 
             # Clear some of the extra spaces.
             $html =~ s/   +/  /g;
@@ -491,8 +484,7 @@ sub handler {
             max_pages => $MAX_PAGES,
             page_no   => $parsed_url_options{'page_no'},
             page_data => $parsed_url_options{'action'} eq 'download' ? 0 : 1,
-            )
-            or return $self->error( "Data: " . $data->error );
+        ) or return $self->error( "Data: " . $data->error );
 
         $self->object_plugin( 'map_details',
             $detail_data->{'reference_map'} );
@@ -520,8 +512,7 @@ sub handler {
                                     ? $position->{$_}
                                     : ''
                                 } @{ +POSITION_FIELDS }
-                            )
-                            . RECORD_SEP;
+                        ) . RECORD_SEP;
                     }
                 }
                 else {
@@ -543,9 +534,9 @@ sub handler {
             my $t = $self->template;
             $t->process(
                 DETAIL_TEMPLATE,
-                {   apr                   => $apr,
-                    pager                 => $detail_data->{'pager'},
-                    feature_types         => $detail_data->{'feature_types'},
+                {   apr           => $apr,
+                    pager         => $detail_data->{'pager'},
+                    feature_types => $detail_data->{'feature_types'},
                     feature_count_by_type =>
                         $detail_data->{'feature_count_by_type'},
                     evidence_types   => $detail_data->{'evidence_types'},
@@ -560,8 +551,7 @@ sub handler {
                     features              => $detail_data->{'features'},
                 },
                 \$detail_html
-                )
-                or $detail_html = $t->error;
+            ) or $detail_html = $t->error;
 
            # This has to re-write the cookie because the data may have changed
            # since Apache.pm wrote it.

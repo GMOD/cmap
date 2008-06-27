@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.91 2008-01-24 16:43:07 mwz444 Exp $
+# $Id: Utils.pm,v 1.92 2008-06-27 20:50:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -62,6 +62,7 @@ $VERSION = (qw$Revision: 1.91 $)[-1];
     included_evidence_types  ignored_evidence_types
     less_evidence_types      greater_evidence_types
     evidence_type_score      stack_slot
+    dotplot_ps
 ];
 
 # Not saving these because they should be stored in slots by now.
@@ -81,6 +82,7 @@ $VERSION = (qw$Revision: 1.91 $)[-1];
     'link_group'       => q{},
     'flip'             => q{},
     'dotplot'          => 0,
+    'dotplot_ps'       => 1,
     'session_mod'      => q{},
     'page_no'          => 1,
     'action'           => 'view',
@@ -238,8 +240,7 @@ Special thanks to Noel Yap for suggesting this strategy.
     # If we took fewer than was possible, try to sort them nicely.
     #
     elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
-        @accepted
-            = map { $_->[0] }
+        @accepted = map { $_->[0] }
             sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
             map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
             @accepted;
@@ -386,9 +387,8 @@ Special thanks to Noel Yap for suggesting this strategy.
         my $ok = 0;
         while ( !$ok ) {
             $ok = 1;
-            @accepted
-                = map { $_->[0] }
-                sort  { $a->[1] <=> $b->[1] }
+            @accepted = map { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
                 map { [ $_, $_->{'y'} ] } @accepted;
 
             my $last_target = $accepted[0]->{'target'};
@@ -424,8 +424,7 @@ Special thanks to Noel Yap for suggesting this strategy.
         #
         # Figure the gap to evenly space the labels in the space.
         #
-        @accepted
-            = map { $_->[0] }
+        @accepted = map { $_->[0] }
             sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
             map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
             @accepted;
@@ -1309,9 +1308,9 @@ sub _order_out_from_zero {
 # ----------------------------------------------------
 sub _get_options_from_url {
 
-    my %args = @_;
-    my $apr  = $args{'apr'};
-    my $calling_cmap_object  = $args{'calling_cmap_object'};
+    my %args                = @_;
+    my $apr                 = $args{'apr'};
+    my $calling_cmap_object = $args{'calling_cmap_object'};
 
     my %parsed_url_options;
 
@@ -1358,7 +1357,7 @@ sub _get_options_from_url {
         omit_area_boxes          mapMenu             featureMenu
         corrMenu                 displayMenu         advancedMenu
         session_id               saved_link_id       general_min_corrs
-        ignore_comp_maps         eliminate_orphans
+        ignore_comp_maps         eliminate_orphans   dotplot_ps
         ]
         )
     {
@@ -1912,8 +1911,7 @@ sub parse_url {
             my @cmaps = split( /:/, $parsed_url_options{'comparative_maps'} );
             my $found = 0;
             for ( my $i = 0; $i <= $#cmaps; $i++ ) {
-                my ( $c_slot_no, $c_field, $c_acc )
-                    = split( /=/, $cmaps[$i] )
+                my ( $c_slot_no, $c_field, $c_acc ) = split( /=/, $cmaps[$i] )
                     or next;
                 $acc =~ s/^(.*)\[.*/$1/;
                 if (    ( $c_slot_no eq $slot_no )

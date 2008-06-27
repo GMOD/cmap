@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.43 $
+$Revision: 1.44 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -885,6 +885,10 @@ taking images for publication.
 If set to 1, the legend on the image is removed.  This is useful for
 taking images for publication.
 
+=item *  dotplot_ps (Size of Dot Plot Pixels) [ default: 1 ]
+
+Sets the size of the lines in the dotplot view.  Must be a positive integer.
+
 =back
 
 =head4 Advanced Menu Options
@@ -1248,6 +1252,7 @@ of the CMap viewer to see the options of radio buttons.
     ref_map_stop
     font_size
     pixel_height
+    dotplot_ps
 
 =item - Feature and Evidence Type Parameters
 

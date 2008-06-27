@@ -127,6 +127,7 @@ my %config_defs = (
     image_type                => { %generic_scalar_def, },
     stack_maps                => { %generic_scalar_def, },
     clean_view                => { %generic_scalar_def, },
+    dotplot_ps => { %generic_scalar_def, option_type => 'integer', },
     min_map_pixel_height =>
         { %generic_scalar_def, option_type => 'integer', },
     min_tick_distance => { %generic_scalar_def, option_type => 'integer', },

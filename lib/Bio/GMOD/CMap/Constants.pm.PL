@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.55 2008-02-19 20:54:42 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.56 2008-06-27 20:50:29 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -341,6 +341,11 @@ use constant DEFAULT => {
     cookie_domain => '',
 
     disable_cache => 0,
+
+    #
+    #The default pixel size of the dot plot lines
+    #
+    dotplot_ps => 1,
 
     evidence_default_display => 'display',
     #
