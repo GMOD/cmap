@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use base 'Class::Base';
 
@@ -398,7 +398,9 @@ sub banding {
     my $stop_drawing;
 
     # If it overlaps with the previous one, change the color
-    if ( defined($last_y) and $last_y >= $y_pos1 ) {
+    if ( defined( $calling_obj->{'last_banding_y'}{$x_pos2} )
+        and $last_y >= $y_pos1 )
+    {
 
        # Basically, we don't want to cover the last pixel of the previous band
        # unless we have to.  If it overlaps by more than one pixel or it is
