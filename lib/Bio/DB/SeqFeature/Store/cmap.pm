@@ -1,6 +1,6 @@
 package Bio::DB::SeqFeature::Store::cmap;
 
-# $Id: cmap.pm,v 1.4 2008-05-21 21:32:57 mwz444 Exp $
+# $Id: cmap.pm,v 1.5 2008-06-28 19:49:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -83,7 +83,7 @@ The following is an example CMap GFF file
  ##cmap-gff-version 1
  ##cmap_species  species_acc=rice08;species_full_name=Oriza sativa;species_common_name=Rice;display_order=1;
  ###
- ##cmap_map_set map_set_acc=MS1;map_set_name=testlong1;map_set_short_name=testshort1;map_type_acc=Seq;
+ ##cmap_map_set map_set_acc=MS1;map_set_name=testlong1;map_set_short_name=testshort1;map_type_acc=Seq;unit_modifier=1
 
  ##cmap_map map_acc=ms1_Contig1;map_name=Contig1;map_start=1;map_stop=8970;display_order=2;map_set_acc=MS1;
  ##sequence-region   Contig1 1   8970  
@@ -92,7 +92,7 @@ The following is an example CMap GFF file
  Contig1	CMap	marker	7701	7701	.	+	.	ID=marker00003;Name=marker3;Alias=mymarker3;corr_by_id=marker00006 shared_marker
 
  ###
- ##cmap_map_set map_set_acc=MS2;map_set_name=testlong2;map_set_short_name=testshort2;map_type_acc=Seq;species_acc=rice08
+ ##cmap_map_set map_set_acc=MS2;map_set_name=testlong2;map_set_short_name=testshort2;map_type_acc=Seq;species_acc=rice08;unit_modifier=1
  ##cmap_map map_acc=ms2_Contig1;map_name=Contig1;map_start=1;map_stop=10000;display_order=2;map_set_acc=MS2;
  ##sequence-region   Contig1 1   10000  
  Contig1	CMap	marker	1801	1801	.	+	.	ID=marker00004;Name=marker1;Alias=mymarker1;corr_by_id=marker00001 shared_marker
@@ -175,6 +175,7 @@ An example is "".
   species_acc#
   species_common_name#
   species_full_name#
+  unit_modifier&
 
 
  + required for creation
@@ -182,20 +183,37 @@ An example is "".
  # Species information is not required if the current species has been set by
    the ##cmap_species pragma (see above).  Otherwise, just enough information
    to identify the species is required.
+ & See the Unit Modifier section below
+
+=head3 Unit Modifier
+
+The unit_modifier option is used to modify the start and stop positions of maps
+and features.  Because GFF requires start and stops to be integers, when
+creating a CMap GFF file, the values are devided by the unit_granularity.  
+
+For instance, a feature start of 58.23 with a unit granularity of 0.01 will be
+output as 5823.  The unit modifier (which is the same value as the unit
+granularity) is used to return that value back to the original.
+
+The unit_modifier is stored in the ##cmap_map_set pragma and will affect any
+maps in that map set that immediately follow.
+
+If no unit_modifier is specified, it will default to 1 (which leaves the values
+as they are).
 
 =head3 Examples
 
   # Enough create or set a map set if it has been preceded by a ##cmap_species pragma 
-  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;map_set_acc=SampleMS1;
-  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;
+  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;map_set_acc=SampleMS1
+  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;unit_modifier=1
   
   # Create or set map set and select species
-  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;species_acc=rice08;
-  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;species_common_name=Rice;
+  ##cmap_map_set map_set_name=Sample Map Set;map_set_short_name=Sample;map_type_acc=Seq;species_acc=rice08
+  ##cmap_map_set map_set_name=Sample Map Set2;map_set_short_name=Sample2;map_type_acc=Genetic;species_common_name=Rice;unit_modifier=0.01
 
   # Find a Map Set already in the db
-  ##cmap_map_set map_set_name=Sample Map Set;
-  ##cmap_map_set map_set_acc=SampleMS1;
+  ##cmap_map_set map_set_name=Sample Map Set;unit_modifier=1
+  ##cmap_map_set map_set_acc=SampleMS1;unit_modifier=1
 
 =head3 Important Note
 
@@ -744,6 +762,8 @@ sub store_map_set_data {
     $self->{'stored_map_data'}      = \%stored_map_data;
     $self->{'map_acc_to_name'}      = \%map_acc_to_name;
     $self->{'current_map_set_data'} = $map_set_data;
+    $self->set_current_unit_modifier( $self->{'unit_modifier'}{$map_set_id}
+            || 1 );
 
     return;
 }
@@ -824,6 +844,35 @@ sub insert_threshold {
         $self->{'insert_threshold'} = $new_threshold;
     }
     return $self->{'insert_threshold'};
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 current_unit_modifier()
+
+Return the current unit modifier for the current map set
+
+=cut
+
+sub current_unit_modifier {
+    my $self = shift;
+    return $self->{'current_unit_modifier'} || 1;
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 set_current_unit_modifier()
+
+=cut
+
+sub set_current_unit_modifier {
+    my $self = shift;
+    my $val  = shift;
+    $self->{'current_unit_modifier'} = $val || 1;
 }
 
 # ----------------------------------------------------
@@ -923,6 +972,8 @@ sub get_or_create_map_set_from_description_line {
     my $self = shift;
     my $desc_str = shift or return;
 
+    my $map_set_id;
+
     # species_id will be added into the param list by this method
     my @insertion_map_set_params = qw(
         map_set_name
@@ -959,64 +1010,73 @@ sub get_or_create_map_set_from_description_line {
     return unless %params;
 
     # First check if there is a map_set already in the db.
+
+    # Check the map_set_acc
     if ( $params{'map_set_acc'} ) {
 
-        my $map_set_id = $sql_object->acc_id_to_internal_id(
+        $map_set_id = $sql_object->acc_id_to_internal_id(
             acc_id      => $params{'map_set_acc'},
             object_type => 'map_set',
         );
 
-        if ($map_set_id) {
-            return $map_set_id;
+    }
+
+    unless ($map_set_id) {
+        my $species_id;
+        if ( $desc_str =~ /species/ ) {
+            $species_id = $self->get_or_create_species_from_description_line(
+                $desc_str);
+            $params{'species_id'} = $species_id;
         }
-    }
 
-    my $species_id;
-    if ( $desc_str =~ /species/ ) {
-        $species_id
-            = $self->get_or_create_species_from_description_line($desc_str);
-        $params{'species_id'} = $species_id;
-    }
+     # CMap doesn't have a search on map_set name so we'll have to search them
+     # all.  There shouldn't be too many map_set so this probably won't be a
+     # problem.
+        my $map_set_array = $sql_object->get_map_sets();
 
-    # CMap doesn't have a search on map_set name so we'll have to search them
-    # all.  There shouldn't be too many map_set so this probably won't be a
-    # problem.
-    my $map_set_array = $sql_object->get_map_sets();
-
-MAP_SET:
-    foreach my $map_set ( @{ $map_set_array || [] } ) {
-        foreach my $param (@identifying_map_set_params) {
-            if ( defined $params{$param} ) {
-                next MAP_SET unless ( $map_set->{$param} eq $params{$param} );
+    MAP_SET:
+        foreach my $map_set ( @{ $map_set_array || [] } ) {
+            foreach my $param (@identifying_map_set_params) {
+                if ( defined $params{$param} ) {
+                    next MAP_SET
+                        unless ( $map_set->{$param} eq $params{$param} );
+                }
             }
-        }
 
         # There were no conflicts, so this map_set is the one for which we are
         # looking
-        return $map_set->{'map_set_id'};
+            $map_set_id = $map_set->{'map_set_id'};
+            last;
+        }
     }
 
-    # Didn't find one, so now create it.
+    # If didn't find one, so now create it.
+    unless ($map_set_id) {
 
-    unless ( $params{'species_id'} ) {
-        $species_id = $self->{'current_species_id'};
-        $params{'species_id'} = $species_id;
+        unless ( $params{'species_id'} ) {
+            $params{'species_id'} = $self->{'current_species_id'};
+        }
+
+        # First check to make sure we have enough info to create it
+        foreach my $param (@required_map_set_params) {
+            die "Missing $param to create map_set in line $desc_str\n"
+                unless ( defined $params{$param} );
+        }
+
+        # Create Args for creation
+        my %args;
+        foreach my $param (@insertion_map_set_params) {
+            next unless ( defined $params{$param} );
+            $args{$param} = $params{$param};
+        }
+
+        $map_set_id = $cmap_admin->map_set_create(%args);
     }
 
-    # First check to make sure we have enough info to create it
-    foreach my $param (@required_map_set_params) {
-        die "Missing $param to create map_set in line $desc_str\n"
-            unless ( defined $params{$param} );
+    # Set Map Set options
+    if ($map_set_id) {
+        $self->{'unit_modifier'}{$map_set_id} = $params{'unit_modifier'} || 1;
     }
-
-    # Create Args for creation
-    my %args;
-    foreach my $param (@insertion_map_set_params) {
-        next unless ( defined $params{$param} );
-        $args{$param} = $params{$param};
-    }
-
-    my $map_set_id = $cmap_admin->map_set_create(%args);
 
     return $map_set_id;
 }
@@ -1088,7 +1148,7 @@ sub get_or_create_map_from_description_line {
     if ( $desc_str =~ /map_set/ ) {
         $map_set_id
             = $self->get_or_create_map_set_from_description_line($desc_str);
-        $self->set_map_set_as_current($map_set_id);
+        $self->set_map_set_as_current( $map_set_id, $desc_str );
         $params{'map_set_id'} = $map_set_id;
     }
 
@@ -1105,7 +1165,7 @@ sub get_or_create_map_from_description_line {
         next unless ( defined $params{$param} );
         $find_args{$param} = $params{$param};
     }
-    my $map_results = $cmap_admin->sql()->get_maps(%find_args);
+    my $map_results = $sql_object->get_maps(%find_args);
     if (@$map_results) {
         return $map_results->[0]{'map_id'};
     }
@@ -1125,7 +1185,11 @@ sub get_or_create_map_from_description_line {
         $create_args{$param} = $params{$param};
     }
 
-    my $map_id = $cmap_admin->map_create(%create_args);
+    my $unit_modifier = $self->current_unit_modifier();
+    $create_args{'map_start'} *= $unit_modifier;
+    $create_args{'map_stop'}  *= $unit_modifier;
+
+    my $map_id = $cmap_admin->sql()->insert_map(%create_args);
     $self->add_map_data($map_id);
 
     return $map_id;
@@ -1440,6 +1504,31 @@ sub add_meta_corr {
 
 =pod
 
+=head2 finish_loading_features()
+
+=cut
+
+sub finish_loading_features {
+    my $self = shift;
+
+    my $sql_object = $self->cmap_admin->sql();
+    my ( $feature_insertion_index, $feature_id_array, )
+        = $sql_object->insert_feature(
+        threshold            => 0,
+        report_feature_index => 1,
+        );
+
+    if ( @{ $feature_id_array || [] } ) {
+        $self->load_feature_auxilary_info($feature_id_array);
+    }
+
+    return;
+}
+
+# ----------------------------------------------------
+
+=pod
+
 =head2 load_corrs_from_tmp_db()
 
 =cut
@@ -1493,6 +1582,8 @@ sub load_corrs_from_tmp_db {
         next
             if ( $self->{'inserted_corrs'}{$corr_key1}
             or $self->{'inserted_corrs'}{$corr_key2} );
+        $self->{'inserted_corrs'}{$corr_key1} = 1;
+        $self->{'inserted_corrs'}{$corr_key2} = 1;
         $sql_object->insert_feature_correspondence(
             feature_id1       => $feature_id1,
             feature_id2       => $feature_id2,
@@ -1608,9 +1699,6 @@ sub load_attrs_from_tmp_db {
             die "Did not find a $object_type matching the description: "
                 . $attr_params->{'desc_str'} . "\n";
         }
-
-        my $cmap_admin = $self->cmap_admin();
-        my $sql_object = $cmap_admin->sql();
 
         my @insertion_params = qw(
             object_type
@@ -1737,9 +1825,6 @@ sub load_xrefs_from_tmp_db {
             die "Did not find a $object_type matching the description: "
                 . $xref_params->{'desc_str'} . "\n";
         }
-
-        my $cmap_admin = $self->cmap_admin();
-        my $sql_object = $cmap_admin->sql();
 
         my @insertion_params = qw(
             object_type
@@ -1955,7 +2040,7 @@ sub handle_unrecognized_meta {
     if ( $instruction =~ /^cmap_map_set\s+(.+)/ ) {
         my $map_set_id
             = $self->get_or_create_map_set_from_description_line($1);
-        $self->set_map_set_as_current($map_set_id);
+        $self->set_map_set_as_current( $map_set_id, $instruction );
     }
     elsif ( $instruction =~ /^cmap_map\s+(.+)/ ) {
         $self->{'current_map_id'}
@@ -1994,10 +2079,11 @@ sub handle_unrecognized_meta {
 
 sub commit {
     my $self = shift;
+    $self->finish_loading_features();
     $self->load_corrs_from_tmp_db();
     $self->load_attrs_from_tmp_db();
     $self->load_xrefs_from_tmp_db();
-    $self->delete_tmp_dbs();
+    $self->delete_tmp_databases();
 }
 
 # we memoize this in order to avoid making zillions of calls
@@ -2133,11 +2219,12 @@ sub handle_map {
 
     }
     else {
+        my $unit_modifier = $self->current_unit_modifier();
         $map_id = $self->cmap_admin()->map_create(
             map_name   => $map_name,
             map_set_id => $self->{'current_map_set_id'},
-            map_start  => $object->start,
-            map_stop   => $object->stop,
+            map_start  => $object->start * $unit_modifier,
+            map_stop   => $object->stop * $unit_modifier,
         );
 
         $self->add_map_data($map_id);
@@ -2184,54 +2271,79 @@ sub handle_feature {
         $self->throw("$map_name is not a map in this set\n");
         return;
     }
+
+    my $unit_modifier    = $self->current_unit_modifier();
     my $feature_name     = $object->name;
-    my $feature_start    = $object->start;
-    my $feature_stop     = $object->stop;
+    my $feature_start    = $object->start * $unit_modifier;
+    my $feature_stop     = $object->stop * $unit_modifier;
     my $direction        = $object->strand;
     my $feature_type_acc = $object->primary_tag();
 
     $feature_name
         ||= $feature_type_acc . "_" . $feature_start . "_" . $feature_stop;
 
-    my $feature_id = $cmap_admin->sql()->insert_feature(
-        map_id           => $map_id,
-        feature_name     => $feature_name,
-        feature_start    => $feature_start,
-        feature_stop     => $feature_stop,
-        feature_type_acc => $feature_type_acc,
-        direction        => $direction,
-        gclass           => $feature_type_acc,
-    );
-
-    unless ($feature_id) {
-        die "FAILED TO INSERT FEATURE: $feature_name\n";
-    }
-
-    my %attributes = $object->attributes();
-    my $load_ids   = $attributes{'load_id'};
-
-    foreach my $load_id ( @{ $load_ids || [] } ) {
-        $self->load_to_cmap_ids(
-            load_id => $load_id,
-            cmap_id => $feature_id
+    my ( $feature_insertion_index, $feature_id_array, )
+        = $cmap_admin->sql()->insert_feature(
+        map_id               => $map_id,
+        feature_name         => $feature_name,
+        feature_start        => $feature_start,
+        feature_stop         => $feature_stop,
+        feature_type_acc     => $feature_type_acc,
+        direction            => $direction,
+        gclass               => $feature_type_acc,
+        threshold            => $self->insert_threshold(),
+        report_feature_index => 1,
         );
+
+    # Save the attributes for later when the feature has a proper feature_id
+    $self->{'saved_feature_info'}{$feature_insertion_index}
+        = { $object->attributes() };
+
+    if ( @{ $feature_id_array || [] } ) {
+        $self->load_feature_auxilary_info($feature_id_array);
+    }
+}
+
+sub load_feature_auxilary_info {
+    my $self             = shift;
+    my $feature_id_array = shift;
+
+    for (
+        my $feature_insertion_index = 0;
+        $feature_insertion_index <= $#{ $feature_id_array || [] };
+        $feature_insertion_index++
+        )
+    {
+        my $attributes
+            = $self->{'saved_feature_info'}{$feature_insertion_index};
+        my $feature_id = $feature_id_array->[$feature_insertion_index];
+
+        my $load_ids = $attributes->{'load_id'};
+
+        foreach my $load_id ( @{ $load_ids || [] } ) {
+            $self->load_to_cmap_ids(
+                load_id => $load_id,
+                cmap_id => $feature_id
+            );
+        }
+
+        # Alias
+        $self->handle_aliases( $feature_id, $attributes, );
+
+        # Correspondences
+        $self->handle_correspondences_by_id( $feature_id,
+            $attributes->{'corr_by_id'} );
+
+        # Attributes
+        $self->handle_feature_attributes( $feature_id,
+            $attributes->{'attribute'},
+        );
+
+        # Xrefs
+        $self->handle_feature_xrefs( $feature_id, $attributes->{'xref'}, );
     }
 
-    # Alias
-    $self->handle_aliases( $feature_id, \%attributes, );
-
-    # Correspondences
-    $self->handle_correspondences_by_id( $feature_id,
-        $attributes{'corr_by_id'} );
-
-    # Attributes
-    $self->handle_feature_attributes( $feature_id, $attributes{'attribute'},
-    );
-
-    # Xrefs
-    $self->handle_feature_xrefs( $feature_id, $attributes{'xref'}, );
-
-    $object->primary_id($feature_id);
+    #$object->primary_id($feature_id);
 }
 
 # ----------------------------------------------------
@@ -2419,7 +2531,8 @@ sub create_tmp_db {
     my $db_file = shift;
 
     my %db;
-    my $result = tie( %db, 'DB_File', $db_file, O_CREAT, 0666, $DB_HASH );
+    my $result
+        = tie( %db, 'DB_File', $db_file, O_RDWR | O_CREAT, 0666, $DB_HASH );
     unless ($result) {
         $self->throw( "Couldn't tie: " . $db_file . " $!" );
     }
@@ -2429,7 +2542,7 @@ sub create_tmp_db {
     return \%db;
 }
 
-sub delete_databases {
+sub delete_tmp_databases {
     my $self = shift;
 
     unlink $self->corr_tmp_db_file_name() if ( $self->{'corr_tmp_db'} );

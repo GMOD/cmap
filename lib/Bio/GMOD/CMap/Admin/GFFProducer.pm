@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GFFProducer;
 
 # vim: set ft=perl:
 
-# $Id: GFFProducer.pm,v 1.4 2008-06-27 14:54:03 mwz444 Exp $
+# $Id: GFFProducer.pm,v 1.5 2008-06-28 19:49:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ the database or the import module.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -630,6 +630,10 @@ sub write_map_set {
     my $attributes   = $args{'attributes'};
     my $xrefs        = $args{'xrefs'};
 
+    # Set the unit_modifier
+    $map_set_data->{'unit_modifier'}
+        = $self->unit_granularity( $map_set_data->{'map_type_acc'} );
+
     my @map_set_params = qw(
         map_set_name
         map_set_short_name
@@ -640,6 +644,7 @@ sub write_map_set {
         color
         width
         published_on
+        unit_modifier
     );
 
     # Print the ### before the map set to make sure the previous features are

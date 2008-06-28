@@ -2,7 +2,7 @@
 
 package Bio::GMOD::CMap::Admin::Interactive;
 
-# $Id: Interactive.pm,v 1.7 2008-06-27 14:54:03 mwz444 Exp $
+# $Id: Interactive.pm,v 1.8 2008-06-28 19:49:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -1535,8 +1535,6 @@ Directory where output file is to be placed
     my $only_corrs              = $args{'only_corrs'} || 0;
     my $ignore_unit_granularity = $args{'ignore_unit_granularity'} || 0;
     my $export_file             = $args{'export_file'};
-    print STDERR "OC $only_corrs\n";
-    print STDERR "IUG $ignore_unit_granularity\n";
 
     unless ($export_file) {
         $export_file = $self->data_source() . ".gff";
