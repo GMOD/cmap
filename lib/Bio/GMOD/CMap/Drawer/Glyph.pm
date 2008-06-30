@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use base 'Class::Base';
 
@@ -349,15 +349,10 @@ sub filled_box {
     my $feature      = $args{'feature'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
-    push @$drawing_data,
-        [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
     my $width = $feature->{'width'} || 3;
-    push @$drawing_data,
-        [ FILLED_RECT, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, $color, ];
-    push @$drawing_data,
-        [ RECTANGLE, $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2, 'black', ];
-    @coords
-        = ( $x_pos2 - $width / 2, $y_pos1, $x_pos2 + $width / 2, $y_pos2 );
+    @coords = ( $x_pos2, $y_pos1, $x_pos2 + $width, $y_pos2 );
+    push @$drawing_data, [ FILLED_RECT, @coords, $color, ];
+    push @$drawing_data, [ RECTANGLE,   @coords, 'black', ];
 
     return \@coords;
 }
