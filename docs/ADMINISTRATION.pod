@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.44 $
+$Revision: 1.45 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1526,7 +1526,44 @@ be discussed in detail later.  For the moment, let's just focus on
 what you need to import your first data set.  To do that, you'll 
 need to first set up the species.
 
-=head1 SETTING UP SPECIES
+=head1 CREATING AND IMPORTING DATA
+
+=head2 IMPORTING GFF DATA
+
+Starting with CMap version 1.01, CMap is able to import data in the GFF3 file
+format.  
+
+Using special CMap specific extensions, all the CMap data can be imported in
+one file.  This allows a whole data base worth of CMap data to be imported in
+one step (rather than the multiple previously required which are described
+below).  
+
+Alternatively, regular GFF3 (as used by GBrowse) can be imported if a map set
+is specified.
+
+The format is described in detail in the Bio::DB::SeqFeature::Store::cmap
+module.  It can be accessed by running the command:
+
+  $ perldoc Bio::DB::SeqFeature::Store::cmap
+
+The GFF files can be imported using the cmap_admin.pl script, either using the
+menu system or by using the command line interface (examples follow).
+
+The first example is using a gff file "cmap_style.gff" that has the CMap
+extensions to define which species and map sets the data belongs.
+
+  $ cmap_admin.pl -d DATASOURCE --action import_gff cmap_style.gff
+
+This second example defines the map set accession to import the data into.
+However, if a map set is defined in the file, the map set in the file will be
+used.
+
+  $ cmap_admin.pl -d DATASOURCE --action import_gff --map_set_acc MAP_SET_ACCESSION gbrowse_style.gff
+
+Note: In order for GFF importing to work correcly, it requires bioperl-live
+downloaded after June 7th, 2008.
+
+=head2 SETTING UP SPECIES
 
 Click on "View Species" from the home page of the web-admin tool.  As
 you currently have no species to view, you should see the message "No
@@ -1609,7 +1646,7 @@ document only mentions the "create" or "edit" page for an object, rest
 assured that the complementary page works the same as the one
 described.
 
-=head1 CREATING A NEW MAP SET
+=head2 CREATING A NEW MAP SET
 
 Once you have species set up and map types defined, you are ready to create a
 new map set.  Everything in CMap is designed to be generic, so a "map
@@ -1620,7 +1657,7 @@ chromosomes, linkage groups, FPC contigs, and such.  As the database
 design allows only one species and one map type to be linked to a map
 set, it is best to keep these narrowly defined.
 
-=head2 USING THE WEB ADMIN TOOL TO CREATE A MAP SET
+=head3 USING THE WEB ADMIN TOOL TO CREATE A MAP SET
 
 To create a new map set, click on the "Create New Map Set" link from
 the admin home page or from the "Map Sets View" page.  If you have
@@ -1698,7 +1735,7 @@ The color that maps of this set will be drawn.
 
 =back
 
-=head2 USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
+=head3 USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
 
 You can also create a new map set by using the "cmap_admin.pl" tool.
 There are only a few functions that exists in both tools, and
@@ -1718,7 +1755,7 @@ if you had only one species in the database, cmap_admin.pl will not
 ask you which species to associate with the new map set. There can
 only be one answer, so it answers the question automatically.
 
-=head2 VIEWING NEW MAP SET
+=head3 VIEWING NEW MAP SET
 
 Once you have successfully created a map set with the web admin tool,
 you will be taken to the view of that map set.  You should see the
@@ -1727,7 +1764,7 @@ associated with it.  You can either create each map for the map set
 individually or you can import the data for the map set.  Most likely,
 you will want to do the latter, so that is the next section.
 
-=head1 IMPORTING MAP DATA
+=head2 IMPORTING MAP DATA
 
 Using the cmap_admin.pl, you can import a tab-delimited file
 containing the data for a map set with the following fields and
@@ -1866,7 +1903,7 @@ When cmap_admin.pl has successfully finished importing your map data,
 you will be returned to the "Main Menu."  From here, choose to "Quit"
 as the rest of the functionality will be covered later.
 
-=head2 IMPORTING XML DATA (EXPERIMENTAL)
+=head3 IMPORTING XML DATA (EXPERIMENTAL)
 
 As of 0.10, CMap exports and imports data in XML format.  The standard
 tab-delimited format is very convenient and easy to generate, but it's
@@ -1884,7 +1921,7 @@ another database, of course) using the "Import data" option and then
 "Import CMap objects."  Database objects are only created on import at
 this time;  there is no updating of existing objects, so be careful!
 
-=head1 MAKING CORRESPONDENCES
+=head2 MAKING CORRESPONDENCES
 
 Once you have more than one set of maps in CMap, you can use it for
 what it was designed:  showing comparisons.  To do this, you must
@@ -1894,7 +1931,7 @@ that can be used to support the correspondences.  These are defined
 in the configuration file.  For how to create evidence types, see 
 L<EDITING CONFIGURATION FILES> above.
 
-=head2 CREATING CORRESPONDENCE RECORDS
+=head3 CREATING CORRESPONDENCE RECORDS
 
 Once you have evidence types, you can create the correspondence
 records.  It might be helpful to you to inspect "cmap-schema.png" and
@@ -2028,7 +2065,7 @@ gets created.
 
 =back
 
-=head1 LOADING THE CORRESPONDENCE MATRIX
+=head2 LOADING THE CORRESPONDENCE MATRIX
 
 The data underlying the correspondence matrix is all precomputed.  As
 it is an intensive operation on seldom-changing data, it was
@@ -2041,7 +2078,7 @@ cmap_admin.pl and choose the "Reload correspondence matrix" option.
 The only option is to completely truncate the table and reload it from
 scratch.
 
-=head1 ESTABLISHING DATABASE CROSS-REFERENCES
+=head2 ESTABLISHING DATABASE CROSS-REFERENCES
 
 See the "attributes-and-xrefs.pod" document.
 
