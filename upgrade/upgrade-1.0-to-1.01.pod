@@ -1,0 +1,91 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+upgrade-16-to-1.0.pod
+
+=head1 SYNOPSIS
+
+Where we discuss updating CMap from version 0.16 to 1.0.
+
+=head1 INTRODUCTION
+
+Congratulations on your decision to upgrade from CMap version 1.0 to
+1.01.  This guide will take you through the upgrade of the software.
+ 
+Please make sure you back up both your database and you configuration
+files.  While this process has been tested, it is best not to take any
+chances.
+
+=head1 INSTALLING VERSION 1.1
+
+Run the build commands as you normally would 
+
+ $ perl Build.PL
+ $ ./Build
+ $ su
+ # ./Build install
+
+Make sure the new template files have been added by doing a 
+
+ # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
+
+=head1 DATABASE UPDATE
+
+There is no Database change between versions 1.0 and 1.01.
+
+=head1 CONFIGURATION FILE UPDATE
+
+There are no required changes to the configuration files.  It is a
+good idea to validate the individual configuration files.
+
+=head2 CONFIGURATION VALIDATION
+
+Validate individual using the validation script,
+cmap_validate_config.pl, included with the distribution.
+
+  $ cmap_validate_config.pl /path/to/cmap.conf/example.conf > output_file
+
+The output lists any problems with the configuration file as well as
+any optional configuration options that are not being used.  The last
+line will tell you if the file is valid.  
+
+If the is reported as "INVALID" on the last line, look through the
+output for the reasons it was declared INVALID.
+
+Note: It will probably report "unit_granularity" as missing for map
+types.  This value is the smallest unit that the map can be broken
+into.  For example, a sequence has a unit_granularity of 1 whereas a
+genetic map might have a granularity of .01. 
+
+=head2 NEW USEFUL CONFIGURATIONS
+
+The following are some of the more useful configurations that have
+been added.  See the ADMINISTRATION document for more information.
+
+=over 4
+
+=item *  dotplot_ps 
+
+Sets the size of the lines in the dotplot view.  Must be a positive
+integer.  It defaults to 1.
+
+=back
+
+=head1 CONCLUSION
+
+That should do it for the upgrade process.  If you have any troubles
+email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+Please see the CMap home page (http://www.gmod.org/CMap) for other
+information and patches.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut
