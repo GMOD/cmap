@@ -204,11 +204,11 @@ Example:  "ref0=2442;ref1=1221"
 
 # vim: set ft=perl:
 
-# $Id: CMap3D.pm,v 1.1 2008-06-02 13:05:50 mwz444 Exp $
+# $Id: CMap3D.pm,v 1.2 2008-07-01 05:24:37 chrisduran Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Storable qw(nfreeze thaw);
@@ -225,6 +225,7 @@ sub handler {
     my $action = $apr->param('action');
 
     print $apr->header( -type => 'text/xml', );
+	print "<?xml version='1.0' encoding='ISO-8859-1' ?>\n";
     if ( $action eq 'get_species' ) {
         $self->get_species( apr => $apr, );
     }
@@ -344,7 +345,7 @@ sub get_map_sets {
 
     print "<map_set_listing>\n";
     foreach my $map_set_acc (@corresponding_map_set_accs) {
-        print "<map_set>$map_set_acc</map_set>";
+        print "<map_set>$map_set_acc</map_set>\n";
     }
     print "</map_set_listing>\n";
 }
@@ -500,8 +501,8 @@ sub get_map_data {
 
     # Print the starting cmap3d tag
     my $cmap_version   = $Bio::GMOD::CMap::VERSION;
-    my $server_version = "0100";
-    my $client_version = "0100";
+    my $server_version = "1.2";
+    my $client_version = "0150";
     print
         qq[<cmap3d server="$server_version" client="$client_version" cmap="$cmap_version">\n];
 
