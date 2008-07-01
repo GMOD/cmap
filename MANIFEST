@@ -42,6 +42,7 @@ data/tabtest-export.xml
 data/tabtest.corr
 data/tabtest1
 data/tabtest2
+data/test_data.gff
 DISCLAIMER
 docs/ADMINISTRATION.pod
 docs/attributes-and-xrefs.pod
@@ -240,10 +241,12 @@ htdocs/tutorial/Slide9.png
 INSTALL.pod
 install_util/cmap_netinstall.pl
 install_util/GuessDirectories.pm
+lib/Bio/DB/SeqFeature/Store/cmap.pm
 lib/Bio/GMOD/CMap.pm
 lib/Bio/GMOD/CMap/Admin.pm
 lib/Bio/GMOD/CMap/Admin/Export.pm
 lib/Bio/GMOD/CMap/Admin/GBrowseLiason.pm
+lib/Bio/GMOD/CMap/Admin/GFFProducer.pm
 lib/Bio/GMOD/CMap/Admin/Import.pm
 lib/Bio/GMOD/CMap/Admin/ImportAlignments.pm
 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
@@ -253,6 +256,7 @@ lib/Bio/GMOD/CMap/Admin/ManageLinks.pm
 lib/Bio/GMOD/CMap/Admin/SavedLink.pm
 lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
+lib/Bio/GMOD/CMap/Apache/CMap3D.pm
 lib/Bio/GMOD/CMap/Apache/CorrespondenceMenu.pm
 lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
 lib/Bio/GMOD/CMap/Apache/DataDownloader.pm
@@ -398,6 +402,7 @@ upgrade/cmap_13_to_cmap_14.sql
 upgrade/cmap_14_to_15.sql
 upgrade/cmap_16_to_1.0.sql
 upgrade/cmap_typetables_to_config.pl
+upgrade/upgrade-1.0-to-1.01.pod
 upgrade/upgrade-12-to-13.pod
 upgrade/upgrade-13-to-14.pod
 upgrade/upgrade-14-to-15.pod
