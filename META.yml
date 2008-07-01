@@ -2,7 +2,8 @@
 name: cmap
 version: 1.01
 author:
-  - Ken Y. Clark <kclark@cshl.org>
+  - Ken Y. Clark <kclark@cshl.edu>
+  - Ben Faga <faga@cshl.edu>
 abstract: Genetic and comparative maps
 license: gpl
 requires:
