@@ -1,6 +1,6 @@
 package Bio::DB::SeqFeature::Store::cmap;
 
-# $Id: cmap.pm,v 1.6 2008-07-01 16:48:07 mwz444 Exp $
+# $Id: cmap.pm,v 1.7 2008-07-01 17:24:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -1146,16 +1146,14 @@ sub get_or_create_map_from_description_line {
         }
     }
 
-    my $map_set_id;
     if ( $desc_str =~ /map_set/ ) {
-        $map_set_id
+        my $map_set_id
             = $self->get_or_create_map_set_from_description_line($desc_str);
         $self->set_map_set_as_current( $map_set_id, $desc_str );
         $params{'map_set_id'} = $map_set_id;
     }
-    elsif ( $params{'map_set_id'} ) {
-        $map_set_id = $self->{'current_map_set_id'};
-        $params{'map_set_id'} = $map_set_id;
+    elsif ( $self->{'current_map_set_id'} ) {
+        $params{'map_set_id'} = $self->{'current_map_set_id'};
     }
 
     # CMap does have a search on all the identifying parameters so we'll just
@@ -1175,7 +1173,7 @@ sub get_or_create_map_from_description_line {
 
     # First check to make sure we have enough info to create it
     foreach my $param (@required_map_params) {
-        die "Missing $param to create map_set in line $desc_str\n"
+        die "Missing $param to create map in line $desc_str\n"
             unless ( defined $params{$param} );
     }
 
