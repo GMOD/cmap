@@ -32,6 +32,13 @@ Make sure the new template files have been added by doing a
 
  # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
 
+=head1 UPDATE BIOPERL
+
+In order to use the new GFF3 importer, you must have the latest (as of
+June 7th, 2008) version of bioperl-live.
+
+http://www.bioperl.org/wiki/Bioperl-live
+
 =head1 DATABASE UPDATE
 
 There is no Database change between versions 1.0 and 1.01.
