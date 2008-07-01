@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.45 $
+$Revision: 1.46 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1562,6 +1562,15 @@ used.
 
 Note: In order for GFF importing to work correcly, it requires bioperl-live
 downloaded after June 7th, 2008.
+
+
+=head3 EXAMPLE GFF IMPORT
+
+A sample CMap GFF3 file, "test_data.gff", is located in the data directory of
+the distribution.  This can be imported into the demo database (which can be
+created using the "./Build demo" command). 
+
+  $ cmap_admin.pl -d CMAP_DEMO --action import_gff data/test_data.gff
 
 =head2 SETTING UP SPECIES
 

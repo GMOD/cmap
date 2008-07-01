@@ -278,9 +278,17 @@ stack_maps 0
 # Set default value for clean_view
 # In the clean view, navigation buttons are removed from the picture
 # Values: 0 (don't clean), 1 (clean)
-# Default: 1
+# Default: 0
 #
 clean_view 0
+
+#
+# Set default value for dotplot_ps
+# This is the pixel size for the dotplot.
+# Values: positive integer
+# Default: 1
+#
+dotplot_ps 1
 
 #
 # Set default value for show_intraslot_correspondences
@@ -511,6 +519,21 @@ area_code <<EOF
 EOF
 </feature_type>
 
+<feature_type syntenic_block>
+feature_type_acc syntenic_block
+feature_type Syntenic Block
+default_rank 3 
+color blue
+shape direction-arrow
+drawing_lane 3
+drawing_priority 3
+feature_default_display
+area_code <<EOF
+\$code=sprintf("onMouseOver=\\"window.status='%s';return true\\"",\$feature->{'feature_type_acc'});
+\$code.=sprintf(" onClick=\\"demo('%s')\\";",\$feature->{'feature_id'});
+EOF
+</feature_type>
+
 <feature_type read_depth>
   feature_type_acc read_depth
   feature_type read_depth
@@ -544,6 +567,29 @@ color
     1    lightblue
     20   blue
     0    darkblue
+</aggregated_correspondence_colors>
+
+</evidence_type>
+
+<evidence_type synteny> 
+evidence_type_acc synteny 
+evidence_type Synteny
+rank 1 
+line_type ribbon
+color blue
+# The aggregated_correspondence_colors option dictates the color of aggregated
+# correspondence lines for this evidence type.  It is defined the same way as
+# aggregated_correspondence_colors is in the main general section above.
+# Also see the ADMINISTRATION.pod.
+#
+#These colors will only be used if the aggregate correspondences are split based
+#on evidence type.  Meaning each evidence type will have it's own aggregated
+#correspondence.  It is suggested to use primary colors for each different type,
+#so they can be distinguished.
+<aggregated_correspondence_colors>
+    1    pink
+    20   red
+    0    black
 </aggregated_correspondence_colors>
 
 </evidence_type>
