@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.183 2008-06-27 14:54:03 mwz444 Exp $
+# $Id: Generic.pm,v 1.184 2008-07-01 18:13:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ The cmap_object in the validation hashes is there for legacy code.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.183 $)[-1];
+$VERSION = (qw$Revision: 1.184 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1323,7 +1323,7 @@ Not using cache because this query is quicker.
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $species_id        = $args{'species_id'};
-    my $species_acc       = $args{'species_id'};
+    my $species_acc       = $args{'species_acc'};
     my $species_ids       = $args{'species_ids'} || [];
     my $species_accs      = $args{'species_accs'} || [];
     my $is_relational_map = $args{'is_relational_map'};
@@ -1356,7 +1356,7 @@ Not using cache because this query is quicker.
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " s.species_id = " . $db->quote($species_id) . " ";
     }
-    if ($species_acc) {
+    elsif ($species_acc) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " s.species_acc = " . $db->quote($species_acc) . " ";
     }
