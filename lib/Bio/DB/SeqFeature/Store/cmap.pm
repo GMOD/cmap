@@ -1,6 +1,6 @@
 package Bio::DB::SeqFeature::Store::cmap;
 
-# $Id: cmap.pm,v 1.5 2008-06-28 19:49:43 mwz444 Exp $
+# $Id: cmap.pm,v 1.6 2008-07-01 16:48:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -1022,16 +1022,18 @@ sub get_or_create_map_set_from_description_line {
     }
 
     unless ($map_set_id) {
-        my $species_id;
         if ( $desc_str =~ /species/ ) {
-            $species_id = $self->get_or_create_species_from_description_line(
+            $params{'species_id'}
+                = $self->get_or_create_species_from_description_line(
                 $desc_str);
-            $params{'species_id'} = $species_id;
+        }
+        elsif ( $self->{'current_species_id'} ) {
+            $params{'species_id'} = $self->{'current_species_id'};
         }
 
-     # CMap doesn't have a search on map_set name so we'll have to search them
-     # all.  There shouldn't be too many map_set so this probably won't be a
-     # problem.
+        # CMap doesn't have a search on map_set name so we'll have to search
+        # them all.  There shouldn't be too many map_set so this probably won't
+        # be a problem.
         my $map_set_array = $sql_object->get_map_sets();
 
     MAP_SET:
@@ -1151,8 +1153,7 @@ sub get_or_create_map_from_description_line {
         $self->set_map_set_as_current( $map_set_id, $desc_str );
         $params{'map_set_id'} = $map_set_id;
     }
-
-    unless ( $params{'map_set_id'} ) {
+    elsif ( $params{'map_set_id'} ) {
         $map_set_id = $self->{'current_map_set_id'};
         $params{'map_set_id'} = $map_set_id;
     }
