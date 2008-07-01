@@ -28,6 +28,7 @@ my @wipe_feature_fields = qw[
 ];
 my @wipe_corr_fields = qw[
     feature_id1     feature_id2
+    species_id2     species_acc2
     map_set_id2     map_id2
     published_on2   feature_correspondence_id
     feature_correspondence_acc
