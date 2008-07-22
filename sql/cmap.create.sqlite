@@ -258,7 +258,7 @@ CREATE TABLE cmap_commit_log (
   map_acc varchar(30) NOT NULL DEFAULT '',
   commit_type varchar(200) NOT NULL DEFAULT '',
   commit_text varchar(200) NOT NULL DEFAULT '',
-  commit_object text NOT NULL DEFAULT '',
+  commit_object text NOT NULL,
   commit_date date DEFAULT NULL,
   transaction_id int(11) NOT NULL DEFAULT '0'
 );
