@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.127 2008-07-01 16:24:07 mwz444 Exp $
+# $Id: CMap.pm,v 1.128 2008-09-30 14:38:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -1552,6 +1552,15 @@ Returns a Template Toolkit object.
             "Template directory '$template_dir' doesn't exist")
             unless -d $template_dir;
 
+        my %flags = ();
+        if ( my $template_toolkit_flags
+            = $self->config_data('template_toolkit_flags') )
+        {
+            if ( ref($template_toolkit_flags) eq 'HASH' ) {
+                %flags = %{ $template_toolkit_flags || {} };
+            }
+        }
+
         $self->{'template'} = Template->new(
             COMPILE_EXT  => '.ttc',
             COMPILE_DIR  => $cache_dir,
@@ -1561,6 +1570,7 @@ Returns a Template Toolkit object.
                 nbsp => sub { my $s = shift; $s =~ s{\s+}{\&nbsp;}g; $s },
                 commify => \&Bio::GMOD::CMap::Utils::commify,
             },
+            %flags,
             )
             or $self->error(
             "Couldn't create Template object: " . Template->error() );

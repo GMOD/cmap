@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.46 $
+$Revision: 1.47 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1326,6 +1326,19 @@ If you wish to have something like this, I'm sure you can glean the basic ideas
 from Lincoln's "GramenePage.pm" module.  Then define the "page_object" in your
 cmap.conf.  Otherwise, just don't worry about it, and this method will never
 return anything.
+
+=item * template_toolkit_flags [ optional ]
+
+This option sets flags during the creation of the Template Toolkit object
+allowing for more powerful use of Template Toolkit.  These flags are passed
+into the Template->new() method.
+
+It will only take strings as values (no complicated objects).
+
+  <template_toolkit_flags>
+    EVAL_PERL 1
+    SOMETHING else
+  </template_toolkit_flags>
 
 =back
 
