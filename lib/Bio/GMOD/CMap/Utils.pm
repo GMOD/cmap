@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.92 2008-06-27 20:50:29 mwz444 Exp $
+# $Id: Utils.pm,v 1.93 2008-09-30 14:40:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -858,7 +858,8 @@ example: 10000 becomes 10K
     # the "q{}." is to fix a rounding error in perl
     my $scale = $num ? int( q{} . ( log( abs($num) ) / log(10) ) ) : 0;
     my $rounding_power = $scale - $sig_digits + 1;
-    my $rounded_temp   = int( ( $num / ( 10**$rounding_power ) ) + .5 );
+    my $half = ($num >= 0)? 0.5: -0.5;
+    my $rounded_temp = int( ( $num / ( 10**$rounding_power ) ) + $half );
     my $printable_num  = $rounded_temp /
         ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
     my $unit = calculate_units( 10**( $scale - ( $scale % 3 ) ) );
