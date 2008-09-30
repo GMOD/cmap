@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.39 2008-01-28 21:33:13 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.40 2008-09-30 14:44:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -140,6 +140,8 @@ which is slow.  Setting to 0 is recommended.
         config      => $self->config,
         data_source => $self->data_source,
     );
+
+    $sql_object->start_transaction();
 
     my %evidence_type_acc_exists;
     $self->Print("Importing feature correspondence data.\n");
@@ -326,6 +328,8 @@ LINE:
     }
 
     my $fc_id = $admin->feature_correspondence_create();
+
+    $sql_object->commit_transaction();
 
     return 1;
 }

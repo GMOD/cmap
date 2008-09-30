@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.85 2008-03-07 21:26:30 mwz444 Exp $
+# $Id: Import.pm,v 1.86 2008-09-30 14:44:15 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -335,6 +335,8 @@ appended to the list of xrefs.
     my (@bulk_insert_aliases, @bulk_insert_atts,
         @bulk_insert_xrefs,   @bulk_feature_names
     );
+
+    $sql_object->start_transaction();
 
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
@@ -786,6 +788,8 @@ appended to the list of xrefs.
 
         $self->Print( "Verified map $map_name ($map_id).\n" );
     }
+
+    $sql_object->commit_transaction();
 
     $self->Print("Done\n");
 

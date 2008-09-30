@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.9 2007-09-28 20:17:07 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.10 2008-09-30 14:44:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -58,6 +58,9 @@ sub import_alignments {
         config      => $self->config,
         data_source => $self->data_source,
     );
+
+    my $sql_object = $self->sql;
+    $sql_object->start_transaction();
 
     my $in = new Bio::SearchIO(
         -format => $format,
@@ -115,6 +118,7 @@ sub import_alignments {
             }
         }
     }
+    $sql_object->commit_transaction();
     return 1;
 }
 
