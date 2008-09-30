@@ -396,6 +396,11 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_array,
         element                  => { %generic_scalar_def, },
     },
+    template_toolkit_flags => {
+        validation_method        => \&validate_hash,
+        print_valididated_method => \&print_validated_hash,
+        print_corrections_method => \&print_corrected_hash,
+    },
     disallow_name_correspondence => {
         validation_method        => \&validate_array,
         print_valididated_method => \&print_validated_array,
@@ -648,9 +653,14 @@ sub validate_hash {
     }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start '$option_name' is defined as a "
-            . ref($config_object)
-            . " when it should a hash.\n";
+        if ( ref($config_object) eq 'ARRAY' ) {
+            print "$error_start '$option_name' has duplicate entries. \n";
+        }
+        else {
+            print "$error_start '$option_name' is defined as a "
+                . ref($config_object)
+                . " when it should a hash.\n";
+        }
         return 0;
     }
 
@@ -729,34 +739,32 @@ sub validate_hash_with_acc {
     }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start '$option_name' is defined as a "
-            . ref($config_object)
-            . " when it should a hash.\n";
+        if ( ref($config_object) eq 'ARRAY' ) {
+            print "$error_start '$option_name' has duplicate entries. \n";
+        }
+        else {
+            print "$error_start '$option_name' is defined as a "
+                . ref($config_object)
+                . " when it should a hash.\n";
+        }
         return 0;
     }
 
     foreach my $acc ( sort keys %$config_object ) {
         if ( ref($config_object) ne 'HASH' ) {
             $valid = 0;
-            print "$error_start <$option_name $acc> is defined as a "
-                . ref($config_object)
-                . " when it should a hash.\n";
+            if ( ref($config_object) eq 'ARRAY' ) {
+                print "$error_start '$option_name' has duplicate entries. \n";
+            }
+            else {
+                print "$error_start '$option_name' is defined as a "
+                    . ref($config_object)
+                    . " when it should a hash.\n";
+            }
             next;
         }
-        if ( $def->{'accession_name'} ) {
-            unless (
-                defined( $config_object->{$acc}{ $def->{'accession_name'} } )
-                and $acc eq
-                $config_object->{$acc}{ $def->{'accession_name'} } )
-            {
-                $valid = 0;
-                print "$error_start the "
-                    . $def->{'accession_name'}
-                    . " field in <$option_name $acc> must equal '$acc'\n";
-            }
-        }
-        unless (
-            validate_hash(
+
+        if (not validate_hash(
                 option_name   => $option_name,
                 def           => $def,
                 config_object => $config_object->{$acc},
@@ -767,6 +775,18 @@ sub validate_hash_with_acc {
             $valid = 0;
             print "$error_start <$option_name $acc> "
                 . "is defined incorrectly (see above)\n\n";
+        }
+        elsif ( $def->{'accession_name'} ) {
+            unless (
+                defined( $config_object->{$acc}{ $def->{'accession_name'} } )
+                and $acc eq
+                $config_object->{$acc}{ $def->{'accession_name'} } )
+            {
+                $valid = 0;
+                print "$error_start the "
+                    . $def->{'accession_name'}
+                    . " field in <$option_name $acc> must equal '$acc'\n";
+            }
         }
 
     }
