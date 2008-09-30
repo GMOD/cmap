@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GFFProducer;
 
 # vim: set ft=perl:
 
-# $Id: GFFProducer.pm,v 1.5 2008-06-28 19:49:43 mwz444 Exp $
+# $Id: GFFProducer.pm,v 1.6 2008-09-30 14:42:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ the database or the import module.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -742,6 +742,7 @@ sub write_feature {
 
     my $feature_type_acc = $feature_data->{'feature_type_acc'};
     my $feature_id       = $feature_data->{'feature_id'};
+    my $feature_acc      = $feature_data->{'feature_acc'};
 
     my $seq_id = uri_escape( $feature_data->{'map_name'} );
     my $source
@@ -768,6 +769,10 @@ sub write_feature {
         id       => $feature_id,
         ) . ";";
     $column9 .= "Name=" . uri_escape( $feature_data->{'feature_name'} );
+
+    if ( $feature_acc !~ /^\d+$/ ) {
+        $column9 .= ";feature_acc=" . uri_escape($feature_acc);
+    }
 
     # Aliases
     foreach my $alias ( @{ $feature_data->{'aliases'} || [] } ) {
