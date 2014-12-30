@@ -7286,10 +7286,9 @@ If $include_map1_data also has
         or @$less_evidence_type_accs
         or @$greater_evidence_type_accs )
     {
-        $from_sql .= q[, cmap_feature_correspondence fc
-                        , cmap_correspondence_evidence ce];
+        $from_sql .= q[, cmap_correspondence_evidence ce];
         $where_sql .= q[
-            and fc.feature_correspondence_id=ce.feature_correspondence_id
+            and cl.feature_correspondence_id=ce.feature_correspondence_id
             and  ( ];
         my @join_array;
         if (@$included_evidence_type_accs) {
