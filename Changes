@@ -1,5 +1,11 @@
                       Revision history for CMap
 
+1.02
+
+- Use transactions when importing tab-delimited data to allow a rollback in
+  the event of an error. The MySQL schema now specifies the InnoDB storage
+  engine for transaction support.
+
 1.01
 
 - Modified the insert_feature_correspondence() method to allow correspondences

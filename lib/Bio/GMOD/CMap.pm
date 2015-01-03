@@ -374,6 +374,13 @@ Returns all the data souces defined in the configuration files.
 }
 
 # ----------------------------------------------------
+# callback for DBI::connect_cached() to remove the AutoCommit attribute from
+# the attribute list if a connection already exists. This method, taken from
+# the DBI perldoc, prevents the premature commit of a transaction upon a new
+# connection.
+my $callbacks = {
+     'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
+};
 sub db {
 
 =pod
@@ -414,11 +421,12 @@ Returns a database handle.  This is the only way into the database.
             LongReadLen      => 3000,
             LongTruncOk      => 1,
             RaiseError       => 1,
+            Callbacks        => $callbacks,
         };
 
         eval {
             $self->{'db'}
-                = DBI->connect( $datasource, $user, $password, $options );
+                = DBI->connect_cached( $datasource, $user, $password, $options );
         };
 
         if ( $@ || !defined $self->{'db'} ) {
@@ -1715,22 +1723,6 @@ Clears the image directory of files.  (It will not touch directories.)
 Methods that do things tother than store variables.
 
 =cut
-
-# ----------------------------------------------------
-sub DESTROY {
-
-=pod
-
-=head3 DESTROY
-
-Object clean-up when destroyed by Perl.
-
-=cut
-
-    my $self = shift;
-    $self->db->disconnect if defined $self->{'db'};
-    return 1;
-}
 
 # ----------------------------------------------------
 sub warn {

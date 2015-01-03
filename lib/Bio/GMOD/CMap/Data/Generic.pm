@@ -12100,7 +12100,7 @@ sub start_transaction {
     my $self = shift;
     my %args = @_;
     my $db   = $self->db;
-    $db->{AutoCommit} = 0;
+    $db->begin_work();
 
     return;
 }
@@ -12111,7 +12111,6 @@ sub rollback_transaction {
     my $db   = $self->db;
 
     $db->rollback;
-    $db->{AutoCommit} = 1;
 
     return;
 }
@@ -12122,7 +12121,6 @@ sub commit_transaction {
     my $db   = $self->db;
 
     $db->commit;
-    $db->{AutoCommit} = 1;
 
     return;
 }
