@@ -10,6 +10,7 @@ use Data::Dumper;
 use Test::More qw(no_plan);
 use Bio::GMOD::CMap::Admin::Interactive;
 use File::Spec::Functions qw( catfile );
+use DBI::Const::GetInfoType;
 
 my @wipe_species_fields = qw[ species_id ];
 my @wipe_map_set_fields = qw[
@@ -43,7 +44,7 @@ my $interactive = Bio::GMOD::CMap::Admin::Interactive->new(
     #config_dir => $config_dir,
 );
 my $sql_object = $interactive->sql();
-my $driver = $sql_object->db->get_info(17);
+my $driver = $sql_object->db->get_info($GetInfoType{SQL_DBMS_NAME});
 # ----------------------------------------------
 ### Return Objects
 my $get_species_return = [
