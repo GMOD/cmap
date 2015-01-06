@@ -2,4 +2,4 @@ map_name	map_acc	feature_name	feature_acc	feature_start	feature_stop	feature_typ
 T2	T2	F1	T2.1	0	1000	contig	F1.A,F1.AA
 T2	T2	F1.A	T2.2	1000	2000	contig	
 T2	T2	F1	T2.3	1000	2000	marker	
-T2	T2	R1.b1	T2.4	0	500	read	
+T2	T2	R1.b1	T2.4	0	500	read	R1.b1.A

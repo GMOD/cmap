@@ -145,10 +145,38 @@ my $get_features_return1 = [
         'feature_start'       => ($driver eq 'SQLite') ? '0' : '0.00',
         'species_common_name' => 'species_common_name1',
         'map_acc'             => 'T1',
-        'aliases'             => [],
+        'aliases'             => ['R1.g1.A'],
         'feature_name'        => 'R1.g1',
         'map_set_short_name'  => 'map_set_short_name1',
         'species_acc'         => 'species_acc1'
+    }
+];
+
+my $get_corrs_return0 = [
+    {   'feature_acc1'           => 'T1.2',
+        'feature_start2'         => ($driver eq 'SQLite') ? '0' : '0.00',
+        'map_units2'             => 'bp',
+        'map_set_short_name2'    => 'map_set_short_name2',
+        'feature_acc2'           => 'T2.4',
+        'ms_display_order2'      => '1',
+        'map_acc2'               => 'T2',
+        'evidence_type'          => 'Automated name-based 3',
+        'map_display_order2'     => '1',
+        'feature_type_acc1'      => 'read',
+        'feature_type2'          => 'Read',
+        'is_enabled'             => '1',
+        'feature_type_acc2'      => 'read',
+        'species_common_name2'   => 'species_common_name1',
+        'score'                  => undef,
+        'evidence_type_acc'      => 'ANB3',
+        'map_set_acc2'           => 'map_set_acc2',
+        'species_display_order2' => '1',
+        'map_type2'              => 'Sequence',
+        'feature_type1'          => 'Read',
+        'feature_stop2'          => ($driver eq 'SQLite') ? '500' : '500.00',
+        'feature_name2'          => 'R1.b1',
+        'map_name2'              => 'T2',
+        'map_type_acc2'          => 'Seq'
     }
 ];
 
@@ -455,13 +483,31 @@ ok( $interactive->import_tab_data(
 );
 
 # -----------------------------------------------------------------------
-### Import Corrs
+### Import Corrs (feature aliases)
+ok( $interactive->import_correspondences(
+        map_set_accs => 'map_set_acc1,map_set_acc2',
+        command_line => 1,
+        file_str     => catfile( 't', 'test_data', 'tab_corrs_aliases' ),
+    ),
+    'Testing import_correspondences (feature aliases)'
+);
+
+my $actual_get_corrs_return0
+    = $sql_object->get_feature_correspondence_details(
+    map_id1                     => $map_id1,
+    included_evidence_type_accs => ['ANB3'],
+    );
+wipe_fields_from_array_ref( $actual_get_corrs_return0, @wipe_corr_fields, );
+is_deeply( $actual_get_corrs_return0, $get_corrs_return0,
+    'Get Correspondence Check import (feature aliases)' );
+# -----------------------------------------------------------------------
+### Import Corrs (feature names)
 ok( $interactive->import_correspondences(
         map_set_accs => 'map_set_acc1,map_set_acc2',
         command_line => 1,
         file_str     => catfile( 't', 'test_data', 'tab_corrs1' ),
     ),
-    'Testing import_correspondences'
+    'Testing import_correspondences (feature names)'
 );
 
 my $actual_get_corrs_return1
@@ -471,7 +517,7 @@ my $actual_get_corrs_return1
     );
 wipe_fields_from_array_ref( $actual_get_corrs_return1, @wipe_corr_fields, );
 is_deeply( $actual_get_corrs_return1, $get_corrs_return1,
-    'Get Correspondence Check import' );
+    'Get Correspondence Check import (feature names)' );
 
 # -----------------------------------------------------------------------
 ### Make Corrs

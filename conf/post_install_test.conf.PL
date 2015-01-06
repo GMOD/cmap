@@ -567,6 +567,19 @@ color
 
 </evidence_type>
 
+<evidence_type ANB3> 
+evidence_type_acc ANB3 
+evidence_type Automated name-based 3
+rank 1 
+color 
+<aggregated_correspondence_colors>
+    1    lightblue
+    20   blue
+    0    darkblue
+</aggregated_correspondence_colors>
+
+</evidence_type>
+
 <map_type Seq>
 map_type_acc Seq
 map_type Sequence

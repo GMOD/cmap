@@ -233,6 +233,7 @@ LINE:
                     $sql_object->get_features(
                         feature_name => $upper_name,
                         map_set_ids  => \@map_set_ids,
+                        aliases_get_rows => 1,
                     )
                     };
             }
