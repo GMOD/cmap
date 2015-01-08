@@ -1337,11 +1337,11 @@ Not using cache because this query is quicker.
     my $select_sql    = "select ";
     my $distinct_sql  = '';
     my $select_values = q[
-                 s.species_id,
-                 s.species_acc,
-                 s.species_common_name,
-                 s.species_full_name,
-                 s.display_order
+                 s.species_id AS species_id,
+                 s.species_acc AS species_acc,
+                 s.species_common_name AS species_common_name,
+                 s.species_full_name AS species_full_name,
+                 s.display_order AS display_order
     ];
     my $from_sql = q[
         from     cmap_species s
@@ -1853,23 +1853,23 @@ Array of Hashes:
     my $return_object;
 
     my $select_sql = q[
-        select  ms.map_set_id,
-                ms.map_set_acc,
-                ms.map_set_name,
-                ms.map_set_short_name,
-                ms.map_type_acc,
-                ms.published_on,
-                ms.is_enabled,
-                ms.is_relational_map,
-                ms.map_units,
+        select  ms.map_set_id AS map_set_id,
+                ms.map_set_acc AS map_set_acc,
+                ms.map_set_name AS map_set_name,
+                ms.map_set_short_name AS map_set_short_name,
+                ms.map_type_acc AS map_type_acc,
+                ms.published_on AS published_on,
+                ms.is_enabled AS is_enabled,
+                ms.is_relational_map AS is_relational_map,
+                ms.map_units AS map_units,
                 ms.display_order as map_set_display_order,
-                ms.shape,
-                ms.color,
-                ms.width,
-                s.species_id,
-                s.species_acc,
-                s.species_common_name,
-                s.species_full_name,
+                ms.shape AS shape,
+                ms.color AS color,
+                ms.width AS width,
+                s.species_id AS species_id,
+                s.species_acc AS species_acc,
+                s.species_common_name AS species_common_name,
+                s.species_full_name AS species_full_name,
                 s.display_order as species_display_order
     ];
     my $from_sql = qq[
@@ -2086,51 +2086,51 @@ Not using cache because this query is quicker.
     my $return_object;
 
     my $sql_str = q[
-        select  ms.map_set_id,
-                ms.map_set_acc,
-                ms.map_set_name,
-                ms.map_set_short_name,
-                ms.map_type_acc,
-                ms.species_id,
-                ms.published_on,
-                ms.is_enabled,
-                ms.is_relational_map,
-                ms.map_units,
-                ms.display_order as map_set_display_order
-        from    cmap_map_set ms
+        select  map_set_id,
+                map_set_acc,
+                map_set_name,
+                map_set_short_name,
+                map_type_acc,
+                species_id,
+                published_on,
+                is_enabled,
+                is_relational_map,
+                map_units,
+                display_order as map_set_display_order
+        from    cmap_map_set
     ];
     my $where_sql = '';
 
     if ($map_set_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_id = " . $db->quote($map_set_id) . " ";
+        $where_sql .= " map_set_id = " . $db->quote($map_set_id) . " ";
     }
     elsif (@$map_set_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_id in ("
+        $where_sql .= " map_set_id in ("
             . join( ",", map { $db->quote($_) } sort @$map_set_ids ) . ") ";
     }
     elsif ($map_set_acc) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_acc = " . $db->quote($map_set_acc) . " ";
+        $where_sql .= " map_set_acc = " . $db->quote($map_set_acc) . " ";
     }
     elsif (@$map_set_accs) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_set_acc in ("
+        $where_sql .= " map_set_acc in ("
             . join( ",", map { $db->quote($_) } sort @$map_set_accs ) . ") ";
     }
     if ($map_type_acc) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.map_type_acc = " . $db->quote($map_type_acc) . " ";
+        $where_sql .= " map_type_acc = " . $db->quote($map_type_acc) . " ";
     }
     if ( defined($is_relational_map) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_relational_map = "
+        $where_sql .= " is_relational_map = "
             . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_enabled = " . $db->quote($is_enabled) . " ";
+        $where_sql .= " is_enabled = " . $db->quote($is_enabled) . " ";
     }
 
     $sql_str .= $where_sql;
@@ -2207,11 +2207,11 @@ Not using cache because this query is quicker.
     my $db = $self->db;
     my $return_object;
     my $sql_str = q[ 
-        select distinct ms.map_set_id,
-               ms.map_set_short_name,
-               s.species_common_name,
-               s.species_acc,
-               ms.map_set_acc
+        select distinct ms.map_set_id AS map_set_id,
+               ms.map_set_short_name AS map_set_short_name,
+               s.species_common_name AS species_common_name,
+               s.species_acc AS species_acc,
+               ms.map_set_acc AS map_set_acc
         from   cmap_map_set ms,
                cmap_species s,
                cmap_map map 
@@ -2761,27 +2761,27 @@ Array of Hashes:
     my $return_object;
 
     my $select_sql = q[
-        select  map.map_id,
-                map.map_acc,
-                map.map_name,
-                map.map_start,
-                map.map_stop,
-                map.display_order,
-                ms.map_set_id,
-                ms.map_set_acc,
-                ms.map_set_name,
-                ms.map_set_short_name,
-                ms.published_on,
-                ms.shape,
-                ms.width,
-                ms.color,
-                ms.map_type_acc,
-                ms.map_units,
-                ms.is_relational_map,
-                s.species_id,
-                s.species_acc,
-                s.species_common_name,
-                s.species_full_name
+        select  map.map_id AS map_id,
+                map.map_acc AS map_acc,
+                map.map_name AS map_name,
+                map.map_start AS map_start,
+                map.map_stop AS map_stop,
+                map.display_order AS display_order,
+                ms.map_set_id AS map_set_id,
+                ms.map_set_acc AS map_set_acc,
+                ms.map_set_name AS map_set_name,
+                ms.map_set_short_name AS map_set_short_name,
+                ms.published_on AS published_on,
+                ms.shape AS shape,
+                ms.width AS width,
+                ms.color AS color,
+                ms.map_type_acc AS map_type_acc,
+                ms.map_units AS map_units,
+                ms.is_relational_map AS is_relational_map,
+                s.species_id AS species_id,
+                s.species_acc AS species_acc,
+                s.species_common_name AS species_common_name,
+                s.species_full_name AS species_full_name
     ];
     my $from_sql = q[
         from    cmap_map_set ms,
@@ -3071,11 +3071,11 @@ Not using cache because this query is quicker.
     my @identifiers;
 
     my $sql_str = q[
-        select   map.map_acc,
-                 map.map_id,
-                 map.map_name,
-                 map.map_start,
-                 map.map_stop
+        select   map.map_acc AS map_acc,
+                 map.map_id AS map_id,
+                 map.map_name AS map_name,
+                 map.map_start AS map_start,
+                 map.map_stop AS map_stop
         from     cmap_map map
     ];
 
@@ -3783,29 +3783,29 @@ Not using cache because this query is quicker.
 
     my @identifiers = ();    #holds the value of the feature_id or map_id, etc
     my $select_sql  = qq[
-        select  f.feature_id,
-                f.feature_acc,
-                f.feature_type_acc,
-                f.feature_name,
-                f.feature_start,
-                f.feature_stop,
-                f.direction,
-                f.map_id,
-                f.is_landmark,
-                map.map_acc,
-                map.map_name,
+        select  f.feature_id AS feature_id,
+                f.feature_acc AS feature_acc,
+                f.feature_type_acc AS feature_type_acc,
+                f.feature_name AS feature_name,
+                f.feature_start AS feature_start,
+                f.feature_stop AS feature_stop,
+                f.direction AS direction,
+                f.map_id AS map_id,
+                f.is_landmark AS is_landmark,
+                map.map_acc AS map_acc,
+                map.map_name AS map_name,
                 map.map_start as map_start,
                 map.map_stop as map_stop,
-                ms.map_set_id,
-                ms.map_set_acc,
-                ms.map_set_name,
-                ms.map_set_short_name,
-                ms.is_relational_map,
-                ms.map_type_acc,
-                ms.map_units,
-                s.species_id,
-                s.species_acc,
-                s.species_common_name
+                ms.map_set_id AS map_set_id,
+                ms.map_set_acc AS map_set_acc,
+                ms.map_set_name AS map_set_name,
+                ms.map_set_short_name AS map_set_short_name,
+                ms.is_relational_map AS is_relational_map,
+                ms.map_type_acc AS map_type_acc,
+                ms.map_units AS map_units,
+                s.species_id AS species_id,
+                s.species_acc AS species_acc,
+                s.species_common_name AS species_common_name
     ];
     my $from_sql = qq[
         from    cmap_feature f,
@@ -4200,16 +4200,16 @@ Using Cache
     my $db                       = $self->db;
     my $return_object;
     my $select_str = qq[
-         select f.feature_id,
-               f.feature_acc,
-               f.feature_name,
-               f.is_landmark,
-               f.feature_start,
-               f.feature_stop,
-               f.feature_type_acc,
-               f.default_rank,
-               f.direction,
-               map.map_set_id           
+         select f.feature_id AS feature_id,
+               f.feature_acc AS feature_acc,
+               f.feature_name AS feature_name,
+               f.is_landmark AS is_landmark,
+               f.feature_start AS feature_start,
+               f.feature_stop AS feature_stop,
+               f.feature_type_acc AS feature_type_acc,
+               f.default_rank AS default_rank,
+               f.direction AS direction,
+               map.map_set_id AS map_set_id                      
     ];
     my $from_str .= qq[
         from   cmap_map map, 
@@ -4542,18 +4542,18 @@ Array of Hashes:
 
     my $select_sql = q[
         select   distinct  
-                 f.feature_id,
-                 f.feature_acc,
-                 f.map_id,
-                 f.feature_name,
-                 f.is_landmark,
-                 f.feature_start,
-                 f.feature_stop,
-                 f.feature_type_acc,
-                 f.direction,
-                 map.map_acc,
-                 map.map_name,
-                 ms.map_units
+                 f.feature_id AS feature_id,
+                 f.feature_acc AS feature_acc,
+                 f.map_id AS map_id,
+                 f.feature_name AS feature_name,
+                 f.is_landmark AS is_landmark,
+                 f.feature_start AS feature_start,
+                 f.feature_stop AS feature_stop,
+                 f.feature_type_acc AS feature_type_acc,
+                 f.direction AS direction,
+                 map.map_acc AS map_acc,
+                 map.map_name AS map_name,
+                 ms.map_units AS map_units
     ];
     my $from_sql = q[
         from     cmap_feature f,
@@ -5520,12 +5520,12 @@ Not using cache because this query is quicker.
     my @identifiers = ();
 
     my $select_sql = qq[
-            select  fa.feature_alias_id,
-                    fa.alias,
-                    f.feature_id,
-                    f.feature_acc,
-                    f.feature_name,
-                    f.feature_type_acc
+            select  fa.feature_alias_id AS feature_alias_id,
+                    fa.alias AS alias,
+                    f.feature_id AS feature_id,
+                    f.feature_acc AS feature_acc,
+                    f.feature_name AS feature_name,
+                    f.feature_type_acc AS feature_type_acc
     ];
     my $from_sql = qq[
             from    cmap_feature_alias fa,
@@ -6163,12 +6163,12 @@ Not using cache because this query is quicker.
 
     my $sql_str = q[
         select   f2.feature_name as feature_name2,
-                 cl.feature_id1,
-                 cl.feature_id2,
+                 cl.feature_id1 AS feature_id1,
+                 cl.feature_id2 AS feature_id2,
                  f1.feature_acc as feature_acc1,
                  f2.feature_acc as feature_acc2,
-                 cl.feature_start2,
-                 cl.feature_stop2,
+                 cl.feature_start2 AS feature_start2,
+                 cl.feature_stop2 AS feature_stop2,
                  f1.feature_type_acc as feature_type_acc1,
                  f2.feature_type_acc as feature_type_acc2,
                  map2.map_id as map_id2,
@@ -6186,11 +6186,11 @@ Not using cache because this query is quicker.
                  s2.species_acc as species_acc2,
                  s2.species_common_name as species_common_name2,
                  s2.display_order as species_display_order2,
-                 fc.feature_correspondence_id,
-                 fc.feature_correspondence_acc,
-                 fc.is_enabled,
-                 ce.evidence_type_acc,
-                 ce.score
+                 fc.feature_correspondence_id AS feature_correspondence_id,
+                 fc.feature_correspondence_acc AS feature_correspondence_acc,
+                 fc.is_enabled AS is_enabled,
+                 ce.evidence_type_acc AS evidence_type_acc,
+                 ce.score AS score
         from     cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
@@ -6371,9 +6371,9 @@ Not using cache because this query is quicker.
     my $return_object;
 
     my $sql_str = q[
-        select fc.feature_correspondence_id,
-               fc.feature_correspondence_acc,
-               fc.is_enabled,
+        select fc.feature_correspondence_id AS feature_correspondence_id,
+               fc.feature_correspondence_acc AS feature_correspondence_acc,
+               fc.is_enabled AS is_enabled,
                f1.feature_acc as feature_acc1,
                f2.feature_acc as feature_acc2
         from    cmap_feature_correspondence fc,
@@ -6535,8 +6535,8 @@ Array of Hashes:
     my $sql_str = qq[
         select   cl.feature_id1 as feature_id,
                  f2.feature_id as ref_feature_id, 
-                 cl.feature_correspondence_id,
-                 ce.evidence_type_acc
+                 cl.feature_correspondence_id AS feature_correspondence_id,
+                 ce.evidence_type_acc AS evidence_type_acc
         from     cmap_feature f2, 
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
@@ -6799,14 +6799,14 @@ Array of Hashes:
     my $return_object;
 
     my $select_sql = qq[
-        select   cl.map_id1,
-                 cl.map_id2,
-                 cl.feature_start1,
-                 cl.feature_stop1,
-                 cl.feature_start2,
-                 cl.feature_stop2,
-                 cl.feature_id1,
-                 cl.feature_id2
+        select   cl.map_id1 AS map_id1,
+                 cl.map_id2 AS map_id2,
+                 cl.feature_start1 AS feature_start1,
+                 cl.feature_stop1 AS feature_stop1,
+                 cl.feature_start2 AS feature_start2,
+                 cl.feature_stop2 AS feature_stop2,
+                 cl.feature_id1 AS feature_id1,
+                 cl.feature_id2 AS feature_id2
     ];
 
     my $from_sql = qq[
@@ -7177,8 +7177,8 @@ If $include_map1_data also has
 
     my $select_sql = qq[
         select   count(distinct cl.feature_correspondence_id) as no_corr,
-                 cl.map_id1,
-                 cl.map_id2,
+                 cl.map_id1 AS map_id1,
+                 cl.map_id2 AS map_id2,
                  map2.map_acc as map_acc2,
                  map2.map_set_id as map_set_id2
     ];
@@ -7912,11 +7912,11 @@ Not using cache because this query is quicker.
 
     my @identifiers = ();
     my $sql_str     = q[
-        select   ce.correspondence_evidence_id,
-                 ce.feature_correspondence_id,
-                 ce.correspondence_evidence_acc,
-                 ce.score,
-                 ce.evidence_type_acc
+        select   ce.correspondence_evidence_id AS correspondence_evidence_id,
+                 ce.feature_correspondence_id AS feature_correspondence_id,
+                 ce.correspondence_evidence_acc AS correspondence_evidence_acc,
+                 ce.score AS score,
+                 ce.evidence_type_acc AS evidence_type_acc
         from     cmap_correspondence_evidence ce
     ];
     my $where_sql    = '';
@@ -9540,13 +9540,13 @@ Array of Hashes:
 
     my @identifiers;
     my $select_sql = qq[
-        select  mtf.map_id,
-                mtf.map_acc,
-                mtf.feature_id,
-                mtf.feature_acc
+        select  map_id,
+                map_acc,
+                feature_id,
+                feature_acc
     ];
     my $from_sql = qq[
-        from    cmap_map_to_feature mtf
+        from    cmap_map_to_feature
     ];
     my $where_sql = q{};
 
@@ -10484,7 +10484,7 @@ Array of Hashes:
 
     my $sql_str = qq[
         select   distinct
-                 f.feature_type_acc
+                 f.feature_type_acc AS feature_type_acc
         from     cmap_feature f
     ];
     my $where_sql = '';
@@ -10602,18 +10602,18 @@ Array of Hashes:
 
     my $sql_str = qq[
         select   distinct
-                 ms.map_type_acc
-        from     cmap_map_set ms
+                 map_type_acc
+        from     cmap_map_set
     ];
     my $where_sql = '';
     if ( defined($is_relational_map) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_relational_map = "
+        $where_sql .= " is_relational_map = "
             . $db->quote($is_relational_map) . " ";
     }
     if ( defined($is_enabled) ) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " ms.is_enabled = " . $db->quote($is_enabled) . " ";
+        $where_sql .= " is_enabled = " . $db->quote($is_enabled) . " ";
     }
 
     $sql_str .= $where_sql;
@@ -10794,10 +10794,10 @@ Not using cache because this query is quicker.
     my $select_sql = qq[
         select   sum(cm.no_correspondences) as correspondences,
                  count(cm.link_map_acc) as map_count,
-                 cm.reference_map_set_acc,
-                 cm.reference_species_acc,
-                 cm.link_map_set_acc,
-                 cm.link_species_acc
+                 cm.reference_map_set_acc AS reference_map_set_acc,
+                 cm.reference_species_acc AS reference_species_acc,
+                 cm.link_map_set_acc AS link_map_set_acc,
+                 cm.link_species_acc AS link_species_acc
 
     ];
     my $from_sql = qq[
@@ -10899,13 +10899,13 @@ this table in your db, it dummy up this method.
     my @reference_maps = @{
         $db->selectall_arrayref(
             q[
-                select   map.map_id,
-                         map.map_acc,
-                         map.map_name,
-                         ms.map_set_acc,
-                         ms.map_set_short_name,
-                         s.species_acc,
-                         s.species_common_name
+                select   map.map_id AS map_id,
+                         map.map_acc AS map_acc,
+                         map.map_name AS map_name,
+                         ms.map_set_acc AS map_set_acc,
+                         ms.map_set_short_name AS map_set_short_name,
+                         s.species_acc AS species_acc,
+                         s.species_common_name AS species_common_name
                 from     cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
@@ -11193,9 +11193,9 @@ Again if you don't want CMap to mess with your db, make this a dummy method.
     my $db = $self->db;
 
     my $select_sql = q[
-        select  cl.feature_id1,
-                cl.feature_id2,
-                cl.feature_correspondence_id
+        select  cl.feature_id1 AS feature_id1,
+                cl.feature_id2 AS feature_id2,
+                cl.feature_correspondence_id AS feature_correspondence_id
     ];
     my $from_sql = q[
         from  cmap_correspondence_lookup cl
@@ -11282,7 +11282,7 @@ Array of correspondence_evidence_ids
     my $return_object;
 
     my $evidence_move_sql = qq[
-        select distinct ce1.correspondence_evidence_id
+        select distinct ce1.correspondence_evidence_id AS correspondence_evidence_id
         from   cmap_correspondence_evidence ce1
         left join cmap_correspondence_evidence ce2
             on ce1.evidence_type_acc=ce2.evidence_type_acc
