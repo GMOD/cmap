@@ -36,30 +36,6 @@ CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (fea
 CREATE UNIQUE INDEX correspondence_evidence_acc_cm on cmap_correspondence_evidence (correspondence_evidence_acc);
 
 --
--- Table: cmap_correspondence_lookup
---
-CREATE TABLE cmap_correspondence_lookup (
-  feature_id1 int(11) DEFAULT NULL,
-  feature_id2 int(11) DEFAULT NULL,
-  feature_correspondence_id int(11) DEFAULT NULL,
-  feature_start1 double(11,2) DEFAULT NULL,
-  feature_start2 double(11,2) DEFAULT NULL,
-  feature_stop1 double(11,2) DEFAULT NULL,
-  feature_stop2 double(11,2) DEFAULT NULL,
-  map_id1 int(11) DEFAULT NULL,
-  map_id2 int(11) DEFAULT NULL,
-  feature_type_acc1 varchar(30) DEFAULT NULL,
-  feature_type_acc2 varchar(30) DEFAULT NULL
-);
-
-CREATE INDEX feature_id1_cmap_correspondenc on cmap_correspondence_lookup (feature_id1);
-CREATE INDEX corr_id_cmap_correspondence_lo on cmap_correspondence_lookup (feature_correspondence_id);
-CREATE INDEX cl_map_id1_cmap_correspondence on cmap_correspondence_lookup (map_id1);
-CREATE INDEX cl_map_id2_cmap_correspondence on cmap_correspondence_lookup (map_id2);
-CREATE INDEX cl_map_id1_map_id2_cmap_corres on cmap_correspondence_lookup (map_id1, map_id2);
-CREATE INDEX cl_map_id2_map_id1_cmap_corres on cmap_correspondence_lookup (map_id2, map_id1);
-
---
 -- Table: cmap_correspondence_matrix
 --
 CREATE TABLE cmap_correspondence_matrix (
@@ -125,6 +101,46 @@ CREATE TABLE cmap_feature_correspondence (
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 CREATE UNIQUE INDEX feature_correspondence_acc_cma on cmap_feature_correspondence (feature_correspondence_acc);
+
+--
+-- View: cmap_correspondence_lookup
+--
+CREATE VIEW cmap_correspondence_lookup AS
+  SELECT
+    cmap_feature_correspondence.feature_id1 AS feature_id1, 
+    cmap_feature_correspondence.feature_id2 AS feature_id2,
+    cmap_feature_correspondence.feature_correspondence_id AS feature_correspondence_id,
+    cf1.feature_start AS feature_start1,
+    cf2.feature_start AS feature_start2,
+    cf1.feature_stop AS feature_stop1,
+    cf2.feature_stop AS feature_stop2,
+    cf1.map_id AS map_id1,
+    cf2.map_id AS map_id2,
+    cf1.feature_type_acc AS feature_type_acc1,
+    cf2.feature_type_acc AS feature_type_acc2
+   FROM cmap_feature_correspondence 
+   JOIN cmap_feature cf1
+     ON cmap_feature_correspondence.feature_id1 = cf1.feature_id
+   JOIN cmap_feature cf2
+     ON cmap_feature_correspondence.feature_id2 = cf2.feature_id
+UNION ALL
+  SELECT
+    cmap_feature_correspondence.feature_id2 AS feature_id2, 
+    cmap_feature_correspondence.feature_id1 AS feature_id1,
+    cmap_feature_correspondence.feature_correspondence_id AS feature_correspondence_id,
+    cf1.feature_start AS feature_start1,
+    cf2.feature_start AS feature_start2,
+    cf1.feature_stop AS feature_stop1,
+    cf2.feature_stop AS feature_stop2,
+    cf1.map_id AS map_id1,
+    cf2.map_id AS map_id2,
+    cf1.feature_type_acc AS feature_type_acc1,
+    cf2.feature_type_acc AS feature_type_acc2
+   FROM cmap_feature_correspondence 
+   JOIN cmap_feature cf1
+     ON cmap_feature_correspondence.feature_id2 = cf1.feature_id
+   JOIN cmap_feature cf2
+     ON cmap_feature_correspondence.feature_id1 = cf2.feature_id;
 
 --
 -- Table: cmap_map

@@ -37,30 +37,6 @@ CREATE TABLE cmap_correspondence_evidence (
 ) ENGINE=InnoDB;
 
 --
--- Table structure for table `cmap_correspondence_lookup`
---
-
-CREATE TABLE cmap_correspondence_lookup (
-  feature_id1 int(11) default NULL,
-  feature_id2 int(11) default NULL,
-  feature_correspondence_id int(11) default NULL,
-  feature_start1 double(11,2) default NULL,
-  feature_start2 double(11,2) default NULL,
-  feature_stop1 double(11,2) default NULL,
-  feature_stop2 double(11,2) default NULL,
-  map_id1 int(11) default NULL,
-  map_id2 int(11) default NULL,
-  feature_type_acc1 varchar(30) default NULL,
-  feature_type_acc2 varchar(30) default NULL,
-  KEY feature_id1 (feature_id1),
-  KEY corr_id (feature_correspondence_id),
-  KEY cl_map_id1 (map_id1),
-  KEY cl_map_id2 (map_id2),
-  KEY cl_map_id1_map_id2 (map_id1,map_id2),
-  KEY cl_map_id2_map_id1 (map_id2,map_id1)
-) ENGINE=InnoDB;
-
---
 -- Table structure for table `cmap_correspondence_matrix`
 --
 
@@ -129,6 +105,46 @@ CREATE TABLE cmap_feature_correspondence (
   KEY feature_id1 (feature_id1),
   KEY cmap_feature_corresp_idx (is_enabled,feature_correspondence_id)
 ) ENGINE=InnoDB;
+
+--
+-- View: cmap_correspondence_lookup
+--
+CREATE VIEW cmap_correspondence_lookup AS
+  SELECT
+    cmap_feature_correspondence.feature_id1 AS feature_id1, 
+    cmap_feature_correspondence.feature_id2 AS feature_id2,
+    cmap_feature_correspondence.feature_correspondence_id AS feature_correspondence_id,
+    cf1.feature_start AS feature_start1,
+    cf2.feature_start AS feature_start2,
+    cf1.feature_stop AS feature_stop1,
+    cf2.feature_stop AS feature_stop2,
+    cf1.map_id AS map_id1,
+    cf2.map_id AS map_id2,
+    cf1.feature_type_acc AS feature_type_acc1,
+    cf2.feature_type_acc AS feature_type_acc2
+   FROM cmap_feature_correspondence 
+   JOIN cmap_feature cf1
+     ON cmap_feature_correspondence.feature_id1 = cf1.feature_id
+   JOIN cmap_feature cf2
+     ON cmap_feature_correspondence.feature_id2 = cf2.feature_id
+UNION ALL
+  SELECT
+    cmap_feature_correspondence.feature_id2 AS feature_id2, 
+    cmap_feature_correspondence.feature_id1 AS feature_id1,
+    cmap_feature_correspondence.feature_correspondence_id AS feature_correspondence_id,
+    cf1.feature_start AS feature_start1,
+    cf2.feature_start AS feature_start2,
+    cf1.feature_stop AS feature_stop1,
+    cf2.feature_stop AS feature_stop2,
+    cf1.map_id AS map_id1,
+    cf2.map_id AS map_id2,
+    cf1.feature_type_acc AS feature_type_acc1,
+    cf2.feature_type_acc AS feature_type_acc2
+   FROM cmap_feature_correspondence 
+   JOIN cmap_feature cf1
+     ON cmap_feature_correspondence.feature_id2 = cf1.feature_id
+   JOIN cmap_feature cf2
+     ON cmap_feature_correspondence.feature_id1 = cf2.feature_id;
 
 --
 -- Table structure for table `cmap_map`

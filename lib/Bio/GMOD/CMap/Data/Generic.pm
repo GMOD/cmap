@@ -540,22 +540,6 @@ Array of Hashes:
                 rank                        => NUM,
             }
         },
-        {   name   => 'cmap_correspondence_lookup',
-            fields => {
-                feature_id1               => NUM,
-                feature_id2               => NUM,
-                feature_correspondence_id => NUM,
-                feature_start1            => NUM,
-                feature_start2            => NUM,
-                feature_stop1             => NUM,
-                feature_stop2             => NUM,
-                map_id1                   => NUM,
-                map_id2                   => NUM,
-                feature_type_acc1         => STR,
-                feature_type_acc2         => STR,
-
-            }
-        },
         {   name   => 'cmap_correspondence_matrix',
             fields => {
                 reference_map_acc     => STR,
@@ -5296,29 +5280,6 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $sql_str = $update_sql . $set_sql . $where_sql;
     $db->do( $sql_str, {}, @update_args );
-
-    # Modify the any correspondences that might exist
-    foreach my $params (
-        [ 'map_id',           $map_id ],
-        [ 'feature_type_acc', $feature_type_acc ],
-        [ 'feature_start',    $feature_start ],
-        [ 'feature_stop',     $feature_stop ],
-        )
-    {
-        my $param_name  = $params->[0];
-        my $param_value = $params->[1];
-        if ( defined $param_value ) {
-            foreach my $number ( 1, 2 ) {
-                my $update_str = q[
-                    update cmap_correspondence_lookup
-                    set ] . $param_name . $number . q[ = ?
-                    where feature_id] . $number . q[ = ?  ];
-                $db->do( $update_str, {},
-                    ( $param_value, $feature_id, $param_value, $feature_id, )
-                );
-            }
-        }
-    }
 }
 
 #-----------------------------------------------
@@ -7560,25 +7521,6 @@ Feature Correspondence id
                  values ( ?,?,?,?,? )
                 ]
         );
-        my $sth_cl = $db->prepare(
-            qq[
-                insert into cmap_correspondence_lookup
-                (
-                    feature_correspondence_id,
-                    feature_id1,
-                    feature_id2,
-                    feature_start1,
-                    feature_start2,
-                    feature_stop1,
-                    feature_stop2,
-                    map_id1,
-                    map_id2,
-                    feature_type_acc1,
-                    feature_type_acc2
-                 )
-                 values ( ?,?,?,?,?,?,?,?,?,?,? )
-                ]
-        );
         my ($corr_id,     $corr_acc,   $feature_id1,
             $feature_id2, $is_enabled, $evidences
         );
@@ -7598,35 +7540,6 @@ Feature Correspondence id
             $sth_fc->execute(
                 $corr_id,     $corr_acc, $feature_id1,
                 $feature_id2, $is_enabled
-            );
-
-            $sth_cl->execute(
-                $corr_id,
-                $feature_id1,
-                $feature_id2,
-                $feature1->{'feature_start'},
-                $feature2->{'feature_start'},
-                $feature1->{'feature_stop'},
-                $feature2->{'feature_stop'},
-                $feature1->{'map_id'},
-                $feature2->{'map_id'},
-                $feature1->{'feature_type_acc'},
-                $feature2->{'feature_type_acc'},
-
-            );
-            $sth_cl->execute(
-                $corr_id,
-                $feature_id2,
-                $feature_id1,
-                $feature2->{'feature_start'},
-                $feature1->{'feature_start'},
-                $feature2->{'feature_stop'},
-                $feature1->{'feature_stop'},
-                $feature2->{'map_id'},
-                $feature1->{'map_id'},
-                $feature2->{'feature_type_acc'},
-                $feature1->{'feature_type_acc'},
-
             );
 
             # Deal with Evidence
@@ -7801,9 +7714,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $delete_sql_fc             = qq[
         delete from cmap_feature_correspondence
     ];
-    my $delete_sql_cl = qq[
-        delete from cmap_correspondence_lookup
-    ];
     my $where_sql_fc = '';
     my $where_sql_cl = '';
 
@@ -7825,9 +7735,7 @@ If you don't want CMap to delete from your database, make this a dummy method.
     }
 
     $delete_sql_fc .= $where_sql_fc;
-    $delete_sql_cl .= $where_sql_cl;
     $db->do( $delete_sql_fc, {}, (@delete_args) );
-    $db->do( $delete_sql_cl, {}, (@delete_args) );
 
     return 1;
 }
