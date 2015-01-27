@@ -4,6 +4,7 @@
 # $Id: cmap_admin.pl,v 1.147 2008-06-27 14:54:03 mwz444 Exp $
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Pod::Usage;
 use Getopt::Long;
 use Bio::GMOD::CMap::Admin::Interactive;

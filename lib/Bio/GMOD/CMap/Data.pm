@@ -29,7 +29,7 @@ use vars qw( $VERSION );
 $VERSION = (qw$Revision: 1.294 $)[-1];
 
 use Data::Dumper;
-use Date::Format;
+use POSIX;
 use Regexp::Common;
 use Time::ParseDate;
 use Bio::GMOD::CMap::Constants;
@@ -2296,7 +2296,7 @@ Returns the data for drawing comparative maps.
                 = parsedate( $map_set->{'published_on'}, VALIDATE => 1 ) )
             {
                 my @time = localtime($pubdate);
-                $map_set->{'published_on'} = strftime( "%d %B, %Y", @time );
+                $map_set->{'published_on'} = POSIX::strftime( "%d %B, %Y", @time );
             }
             else {
                 $map_set->{'published_on'} = '';

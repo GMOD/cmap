@@ -25,6 +25,7 @@ datasource is provided, the default is used.
 =cut
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Getopt::Long;
 use Pod::Usage;
 use Bio::GMOD::CMap;

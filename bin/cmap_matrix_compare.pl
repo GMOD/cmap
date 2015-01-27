@@ -66,6 +66,7 @@ To see how things changed between Monday and Tuesday:
 
 # -------------------------------------------------------------------
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Bio::GMOD::CMap;
 use Getopt::Long;
 use Data::Dumper;

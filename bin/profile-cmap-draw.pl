@@ -36,6 +36,7 @@ Use this to profile the CMap drawing code.
 =cut
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Getopt::Long;
 use CGI;

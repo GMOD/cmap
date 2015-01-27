@@ -7,6 +7,8 @@ use strict;
 use Data::Dumper;
 
 #use Test::More tests => 8;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use Test::More qw(no_plan);
 use Bio::GMOD::CMap::Admin::Interactive;
 use File::Spec::Functions qw( catfile );

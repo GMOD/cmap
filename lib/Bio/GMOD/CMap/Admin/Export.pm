@@ -142,7 +142,7 @@ An arrayref of object names to be exported, such as "map_set"
     my $date = localtime;
     $dump{'dump_date'} = $date;
     my @comments = (
-        'This file contains data from CMap (http://www.gmod.org/cmap)',
+        'This file contains data from CMap (http://gmod.org/wiki/CMap)',
         'From the ' . $self->data_source . ' data source',
         "Created on $date"
     );

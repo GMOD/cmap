@@ -1,21 +1,3 @@
-#!perl
-
-use strict;
-use CMapBuilder;
-use Cwd;
-use File::Basename qw(&basename &dirname);
-use File::Spec::Functions;
-
-my $builder   = CMapBuilder->current;
-my $conf_dir = catfile( $builder->notes('CONF') );
-
-my $origdir = cwd;
-chdir dirname($0);
-my $file;
-($file = basename($0)) =~ s/\.PL$//;
-open OUT, ">$file" or die "Cannot write file '$file': $!\n";
-print "Extracting $file (with variable substitutions)\n";
-print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
@@ -32,7 +14,6 @@ $VERSION = (qw$Revision: 1.56 $)[-1];
     COLORS
     CORR_GLYPHS
     CACHE_LEVELS
-    CONFIG_DIR
     CMAP_URL
     DASHED_LINE
     DEFAULT
@@ -61,12 +42,9 @@ $VERSION = (qw$Revision: 1.56 $)[-1];
     ON_SCREEN
 ];
 
-NOGROK
-print OUT<<"!GROK!THIS!";
 #
-# The location of the configuration files.
+# The filename of the optional global configuration file.
 #
-use constant CONFIG_DIR => '$conf_dir';
 use constant GLOBAL_CONFIG_FILE => 'global.conf';
 
 #
@@ -75,9 +53,6 @@ use constant GLOBAL_CONFIG_FILE => 'global.conf';
 #
 use constant CACHE_LEVELS => '5';
 
-!GROK!THIS!
-
-print OUT<<'NOGROK';
 #
 # My palette of colors available for drawing maps
 #
@@ -227,7 +202,7 @@ use constant COLORS      => {
 #
 # The URL of the GMOD-CMap website.
 #
-use constant CMAP_URL => 'http://www.gmod.org/cmap';
+use constant CMAP_URL => 'http://gmod.org/wiki/CMap';
 
 #
 # This group represents strings used for the GD package for drawing.
@@ -826,4 +801,3 @@ or the Artistic License 2.0.  Refer to LICENSE for the full license text and to
 DISCLAIMER for additional warranty disclaimers.
 
 =cut
-NOGROK

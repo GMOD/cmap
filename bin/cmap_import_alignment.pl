@@ -44,6 +44,7 @@ Requires Bio::Perl
 
 # ----------------------------------------------------
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Pod::Usage;
 use Getopt::Long;
 use IO::File;

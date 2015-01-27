@@ -17,7 +17,7 @@ bin/cmap_validate_import_file.pl
 bin/profile-cmap-draw.pl
 BUGS
 Build.PL
-cgi-bin/cmap.PL
+cgi-bin/cmap
 chado_integration/chado_integration.pod
 chado_integration/chado_synchronize/chado_sync_tables.sql
 chado_integration/chado_synchronize/cmap_synchronize_chado.pl
@@ -240,7 +240,6 @@ htdocs/tutorial/Slide8.png
 htdocs/tutorial/Slide9.png
 INSTALL.pod
 install_util/cmap_netinstall.pl
-install_util/GuessDirectories.pm
 lib/Bio/DB/SeqFeature/Store/cmap.pm
 lib/Bio/GMOD/CMap.pm
 lib/Bio/GMOD/CMap/Admin.pm
@@ -280,7 +279,7 @@ lib/Bio/GMOD/CMap/Apache/SpeciesViewer.pm
 lib/Bio/GMOD/CMap/Apache/SpiderViewer.pm
 lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
 lib/Bio/GMOD/CMap/Config.pm
-lib/Bio/GMOD/CMap/Constants.pm.PL
+lib/Bio/GMOD/CMap/Constants.pm
 lib/Bio/GMOD/CMap/Data.pm
 lib/Bio/GMOD/CMap/Data/Generic.pm
 lib/Bio/GMOD/CMap/Data/MySQL.pm

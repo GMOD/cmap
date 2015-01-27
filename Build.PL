@@ -4,21 +4,19 @@ use strict;
 use lib './install_util';
 use CMapBuilder;
 use Cwd;
+use FindBin;
 use File::Spec::Functions;
-use GuessDirectories;
 eval { require Module::Build };
 if ( $@ =~ /Can't locate/ ) {
     print qq[Please install "Module::Build" before continuing.\n];
     exit(0);
 }
 
-# HTDOCS must be after WEB_DOCUMENT_ROOT
 # CACHE and SESSIONS must be after HTDOCS
 my @OPTION_LIST = qw[
   CONF
   CGIBIN
   TEMPLATES
-  WEB_DOCUMENT_ROOT
   HTDOCS
   CACHE
   SESSIONS
@@ -27,11 +25,11 @@ my @ARGS = ( qw[ PREFIX ], @OPTION_LIST );
 my %ARGS = (
     PREFIX => {
         desc    => 'A directory prefix for all install arguments',
-        default => catdir( '/', 'usr', 'local', 'apache' ),
+        default => $FindBin::Bin
     },
     CONF => {
-        desc    => 'Location for the cmap.conf configuration file',
-        default => catdir( 'conf', 'cmap.conf' ),
+        desc    => 'Location for the cmap configuration files',
+        default => 'conf',
     },
     CGIBIN => {
         desc    => 'Location for CGI executables',
@@ -41,17 +39,13 @@ my %ARGS = (
         desc    => 'Location for CMap HTML templates',
         default => catdir( 'templates', 'cmap' ),
     },
-    WEB_DOCUMENT_ROOT => {
-        desc    => 'Location of web document root',
-        default => catdir('htdocs'),
-    },
     HTDOCS => {
         desc    => 'Location for static files',
-        default => catdir('cmap'),
+        default => 'htdocs',
     },
     CACHE => {
         desc    => 'Location for temporary image files',
-        default => catdir('tmp'),
+        default => 'tmp',
     },
     SESSIONS => {
         desc    => 'Location for session files',
@@ -74,7 +68,7 @@ my $USAGE = join(
                 $_,
                 $ARGS{$_}{'desc'},
                 $_ eq 'PREFIX' ? ''
-                : ( $_ eq 'HTDOCS' ) ? '$PREFIX + $WEB_DOCUMENT_ROOT + '
+                : ( $_ eq 'HTDOCS' ) ? '$PREFIX + '
                 : ( $_ eq 'CACHE' or $_ eq 'SESSIONS' ) ? '$HTDOCS + '
                 : '$PREFIX + ',
                 $ARGS{$_}{'default'}
@@ -143,7 +137,7 @@ unless ($using_install_conf) {
     #
     # Make sure we have usable options.
     #
-    my $prefix = $OPTIONS{'PREFIX'};
+    my $prefix = $OPTIONS{'PREFIX'} || $FindBin::Bin;
 
     # Backwards compatiple for if "cmap.conf" is specified at end of CONF
     if ( $OPTIONS{'CONF'} ) {
@@ -156,31 +150,11 @@ unless ($using_install_conf) {
         $OPTIONS{'CGIBIN'} ||= catdir( $prefix, $ARGS{'CGIBIN'}{'default'} );
         $OPTIONS{'TEMPLATES'} ||=
           catdir( $prefix, $ARGS{'TEMPLATES'}{'default'} );
-        $OPTIONS{'WEB_DOCUMENT_ROOT'} ||=
-          catdir( $prefix, $ARGS{'WEB_DOCUMENT_ROOT'}{'default'} );
     }
-
-    $OPTIONS{'CONF'} ||= GuessDirectories->conf()
-        || ask_about_dir( "\nCannot guess the correct CONF directory.\n"
-            . "Please specify the CONF directory or hit enter to quit.\n" );
-    $OPTIONS{'CGIBIN'} ||= GuessDirectories->cgibin()
-        || ask_about_dir( "\nCannot guess the correct CGIBIN directory.\n"
-            . "If using Ubuntu, you may need to create "
-            . "the /usr/lib/cgi-bin/ directory.\n"
-            . "Please enter the CGIBIN directory or hit enter to quit.\n" );
-    $OPTIONS{'TEMPLATES'} ||= GuessDirectories->templates()
-        || ask_about_dir( "\nCannot guess the correct TEMPLATES directory.\n"
-            . "Please specify the TEMPLATES directory or hit enter to quit.\n"
-        );
-    $OPTIONS{'WEB_DOCUMENT_ROOT'} ||= GuessDirectories->web_document_root()
-        || ask_about_dir(
-              "\nCannot guess the correct WEB_DOCUMENT_ROOT directory.\n"
-            . "Please specify the WEB_DOCUMENT_ROOT directory or hit enter to quit.\n"
-        );
 
     # These options are dependent on other options
     $OPTIONS{'HTDOCS'} ||=
-      catdir( $OPTIONS{'WEB_DOCUMENT_ROOT'}, $ARGS{'HTDOCS'}{'default'} );
+      catdir( $prefix, $ARGS{'HTDOCS'}{'default'} );
     $OPTIONS{'CACHE'} ||=
       catdir( $OPTIONS{'HTDOCS'}, $ARGS{'CACHE'}{'default'} );
     $OPTIONS{'SESSIONS'} ||=
@@ -196,7 +170,7 @@ unless ($using_install_conf) {
     my $use_values = Module::Build->y_n( "Use these values?", 'y' );
     if ( !$use_values ) {
         foreach
-            my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES', 'WEB_DOCUMENT_ROOT', )
+            my $opt ( 'CONF', 'CGIBIN', 'TEMPLATES' )
         {
             $OPTIONS{$opt} = Module::Build->prompt(
                 "$opt: "
@@ -210,7 +184,6 @@ unless ($using_install_conf) {
                 . $ARGS{'HTDOCS'}->{'desc'} . "\n"
                 . "What should the value of HTDOCS be?\n",
             catdir(
-                $OPTIONS{'WEB_DOCUMENT_ROOT'},
                 $ARGS{'HTDOCS'}{'default'}
             )
         );
@@ -281,13 +254,10 @@ my $builder = CMapBuilder->new(
         'Clone'                        => 0,
         'Config::General'              => 0,
         'Data::Dumper'                 => 0,
-        'Date::Format'                 => 0,
         'Data::Page'                   => 0,
         'Data::Pageset'                => 0,
         'Data::Stag'                   => 0,
         'DBI'                          => 1.20,
-        'Digest::MD5'                  => 0,
-        'File::Temp'                   => 0,
         'Filesys::DfPortable'          => 0,
         'GD'                           => 2.11,
         'GD::SVG'                      => 0.25,
@@ -296,31 +266,40 @@ my $builder = CMapBuilder->new(
         'Module::Build'                => .28,
         'Params::Validate'             => 0,
         'Regexp::Common'               => 0,
-        'Storable'                     => 0,
         'Template'                     => 2.00,
         'Template::Plugin::Comma'      => 0,
         'Text::RecordParser'           => 0.02,
         'Time::ParseDate'              => 0,
         'Time::Piece'                  => 0,
         'URI::Escape'                  => 0,
-        'XML::Parser::PerlSAX'         => 0,
         'XML::Simple'                  => 0,
     },
-    recommends => { },
+    recommends => { 
+        'DBD::SQLite',                 => 0,
+    },
 );
 
 $builder->notes( $_, $OPTIONS{$_} ) for @OPTION_LIST;
 
 my $tarball = $builder->dist_dir . '.tar.gz';
 
-$builder->add_to_cleanup( 'cgi-bin/cmap', 'conf/cmap.conf',
-    'lib/Bio/GMOD/CMap/Constants.pm',
-    $tarball, 'htdocs/index.html', 'pod2htmd.x~~', 'pod2htmi.x~~' );
+$builder->add_to_cleanup( 'conf/cmap.conf',
+    $tarball, 'pod2htmd.x~~', 'pod2htmi.x~~' );
 
 $builder->create_build_script;
 
-print "Now run './Build' and './Build install'\n";
-print "(Other Build targets include 'html' and 'templates')\n";
+print <<END;
+Now run './Build'.
+
+Afterwards, execute './Build test' to run the pre-installation tests
+(requires DBD::SQLite).
+
+If you specified a non-default install directory (outside $FindBin::Bin),
+execute './Build install' to install CMap files. The post-installation tests
+can then be run with './Build post_install_test' (requires DBD::MySQL).
+
+(Other Build targets include 'html' and 'templates').
+END
 exit(0);
 
 sub ask_about_dir {

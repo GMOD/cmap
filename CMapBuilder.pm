@@ -18,6 +18,7 @@ use File::Copy;
 use File::Find;
 use File::Path;
 use File::Spec::Functions qw( catfile catdir abs2rel );
+use FindBin;
 use Module::Build;
 use Test::Harness;
 use Pod::Html;
@@ -26,25 +27,47 @@ use Config;
 use base 'Module::Build';
 
 # ----------------------------------------------------
-sub ACTION_build {
-    my $self = shift;
-    $self->SUPER::ACTION_build;
-
-    # Rebuild files with configuration options
-    foreach my $PL_file ( 'cgi-bin/cmap.PL', 'conf/global.conf.PL',
-        'lib/Bio/GMOD/CMap/Constants.pm.PL',
-        )
-    {
-        $self->run_perl_script($PL_file);
-    }
-
-}
-
-# ----------------------------------------------------
 sub ACTION_test {
     my $self = shift;
 
-    warn "No pre-installation tests defined.\n";
+    use constant DATASOURCE => 'CMAP_INSTALL_TEST';
+    use lib "$FindBin::Bin/lib";
+    $ENV{'CMAP_ROOT'} = $FindBin::Bin;
+    require DBD::SQLite;
+    require Bio::GMOD::CMap::Admin;
+    require Bio::GMOD::CMap::Admin::Import;
+    require Bio::GMOD::CMap::Admin::MakeCorrespondences;
+
+    # Create config
+    $self->ACTION_create_sqlite_db(DATASOURCE, "$FindBin::Bin/t/CMAP_INSTALL_TEST.db")
+        or die "Failed to create the SQLite database\n";
+
+    $self->notes( 'DATASOURCE', DATASOURCE );
+
+    $self->run_perl_script( catfile( 'conf', 'post_install_test.conf.PL' ) );
+    my $conf_file = 'post_install_test.conf';
+    my $from_conf = catfile( 'conf', $conf_file );
+    my $to_conf   = catfile( "$FindBin::Bin/t/", 'CMAP_INSTALL_TEST.conf' );
+    $self->copy_if_modified(
+        from    => $from_conf,
+        to      => $to_conf,
+        flatten => 0,
+    );
+
+    # Add data
+    my $config = Bio::GMOD::CMap::Config->new( config_dir => "$FindBin::Bin/t/" );
+    my $admin = Bio::GMOD::CMap::Admin->new( data_source => DATASOURCE, config => $config ) ;
+    die
+        "The config file for the new Data Source (" . DATASOURCE . ") did not get properly installed\n"
+        unless ( DATASOURCE eq $admin->data_source() );
+
+    $self->SUPER::ACTION_test;
+
+    # Purge Cache 'cause what the heck.
+    $admin->purge_cache(1);
+
+    #if ( $self->y_n( "\nDelete the test files and database?", 'y' ) ) {
+    #}
 
     return;
 }
@@ -66,7 +89,18 @@ sub ACTION_install {
             warn "Can't create conf dir $conf_dir: $@\n" if $@;
         }
 
-        foreach my $conf_file ( 'global.conf', 'example.conf' ) {
+        my $copy_conf = 1;
+        my $to_conf = catfile( $conf_dir, 'global.conf' );
+        if ( -e $to_conf ) {
+            $copy_conf
+                = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
+        }
+
+        if ( $copy_conf ) {
+            $self->run_perl_script([], 'conf/global.conf.PL', [$conf_dir]);
+        }
+
+        foreach my $conf_file ( 'example.conf' ) {
             my $from_conf = catfile( 'conf',    $conf_file );
             my $to_conf   = catfile( $conf_dir, $conf_file );
             my $copy_conf = 1;
@@ -167,18 +201,6 @@ sub ACTION_html {
     my $self = shift;
     my $cwd  = cwd();
 
-    my $cgi_dir
-        = "/"
-        . abs2rel( $self->notes('CGIBIN'),
-        $self->notes('WEB_DOCUMENT_ROOT') );
-    if ( $cgi_dir =~ /\.\./ ) {
-        $cgi_dir = '/cgi-bin';
-    }
-    my $cmap_htdoc_dir
-        = "/"
-        . abs2rel( $self->notes('HTDOCS'),
-        $self->notes('WEB_DOCUMENT_ROOT') );
-
     #
     # Turn all POD files into HTML and install into "htdocs."
     #
@@ -196,10 +218,10 @@ sub ACTION_html {
     # Prepare a list of the base files to include in the default index page.
     #
     my @html_links = (
-        [ $cgi_dir . '/cmap/viewer',      'CMap Viewer' ],
-        [ $cgi_dir . '/cmap/admin',       'Web Admin Tool' ],
-        [ $cmap_htdoc_dir . '/tutorial/', 'User Tutorial' ],
-        [ $cmap_htdoc_dir . '/admintut/', 'Admin Tutorial' ],
+        [ '/cmap/viewer',      'CMap Viewer' ],
+        [ '/cmap/admin',       'Web Admin Tool' ],
+        [ 'tutorial/', 'User Tutorial' ],
+        [ 'admintut/', 'Admin Tutorial' ],
     );
 
     for my $pod (@pod_files) {
@@ -211,9 +233,9 @@ sub ACTION_html {
         my $outpath = catfile( $cwd, 'htdocs', $outfile );
         print "pod2html $pod -> $outpath\n";
         pod2html(
-            $pod, "--outfile=$outpath", "--backlink=Back to Top",
+            "--infile=$pod", "--outfile=$outpath", "--backlink",
             "--title=$filename",
-            "--css=" . $cmap_htdoc_dir . "/pod-style.css",
+            "--css=" . $self->notes('HTDOCS') . "/pod-style.css",
         );
         push @html_links, [ $outfile, $filename ];
         push @cleanup, $outpath;
@@ -258,18 +280,18 @@ sub ACTION_html {
                 : $q->b( $_->[0] )
             } (
             [ 'CMap Home'      => '' ],
-            [ 'Maps'           => $cgi_dir . '/cmap/viewer' ],
-            [ 'Map Search'     => $cgi_dir . '/cmap/map_search' ],
-            [ 'Feature Search' => $cgi_dir . '/cmap/feature_search' ],
-            [ 'Matrix'         => $cgi_dir . '/cmap/matrix' ],
-            [ 'Map Sets'       => $cgi_dir . '/cmap/map_set_info' ],
-            [ 'Feature Types'  => $cgi_dir . '/cmap/feature_type_info' ],
-            [ 'Map Types'      => $cgi_dir . '/cmap/map_type_info' ],
-            [ 'Evidence Types' => $cgi_dir . '/cmap/evidence_type_info' ],
-            [ 'Species'        => $cgi_dir . '/cmap/species_info' ],
-            [ 'Saved Links'    => $cgi_dir . '/cmap/saved_link' ],
-            [ 'Help'           => $cgi_dir . '/cmap/help' ],
-            [ 'Tutorial'       => $cmap_htdoc_dir . '/tutorial/' ],
+            [ 'Maps'           => '/cmap/viewer' ],
+            [ 'Map Search'     => '/cmap/map_search' ],
+            [ 'Feature Search' => '/cmap/feature_search' ],
+            [ 'Matrix'         => '/cmap/matrix' ],
+            [ 'Map Sets'       => '/cmap/map_set_info' ],
+            [ 'Feature Types'  => '/cmap/feature_type_info' ],
+            [ 'Map Types'      => '/cmap/map_type_info' ],
+            [ 'Evidence Types' => '/cmap/evidence_type_info' ],
+            [ 'Species'        => '/cmap/species_info' ],
+            [ 'Saved Links'    => '/cmap/saved_link' ],
+            [ 'Help'           => '/cmap/help' ],
+            [ 'Tutorial'       => 'tutorial/' ],
             )
     );
 
@@ -290,34 +312,34 @@ sub ACTION_html {
         $q->p('Start using CMap with one of the following options.'),
         $q->ul(
             $q->li(
-                $q->a( { -href => $cgi_dir . '/cmap/viewer' }, 'Maps' )
+                $q->a( { -href => '/cmap/viewer' }, 'Maps' )
                     . " - Use a menu to select your starting maps\n"
             ),
             $q->li(
-                $q->a( { -href => $cgi_dir . '/cmap/map_search' },
+                $q->a( { -href => '/cmap/map_search' },
                     'Map Search' )
                     . " - If the map set is quite large, the Map Search page can be quicker than sorting through menus.\n"
             ),
             $q->li(
-                $q->a( { -href => $cgi_dir . '/cmap/feature_search' },
+                $q->a( { -href => '/cmap/feature_search' },
                     'Feature Search' )
                     . " - Search for a specific feature and display it on a map.\n"
             ),
             $q->li(
-                $q->a( { -href => $cgi_dir . '/cmap/matrix' }, 'Matrix' )
+                $q->a( { -href => '/cmap/matrix' }, 'Matrix' )
                     . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
             ),
             $q->li(
-                $q->a( { -href => $cgi_dir . '/cmap/saved_link' },
+                $q->a( { -href => '/cmap/saved_link' },
                     'Saved Links' )
                     . " - View pages previously saved or imported.\n"
             ),
         ),
         $q->p(
             'For an introduction to the basic consepts of CMap, please see the '
-                . $q->a( { -href => $cgi_dir . '/cmap/help' }, 'help pages' )
+                . $q->a( { -href => '/cmap/help' }, 'help pages' )
                 . ' or the '
-                . $q->a( { -href => $cmap_htdoc_dir . '/tutorial' },
+                . $q->a( { -href => 'tutorial' },
                 'tutorial' )
                 . ".\n"
         ),
@@ -327,7 +349,7 @@ sub ACTION_html {
         ),
         $q->p(
             $q->a(
-                { -href => 'http://www.gmod.org/cmap' },
+                { -href => 'http://gmod.org/wiki/CMap' },
                 'CMap is free software from the GMOD project'
             )
         ),
@@ -675,6 +697,29 @@ sub ACTION_post_install_test {
     #if ( $self->y_n( "\nDelete the test files and database?", 'y' ) ) {
     #}
 
+}
+
+# ----------------------------------------------------
+sub ACTION_create_sqlite_db {
+    my $self = shift;
+    my $data_source = shift;
+    my $db_pathname = shift;
+    my $command;
+
+    print "Dropping the database $db_pathname if it exists...\n";
+    eval unlink($db_pathname); 
+
+    $command = "sqlite3 $db_pathname < $FindBin::Bin/sql/cmap.create.sqlite";
+    print "Running: $command\n";
+    unless ( system($command) == 0 ) {
+        die "$! $?\n";
+    }
+
+    $self->notes( 'DB_USER', '', );
+    $self->notes( 'DB_PASS', '', );
+    $self->notes( 'DNS_STR', "dbi:SQLite:dbname=$db_pathname", );
+
+    return 1;
 }
 
 # ----------------------------------------------------

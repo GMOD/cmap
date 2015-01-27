@@ -53,6 +53,7 @@ use CGI;
 use Apache::Htpasswd;
 use Data::Dumper;
 use Digest::MD5 'md5';
+use File::Spec;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Apache::AdminViewer;
@@ -352,7 +353,11 @@ Return any defined stylesheet.
     my $self = shift;
 
     unless ( defined $self->{'stylesheet'} ) {
-        $self->{'stylesheet'} = $self->config_data('stylesheet') || '';
+        $self->{'stylesheet'} = $self->config_data('stylesheet') 
+          || sprintf('/%s/cmap.css', 
+             File::Spec->abs2rel($self->config_data('web_cmap_htdocs_dir'),
+                                 $self->config_data('web_document_root_dir')));
+
     }
 
     return $self->{'stylesheet'};

@@ -29,6 +29,7 @@ feature types are defined in the config directory.
 =cut
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Getopt::Long;
 use Pod::Usage;

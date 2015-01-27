@@ -1,5 +1,3 @@
-# vim: tw=70:
-
 =pod
 
 =head1 TITLE
@@ -7,8 +5,6 @@
 CMap Install
 
 =head1 VERSION
-
-$Revision: 1.25 $
 
 =head1 QUICK START
 
@@ -28,12 +24,12 @@ Oracle, Sybase, SQLite); create tables with contents of "sql"
 directory; grant appropriate user permissions
 
 =item * Install Perl 5.6.1 or greater and a web server with CGI
-capabilities (e.g., Apache 1.3.x or 2.x)
+capabilities (e.g., Apache)
 
 =item * Execute "perl Build.PL; ./Build; su; ./Build install"; install any
 other Perl modules reported missing by the build process
 
-=item * Modify configuration information in "/path/to/conf/cmap.conf/*.conf"
+=item * Modify configuration information in "/path/to/conf/*.conf"
 
 =item * Import your data or the sample data included in the "data" directory
 
@@ -56,11 +52,11 @@ There are quite a number of prerequisites to getting CMap running:
 
 =item * libgd 2.x
 
-=item * A database (MySQL, Oracle 9x, Sybase, PostgreSQL, SQLite) 
+=item * A database (MySQL, Oracle, Sybase, PostgreSQL, SQLite) 
 
 =item * Perl (5.6.1 or higher)
 
-=item * A web server, Apache version 1.3.x or 2.x suggested
+=item * A web server, Apache is suggested
 
 =item * Directories for CMap components
 
@@ -70,7 +66,7 @@ There are quite a number of prerequisites to getting CMap running:
 
 Versions prior to 0.10 required mod_perl, but this is no longer the
 case.  As such, CMap should actually work with any web server that
-supports CGI, not just Apache (e.g., Microsoft IIS, Netscape, etc.).
+supports CGI, not just Apache (e.g., Microsoft IIS, Oracle iPlanet Web Server, etc.).
 
 =head2 Using the package manager
 
@@ -78,15 +74,15 @@ If you are using a modern version of Linux, you should be able to use
 a package manager to install at least some of these packages.
 
 It is sometimes helpful to see a list of available packages.  On a
-Fedora/Red Hat machine, the command "$ sudo yum list all | less" will
-give you a list of the packages.  In Ubuntu, using the graphical synaptic
-package manager is easier ("$ sudo synaptic").
+CentOS/RHEL machine, the command "$ sudo yum list all | less" will
+give you a list of the packages.  In Ubuntu, the equivalent command is
+"$ apt-cache search ."
 
 =head3 Example Command Line Installs
 
 =over 4
 
-=item * Red Hat, Fedora
+=item * RHEL, CentOS
 
 $ sudo yum install gd.i386
 
@@ -99,20 +95,14 @@ $ sudo apt-get install libgd2-xpm
 =head2 LIBGD
 
 NOTE: To get GD.pm to install when using a packaged libgd, you may
-have to install the gd-devel package as well (fedora: gd-devel.i386,
+have to install the gd-devel package as well (RHEL/CentOS: gd-devel,
 Ubundu: libgd2-xpm-dev).
 
-Unfortunately, unless your operating system can install libgd via a
-package manager, you're pretty much on your own for installing libgd.
-Versions of CMap before 0.10 would work with either the 1.x or 2.x
-version of libgd, but the new dependency on GD::SVG for creating SVG
-output necessitates libgd 2.x.  With any luck, you may already have it
+With any luck, you may already have it
 on your system if you have a GNU/Linux system.  To check, you could
 just skip this step for now and wait to see if the Perl module GD.pm
 will install properly.  If it complains that it can't find libgd, then
-come back here.  Note that as of version 2.0.28, libgd produces GIF
-images again.  This version of CMap assumes you have the latest versions    
-of libgd and GD.pm in order to produce GIFs.
+come back here.
 
 Installation of libgd can easily be one of the more frustrating
 parts of this installation.  There are a number of dependencies 
@@ -121,7 +111,7 @@ you want, like JPEG, libpng, and libgif.  Again, you may already
 have some of these libraries, so you needn't panic just yet.  One
 way to see if you do is to check the directories "/usr/lib" and
 "/usr/local/lib" for files that look like "libgd*," "libjpeg*,"
-"libpng*," and "libgif*".  If you're using something like RedHat Linux,
+"libpng*," and "libgif*".  If you're using something like RHEL,
 you could try the "locate" command for each of these (without the star
 as it does wildcard searching on its own).
 
@@ -138,11 +128,11 @@ Here are URLs to help you track down everything you need to install libgd:
 
 =over 4
 
-=item * libgd: http://www.libgd.org/
+=item * libgd: http://libgd.bitbucket.org/
 
 =item * libpng: http://www.libpng.org/pub/png/pngcode.html
 
-=item * zlib: http://www.gzip.org/zlib/
+=item * zlib: http://www.zlib.net/
 
 =item * JGEP: http://www.ijg.org/
 
@@ -154,7 +144,7 @@ The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
 such as MySQL (at least version 5.0 required), you can skip ahead to
 the next section.  If not and you're doing this on your own and are
-not a trained DBA, I'd recommend using MySQL (http://www.mysql.com/)
+not a trained DBA, I'd recommend using SQLite (http://www.sqlite.org/)
 for your database.  It's free, extremely stable, flexible, and fun.
 Another free database that can be highly recommended is PostgreSQL
 (http://www.postgresql.org/).  Oracle is really overkill for such a
@@ -162,16 +152,10 @@ lightweight application as this because the code doesn't rely on much
 of anything from the database except joins (no
 referential integrity, no stored procedures, etc.).
 
-B<Note:> Oracle 8.x doesn't support ANSI-standard left joins, so some
-parts of the application will fail. If you can't upgrade, then you can
-alter the few SQL statements that cause problems.
-
 I'll assume that you're going to use MySQL.  If you don't already
 have MySQL on your system, you can get everything you need either
 from your software vendor or directly from http://www.mysql.com/.
-There is a package called "Apache Toolbox" that claims to be able to
-install MySQL and Apache and many other things.  It's available at
-http://www.apachetoolbox.com/.  Additionally, RedHat Linux offers
+RedHat Linux offers
 RPMs for installing everything you need, Debian GNU/Linux offers
 apt-get and their DEB packages, or you can get precompiled binaries
 from MySQL for the architecture of your machine.  You may also choose
@@ -179,7 +163,7 @@ to install from source, depending on your bent.  There are a number of
 freely available GUI (Graphical User Interface) and web-based tools to
 help you manage your databases if you want an alternative to MySQL's
 command-line tools;  see the MySQL website for more information.  If
-you get really stuck, then MySQL AB, the company which develops and
+you get really stuck, then Oracle, the company which develops and
 releases MySQL, offers commercial support.
 
 =head2 CREATING DATABASE TABLES AND GRANTING PERMISSIONS
@@ -296,15 +280,11 @@ Given that Apache is the most popular web server right now, it's
 also likely that you'll already have it installed on your system.
 It's usually installed by default on most Linux distributions as well
 as Mac OS X.  If you need to install Apache, just go to
-http://www.apache.org/ and follow the directions there.  CMap works
-just fine with both the 1.3.x or 2.x trees.  If you wish to use
-mod_perl, I recommend you stay with the 1.3.x tree of Apache and the
-latest version of mod_perl < 1.99 (which is actually the beta version
-for mod_perl 2).
+http://www.apache.org/ and follow the directions there.
 
 As stated earlier, CMap is simply a CGI application and should
 therefore run on most any modern web server, including Microsoft IIS.
-If you have any problems (or success) using a web server other than
+If you have any problems using a web server other than
 Apache, please contact the author.
 
 =head2 Directories for CMap Components
@@ -313,7 +293,7 @@ This is likely only a problem for Ubuntu users, as the CGI script
 directory that Ubuntu uses, is not created by default.  To create this
 file run "sudo mkdir /usr/lib/cgi-bin".
 
-Here is a lits of directories needed for the CMap install.  The
+Here is a list of directories needed for the CMap install.  The
 installer should find these automatically (with the exception of the
 Ubuntu issue described above).  These can be specified as arguments to
 Build.pl as well.
@@ -322,9 +302,7 @@ Build.pl as well.
 
 =item * CONF
 
-The location of the config files.  The final directory in the path will be
-cmap.conf.  Meaning that "/usr/local/apache/conf/" will become
-"/usr/local/apache/conf/cmap.conf/".
+The location of the config files.
 
 =item * CGIBIN
 
@@ -335,20 +313,15 @@ The location of the directory where the web server runs CGI scripts.
 The location where Template Toolkit templates are stored.  (These can
 be altered after install to suit individual needs.)
 
-=item * WEB_DOCUMENT_ROOT
-
-This is the root directory for the web server.  For example
-"/var/www/" or "/usr/local/apache/htdocs/".
-
 =item * HTDOCS
 
-This is the base directory for the cmap files.  It is generally
-"WEB_DOCUMENT_ROOT/cmap".
+This is the base directory for the cmap htdocs/ files.
 
 =item * CACHE
 
 The location where CMap stores it's cache files.  Usually
-"HTDOCS/tmp".
+"HTDOCS/tmp". If this is a symbolic link to a non-existent directory, the
+directory will be created during CMap execution.
 
 =item * SESSIONS
 
@@ -400,8 +373,6 @@ Required Modules:
 
 =item *   Data::Dumper
 
-=item *   Date::Format
-
 =item *   Data::Page
 
 =item *   Data::Pageset
@@ -420,10 +391,6 @@ Required Modules:
 
 =item *   DBD::Sybase (if you're using Sybase)
 
-=item *   Digest::MD5
-
-=item *   File::Temp
-
 =item *   Filesys::DfPortable
 
 =item *   GD
@@ -435,8 +402,6 @@ Required Modules:
 =item *   Params::Validate
 
 =item *   Regexp::Common
-
-=item *   Storable
 
 =item *   Template
 
@@ -451,8 +416,6 @@ Required Modules:
 =item *   Time::Piece 
 
 =item *   URI::Escape
-
-=item *   XML::Parser::PerlSAX
 
 =item *   XML::Simple
 
@@ -557,7 +520,7 @@ file, you will have to alter this file.
 
 =item *
 
-The "cmap.conf" directory will be created in the "conf" directory and
+The "conf" directory
 will contain a global.conf to set the "template_dir" and "cache_dir"
 to match the "TEMPLATES" and "CACHE" arguments to "Build.PL,"
 respectively.  It will then be copied to the "CONF" location.
@@ -664,7 +627,7 @@ for you:
   $ su -
   # cd /usr/local/apache
   # mkdir passwd
-  # ./bin/htpasswd -c /usr/local/apache/passwd/cmap admin
+  # ./bin/htdigest -c /usr/local/apache/passwd/cmap admin
 
 In the last command, the last argument is the user name which you'll
 use when prompted by your web browser to see the admin tool, and the
@@ -676,7 +639,7 @@ Now you just need to tell Apache to protect the location of the admin
 interface with a password like so:
 
   <Location /cgi-bin/cmap/admin>
-    AuthType     Basic
+    AuthType     Digest
     AuthName     "CMap Admin"
     AuthUserFile /usr/local/apache/passwd/cmap
     Require      valid-user

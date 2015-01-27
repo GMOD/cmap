@@ -98,12 +98,29 @@ The conf dir and the global conf file are specified in Constants.pm
     }
 
     #
-    # Need a global and specific conf file
+    # Need a specific conf file & global conf file (if CMAP_ROOT unset)
     #
-    croak 'No "global.conf" found in ' . $config_dir
-        unless $self->{'global_config'};
     croak 'No database conf files found in ' . $config_dir
         unless %config_data;
+    if (!$self->{'global_config'}) {
+        if ($ENV{'CMAP_ROOT'}) {
+            my %config =
+               Config::General->new( {
+                   is_enabled   => 1,
+                   cache_dir    => catdir( $ENV{'CMAP_ROOT'}, 'htdocs', 'tmp'),
+                   default_db   => 'CMAP',
+                   session_dir  => catdir( $ENV{'CMAP_ROOT'}, 'htdocs', 'tmp',
+                                            'sessions'),
+                   template_dir => catdir( $ENV{'CMAP_ROOT'} , 'templates'),
+                   web_document_root_dir => $ENV{'CMAP_ROOT'},
+                   web_cmap_htdocs_dir   => '/cmap/htdocs',
+               })->getall();
+            $self->{'global_config'} = \%config;
+        } else {
+            croak 'CMAP_ROOT unset and ' . GLOBAL_CONFIG_FILE
+                  . ' not found in ' . $config_dir
+        }
+    }
     $self->{'config_data'} = \%config_data;
 
     return 1;
@@ -260,7 +277,10 @@ Allows an alternate location of config files.
 =cut
 
     my $self = shift;
-    return $self->{'config_dir'} || CONFIG_DIR;
+    return $self->{'config_dir'} || $ENV{'CMAP_CONF'} 
+                                 || $ENV{'CMAP_ROOT'} .  '/conf'
+        || die 'either CMAP_ROOT and/or CMAP_CONF environment variables must'
+             . 'be defined, or a config_dir argument must be supplied';
 }
 
 1;

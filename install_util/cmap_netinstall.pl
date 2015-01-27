@@ -168,18 +168,18 @@ foreach my $module (
     'CGI',                          'CGI::Session',
     'Class::Base',                  'Clone',
     'Config::General',              'Data::Dumper',
-    'Date::Format',                 'Data::Page',
+    'Data::Page',
     'Data::Pageset',                'Data::Stag',
-    'DBI',                          'Digest::MD5',
-    'File::Temp',                   'Filesys::DfPortable',
+    'DBI',
+    'Filesys::DfPortable',
     'GD',                           'GD::SVG',
     'IO::Tee',                      'IO::Tee',
     'Module::Build',                'Params::Validate',
-    'Regexp::Common',               'Storable',
+    'Regexp::Common',
     'Template',                     'Template::Plugin::Comma',
     'Text::RecordParser',           'Time::ParseDate',
     'Time::Piece',                  'URI::Escape',
-    'XML::Parser::PerlSAX',         'XML::Simple',
+    'XML::Simple',
     )
 {
     if ( installed_or_install($module) ) {

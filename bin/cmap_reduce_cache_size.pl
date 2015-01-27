@@ -36,6 +36,7 @@ It is suggested that this script is run periodically as a cron job.
 
 use strict;
 use warnings;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Bio::GMOD::CMap;
 

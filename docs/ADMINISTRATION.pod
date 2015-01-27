@@ -1081,7 +1081,8 @@ Name of the cookie holding user preferences
 
 =item * stylesheet [ default: /cmap/cmap.css ]
 
-The css formatted stylesheet to use.
+The URL path of the css formatted stylesheet to use. If unset, defaults to
+the URL path of I<web_cmap_htdocs_dir>/cmap.css.
 
 =item * feature_type_details_url [ default: feature_type_info?feature_type ]
 
@@ -3109,7 +3110,6 @@ following is an example that creates a secondary install in the
   perl Build.PL \
     PREFIX=/usr/local/apache2/ \
     CONF=/usr/local/apache2/conf/cmap.conf2 \
-    WEB_DOCUMENT_ROOT=/usr/local/apache2/htdocs/ \
     CGIBIN=/usr/local/apache2/htdocs/cmap2/cgi-bin \
     HTDOCS=/usr/local/apache2/htdocs/cmap2/
 
@@ -3126,15 +3126,9 @@ This is the prefix for the web server install.  The default is "/usr/local/apach
 This will create an alternate config directory to store the config files for
 this installation.
 
-=item * WEB_DOCUMENT_ROOT 
-
-This is the absolute path to the document root of the web server.
-
 =item * CGIBIN
 
 This will create an alternate cgi-bin directory where the the "cmap" script.
-When using a non-standard cgi-bin directory, CGIBIN must be in
-WEB_DOCUMENT_ROOT.  
 
 NOTE: It is important that the cgi script be executable by the web server.  To
 do this in Apache 2, the following must be added to the httpd.conf. 
@@ -3147,7 +3141,6 @@ do this in Apache 2, the following must be added to the httpd.conf.
 =item * HTDOCS
 
 This is the absolute path to the directory where the cmap files will be stored.
-HTDOCS must be in WEB_DOCUMENT_ROOT.  
 
 =back
 

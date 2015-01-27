@@ -4,6 +4,7 @@ use strict;
 use CMapBuilder;
 use Cwd;
 use File::Basename qw(&basename &dirname);
+use File::Spec::Functions qw(catfile);
 
 my $builder               = CMapBuilder->current;
 my $web_document_root_dir = $builder->notes('WEB_DOCUMENT_ROOT');
@@ -12,11 +13,9 @@ my $template_dir          = $builder->notes('TEMPLATES');
 my $cache_dir             = $builder->notes('CACHE');
 my $session_dir           = $builder->notes('SESSIONS');
 
-my $origdir = cwd;
-chdir dirname($0);
-my $file;
-( $file = basename($0) ) =~ s/\.PL$//;
-open OUT, ">$file" or die "Can't write file '$file': $!\n";
+my $file = 'global.conf';
+my $pathname = catfile($ARGV[1], $file);
+open(OUT, '>', $pathname) or die "Can't write file '$pathname': $!\n";
 print "Extracting $file (with variable substitutions)\n";
 print OUT<<"!GROK!THIS!";
 # ----------------------------------------------------

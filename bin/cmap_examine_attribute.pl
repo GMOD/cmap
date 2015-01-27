@@ -60,6 +60,7 @@ Prints results to standard out.
 
 use strict;
 use warnings;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Utils;

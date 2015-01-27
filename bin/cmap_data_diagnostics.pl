@@ -25,6 +25,7 @@ features) to look for any problems.
 # ----------------------------------------------------
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Drawer::Glyph;

@@ -30,6 +30,8 @@ sub handler {
             stylesheet          => $self->stylesheet,
             web_image_cache_dir => $self->web_image_cache_dir(),
             web_cmap_htdocs_dir => $self->web_cmap_htdocs_dir(),
+            script_name_prefix  => $self->apr->request_uri() 
+                                   eq $self->apr->script_name() ? 'cmap/' : '',
         },
         \$html
         )

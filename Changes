@@ -2,6 +2,9 @@
 
 1.02
 
+- Support running CMap directly from git working tree when the CMAP_ROOT
+  environment variable is set (in the Apache config) to the absolute pathname
+  of the top-level directory of the git working tree.
 - Use transactions when importing tab-delimited data to allow a rollback in
   the event of an error. The MySQL schema now specifies the InnoDB storage
   engine for transaction support.

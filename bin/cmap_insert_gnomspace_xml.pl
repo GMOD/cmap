@@ -31,6 +31,7 @@ CMap API to insert features.
 =cut
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Pod::Usage;
 use Data::Dumper;
 use Bio::GMOD::CMap::Admin;

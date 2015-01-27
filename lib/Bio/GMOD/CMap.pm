@@ -44,7 +44,7 @@ use URI::Escape;
 use DBI;
 use File::Path;
 use Filesys::DfPortable;
-use File::Spec::Functions qw( abs2rel rootdir );
+use File::Spec::Functions qw( abs2rel catdir rootdir );
 use Storable qw(nfreeze thaw);
 use Template;
 
@@ -83,15 +83,19 @@ Returns the cache directory.
     my $new_cache_dir = shift;
     my $config        = $self->config or return;
 
+    # use catdir() to remove any trailing slash from the provided cache_dir,
+    # in case cache_dir is a symbolic link that points to a directory that
+    # does not exist yet
+
     if ( defined($new_cache_dir) ) {
-        $self->{'cache_dir'} = $new_cache_dir;
+        $self->{'cache_dir'} = catdir( $new_cache_dir );
     }
     unless ( defined $self->{'cache_dir'} ) {
         unless ( $self->{'config'} ) {
             die "no configuration information\n";
         }
 
-        my $cache_dir = $config->get_config('cache_dir')
+        my $cache_dir = catdir( $config->get_config('cache_dir') )
             or return $self->error(
             'No cache directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
 
@@ -1100,21 +1104,8 @@ Get the image cache directory using the web document root
     my $self = shift;
 
     unless ( $self->{'web_image_cache_dir'} ) {
-        my $image_cache_dir   = $self->config_data('cache_dir');
-        my $web_document_root = $self->config_data('web_document_root_dir');
-        if ($web_document_root) {
-            $image_cache_dir
-                = rootdir() . abs2rel( $image_cache_dir, $web_document_root );
-        }
-        else {
-
-            # This is kinda cludgy but it should work if the web_document_root
-            # isn't defined in the config file.
-            $image_cache_dir =~ s{.+htdocs}{};
-            $image_cache_dir =~ s{.+www}{};
-            $image_cache_dir =~ s{.+html}{};
-        }
-        $self->{'web_image_cache_dir'} = $image_cache_dir;
+        $self->{'web_image_cache_dir'} = 
+            $self->config_data('web_cmap_htdocs_dir') . '/tmp';
     }
     return $self->{'web_image_cache_dir'};
 
@@ -1518,21 +1509,7 @@ Get the htdocs directory using the web document root
     my $self = shift;
 
     unless ( $self->{'web_cmap_htdocs_dir'} ) {
-        my $cmap_htdocs_dir   = $self->config_data('web_cmap_htdocs_dir');
-        my $web_document_root = $self->config_data('web_document_root_dir');
-        if ($web_document_root) {
-            $cmap_htdocs_dir
-                = rootdir() . abs2rel( $cmap_htdocs_dir, $web_document_root );
-        }
-        else {
-
-            # This is kinda cludgy but it should work if the web_document_root
-            # isn't defined in the config file.
-            $cmap_htdocs_dir =~ s{.+htdocs}{};
-            $cmap_htdocs_dir =~ s{.+www}{};
-            $cmap_htdocs_dir =~ s{.+html}{};
-        }
-        $self->{'web_cmap_htdocs_dir'} = $cmap_htdocs_dir;
+        $self->{'web_cmap_htdocs_dir'} = $self->config_data('web_cmap_htdocs_dir');
     }
     return $self->{'web_cmap_htdocs_dir'};
 

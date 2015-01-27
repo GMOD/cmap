@@ -107,6 +107,7 @@ developement to revers e the process.
 
 use strict;
 use warnings;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Bio::GMOD::CMap::Admin;
 use Getopt::Long;

@@ -34,6 +34,7 @@ just a subset of map sets by using the "ms-accs" argument.
 # ----------------------------------------------------
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Getopt::Long;

@@ -27,6 +27,7 @@ Ben Faga E<lt>faga@cshl.eduE<gt>.
 # -------------------------------------------------------
 
 use strict;
+use if $ENV{'CMAP_ROOT'}, lib => $ENV{'CMAP_ROOT'} . '/lib';
 use Config::General;
 use Bio::GMOD::CMap::Constants;
 use Data::Dumper;
