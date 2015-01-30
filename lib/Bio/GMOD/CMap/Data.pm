@@ -77,7 +77,7 @@ sub correspondence_detail_data {
     }
     else {
         $corr
-            = $sql_object->get_feature_correspondences(
+            = $sql_object->get_feature_correspondence(
             feature_correspondence_acc => $correspondence_acc, )
             or return $sql_object->error();
 

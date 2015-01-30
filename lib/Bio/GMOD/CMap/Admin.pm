@@ -1088,10 +1088,9 @@ If not defined, the object_id will be assigned to it.
         #
         # See if a correspondence exists already.
         #
-        my $corrs = $sql_object->get_feature_correspondence_details(
+        my $corrs = $sql_object->get_feature_correspondences(
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
-            disregard_evidence_type => 1,
         );
         if (@$corrs) {
             $feature_correspondence_id

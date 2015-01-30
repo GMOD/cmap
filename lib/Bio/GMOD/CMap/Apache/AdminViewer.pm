@@ -1319,7 +1319,7 @@ sub feature_corr_view {
         or return $self->error('No feature correspondence id');
     my $att_order_by = $apr->param('att_order_by') || q{};
 
-    my $corr = $sql_object->get_feature_correspondences(
+    my $corr = $sql_object->get_feature_correspondence(
         feature_correspondence_id => $feature_correspondence_id, )
         or return $sql_object->error();
 
