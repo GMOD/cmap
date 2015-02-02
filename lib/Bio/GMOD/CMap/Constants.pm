@@ -651,7 +651,6 @@ use constant VALID => {
     #
     sql_driver_module => {
         generic => 'Bio::GMOD::CMap::Data::Generic',
-        mysql   => 'Bio::GMOD::CMap::Data::MySQL',
         oracle  => 'Bio::GMOD::CMap::Data::Oracle',
     },
 
