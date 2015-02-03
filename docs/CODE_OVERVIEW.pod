@@ -41,7 +41,7 @@ other SQL.
 
 The Bio::GMOD::CMap::Data module has as a component an "SQL" object,
 with the choices right now confined to
-Bio::GMOD::CMap::Data::[Generic|MySQL|Oracle].  The "Generic" module
+Bio::GMOD::CMap::Data::[Generic|Oracle].  The "Generic" module
 is the superclass of the other two (and conceivably any others, such
 as classes for PostgreSQL, Sybase, etc.).  All SQL statement methods
 are defined in the Generic module, and any that don't work for a
