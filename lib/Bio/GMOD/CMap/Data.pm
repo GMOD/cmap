@@ -35,7 +35,6 @@ use Time::ParseDate;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Export;
-use Bio::GMOD::CMap::Admin::ManageLinks;
 
 use base 'Bio::GMOD::CMap';
 
@@ -1860,39 +1859,6 @@ Given a feature acc. id, find out all the details on it.
     );
 
     return $feature;
-}
-
-# ----------------------------------------------------
-sub link_viewer_data {
-
-=pod
-
-=head2 link_viewer_data
-
-Given a list of feature names, find any maps they occur on.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $selected_link_set = $args{'selected_link_set'};
-
-    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        config      => $self->config,
-        data_source => $self->data_source
-    );
-
-    my @link_set_names = $link_manager->list_set_names(
-        name_space => $self->get_link_name_space );
-
-    my @links = $link_manager->output_links(
-        name_space    => $self->get_link_name_space,
-        link_set_name => $selected_link_set,
-    );
-
-    return {
-        links     => \@links,
-        link_sets => \@link_set_names,
-    };
 }
 
 # ----------------------------------------------------

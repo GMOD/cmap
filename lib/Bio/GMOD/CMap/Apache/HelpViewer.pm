@@ -18,7 +18,6 @@ use constant TEMPLATES     => {
     feature_details        => 'help_feature_details.tmpl',
     feature_search         => 'help_feature_search.tmpl',
     feature_type_info      => 'help_feature_type_info.tmpl',
-    saved_links            => 'help_saved_links.tmpl',
     matrix                 => 'help_matrix.tmpl',
     map_search             => 'help_map_search.tmpl',
     map_set_info           => 'help_map_set_info.tmpl',

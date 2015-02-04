@@ -169,7 +169,7 @@ foreach my $module (
     'Class::Base',                  'Clone',
     'Config::General',              'Data::Dumper',
     'Data::Page',
-    'Data::Pageset',                'Data::Stag',
+    'Data::Pageset',
     'DBI',
     'Filesys::DfPortable',
     'GD',                           'GD::SVG',

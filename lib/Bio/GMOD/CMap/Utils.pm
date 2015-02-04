@@ -69,7 +69,7 @@ $VERSION = (qw$Revision: 1.93 $)[-1];
 #    comparative_map_right    comparative_map_left
 #    comp_map_set_right       comp_map_set_left
 # Not saving because it is unneccessary
-#    session_id               saved_link_id
+#    session_id
 #    step
 
 %SESSION_PARAM_DEFAULT_OF = (
@@ -1357,7 +1357,7 @@ sub _get_options_from_url {
         comp_menu_order          ref_map_order       prev_ref_map_order
         omit_area_boxes          mapMenu             featureMenu
         corrMenu                 displayMenu         advancedMenu
-        session_id               saved_link_id       general_min_corrs
+        session_id               general_min_corrs
         ignore_comp_maps         eliminate_orphans   dotplot_ps
         ]
         )
@@ -1716,38 +1716,6 @@ sub parse_url {
         }
     }
 
-    # Deal with saved_link_id
-    elsif ( $parsed_url_options{'saved_link_id'} ) {
-
-        # Get the saved link from the db
-        my $saved_links = $calling_cmap_object->sql->get_saved_links(
-            saved_link_id => $parsed_url_options{'saved_link_id'}, );
-        my $saved_link;
-        if ( @{ $saved_links || [] } ) {
-            $saved_link = $saved_links->[0];
-        }
-        else {
-            return $calling_cmap_object->error(
-                "Invalid Saved Link ID: $parsed_url_options{'saved_link_id'}\n"
-            );
-        }
-
-        # Extract the session step
-        my $session_step = $saved_link->{'session_step_object'}
-            or return $calling_cmap_object->error(
-            "Saved Link ID, $parsed_url_options{'saved_link_id'}, does not have a valid session object.\n"
-            );
-        $session_step = thaw($session_step);
-
-        _parse_session_step(
-            session_step           => $session_step,
-            apr                    => $apr,
-            slots_ref              => \%slots,
-            parsed_url_options_ref => \%parsed_url_options,
-            ref_map_accs_ref       => \@ref_map_accs,
-        ) or return $calling_cmap_object->error();
-    }
-
     # Now find any params that need defaults but weren't in the url or the
     # session object
     _default_params_if_needed( \%parsed_url_options );
@@ -1777,8 +1745,8 @@ sub parse_url {
         $apr->param( $param, $parsed_url_options{$param} );
     }
 
-    # Deal with straight url (no session or saved link)
-    # If %slots was not found with a session or a saved link
+    # Deal with straight url (no session)
+    # If %slots was not found with a session
     # then create it from the url
     unless (%slots) {
 

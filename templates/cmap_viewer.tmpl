@@ -245,19 +245,6 @@ function check_radio_for_additional_buttons(radio,val){
         [%- END -%]
       </td>
     </tr>
-    <tr>
-      <td>
-        <form name="save_link_form" action="saved_link" method=POST>
-          <input type="hidden" name="url_to_save" id="url_to_save" value="[%- url_for_saving -%]">
-          <input type="hidden" name="data_source" id="data_source" value="[%- data_source -%]">
-          <input type="hidden" name="action"     value="saved_link_create">
-          <input type="submit" value="Save Link*" name="save_link">
-        </form>
-          *Bookmarks for this page will fail after this session expires.  
-           Use the "Save Link" button to create a permanent link
-        <hr>
-      </td>
-    </tr>
   [%- ELSE -%]
     <tr>
       <td align="left" valign="top">

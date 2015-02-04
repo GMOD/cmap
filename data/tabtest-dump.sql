@@ -129,11 +129,6 @@ INSERT INTO cmap_next_number VALUES ('cmap_feature_correspondence',6);
 INSERT INTO cmap_next_number VALUES ('cmap_correspondence_evidence',6);
 
 --
--- Dumping data for table cmap_saved_link
---
-
-
---
 -- Dumping data for table cmap_species
 --
 

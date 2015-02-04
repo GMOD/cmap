@@ -289,7 +289,6 @@ sub ACTION_html {
             [ 'Map Types'      => '/cmap/map_type_info' ],
             [ 'Evidence Types' => '/cmap/evidence_type_info' ],
             [ 'Species'        => '/cmap/species_info' ],
-            [ 'Saved Links'    => '/cmap/saved_link' ],
             [ 'Help'           => '/cmap/help' ],
             [ 'Tutorial'       => 'tutorial/' ],
             )
@@ -328,11 +327,6 @@ sub ACTION_html {
             $q->li(
                 $q->a( { -href => '/cmap/matrix' }, 'Matrix' )
                     . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
-            ),
-            $q->li(
-                $q->a( { -href => '/cmap/saved_link' },
-                    'Saved Links' )
-                    . " - View pages previously saved or imported.\n"
             ),
         ),
         $q->p(

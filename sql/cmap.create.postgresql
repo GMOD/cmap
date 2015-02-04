@@ -222,26 +222,6 @@ CREATE TABLE "cmap_xref" (
 );
 CREATE INDEX "cx_table_name" on "cmap_xref" ("table_name", "object_id", "display_order");
 
-
---
--- Table: cmap_saved_link
---
-CREATE TABLE "cmap_saved_link" (
-  "saved_link_id" bigint DEFAULT '0' NOT NULL,
-  "saved_on" date DEFAULT NULL,
-  "last_access" date DEFAULT NULL,
-  "session_step_object" bytea NOT NULL,
-  "saved_url" text NOT NULL,
-  "legacy_url" text NOT NULL,
-  "link_title" character varying(50) DEFAULT '',
-  "link_comment" character varying(200) DEFAULT '',
-  "link_group" character varying(40) DEFAULT '' NOT NULL,
-  "hidden" smallint DEFAULT '0' NOT NULL,
-  PRIMARY KEY ("saved_link_id")
-);
-CREATE INDEX "link_group" on "cmap_saved_link" ("link_group");
-
-
 --
 -- Table: cmap_map_to_feature
 --

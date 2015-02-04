@@ -72,9 +72,7 @@ use Bio::GMOD::CMap::Apache::MapSetViewer;
 use Bio::GMOD::CMap::Apache::MapTypeViewer;
 use Bio::GMOD::CMap::Apache::MapViewer;
 use Bio::GMOD::CMap::Apache::MapSearch;
-use Bio::GMOD::CMap::Apache::SavedLinkViewer;
 use Bio::GMOD::CMap::Apache::SpiderViewer;
-use Bio::GMOD::CMap::Apache::LinkViewer;
 use Bio::GMOD::CMap::Apache::MatrixViewer;
 use Bio::GMOD::CMap::Apache::SpeciesViewer;
 use Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
@@ -105,8 +103,6 @@ use constant DISPATCH => {
     map_set_info        => __PACKAGE__ . '::MapSetViewer',
     map_type_info       => __PACKAGE__ . '::MapTypeViewer',
     matrix              => __PACKAGE__ . '::MatrixViewer',
-    saved_link          => __PACKAGE__ . '::SavedLinkViewer', # legacy
-    saved_links         => __PACKAGE__ . '::SavedLinkViewer',
     species_info        => __PACKAGE__ . '::SpeciesViewer',
     view_feature_on_map => __PACKAGE__ . '::ViewFeatureOnMap',
     remote              => __PACKAGE__ . '::Remote',
@@ -114,7 +110,6 @@ use constant DISPATCH => {
     viewer              => __PACKAGE__ . '::MapViewer',
     map_search          => __PACKAGE__ . '::MapSearch',
     spider              => __PACKAGE__ . '::SpiderViewer',
-    link_viewer         => __PACKAGE__ . '::LinkViewer',
 };
 
 use constant FIELD_SEP  => '=';
@@ -399,9 +394,9 @@ current settings over cookie settings.
     # leave whatever's there.  If nothing is defined, then we'll set it with
     # the default value.
     #
-    # If this references a session or a saved link, then that will have the
+    # If this references a session, then that will have the
     # information in it, so we don't want to use a cookie.
-    unless ( $apr->param('session_id') or $apr->param('saved_link_id') ) {
+    unless ( $apr->param('session_id') ) {
         for my $pref (@preference_fields) {
             my $value =
                   defined $apr->param($pref)  ? $apr->param($pref)

@@ -377,8 +377,6 @@ Required Modules:
 
 =item *   Data::Pageset
 
-=item *   Data::Stag
-
 =item *   DBI
 
 =item *   DBD::mysql (if you're using MySQL)

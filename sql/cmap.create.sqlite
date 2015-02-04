@@ -222,24 +222,6 @@ CREATE TABLE cmap_xref (
 CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);
 
 --
--- Table: cmap_saved_link
---
-CREATE TABLE cmap_saved_link (
-  saved_link_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
-  saved_on date DEFAULT NULL,
-  last_access date DEFAULT NULL,
-  session_step_object blob NOT NULL,
-  saved_url text NOT NULL,
-  legacy_url text NOT NULL,
-  link_title varchar(50) DEFAULT '',
-  link_comment varchar(200) DEFAULT '',
-  link_group varchar(40) NOT NULL DEFAULT '',
-  hidden tinyint(4) NOT NULL DEFAULT '0'
-);
-
-CREATE INDEX link_group_cmap_saved_link on cmap_saved_link (link_group);
-
---
 -- Table: cmap_map_to_feature
 --
 CREATE TABLE cmap_map_to_feature (

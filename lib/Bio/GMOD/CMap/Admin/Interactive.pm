@@ -48,8 +48,6 @@ use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
-use Bio::GMOD::CMap::Admin::ManageLinks();
-use Bio::GMOD::CMap::Admin::SavedLink;
 use Bio::GMOD::CMap::Admin::GFFProducer;
 use Benchmark;
 
@@ -412,9 +410,6 @@ No Parameters
         },
         {   action  => 'purge_query_cache_menu',
             display => 'Purge the cache to view new data'
-        },
-        {   action  => 'import_links',
-            display => 'Import links'
         },
     ];
 
@@ -3128,222 +3123,6 @@ No Parameters
 }
 
 # ----------------------------------------------------
-sub manage_links {
-
-=pod
-
-=head2 manage_links
-
-=head3 Description
-
-Menu system for managing link data (no command line interface).  The action
-that is chosen is then called.
-
-=head3 Parameters
-
-No Parameters
-
-=cut
-
-    #
-    # Determine what kind of data to import (new or old)
-    #
-    my $self = shift;
-
-    my $action = $self->show_menu(
-        title   => 'Import Options',
-        prompt  => 'What would you like to import?',
-        display => 'display',
-        return  => 'action',
-        data    => [
-            {   action  => 'import_links',
-                display => 'Import Links'
-            },
-            {   action  => 'delete_links',
-                display => 'Remove Link Set'
-            },
-        ],
-    );
-
-    $self->$action();
-    return 1;
-}
-
-# ----------------------------------------------------
-sub import_links {
-
-=pod
-
-=head2 import_links
-
-=head3 Description
-
-Importing "Saved links" into CMap.
-
-If command_line is true, checks for required options and imports the links
-
-If command_line is not true, uses a menu system to get the link import options.
-
-=head3 Parameters
-
-=over 4
-
-=item * link_group
-
-=item * command_line
-
-=item * file_str (required if command_line)
-
-Comma delimited string of file names to be imported
-
-=back
-
-=cut
-
-    #
-    # Imports links in simple tab-delimited format
-    #
-    my ( $self, %args ) = @_;
-    my $file_str     = $args{'file_str'};
-    my $link_group   = $args{'link_group'};
-    my $command_line = $args{'command_line'};
-    my $sql_object   = $self->sql or die $self->error;
-
-    my $files;
-    if ($command_line) {
-
-        # Check for any missing and required fields
-        my @missing = ();
-        if ($file_str) {
-            unless ( $files = $self->get_files( file_str => $file_str ) ) {
-                print STDERR "None of the files, '$file_str' succeded.\n";
-                push @missing, 'input file(s)';
-            }
-        }
-        else {
-            push @missing, 'input file(s)';
-        }
-        if (@missing) {
-            print STDERR "Missing the following arguments:\n";
-            print STDERR join( "\n", sort @missing ) . "\n";
-            return 0;
-        }
-    }
-    else {
-
-        print "Importing Saved Links\n";
-        ###New File Handling
-        $files = $self->get_files() or return;
-
-        $link_group = $self->show_question(
-            question => "What should this link group be named?\n"
-                . '(This selection will be overwridden if the '
-                . 'group is defined in the file)' . "\n",
-            allow_null => 1,
-            default    => DEFAULT->{'link_group'},
-        );
-
-        #
-        # Confirm decisions.
-        #
-        print join( "\n",
-            'OK to import?',
-            '  Data source     : ' . $self->data_source,
-            '  File            : ' . join( ", ", @$files ),
-            "  Link Group      : $link_group",
-            "[Y/n] " );
-        chomp( my $answer = <STDIN> );
-        return if $answer =~ /^[Nn]/;
-    }
-
-    my $link_manager = Bio::GMOD::CMap::Admin::SavedLink->new(
-        config      => $self->config,
-        data_source => $self->data_source,
-    );
-
-    foreach my $file (@$files) {
-        $link_manager->read_saved_links_file(
-            file_name  => $file,
-            link_group => $link_group,
-            )
-            or do {
-            print "Error: ", $link_manager->error, "\n";
-            return;
-            };
-    }
-    return 1;
-}
-
-# ----------------------------------------------------
-sub delete_links {
-
-=pod
-
-=head2 delete_links
-
-=head3 Description
-
-Menu system for deleting links (no command line interface)
-
-=head3 Parameters
-
-No Parameters
-
-=cut
-
-    #
-    # Removes links
-    #
-    my ( $self, %args ) = @_;
-    my $name_space = $self->get_link_name_space;
-
-    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        config      => $self->config,
-        data_source => $self->data_source,
-    );
-    my @link_set_names = $link_manager->list_set_names(
-        name_space => $self->get_link_name_space, );
-    my @link_set_name_display;
-    foreach my $name (@link_set_names) {
-        $link_set_name_display[ ++$#link_set_name_display ]->{'link_set_name'}
-            = $name;
-    }
-    my $link_set_name = $self->show_menu(
-        title   => join("\n"),
-        prompt  => 'Which would you like to remove?',
-        display => 'link_set_name',
-        return  => 'link_set_name',
-        data    => \@link_set_name_display,
-    );
-    unless ($link_set_name) {
-        print "No Link Sets\n";
-        return;
-    }
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to remove?',
-        '  Data source     : ' . $self->data_source,
-        "  Link Set        : $link_set_name",
-        "[Y/n] " );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
-
-    $link_manager->delete_links(
-        link_set_name => $link_set_name,
-        log_fh        => $self->log_fh,
-        name_space    => $self->get_link_name_space,
-        )
-        or do {
-        print "Error: ", $link_manager->error, "\n";
-        return;
-        };
-    return 1;
-}
-
-# ----------------------------------------------------
 sub import_correspondences {
 
 =pod
@@ -5583,13 +5362,6 @@ Level 5 is purged when any information changes
 =head2 Delete duplicate correspondences
 
 If duplicate correspondences may have been added, this will remove them.
-
-=head2 Manage links
-
-This option is where to import and delete links that will show up in
-the "Imported Links" section of CMap.  The import takes a tab delimited
-file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for
-more info on the format.
 
 =head1 AUTHOR
 

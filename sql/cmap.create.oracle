@@ -258,27 +258,6 @@ TYPE    MyISAM;
 CREATE INDEX table_name01 on cmap_xref (table_name, object_id, display_order);
 
 --
--- Table: cmap_saved_link
---
-
-CREATE TABLE cmap_saved_link (
-  saved_link_id number(11) DEFAULT '0' NOT NULL,
-  saved_on date DEFAULT NULL,
-  last_access date DEFAULT NULL,
-  session_step_object blob(65535) NOT NULL,
-  saved_url clob NOT NULL,
-  legacy_url clob NOT NULL,
-  link_title varchar2(50) DEFAULT '',
-  link_comment varchar2(200) DEFAULT '',
-  link_group varchar2(40) DEFAULT '' NOT NULL,
-  hidden number(4) DEFAULT '0' NOT NULL,
-  PRIMARY KEY (saved_link_id)
-)
-TYPE    MyISAM;
-
-CREATE INDEX link_group on cmap_saved_link (link_group);
-
---
 -- Table: cmap_map_to_feature
 --
 

@@ -90,7 +90,6 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_feature_correspondence  => 'feature_correspondence_id',
         cmap_map                     => 'map_name',
         cmap_map_set                 => 'map_set_short_name',
-        cmap_saved_link              => 'saved_link_id',
         cmap_species                 => 'species_common_name',
         cmap_xref                    => 'xref_name',
         cmap_commit_log              => 'commit_log_id',
@@ -104,7 +103,6 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_feature_correspondence  => 'feature_correspondence_id',
         cmap_map                     => 'map_id',
         cmap_map_set                 => 'map_set_id',
-        cmap_saved_link              => 'saved_link_id',
         cmap_species                 => 'species_id',
         cmap_xref                    => 'xref_id',
         cmap_commit_log              => 'commit_log_id',
@@ -118,7 +116,6 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_feature_correspondence  => 'feature_correspondence_acc',
         cmap_map                     => 'map_acc',
         cmap_map_set                 => 'map_set_acc',
-        cmap_saved_link              => '',
         cmap_species                 => 'species_acc',
         cmap_xref                    => '',
         cmap_commit_log              => '',
@@ -131,7 +128,6 @@ This is a handy place to put lookup hashes for object type to table names.
         feature_correspondence  => 'cmap_feature_correspondence',
         map                     => 'cmap_map',
         map_set                 => 'cmap_map_set',
-        saved_link              => 'cmap_saved_link',
         species                 => 'cmap_species',
         xref                    => 'cmap_xref',
         attribute               => 'cmap_attribute',
@@ -145,7 +141,6 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_feature_correspondence  => 'feature_correspondence',
         cmap_map                     => 'map',
         cmap_map_set                 => 'map_set',
-        cmap_saved_link              => 'saved_link',
         cmap_species                 => 'species',
         cmap_xref                    => 'xref',
         cmap_attribute               => 'attribute',
@@ -637,22 +632,6 @@ Array of Hashes:
                 xref_url      => STR,
             }
         },
-
-        # Omit saved links because the step object won't export nicely
-        #{   name   => 'cmap_saved_link',
-        #    fields => {
-        #        saved_link_id       => NUM,
-        #        saved_on            => STR,
-        #        last_access         => STR,
-        #        session_step_object => STR,
-        #        saved_url           => STR,
-        #        legacy_url          => STR,
-        #        link_title          => STR,
-        #        link_comment        => STR,
-        #        link_group          => STR,
-        #        hidden              => STR,
-        #    }
-        #},
 
         {   name   => 'cmap_map_to_feature',
             fields => {
@@ -11292,367 +11271,6 @@ Array of correspondence_evidence_ids
     $return_object = $db->selectcol_arrayref( $evidence_move_sql, {}, () );
 
     return $return_object;
-}
-
-#-----------------------------------------------
-sub get_saved_links {
-
-=pod
-
-=head2 get_saved_links()
-
-=over 4
-
-=item * Description
-
-=item * Adaptor Writing Info
-
-=item * Input
-
-=over 4
-
-=back
-
-=item * Output
-
-Array of Hashes:
-
-  Keys:
-
-=item * Cache Level (If Used): 
-
-Not using cache because this query is quicker.
-
-=back
-
-=cut
-
-    my $self              = shift;
-    my %validation_params = (
-        cmap_object         => 0,
-        no_validation       => 0,
-        saved_link_id       => 0,
-        session_step_object => 0,
-        saved_url           => 0,
-        legacy_url          => 0,
-        link_group          => 0,
-        link_comment        => 0,
-        link_title          => 0,
-        last_access         => 0,
-        hidden              => 0,
-    );
-    my %args = @_;
-    validate( @_, \%validation_params ) unless $args{'no_validation'};
-
-    my $db = $self->db;
-    my $return_object;
-
-    my $sql_str = q[
-        select saved_link_id,
-               saved_on,
-               last_access,
-               session_step_object,
-               saved_url,
-               legacy_url,
-               link_group,
-               link_title,
-               link_comment,
-               hidden
-        from cmap_saved_link
-    ];
-    my @where_list;
-    my @identifiers = ();
-
-    for my $column (
-        qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url link_group link_comment
-        link_title last_access hidden]
-        )
-    {
-
-        if ( defined( $args{$column} ) ) {
-            push @identifiers, $args{$column};
-            push @where_list,  " $column = ? ";
-        }
-    }
-
-    if (@where_list) {
-        $sql_str .= ' where ' . join " and ", @where_list;
-    }
-
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
-        @identifiers );
-
-    # if saved link was gotten by id, use update_saved_link to
-    # update the last_accessed field.
-    if ( $args{'saved_link_id'} and @{ $return_object || [] } ) {
-        $self->update_saved_link( saved_link_id => $args{'saved_link_id'}, );
-    }
-
-    return $return_object;
-}
-
-#-----------------------------------------------
-sub get_saved_link_groups {
-
-=pod
-
-=head2 get_saved_link_link_groups()
-
-=over 4
-
-=item * Description
-
-=item * Adaptor Writing Info
-
-=item * Input
-
-=over 4
-
-=back
-
-=item * Output
-
-Array of Hashes:
-
-  Keys:
-
-=item * Cache Level (If Used): 
-
-Not using cache because this query is quicker.
-
-=back
-
-=cut
-
-    my $self              = shift;
-    my %validation_params = (
-        cmap_object         => 0,
-        no_validation       => 0,
-        saved_link_id       => 0,
-        session_step_object => 0,
-        saved_url           => 0,
-        legacy_url          => 0,
-        link_group          => 0,
-        link_comment        => 0,
-        link_title          => 0,
-        last_access         => 0,
-        hidden              => 0,
-    );
-    my %args = @_;
-    validate( @_, \%validation_params ) unless $args{'no_validation'};
-
-    my $db = $self->db;
-    my $return_object;
-
-    my $sql_str = q[
-        select 
-               link_group,
-               count(saved_link_id) as link_count
-        from cmap_saved_link
-    ];
-    my @where_list;
-    my @identifiers = ();
-
-    for my $column (
-        qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url link_group link_comment
-        link_title last_access hidden]
-        )
-    {
-
-        if ( defined( $args{$column} ) ) {
-            push @identifiers, $args{$column};
-            push @where_list,  " $column = ? ";
-        }
-    }
-
-    if (@where_list) {
-        $sql_str .= ' where ' . join " and ", @where_list;
-    }
-    $sql_str .= ' group by link_group order by link_group ';
-
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
-        @identifiers );
-
-    return $return_object;
-}
-
-#-----------------------------------------------
-sub insert_saved_link {
-
-=pod
-
-=head2 insert_saved_link()
-
-=over 4
-
-=item * IMPORTANT NOTE
-
-This method is overwritten in the Bio::GMOD::CMap::Data::Oracle module
-
-=item * Description
-
-Insert into the database.
-
-=item * Adaptor Writing Info
-
-The required inputs are only the ones that the database requires.
-
-If you don't want CMap to insert into your database, make this a dummy method.
-
-=item * Input
-
-=over 4
-
-=back
-
-=item * Output
-
-id
-
-=back
-
-=cut
-
-    my $self              = shift;
-    my %validation_params = (
-        cmap_object         => 0,
-        no_validation       => 0,
-        session_step_object => 0,
-        saved_url           => 0,
-        legacy_url          => 0,
-        link_group          => 0,
-        link_comment        => 0,
-        link_title          => 0,
-        last_access         => 0,
-        hidden              => 0,
-    );
-    my %args = @_;
-    validate( @_, \%validation_params ) unless $args{'no_validation'};
-
-    my $db                  = $self->db;
-    my $session_step_object = $args{'session_step_object'};
-    my $saved_url           = $args{'saved_url'};
-    my $legacy_url          = $args{'legacy_url'};
-    my $link_group          = $args{'link_group'};
-    my $link_comment        = $args{'link_comment'};
-    my $link_title          = $args{'link_title'};
-    my $last_access         = $args{'last_access'};
-    my $hidden              = $args{'hidden'} || 0;
-    my $time                = localtime();
-    my $saved_on            = $time->strftime( $self->date_format );
-    unless ( defined $last_access ) {
-        $last_access = $saved_on;
-    }
-
-    my $saved_link_id = $self->next_number( object_type => 'saved_link', )
-        or return $self->error('No next number for saved_link ');
-    $saved_url .= "saved_link_id=$saved_link_id;";
-
-    my @insert_args = (
-        $saved_link_id,       $saved_on,     $last_access,
-        $session_step_object, $saved_url,    $legacy_url,
-        $link_title,          $link_comment, $link_group,
-        $hidden,
-    );
-
-    $db->do(
-        qq[
-        insert into cmap_saved_link
-        (saved_link_id,  saved_on,     last_access,   session_step_object, 
-         saved_url,      legacy_url,   link_title,    link_comment,
-         link_group,     hidden  )
-         values 
-        ( ?,             ?,            ?,             ?, 
-          ?,             ?,            ?,             ?,
-          ?,             ? )
-        ],
-        {},
-        (@insert_args)
-    );
-
-    return $saved_link_id;
-}
-
-#-----------------------------------------------
-sub update_saved_link {
-
-=pod
-
-=head2 update_saved_link()
-
-=over 4
-
-=item * IMPORTANT NOTE
-
-This method is overwritten in the Bio::GMOD::CMap::Data::Oracle module
-
-=item * Description
-
-Given the id and some attributes to modify, updates.
-
-=item * Adaptor Writing Info
-
-=item * Input
-
-=over 4
-
-=back
-
-=back
-
-=cut
-
-    my $self              = shift;
-    my %validation_params = (
-        cmap_object         => 0,
-        no_validation       => 0,
-        saved_link_id       => 1,
-        session_step_object => 0,
-        saved_url           => 0,
-        legacy_url          => 0,
-        link_group          => 0,
-        link_comment        => 0,
-        link_title          => 0,
-        hidden              => 0,
-    );
-    my %args = @_;
-    validate( @_, \%validation_params ) unless $args{'no_validation'};
-
-    my $db = $self->db;
-
-    my @update_args = ();
-    my $update_sql  = qq[
-        update cmap_saved_link
-    ];
-    my @set_list;
-    my $where_sql = " where saved_link_id = ? ";    # ID
-
-    my $time = localtime();
-    $args{'last_access'} = $time->strftime( $self->date_format );
-
-    for my $column (
-        qw[ session_step_object
-        saved_url legacy_url link_group link_comment
-        link_title last_access hidden]
-        )
-    {
-        if ( defined( $args{$column} ) ) {
-            push @update_args, $args{$column};
-            push @set_list,    " $column = ? ";
-        }
-    }
-
-    return unless @set_list;    # nothing to update
-
-    my $set_sql = ' set ' . join( q{,}, @set_list ) . ' ';
-
-    push @update_args, $args{'saved_link_id'};
-
-    my $sql_str = $update_sql . $set_sql . $where_sql;
-    $db->do( $sql_str, {}, @update_args );
-
 }
 
 =pod

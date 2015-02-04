@@ -422,12 +422,6 @@ needing such. It's basically a simple workaround for MySQL's
 "serial" type, etc. By implementing this in Perl, I don't have to
 worry how (or even "if") a particular RDBMS supports a "one-up" field.
 
-=item * cmap_saved_link: 
-
-This table stores the stored links.  The session_step_object contains 
-a frozen (freeze() in Storable.pm) object that holds the session 
-information.
-
 =back
 
 =head1 TIPS
