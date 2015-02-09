@@ -396,8 +396,7 @@ use constant DEFAULT => {
     image_size => 'small',
 
     #
-    # The way to deliver the image, 'png' or 'jpeg'
-    # (or whatever your compilation of GD offers, perhaps 'gif'?).
+    # The way to deliver the image, 'gif', 'png' or 'svg'
     # Default: png
     #
     image_type => 'png',
@@ -620,7 +619,6 @@ use constant VALID => {
     #
     image_type => {
         png  => 1,
-        jpeg => 1,
         svg  => 1,
         gif  => 1,
     },

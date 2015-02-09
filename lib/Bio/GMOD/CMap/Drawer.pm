@@ -156,7 +156,7 @@ String with the pixel_height of the reference map: positive integer
 
 =item * image_type
 
-String with the image type: png, gif, svg or jpeg.
+String with the image type: png, gif, or svg.
 
 =item * label_features
 
@@ -1925,7 +1925,7 @@ Do the actual drawing.
     #
     my $cache_dir = $self->cache_dir or return;
     my $image_type = $self->image_type;
-    my $suffix = '.' . ( ( $image_type eq 'jpeg' ) ? 'jpg' : $image_type );
+    my $suffix = '.' . $image_type;
     my ( $fh, $filename )
         = tempfile( 'X' x 9, DIR => $cache_dir, SUFFIX => $suffix );
     print $fh $img->$image_type()

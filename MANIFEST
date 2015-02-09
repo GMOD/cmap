@@ -251,8 +251,6 @@ lib/Bio/GMOD/CMap/Admin/ImportAlignments.pm
 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
 lib/Bio/GMOD/CMap/Admin/Interactive.pm
 lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
-lib/Bio/GMOD/CMap/Admin/ManageLinks.pm
-lib/Bio/GMOD/CMap/Admin/SavedLink.pm
 lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
 lib/Bio/GMOD/CMap/Apache/CMap3D.pm
@@ -266,7 +264,6 @@ lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
 lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
 lib/Bio/GMOD/CMap/Apache/Index.pm
-lib/Bio/GMOD/CMap/Apache/LinkViewer.pm
 lib/Bio/GMOD/CMap/Apache/Login.pm
 lib/Bio/GMOD/CMap/Apache/MapSearch.pm
 lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
@@ -274,7 +271,6 @@ lib/Bio/GMOD/CMap/Apache/MapTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
 lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
 lib/Bio/GMOD/CMap/Apache/Remote.pm
-lib/Bio/GMOD/CMap/Apache/SavedLinkViewer.pm
 lib/Bio/GMOD/CMap/Apache/SpeciesViewer.pm
 lib/Bio/GMOD/CMap/Apache/SpiderViewer.pm
 lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
@@ -282,7 +278,6 @@ lib/Bio/GMOD/CMap/Config.pm
 lib/Bio/GMOD/CMap/Constants.pm
 lib/Bio/GMOD/CMap/Data.pm
 lib/Bio/GMOD/CMap/Data/Generic.pm
-lib/Bio/GMOD/CMap/Data/MySQL.pm
 lib/Bio/GMOD/CMap/Data/Oracle.pm
 lib/Bio/GMOD/CMap/Drawer.pm
 lib/Bio/GMOD/CMap/Drawer/Dotplot.pm
@@ -298,7 +293,6 @@ sql/cmap.create.mysql
 sql/cmap.create.oracle
 sql/cmap.create.postgresql
 sql/cmap.create.sqlite
-sql/cmap.create.sybase
 sql/cmap_gbrowse.adapt.mysql
 sql/cmap_gbrowse.create.mysql
 t/post_test_01.t
@@ -370,7 +364,6 @@ templates/help_feature_details.tmpl
 templates/help_feature_search.tmpl
 templates/help_feature_type_info.tmpl
 templates/help_header.tmpl
-templates/help_imported_links.tmpl
 templates/help_map_details.tmpl
 templates/help_map_search.tmpl
 templates/help_map_set_info.tmpl

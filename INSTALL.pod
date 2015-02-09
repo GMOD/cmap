@@ -17,7 +17,7 @@ how to install CMap:
 
 =over 4
 
-=item * Install libpng, libjpeg and libgd 2.x
+=item * Install libpng and libgd 2.x
 
 =item * Install the database of your choice (MySQL, PostgreSQL,
 Oracle, Sybase, SQLite); create tables with contents of "sql"
@@ -107,10 +107,10 @@ come back here.
 Installation of libgd can easily be one of the more frustrating
 parts of this installation.  There are a number of dependencies 
 including the zlib compression library and whatever image libraries
-you want, like JPEG, libpng, and libgif.  Again, you may already
+you want, like libpng and libgif.  Again, you may already
 have some of these libraries, so you needn't panic just yet.  One
 way to see if you do is to check the directories "/usr/lib" and
-"/usr/local/lib" for files that look like "libgd*," "libjpeg*,"
+"/usr/local/lib" for files that look like "libgd*,"
 "libpng*," and "libgif*".  If you're using something like RHEL,
 you could try the "locate" command for each of these (without the star
 as it does wildcard searching on its own).
@@ -121,8 +121,8 @@ should tell you which libraries it can and can't find.  You definitely
 won't get far without zlib installed, so you need to do that first.
 Then you can look to see which kinds of files libgd will be able to
 write after you run the configure process.  You'll want to be sure
-that you can at least write JPEG (Joint Photographic Experts Group)
-and PNG (Portable Network Graphics) formats.
+that you can at least write
+PNG (Portable Network Graphics) format.
 
 Here are URLs to help you track down everything you need to install libgd:
 
@@ -133,8 +133,6 @@ Here are URLs to help you track down everything you need to install libgd:
 =item * libpng: http://www.libpng.org/pub/png/pngcode.html
 
 =item * zlib: http://www.zlib.net/
-
-=item * JGEP: http://www.ijg.org/
 
 =back
 

@@ -873,7 +873,7 @@ Values: small, medium, large
 The output type of the image, legal value are whatever image libraries
 installed 
 
-Values: png, jpeg, svg and maybe gif
+Values: png, svg and maybe gif
 
 =item *  clean_view [ default: 0 ]
 
@@ -2640,7 +2640,7 @@ How large to make the font, legal values are "small," "medium" or
 =item * image_type [ default: set in config ]
 
 The output type of the image, legal value are whatever image libraries
-you've installed (usually at least "png" or "jpeg" or "svg")
+you've installed (usually at least "png" or "svg")
 
 =item * min_correspondences [ default: 0 ]
 

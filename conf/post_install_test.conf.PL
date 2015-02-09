@@ -239,7 +239,7 @@ image_size small
 
 #
 # Default image format
-# Values: png, jpeg
+# Values: gif, png, svg
 # Default: png
 #
 image_type png
