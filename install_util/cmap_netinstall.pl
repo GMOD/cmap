@@ -163,12 +163,11 @@ unless ( eval "use GD 2.35; 1" ) {
 print STDERR "\n*** Installing prerequisites for CMap ***\n";
 
 foreach my $module (
-    'Algorithm::Numerical::Sample', 'Apache::Htpasswd',
+    'Apache::Htpasswd',
     'Bit::Vector',                  'Cache::Cache',
     'CGI',                          'CGI::Session',
     'Class::Base',                  'Clone',
     'Config::General',              'Data::Dumper',
-    'Data::Page',
     'Data::Pageset',
     'DBI',
     'Filesys::DfPortable',

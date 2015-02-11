@@ -244,7 +244,6 @@ my $builder = CMapBuilder->new(
     ],
     sign              => 1,
     requires          => {
-        'Algorithm::Numerical::Sample' => 0,
         'Apache::Htpasswd'             => 0,
         'Bit::Vector'                  => 0,
         'Cache::Cache'                 => 0,
@@ -254,7 +253,6 @@ my $builder = CMapBuilder->new(
         'Clone'                        => 0,
         'Config::General'              => 0,
         'Data::Dumper'                 => 0,
-        'Data::Page'                   => 0,
         'Data::Pageset'                => 0,
         'DBI'                          => 1.20,
         'Filesys::DfPortable'          => 0,

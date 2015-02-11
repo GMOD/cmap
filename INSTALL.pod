@@ -351,8 +351,6 @@ Required Modules:
 
 =over 4
 
-=item *   Algorithm::Numerical::Sample
-
 =item *   Apache::Htpasswd
 
 =item *   Bit::Vector
@@ -368,10 +366,6 @@ Required Modules:
 =item *   Clone
 
 =item *   Config::General
-
-=item *   Data::Dumper
-
-=item *   Data::Page
 
 =item *   Data::Pageset
 

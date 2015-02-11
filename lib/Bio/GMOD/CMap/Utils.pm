@@ -22,7 +22,6 @@ which are exported by default.
 =cut 
 
 use strict;
-use Algorithm::Numerical::Sample 'sample';
 use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
@@ -211,11 +210,10 @@ Special thanks to Noel Yap for suggesting this strategy.
                 }
             }
             else {
-                my @sample = sample(
-                    set         => [ 0 .. $no_present - 1 ],
-                    sample_size => $no_possible,
-                );
-                push @accepted, @{ $labels->{$priority} }[@sample];
+                while ( @accepted < $no_possible ) {
+                    push(@accepted, splice(@{ $labels->{$priority} },
+                                           rand(@{ $labels->{$priority} }), 1));
+                }
             }
         }
         else {
