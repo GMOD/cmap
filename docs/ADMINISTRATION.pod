@@ -868,7 +868,7 @@ How large to make the image
 
 Values: small, medium, large
 
-=item * image_type [ default: png ]
+=item * image_type [ default: gif ]
 
 The output type of the image, legal value are whatever image libraries
 installed 
@@ -2640,7 +2640,7 @@ How large to make the font, legal values are "small," "medium" or
 =item * image_type [ default: set in config ]
 
 The output type of the image, legal value are whatever image libraries
-you've installed (usually at least "png" or "svg")
+you've installed (usually at least "gif", "png", or "svg")
 
 =item * min_correspondences [ default: 0 ]
 

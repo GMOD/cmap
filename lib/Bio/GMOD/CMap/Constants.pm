@@ -397,9 +397,9 @@ use constant DEFAULT => {
 
     #
     # The way to deliver the image, 'gif', 'png' or 'svg'
-    # Default: png
+    # Default: gif
     #
-    image_type => 'png',
+    image_type => 'gif',
 
     is_enabled => 1,
 

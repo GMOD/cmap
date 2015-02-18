@@ -365,11 +365,13 @@ use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Drawer::Map;
+use Bio::GMOD::CMap::Drawer::GDWrapper;
 use Bio::GMOD::CMap::Drawer::Glyph;
 use File::Basename;
 use File::Temp 'tempfile';
 use File::Path;
 use Data::Dumper;
+use GD;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
@@ -868,12 +870,12 @@ Accepts a list of attributes to describe how to draw an object.
             my $font   = $attr[1];
             my $string = $attr[4];
             push @x,
-                $attr[ $x_locations[0] ] + ( $font->width * length($string) );
-            push @y, $attr[ $y_locations[0] ] - $font->height;
+                $attr[ $x_locations[0] ] + ( $self->string_width($font, $string) );
+            push @y, $attr[ $y_locations[0] ] - $self->string_height($font, $string);
         }
         elsif ( $shape eq STRING_UP ) {
             my $font = $attr[1];
-            push @x, $attr[ $x_locations[0] ] + $font->height;
+            push @x, $attr[ $x_locations[0] ] + $self->string_height($font, 'X');
         }
 
         push @{ $self->{'drawing_data'}{$layer} }, [@attr];
@@ -1487,20 +1489,20 @@ Lays out the image and writes it to the file system, set the "image_name."
     }
 
     my $watermark = 'CMap v' . $Bio::GMOD::CMap::VERSION;
-    my $wm_x      = $max_x - $font->width * length($watermark) - 5;
+    my $wm_x      = $max_x - $self->string_width($font, $watermark) - 5;
     my $wm_y      = $max_y;
     $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
     $self->add_map_area(
         coords => [
             $wm_x, $wm_y,
-            $wm_x + $font->width * length($watermark),
-            $wm_y + $font->height
+            $wm_x + $self->string_width($font, $watermark),
+            $wm_y + $self->string_height($font, $watermark)
         ],
         url => CMAP_URL,
         alt => 'GMOD-CMap website',
     ) unless ($omit_all_area_boxes);
 
-    $max_y += $font->height;
+    $max_y += $self->string_height($font, $watermark);
 
     $self->max_x($max_x);
     $self->max_y($max_y);
@@ -1556,6 +1558,7 @@ Lays out the legend.  Used in draw().
     my $corrs_aggregated    = $args{'corrs_aggregated'};
     my $bg_color            = $args{'bg_color'};
     my $border_color        = $args{'border_color'};
+    my $font_height         = $self->string_height($font, 'X');
 
     my @bounds = ( $min_x, $max_y + 10 );
 
@@ -1571,8 +1574,8 @@ Lays out the legend.  Used in draw().
     if ( my @feature_types = $self->feature_types_seen_first ) {
         my $string = 'Feature Types:';
         $self->add_drawing( STRING, $font, $x, $max_y, $string, 'black' );
-        $max_y += $font->height + 10;
-        my $end = $x + $font->width * length($string);
+        $max_y += $font_height + 10;
+        my $end = $x + $self->string_width($font, $string);
         $max_x = $end if $end > $max_x;
 
         my $corr_color = $self->config_data('feature_correspondence_color');
@@ -1646,11 +1649,11 @@ Lays out the legend.  Used in draw().
 
                 # Features that aren't being displayed
                 my $box_x1   = $feature_x;
-                my $box_x2   = $feature_x + $font->height - 1;
-                my $box_midx = $feature_x + int( $font->height / 2 );
+                my $box_x2   = $feature_x + $font_height - 1;
+                my $box_midx = $feature_x + int( $font_height / 2 );
                 my $box_midy = $feature_y - 1;
-                my $box_y1   = $box_midy - int( $font->height / 2 ) + 1;
-                my $box_y2   = $box_midy + int( $font->height / 2 ) - 1;
+                my $box_y1   = $box_midy - int( $font_height / 2 ) + 1;
+                my $box_y2   = $box_midy + int( $font_height / 2 ) - 1;
 
                 # Cross Bars
                 $self->add_drawing( LINE, $box_x1 + 2, $box_midy, $box_x2 - 2,
@@ -1682,22 +1685,22 @@ Lays out the legend.  Used in draw().
                 );
 
                 $label_y = $feature_y;
-                $label_x += $font->height + 3;
+                $label_x += $font_height + 3;
             }
             else {
                 $label_x += 15;
                 $label_y = $feature_y;
             }
 
-            my $ft_y = $label_y - $font->height / 2;
+            my $ft_y = $label_y - $font_height / 2;
             $self->add_drawing( STRING, $font, $label_x, $ft_y, $label,
                 $color );
 
             $self->add_map_area(
                 coords => [
                     $label_x, $ft_y,
-                    $label_x + $font->width * length($label),
-                    $ft_y + $font->height,
+                    $label_x + $self->string_width($font, $label),
+                    $ft_y + $font_height,
                 ],
                 url => $ft_details_url . $ft->{'feature_type_acc'},
                 alt => "Feature Type Details for $label",
@@ -1705,9 +1708,9 @@ Lays out the legend.  Used in draw().
                 unless ( $omit_all_area_boxes
                 or $ft->{'correspondence_color'} );
 
-            my $furthest_x = $label_x + $font->width * length($label) + 5;
+            my $furthest_x = $label_x + $self->string_width($font, $label) + 5;
             $max_x = $furthest_x if $furthest_x > $max_x;
-            $max_y = $label_y + $font->height;
+            $max_y = $label_y + $font_height;
         }
 
         #
@@ -1716,7 +1719,7 @@ Lays out the legend.  Used in draw().
         if ( my @evidence_types = $self->correspondence_evidence_seen ) {
             $self->add_drawing( STRING, $font, $x, $max_y, 'Evidence Types:',
                 'black' );
-            $max_y += $font->height + 10;
+            $max_y += $font_height + 10;
 
             for my $et (@evidence_types) {
                 my $color = $et->{'line_color'}
@@ -1729,18 +1732,18 @@ Lays out the legend.  Used in draw().
                 $self->add_drawing( STRING, $font, $x + 15, $max_y, $string,
                     $color );
 
-                my $end = $x + 15 + $font->width * length($string) + 4;
+                my $end = $x + 15 + $self->string_width($font, $string) + 4;
                 $max_x = $end if $end > $max_x;
 
                 $self->add_map_area(
                     coords =>
-                        [ $x + 15, $max_y, $end, $max_y + $font->height, ],
+                        [ $x + 15, $max_y, $end, $max_y + $font_height, ],
                     url => $et_details_url . $et->{'evidence_type_acc'},
                     alt => 'Evidence Type Details for '
                         . $et->{'evidence_type'},
                 ) unless ($omit_all_area_boxes);
 
-                $max_y += $font->height + 5;
+                $max_y += $font_height + 5;
             }
         }
         $max_y += 5;
@@ -1750,7 +1753,7 @@ Lays out the legend.  Used in draw().
 
         $self->add_drawing( STRING, $font, $x, $max_y,
             'Aggregated Correspondences Colors:', 'black' );
-        $max_y += $font->height + 10;
+        $max_y += $font_height + 10;
         my $all_corr_colors = $self->aggregated_correspondence_colors;
         if ( $all_corr_colors and %$all_corr_colors ) {
             foreach my $evidence_type_acc ( keys(%$all_corr_colors) ) {
@@ -1768,7 +1771,7 @@ Lays out the legend.  Used in draw().
                         ),
                         'black'
                     );
-                    $max_y += $font->height + 4;
+                    $max_y += $font_height + 4;
                 }
                 elsif ( scalar( keys(%$all_corr_colors) ) > 1 ) {
 
@@ -1789,13 +1792,13 @@ Lays out the legend.  Used in draw().
                         $color_bound . ' or fewer correspondences',
                         $corr_colors->{$color_bound}
                     );
-                    $max_y += $font->height + 4;
+                    $max_y += $font_height + 4;
                     $last_bound = $color_bound;
                 }
                 $self->add_drawing( STRING, $font, $x + 15, $max_y,
                     'More than ' . $last_bound . ' correspondences',
                     $default_color );
-                $max_y += $font->height + 6;
+                $max_y += $font_height + 6;
             }
         }
         else {
@@ -1804,10 +1807,10 @@ Lays out the legend.  Used in draw().
             $self->add_drawing( STRING, $font, $x, $max_y,
                 'All Aggregated Correspondences',
                 $default_color );
-            $max_y += $font->height + 4;
+            $max_y += $font_height + 4;
 
         }
-        $max_y += $font->height;
+        $max_y += $font_height
 
     }
 
@@ -1828,21 +1831,29 @@ Lays out the legend.  Used in draw().
     unless ( $self->clean_view() ) {
         $self->add_drawing( STRING, $font, $x, $max_y, 'Menu Symbols:',
             'black' );
-        $max_y += $font->height + 10;
+        $max_y += $font_height + 10;
 
         for my $button (@buttons) {
             my ( $sym, $caption ) = @$button;
-            $self->add_drawing( STRING, $font, $x + 3, $max_y + 2, $sym,
-                'grey' );
-            my $end = $x + ( $font->width * length($sym) ) + 4;
+
+            # make buttons containing same # of characters uniform in width
+            my $font_width_button = $self->string_width($font, 'X' x length($sym));
+            $self->add_drawing( STRING, $font, 
+                                $x + int(($font_width_button+4)/2.0
+                                         - ($self->string_width($font,$sym))/2.0
+                                         + 0.5) + 1,
+                                $max_y + 2, $sym, 'grey' );
+            
+            # make buttons containing same # of characters uniform in width
+            my $end = $x + $font_width_button + 4;
 
             $self->add_drawing( RECTANGLE, $x, $max_y, $end,
-                $max_y + $font->height + 4, 'grey' );
+                $max_y + $font_height + 4, 'grey' );
 
             $self->add_drawing( STRING, $font, $end + 5, $max_y + 2, $caption,
                 'black' );
 
-            $max_y += $font->height + 10;
+            $max_y += $font_height + 10;
         }
     }
 
@@ -1872,7 +1883,10 @@ Do the actual drawing.
     my $width      = $self->map_width;
     my $img_class  = $self->image_class;
     my $poly_class = $self->polygon_class;
-    my $img        = $img_class->new( $width, $height );
+    my $img        = $self->image_type eq 'svg'
+                     ? GD::SVG::Image->new( $width, $height, 1 )
+                     : Bio::GMOD::CMap::Drawer::GDWrapper->new($img_class->new( $width, $height, 1 ));
+
     my %colors     = (
         (   map {
                 $_,
@@ -1910,7 +1924,10 @@ Do the actual drawing.
             }
             $img->$method( $poly, map { $colors{ lc $_ } } @colors );
         }
-        else {
+        elsif ( $method eq LINE && $self->image_type ne 'svg' ) {
+            $img->setAntiAliased( map { $colors{ lc $_ } } @colors );
+            $img->$method( @$obj, gdAntiAliased );
+        } else {
             $img->$method( @$obj, map { $colors{ lc $_ } } @colors );
         }
     }
@@ -3148,6 +3165,64 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
     return $self->{'regular_font'};
 }
 
+# ----------------------------------------------------
+sub string_width {
+
+=pod
+
+=head2 string_width
+
+Calculate width of string when either TrueType fonts (GIF, PNG) or SVG is
+used.
+
+=cut
+
+    my $self = shift;
+    my ($font, $string) = @_;
+
+    return ($self->image_type eq 'svg') 
+           ? $font->width * length($string)
+           : $self->ttf->string_width($font, $string);
+}
+
+# ----------------------------------------------------
+sub string_height {
+
+=pod
+
+=head2 string_width
+
+Calculate width of string when either TrueType fonts (GIF, PNG) or SVG is
+used.
+
+=cut
+
+    my $self = shift;
+    my ($font, $string) = @_;
+
+    return ($self->image_type eq 'svg') 
+           ? $font->height
+           : $self->ttf->string_height($font, $string);
+}
+# ----------------------------------------------------
+sub ttf {
+
+=pod
+
+=head2 ttf
+
+Returns a Bio::GMOD::CMap::Drawer::GDWrapper object for use in generating
+string_width() and string_heigh() of TrueType fonts (not used for SVG)
+
+=cut
+
+    my $self = shift;
+    unless ( $self->{'ttf'} ) {
+        $self->{'ttf'} = Bio::GMOD::CMap::Drawer::GDWrapper->new($self->image_class->new( 10, 10, 1 ));
+    }
+
+    return $self->{'ttf'};
+}
 # ----------------------------------------------------
 sub tick_y_positions {
 

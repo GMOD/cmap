@@ -645,6 +645,7 @@ such as the units.
     my $top_buf       = 12;
     my $buf           = 2;
     my $font          = $drawer->regular_font;
+    my $font_height   = $drawer->string_height($font, 'X');
     my $is_compressed = $args{'is_compressed'};
     my $y             = $y2 + $top_buf;
     my $x_mid         = $x1 + ( ( $x2 - $x1 ) / 2 );
@@ -670,7 +671,7 @@ such as the units.
             or $magnification != 1 )
         {
             my $full_str = "Reset Map";
-            $x = $x_mid - ( ( $font->width * length($full_str) ) / 2 );
+            $x = $x_mid - ( ( $drawer->string_width($font, $full_str) ) / 2 );
             push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
             my $reset_url = $self->create_viewer_link(
                 $drawer->create_minimal_link_params(),
@@ -683,22 +684,22 @@ such as the units.
                 {
                 coords => [
                     $x, $y,
-                    $x + ( $font->width * length($full_str) ),
-                    $y + $font->height,
+                    $x + ( $drawer->string_width($font, $full_str) ),
+                    $y + $font_height,
                 ],
                 url  => $reset_url,
                 alt  => 'Make map original size',
                 code => $code,
                 }
                 unless ($omit_all_area_boxes);
-            $y += $font->height + $buf;
+            $y += $font_height + $buf;
             $bounds->[0] = $x
                 if ( $bounds->[0] < $x );
-            $bounds->[2] = $x + ( $font->width * length($full_str) )
+            $bounds->[2] = $x + ( $drawer->string_width($font, $full_str) )
                 if (
-                $bounds->[2] < $x + ( $font->width * length($full_str) ) );
-            $bounds->[3] = $y + $font->height
-                if ( $bounds->[3] < $y + $font->height );
+                $bounds->[2] < $x + ( $drawer->string_width($font, $full_str ) ) );
+            $bounds->[3] = $y + $font_height
+                if ( $bounds->[3] < $y + $font_height );
 
         }
 
@@ -716,7 +717,7 @@ such as the units.
             my $mag_minus_str = "-";
             my $mag_mid_str   = " Mag ";
             $x = $x_mid - (
-                (   $font->width * length(
+                (   $drawer->string_width($font,
                         $mag_minus_str . $mag_plus_str . $mag_mid_str
                     )
                 ) / 2
@@ -732,12 +733,15 @@ such as the units.
             $code = qq[
             onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
             ];
+            my $font_width_mag_minus_str = $drawer->string_width($font, $mag_minus_str);
+            my $font_width_mag_mid_str = $drawer->string_width($font, $mag_mid_str);
+            my $font_width_mag_plus_str = $drawer->string_width($font, $mag_plus_str);
             push @$map_area_data,
                 {
                 coords => [
                     $x, $y,
-                    $x + ( $font->width * length($mag_minus_str) ),
-                    $y + $font->height
+                    $x + $font_width_mag_minus_str,
+                    $y + $font_height
                 ],
                 url  => $mag_minus_url,
                 alt  => 'Magnification',
@@ -746,9 +750,9 @@ such as the units.
                 unless ($omit_all_area_boxes);
             $bounds->[0] = $x
                 if ( $bounds->[0] > $x );
-            $bounds->[3] = $y + $font->height
-                if ( $bounds->[3] < $y + $font->height );
-            $x += ( $font->width * length($mag_minus_str) );
+            $bounds->[3] = $y + $font_height
+                if ( $bounds->[3] < $y + $font_height );
+            $x += $font_width_mag_minus_str;
 
             # Middle
             push @$drawing_data,
@@ -760,15 +764,15 @@ such as the units.
                 {
                 coords => [
                     $x, $y,
-                    $x + ( $font->width * length($mag_mid_str) ),
-                    $y + $font->height
+                    $x + $font_width_mag_mid_str,
+                    $y + $font_height
                 ],
                 url  => '',
                 alt  => 'Current Magnification: ' . $magnification . ' times',
                 code => $code,
                 }
                 unless ($omit_all_area_boxes);
-            $x += ( $font->width * length($mag_mid_str) );
+            $x += $font_width_mag_mid_str;
 
             # Plus Side
             my $mag_plus_url
@@ -784,18 +788,17 @@ such as the units.
                 {
                 coords => [
                     $x, $y,
-                    $x + ( $font->width * length($mag_plus_str) ),
-                    $y + $font->height
+                    $x + $font_width_mag_plus_str,
+                    $y + $font_height
                 ],
                 url  => $mag_plus_url,
                 alt  => 'Magnification',
                 code => $code,
                 }
                 unless ($omit_all_area_boxes);
-            $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
-                if ( $bounds->[2]
-                < $x + ( $font->width * length($mag_plus_str) ) );
-            $y += $font->height + $buf;
+            $bounds->[2] = $x + $font_width_mag_plus_str
+                if ( $bounds->[2] < $x + $font_width_mag_plus_str );
+            $y += $font_height + $buf;
         }
     }
 
@@ -803,13 +806,14 @@ such as the units.
     my ( $start, $stop )
         = $drawer->data_module->getDisplayedStartStop( $slot_no, $map_id );
     my $start_str = commify($start) . "-" . commify($stop) . " " . $map_units;
-    $x = $x_mid - ( ( $font->width * length($start_str) ) / 2 );
+    my $font_width_start_str = $drawer->string_width($font, $start_str);
+    $x = $x_mid - ( $font_width_start_str / 2 );
     push @$drawing_data, [ STRING, $font, $x, $y, $start_str, 'grey' ];
-    $y += $font->height + $buf;
+    $y += $font_height + $buf;
     $bounds->[0] = $x
         if ( $bounds->[0] > $x );
-    $bounds->[2] = $x + ( $font->width * length($start_str) )
-        if ( $bounds->[2] < $x + ( $font->width * length($start_str) ) );
+    $bounds->[2] = $x + $font_width_start_str
+        if ( $bounds->[2] < $x + $font_width_start_str );
     $bounds->[3] = $y
         if ( $bounds->[3] < $y );
     ###Map Length
@@ -1034,9 +1038,10 @@ Creates the slot title.
     my $right_x = 0;
     my $buffer  = 4;
     my $mid_x   = 0;
+    my $font_height = $drawer->string_height($font, 'X');
     my $top_y
-        = $min_y - ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
-    $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
+        = $min_y - ( ( scalar @$lines ) * ( $font_height + $buffer ) ) - 4;
+    $top_y -= ( $font_height + $buffer ) if ( scalar @$buttons );
     my $leftmost            = $mid_x;
     my $rightmost           = $mid_x;
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
@@ -1047,13 +1052,13 @@ Creates the slot title.
     my ( @drawing_data, @map_area_data );
     my $y = $top_y;
     for my $label (@$lines) {
-        my $len     = $font->width * length($label);
+        my $len     = $drawer->string_width($font, $label);
         my $label_x = $mid_x - $len / 2;
         my $end     = $label_x + $len;
 
         push @drawing_data, [ STRING, $font, $label_x, $y, $label, 'black' ];
 
-        $y += $font->height + $buffer;
+        $y += $font_height + $buffer;
         $leftmost  = $label_x if $label_x < $leftmost;
         $rightmost = $end     if $end > $rightmost;
     }
@@ -1064,7 +1069,7 @@ Creates the slot title.
     my $buttons_width = 0;
     if ( scalar @$buttons ) {
         for my $button (@$buttons) {
-            $buttons_width += $font->width * length( $button->{'label'} );
+            $buttons_width += $drawer->string_width($font, 'X' x length($button->{'label'}) );
         }
         $buttons_width += 6 * ( scalar @$buttons - 1 );
 
@@ -1077,12 +1082,16 @@ Creates the slot title.
         $y += 6;
 
         for my $button (@$buttons) {
-            my $len = $font->width * length( $button->{'label'} );
+            my $len = $drawer->string_width($font, 'X' x length($button->{'label'}));
             my $end = $label_x + $len;
             my @area
-                = ( $label_x - 3, $y - 2, $end + 1, $y + $font->height + 2 );
+                = ( $label_x - 3, $y - 2, $end + 1, $y + $font_height + 2 );
+            my $font_width_label = $drawer->string_width($font, $button->{'label'});
             push @drawing_data,
-                [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
+                [ STRING,
+                  $font,
+                  $label_x + int(($len - $font_width_label)/2.0 + 0.5),
+                  $y, $button->{'label'}, 'grey' ],
                 [ RECTANGLE, @area, 'grey' ],;
 
             $leftmost  = $label_x if $label_x < $leftmost;
@@ -1234,8 +1243,8 @@ Variable Info:
         or return $self->error( $drawer->error );
     my $slots       = $drawer->slots;
     my @map_ids     = $self->map_ids;
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
+    my $font_height = $drawer->string_height($reg_font, 'X');
+    my $font_width  = $drawer->string_width($reg_font, 'X');
     my $no_of_maps  = scalar @map_ids;
 
     # if more than one map in slot, compress all
@@ -2339,7 +2348,7 @@ sub place_map_y {
                 # make room for three lines
                 my $reg_font = $drawer->regular_font
                     or return $self->error( $drawer->error );
-                my $font_height = $reg_font->height;
+                my $font_height = $drawer->string_height($reg_font, 'X');
                 $stacked_max_y = $base_y + ( $font_height * 3 );
             }
             $min_ref_y       = $stacked_max_y;
@@ -2652,8 +2661,8 @@ sub add_topper {
     my $map_name    = $self->map_name($map_id);
     my $reg_font    = $drawer->regular_font
         or return $self->error( $drawer->error );
-    my $font_width          = $reg_font->width;
-    my $font_height         = $reg_font->height;
+    my $font_width    = $drawer->string_width($reg_font, 'X');
+    my $font_height   = $drawer->string_height($reg_font, 'X');
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     my $base_x        = $map_placement_data->{$map_id}{'map_coords'}[0];
@@ -2750,8 +2759,9 @@ sub add_topper {
 
     for ( my $i = $#map_toppers; $i >= 0; $i-- ) {
         my $topper = $map_toppers[$i];
-        my $f_x1   = $mid_x - ( ( length($topper) * $font_width ) / 2 );
-        my $f_x2   = $f_x1 + ( length($topper) * $font_width );
+        my $font_width_topper = $drawer->string_width($reg_font, $topper);
+        my $f_x1   = $mid_x - ( $font_width_topper / 2 );
+        my $f_x2   = $f_x1 + $font_width_topper;
 
         $current_min_y -= ( $font_height + 4 );
         my $topper_y = $current_min_y;
@@ -2841,8 +2851,8 @@ sub add_capped_mark {
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     my $reg_font            = $drawer->regular_font
         or return $self->error( $drawer->error );
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
+    my $font_width  = $drawer->string_width($reg_font, 'X');
+    my $font_height = $drawer->string_height($reg_font, 'X');
     my $map_coords  = $map_placement_data->{$map_id}{'map_coords'};
     if ( $capped == 1 or $capped == 3 ) {    #top capped
                                              # Draw asterisk
@@ -2943,8 +2953,8 @@ sub add_tick_marks {
     my $label_side          = $drawer->label_side($slot_no);
     my $reg_font            = $drawer->regular_font
         or return $self->error( $drawer->error );
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
+    my $font_width  = $drawer->string_width($reg_font, 'X');
+    my $font_height = $drawer->string_height($reg_font, 'X');
     my $base_x      = $map_coords->[0];
     my $clean_view  = $self->clean_view;
 
@@ -3279,8 +3289,7 @@ sub add_feature_to_map {
         my $omit_area_boxes = $drawer->omit_area_boxes;
         my $reg_font        = $drawer->regular_font
             or return $self->error( $drawer->error );
-        my $font_width          = $reg_font->width;
-        my $font_height         = $reg_font->height;
+        my $font_height         = $drawer->string_height($reg_font, 'X');
         my $label_side          = $drawer->label_side($slot_no);
         my $feature_details_url = DEFAULT->{'feature_details_url'};
 
@@ -3535,8 +3544,7 @@ sub add_labels_to_map {
     my $label_side      = $drawer->label_side($slot_no);
     my $reg_font        = $drawer->regular_font
         or return $self->error( $drawer->error );
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
+    my $font_height = $drawer->string_height($reg_font, 'X');
     my $feature_highlight_fg_color
         = $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color
@@ -3567,7 +3575,7 @@ sub add_labels_to_map {
         my $text      = $label->{'text'};
         my $feature   = $label->{'feature'};
         my $label_y   = $label->{'y'};
-        my $label_len = $font_width * length($text);
+        my $label_len = $drawer->string_width($reg_font, $text);
         my $label_x
             = $label_side eq RIGHT
             ? $base_x + $label_offset
