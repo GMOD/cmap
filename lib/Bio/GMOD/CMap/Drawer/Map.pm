@@ -3380,7 +3380,7 @@ sub add_feature_to_map {
                         . $feature->{'feature_name'} . ' ['
                         . $feature->{'feature_acc'} . ']';
                     eval $self->feature_type_data(
-                        $feature->{'feature_type_acc'}, 'area_code' );
+                        $feature->{'feature_type_acc'}, 'area_code' ) or die;
                     push @$map_area_data,
                         {
                         coords => \@coords,
@@ -3616,7 +3616,7 @@ sub add_labels_to_map {
             . $feature->{'feature_name'} . ' ['
             . $feature->{'feature_acc'} . ']';
         eval $self->feature_type_data( $feature->{'feature_type_acc'},
-            'area_code' );
+            'area_code' ) or die;
         push @$map_area_data,
             {
             coords => \@label_bounds,
