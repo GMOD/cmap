@@ -3380,7 +3380,11 @@ sub add_feature_to_map {
                         . $feature->{'feature_name'} . ' ['
                         . $feature->{'feature_acc'} . ']';
                     eval $self->feature_type_data(
-                        $feature->{'feature_type_acc'}, 'area_code' ) or die;
+                        $feature->{'feature_type_acc'}, 'area_code' );
+                    if ($@) {
+                        die 'Error in area_code of feature_type_acc ('
+                            . $feature->{'feature_type_acc'} . '): ' . $@;
+                    }
                     push @$map_area_data,
                         {
                         coords => \@coords,
@@ -3616,7 +3620,11 @@ sub add_labels_to_map {
             . $feature->{'feature_name'} . ' ['
             . $feature->{'feature_acc'} . ']';
         eval $self->feature_type_data( $feature->{'feature_type_acc'},
-            'area_code' ) or die;
+            'area_code' );
+        if ($@) {
+            die 'Error in area_code of feature_type_acc ('
+                . $feature->{'feature_type_acc'} . '): ' . $@;
+        }
         push @$map_area_data,
             {
             coords => \@label_bounds,
