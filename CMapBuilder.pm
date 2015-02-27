@@ -574,10 +574,6 @@ sub ACTION_demo {
         allow_update           => 0,
     ) or die "Error: ", $corr_maker->error, "\n";
 
-    # Load the Matrix
-    $admin->reload_correspondence_matrix
-        or die "Error: ", $admin->error, "\n";
-
     # Purge Cache 'cause what the heck.
     $admin->purge_cache(1);
 

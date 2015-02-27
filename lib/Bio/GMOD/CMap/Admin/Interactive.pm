@@ -405,9 +405,6 @@ No Parameters
         {   action  => 'delete_duplicate_correspondences',
             display => 'Delete duplicate correspondences'
         },
-        {   action  => 'reload_correspondence_matrix',
-            display => 'Reload correspondence matrix'
-        },
         {   action  => 'purge_query_cache_menu',
             display => 'Purge the cache to view new data'
         },
@@ -4272,47 +4269,6 @@ Options: exact_match, read_pair
 }
 
 # ----------------------------------------------------
-sub reload_correspondence_matrix {
-
-=pod
-
-=head2 reload_correspondence_matrix
-
-=head3 Description
-
-Reloads the correspondence matrix to allow new data to be put into the matrix
-view.
-
-=head3 Parameters
-
-=over 4
-
-=item * command_line
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $command_line = $args{'command_line'};
-
-    unless ($command_line) {
-        print "OK to truncate table in data source '", $self->data_source,
-            "' and reload? [Y/n] ";
-        chomp( my $answer = <STDIN> );
-        return if $answer =~ m/^[Nn]/;
-    }
-
-    my $admin = $self->admin;
-    $admin->reload_correspondence_matrix or do {
-        print "Error: ", $admin->error, "\n";
-        return;
-    };
-
-    return 1;
-}
-
-# ----------------------------------------------------
 sub prepare_for_gbrowse {
 
 =pod
@@ -5127,10 +5083,6 @@ cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_typ
     --from_group_size : The number of maps from the "from" map set to group 
         together during name based correspondence creation.
                     (default: 1)
-
-=head2 reload_correspondence_matrix
-
-cmap_admin.pl [-d data_source] --action reload_correspondence_matrix
 
 =head2 purge_query_cache
 

@@ -366,23 +366,6 @@ my $get_corrs_return3 = [
     }
 ];
 
-my $get_matrix_return = [
-    {   'reference_species_acc' => 'species_acc1',
-        'correspondences'       => '3',
-        'map_count'             => '1',
-        'link_map_set_acc'      => 'map_set_acc2',
-        'reference_map_set_acc' => 'map_set_acc1',
-        'link_species_acc'      => 'species_acc1'
-    },
-    {   'reference_species_acc' => 'species_acc1',
-        'correspondences'       => '3',
-        'map_count'             => '1',
-        'link_map_set_acc'      => 'map_set_acc1',
-        'reference_map_set_acc' => 'map_set_acc2',
-        'link_species_acc'      => 'species_acc1'
-    }
-];
-
 # -----------------------------------------------------------------------
 ### Species Creation
 my $species_id;
@@ -584,15 +567,6 @@ my $actual_get_corrs_return4
 wipe_fields_from_array_ref( $actual_get_corrs_return4, @wipe_corr_fields, );
 is_deeply( $actual_get_corrs_return4, $get_corrs_return1,
     'Get Correspondence Check delete_duplicate' );
-
-# -----------------------------------------------------------------------
-### Reload the Matrix
-ok( $interactive->reload_correspondence_matrix( command_line => '1', ),
-    'Testing reload_correspondence_matrix' );
-
-my $actual_get_matrix_return = $sql_object->get_matrix_relationships();
-wipe_fields_from_array_ref( $actual_get_matrix_return, @wipe_matrix_fields, );
-is_deeply( $actual_get_matrix_return, $get_matrix_return, 'Matrix Check' );
 
 # -----------------------------------------------------------------------
 ### Export text file

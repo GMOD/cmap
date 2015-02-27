@@ -2032,41 +2032,6 @@ Nothing
 }
 
 # ----------------------------------------------------
-sub reload_correspondence_matrix {
-
-=pod
-
-=head2 reload_correspondence_matrix
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-Reload the matrix data table with up to date information
-
-=item * Usage
-
-    $admin->reload_correspondence_matrix();
-
-=item * Returns
-
-Nothing
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $sql_object = $self->sql or return;
-
-    my $new_records = $sql_object->reload_correspondence_matrix();
-
-    print("\n$new_records new records inserted.\n");
-}
-
-# ----------------------------------------------------
 sub set_attributes {
 
 =pod

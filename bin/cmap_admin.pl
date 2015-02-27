@@ -152,7 +152,6 @@ my %command_line_actions = (
     import_object_data               => 1,
     import_links                     => 1,
     purge_query_cache                => 1,
-    reload_correspondence_matrix     => 1,
     delete_duplicate_correspondences => 1,
     export_as_gff                    => 1,
     export_as_sql                    => 1,
@@ -249,8 +248,6 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2;
 
 # ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2 --purge_all_datasources;
-
-# ./bin/cmap_admin.pl -d WashU -a reload_correspondence_matrix
 
 # ./bin/cmap_admin.pl -d WashU -a delete_duplicate_correspondences --map_set_acc 'blah'
 
@@ -482,19 +479,6 @@ cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_typ
         together during name based correspondence creation.
                     (default: 1)
 
-=head2 reload_correspondence_matrix
-
-cmap_admin.pl [-d data_source] --action reload_correspondence_matrix
-
-=head2 purge_query_cache
-
-cmap_admin.pl [-d data_source] --action purge_query_cache [options]
-
-  Optional:
-    --cache_level           : The level of the cache to be purged (default: 1)
-    --purge_all_datasources : purge the caches of all datasources enabled on
-                              this machine.
-
 =head2 delete_duplicate_correspondences
 
 cmap_admin.pl [-d data_source] --action delete_duplicate_correspondences [--map_set_acc map_set_acc]
@@ -596,13 +580,6 @@ as normal, but only if one of the two features falls on one of the
 maps specified will a correspondence be created.  Again, the idea is
 that this should take less time than reloading correspondences when
 searching the entire database.
-
-=head2 Reload correspondence matrix
-
-You should choose this option whenever you've altered the number of
-correspondences in the database.  This will truncate the
-"cmap_correspondence_matrix" table and reload it with the pair-wise
-comparison of every map set in the database.
 
 =head2 Export data
 

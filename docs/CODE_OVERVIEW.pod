@@ -392,7 +392,7 @@ others, so they can be ranked accordingly.
 
 =item * cmap_correspondence_lookup: 
 
-This is sort of a cheater table introduced in order to make it easier
+This is a view that makes it easier
 to find correspondences. It doubles the number of records for any
 single correspondence. E.g., if "foo" corresponds to "bar," then two
 records go into this table, one saying "foo=>bar" and the other saying
@@ -401,12 +401,8 @@ in the "cmap_feature_correspondence" table.
 
 =item * cmap_correspondence_matrix: 
 
-This is another cheater table used to make lookups of feature
-correspondences fast. The idea is that correspondences don't often
-change, so it's quicker and easier to pre-compute all the possible
-combinations for the matrix and cache them in a table. Everytime a the
-number of correspondences changes for any reason, it is necessary to
-manually reload this table using the cmap_admin.pl tool.
+This is a view used for convenience to render the feature correspondence
+matrix.
 
 =item * cmap_xref: 
 

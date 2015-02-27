@@ -36,22 +36,6 @@ CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (fea
 CREATE UNIQUE INDEX correspondence_evidence_acc_cm on cmap_correspondence_evidence (correspondence_evidence_acc);
 
 --
--- Table: cmap_correspondence_matrix
---
-CREATE TABLE cmap_correspondence_matrix (
-  reference_map_acc varchar(30) NOT NULL DEFAULT '0',
-  reference_map_name varchar(32) NOT NULL DEFAULT '',
-  reference_map_set_acc varchar(30) NOT NULL DEFAULT '0',
-  reference_species_acc varchar(30) NOT NULL DEFAULT '0',
-  link_map_acc varchar(30) DEFAULT NULL,
-  link_map_name varchar(32) DEFAULT NULL,
-  link_map_set_acc varchar(30) NOT NULL DEFAULT '0',
-  link_species_acc varchar(30) NOT NULL DEFAULT '0',
-  no_correspondences int(11) NOT NULL DEFAULT '0'
-);
-
-
---
 -- Table: cmap_feature
 --
 CREATE TABLE cmap_feature (
@@ -261,5 +245,35 @@ CREATE TABLE cmap_commit_log (
   transaction_id int(11) NOT NULL DEFAULT '0'
 );
 
+--
+-- View: cmap_correspondence_matrix
+--
+CREATE VIEW cmap_correspondence_matrix AS
+  SELECT map1.map_acc         AS reference_map_acc,
+         map1.map_name        AS reference_map_name,
+         ms1.map_set_acc      AS reference_map_set_acc,
+         s1.species_acc       AS reference_species_acc,
+         map2.map_acc         AS link_map_acc,
+         map2.map_name        AS link_map_name,
+         ms2.map_set_acc      AS link_map_set_acc,
+         s2.species_acc       AS link_species_acc,
+         COUNT(f2.feature_id) AS no_correspondences
+    FROM cmap_species s1 
+    JOIN cmap_map_set ms1              ON ms1.species_id = s1.species_id
+    JOIN cmap_map map1                 ON map1.map_set_id = ms1.map_set_id
+    JOIN cmap_feature f1               ON f1.map_id = map1.map_id
+    JOIN cmap_correspondence_lookup cl ON cl.feature_id1 = f1.feature_id
+    JOIN cmap_feature f2               ON f2.feature_id = cl.feature_id2
+    JOIN cmap_map map2                 ON map2.map_id = f2.map_id
+    JOIN cmap_map_set ms2              ON ms2.map_set_id = map2.map_set_id
+    JOIN cmap_species s2               ON s2.species_id = ms2.species_id
+    JOIN cmap_feature_correspondence fc 
+      ON fc.feature_correspondence_id = cl.feature_correspondence_id
+   WHERE ms1.is_relational_map = 0
+     AND cl.feature_correspondence_id = fc.feature_correspondence_id
+     AND fc.is_enabled=1
+     AND ((f2.map_id <> f1.map_id AND ms2.is_relational_map = 0)
+         OR ms2.is_relational_map = 1)
+  GROUP BY map1.map_acc, map2.map_acc;
 
 COMMIT;
