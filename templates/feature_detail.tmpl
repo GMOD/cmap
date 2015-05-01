@@ -93,7 +93,7 @@
             <td colspan="2">
                 [%- FOREACH xref=feature.xrefs -%]
                     [% NEXT UNLESS xref.xref_url %]
-                    <b>[</b>&nbsp;<a href="[% xref.xref_url %]">[% xref.xref_name %]</a>&nbsp;<b>]</a><br />
+                    <b>[</b>&nbsp;<a target="_parent" href="[% xref.xref_url %]">[% xref.xref_name %]</a>&nbsp;<b>]</a><br />
                 [%- END -%]
                 </ul>
             </td>

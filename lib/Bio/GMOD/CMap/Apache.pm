@@ -78,6 +78,7 @@ use Bio::GMOD::CMap::Apache::SpeciesViewer;
 use Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 use Bio::GMOD::CMap::Apache::Remote;
 use Bio::GMOD::CMap::Apache::CMap3D;
+use Bio::GMOD::CMap::Apache::FeatureXRefs;
 
 use base 'Bio::GMOD::CMap';
 
@@ -110,6 +111,7 @@ use constant DISPATCH => {
     viewer              => __PACKAGE__ . '::MapViewer',
     map_search          => __PACKAGE__ . '::MapSearch',
     spider              => __PACKAGE__ . '::SpiderViewer',
+    feature_xrefs       => __PACKAGE__ . '::FeatureXRefs',
 };
 
 use constant FIELD_SEP  => '=';

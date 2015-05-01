@@ -16,6 +16,9 @@
   species_acc-map_set_acc.dat instead of
   species_common_name-map_set_short_name.dat, as the former is guaranteed to
   be unique.
+- Iliana Toneva (NCGR) contributed code to generate JSON-formatted feature
+  xrefs via URL; e.g.:
+  /cmap/feature_xrefs?feature_acc=FEATURE_ACC&data_source=DATA_SOURCE
 
 1.01
 
