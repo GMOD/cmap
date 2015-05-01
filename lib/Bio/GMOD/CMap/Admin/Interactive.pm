@@ -2011,15 +2011,15 @@ Directory where output file is to be placed
     }
 
     for my $map_set (@$map_sets) {
-        my $map_set_id          = $map_set->{'map_set_id'};
-        my $map_set_short_name  = $map_set->{'map_set_short_name'};
-        my $species_common_name = $map_set->{'species_common_name'};
+        my $map_set_id  = $map_set->{'map_set_id'};
+        my $map_set_acc = $map_set->{'map_set_acc'};
+        my $species_acc = $map_set->{'species_acc'};
         my $file_name
-            = join( '-', $species_common_name, $map_set_short_name );
+            = join( '-', $species_acc, $map_set_acc );
         $file_name =~ tr/a-zA-Z0-9-/_/cs;
         $file_name = "$dir/$file_name.dat";
 
-        print $log_fh "Dumping '$species_common_name-$map_set_short_name' "
+        print $log_fh "Dumping '$species_acc-$map_set_acc' "
             . "to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
         print $fh join( OFS, @col_names ), ORS;

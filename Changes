@@ -12,6 +12,10 @@
 - Use transactions when importing tab-delimited data to allow a rollback in
   the event of an error. The MySQL schema now specifies the InnoDB storage
   engine for transaction support.
+- cmap_admin.pl --action export_as_text now saves files as
+  species_acc-map_set_acc.dat instead of
+  species_common_name-map_set_short_name.dat, as the former is guaranteed to
+  be unique.
 
 1.01
 
