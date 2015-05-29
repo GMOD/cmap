@@ -926,9 +926,8 @@ Nothing
 
     my $map_id = $features->[0]{'map_id'};
 
-    my $corrs = $sql_object->get_feature_correspondence_details(
+    my $corrs = $sql_object->get_feature_correspondences(
         feature_id1             => $feature_id,
-        disregard_evidence_type => 1,
     );
     foreach my $corr (@$corrs) {
         $self->feature_correspondence_delete(

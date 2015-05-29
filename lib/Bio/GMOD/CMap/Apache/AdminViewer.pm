@@ -1250,10 +1250,9 @@ sub feature_corr_insert {
     if ( $feature_correspondence_id < 0 ) {
         my $sql_object = $self->sql or return;
         my $feature_correspondences
-            = $sql_object->get_feature_correspondence_details(
+            = $sql_object->get_feature_correspondences(
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
-            disregard_evidence_type => 1,
             );
         if (@$feature_correspondences) {
             $feature_correspondence_id
