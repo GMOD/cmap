@@ -6061,8 +6061,6 @@ If disregard_evidence_type is not true AND no evidence type info is given, retur
 
 =item - feature_id1 (feature_id1)
 
-=item - feature_id2 (feature_id2)
-
 =item - species_id2 (species_id2)
 
 =item - species_acc2 (species_acc2)
@@ -6149,7 +6147,6 @@ Not using cache because this query is quicker.
         no_validation               => 0,
         feature_correspondence_id   => 0,
         feature_id1                 => 0,
-        feature_id2                 => 0,
         species_id2                 => 0,
         species_acc2                => 0,
         map_set_id2                 => 0,
@@ -6169,7 +6166,6 @@ Not using cache because this query is quicker.
 
     my $feature_correspondence_id   = $args{'feature_correspondence_id'};
     my $feature_id1                 = $args{'feature_id1'};
-    my $feature_id2                 = $args{'feature_id2'};
     my $species_id2                 = $args{'species_id2'};
     my $species_acc2                = $args{'species_acc2'};
     my $map_set_id2                 = $args{'map_set_id2'};
@@ -6193,12 +6189,12 @@ Not using cache because this query is quicker.
 
     my $sql_str = q[
         select   f2.feature_name as feature_name2,
-                 cl.feature_id1 AS feature_id1,
-                 cl.feature_id2 AS feature_id2,
+                 f1.feature_id AS feature_id1,
+                 f2.feature_id AS feature_id2,
                  f1.feature_acc as feature_acc1,
                  f2.feature_acc as feature_acc2,
-                 cl.feature_start2 AS feature_start2,
-                 cl.feature_stop2 AS feature_stop2,
+                 f2.feature_start AS feature_start2,
+                 f2.feature_stop AS feature_stop2,
                  f1.feature_type_acc as feature_type_acc1,
                  f2.feature_type_acc as feature_type_acc2,
                  map2.map_id as map_id2,
@@ -6221,7 +6217,9 @@ Not using cache because this query is quicker.
                  fc.is_enabled AS is_enabled,
                  ce.evidence_type_acc AS evidence_type_acc,
                  ce.score AS score
-        from     cmap_correspondence_lookup cl, 
+        from     ] 
+        . ($feature_id1 ? "" : " cmap_correspondence_lookup cl,")
+        . qq [
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
                  cmap_feature f1,
@@ -6229,10 +6227,7 @@ Not using cache because this query is quicker.
                  cmap_map map2,
                  cmap_map_set ms2,
                  cmap_species s2
-        where    cl.feature_correspondence_id=fc.feature_correspondence_id
-        and      fc.feature_correspondence_id=ce.feature_correspondence_id
-        and      cl.feature_id1=f1.feature_id
-        and      cl.feature_id2=f2.feature_id
+        where    fc.feature_correspondence_id=ce.feature_correspondence_id
         and      f2.map_id=map2.map_id
         and      map2.map_set_id=ms2.map_set_id
         and      ms2.is_enabled=1
@@ -6243,11 +6238,18 @@ Not using cache because this query is quicker.
         $sql_str .= " and cl.feature_correspondence_id="
             . $db->quote($feature_correspondence_id) . " ";
     }
+    # optimization: if feature_id1 argument is present, avoid using the cmap_correspondence_lookup view
     if ($feature_id1) {
-        $sql_str .= " and cl.feature_id1=" . $db->quote($feature_id1) . " ";
-    }
-    if ($feature_id2) {
-        $sql_str .= " and cl.feature_id2=" . $db->quote($feature_id2) . " ";
+        $sql_str .= " and (fc.feature_id1 = " . $db->quote($feature_id1) 
+                  . "      or fc.feature_id2 = " . $db->quote($feature_id1) . ")"
+                  . " and f1.feature_id = CASE fc.feature_id1 WHEN " . $db->quote($feature_id1) 
+                  . " THEN fc.feature_id1 ELSE fc.feature_id2 END" 
+                  . " and f2.feature_id = CASE fc.feature_id1 WHEN " . $db->quote($feature_id1) 
+                  . " THEN fc.feature_id2 ELSE fc.feature_id1 END";
+    } else {
+        $sql_str .= " and cl.feature_correspondence_id=fc.feature_correspondence_id"
+                  . " and cl.feature_id1=f1.feature_id"
+                  . " and cl.feature_id2=f2.feature_id";
     }
 
     if ($map_id1) {
