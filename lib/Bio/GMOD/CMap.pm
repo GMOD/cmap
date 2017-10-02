@@ -39,7 +39,6 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Config;
 
 use Cache::SizeAwareFileCache;
-use Cwd;
 use URI::Escape;
 use DBI;
 use File::Path;
@@ -100,7 +99,7 @@ Returns the cache directory.
             'No cache directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
 
         unless ( -d $cache_dir ) {
-            eval { mkpath( Cwd::realpath($cache_dir), 0, 0700 ) };
+            eval { mkpath( -l $cache_dir ? readlink($cache_dir) : $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
                 return $self->error(
                     "Cache directory '$cache_dir' can't be created: $err");
