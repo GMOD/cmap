@@ -9205,7 +9205,7 @@ Xref id
         $display_order++;
     }
     my @insert_args = (
-        $xref_id,  $table_name, $object_id,
+        $xref_id,  $table_name || '', $object_id,
         $xref_url, $xref_name,  $display_order
     );
 
